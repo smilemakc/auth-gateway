@@ -30,6 +30,12 @@ var (
 	ErrInternalServer        = &AppError{Code: http.StatusInternalServerError, Message: "Internal server error"}
 	ErrRateLimitExceeded     = &AppError{Code: http.StatusTooManyRequests, Message: "Rate limit exceeded"}
 	ErrInvalidProvider       = &AppError{Code: http.StatusBadRequest, Message: "Invalid OAuth provider"}
+
+	// API Key errors
+	ErrAPIKeyNotFound        = &AppError{Code: http.StatusNotFound, Message: "API key not found"}
+	ErrInvalidAPIKey         = &AppError{Code: http.StatusUnauthorized, Message: "Invalid API key"}
+	ErrAPIKeyExpired         = &AppError{Code: http.StatusUnauthorized, Message: "API key expired"}
+	ErrAPIKeyRevoked         = &AppError{Code: http.StatusUnauthorized, Message: "API key revoked"}
 )
 
 // NewAppError creates a new application error
