@@ -1,0 +1,99 @@
+package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+// User represents a user in the system
+type User struct {
+	ID                uuid.UUID  `json:"id" db:"id"`
+	Email             string     `json:"email" db:"email"`
+	Username          string     `json:"username" db:"username"`
+	PasswordHash      string     `json:"-" db:"password_hash"` // Never expose password hash
+	FullName          string     `json:"full_name,omitempty" db:"full_name"`
+	ProfilePictureURL string     `json:"profile_picture_url,omitempty" db:"profile_picture_url"`
+	Role              string     `json:"role" db:"role"`
+	EmailVerified     bool       `json:"email_verified" db:"email_verified"`
+	IsActive          bool       `json:"is_active" db:"is_active"`
+	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
+}
+
+// UserRole defines available user roles
+type UserRole string
+
+const (
+	RoleUser      UserRole = "user"
+	RoleModerator UserRole = "moderator"
+	RoleAdmin     UserRole = "admin"
+)
+
+// IsValidRole checks if a role is valid
+func IsValidRole(role string) bool {
+	switch UserRole(role) {
+	case RoleUser, RoleModerator, RoleAdmin:
+		return true
+	default:
+		return false
+	}
+}
+
+// CreateUserRequest represents a request to create a new user
+type CreateUserRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Username string `json:"username" binding:"required,min=3,max=100"`
+	Password string `json:"password" binding:"required,min=8"`
+	FullName string `json:"full_name,omitempty"`
+}
+
+// UpdateUserRequest represents a request to update user profile
+type UpdateUserRequest struct {
+	FullName          string `json:"full_name,omitempty"`
+	ProfilePictureURL string `json:"profile_picture_url,omitempty"`
+}
+
+// ChangePasswordRequest represents a request to change password
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+// SignInRequest represents a sign-in request
+type SignInRequest struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+// RefreshTokenRequest represents a token refresh request
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+// ForgotPasswordRequest represents a forgot password request
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+// ResetPasswordRequest represents a reset password request
+type ResetPasswordRequest struct {
+	Token       string `json:"token" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+// PublicUser returns a user without sensitive information
+func (u *User) PublicUser() *User {
+	return &User{
+		ID:                u.ID,
+		Email:             u.Email,
+		Username:          u.Username,
+		FullName:          u.FullName,
+		ProfilePictureURL: u.ProfilePictureURL,
+		Role:              u.Role,
+		EmailVerified:     u.EmailVerified,
+		IsActive:          u.IsActive,
+		CreatedAt:         u.CreatedAt,
+		UpdatedAt:         u.UpdatedAt,
+	}
+}
