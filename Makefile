@@ -90,6 +90,15 @@ dev: ## Start development environment
 	@sleep 5
 	@echo "Services ready! You can now run: make run"
 
+proto-gen: ## Generate Go code from proto files
+	@echo "Generating proto files..."
+	@chmod +x scripts/generate-proto.sh
+	@./scripts/generate-proto.sh
+
+grpc-example: ## Run gRPC client example
+	@echo "Running gRPC client example..."
+	cd examples/grpc-client && go run main.go
+
 all: clean deps build test ## Clean, download deps, build and test
 
 .DEFAULT_GOAL := help

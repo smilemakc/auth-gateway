@@ -29,8 +29,8 @@ COPY --from=builder /app/auth-gateway .
 # Copy migrations
 COPY --from=builder /app/migrations ./migrations
 
-# Expose port
-EXPOSE 3000
+# Expose ports
+EXPOSE 3000 50051
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

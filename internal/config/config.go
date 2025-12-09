@@ -23,6 +23,7 @@ type Config struct {
 // ServerConfig contains server-related configuration
 type ServerConfig struct {
 	Port     string
+	GRPCPort string
 	Env      string
 	LogLevel string
 }
@@ -106,6 +107,7 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Server: ServerConfig{
 			Port:     getEnv("PORT", "3000"),
+			GRPCPort: getEnv("GRPC_PORT", "50051"),
 			Env:      getEnv("ENV", "development"),
 			LogLevel: getEnv("LOG_LEVEL", "info"),
 		},

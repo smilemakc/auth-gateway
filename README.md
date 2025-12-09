@@ -14,6 +14,7 @@
 - ✅ Health checks
 - ✅ CORS поддержка
 - ✅ Structured logging
+- ✅ gRPC API для микросервисов
 - ⏳ OAuth интеграция (Google, Yandex, GitHub, Instagram) - в разработке
 - ⏳ Prometheus метрики - в разработке
 
@@ -21,6 +22,7 @@
 
 - **Язык:** Go 1.23+
 - **Web Framework:** Gin
+- **RPC:** gRPC
 - **Database:** PostgreSQL 14+
 - **Cache:** Redis 7+
 - **JWT:** golang-jwt/jwt
@@ -130,6 +132,61 @@ curl -X GET http://localhost:3000/auth/profile \
 curl -X POST http://localhost:3000/auth/logout \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
+
+## gRPC API для микросервисов
+
+Auth Gateway предоставляет gRPC API для проверки токенов и авторизации между микросервисами.
+
+### gRPC Endpoints
+
+| Метод | Описание |
+|-------|----------|
+| `ValidateToken` | Проверка JWT токена и получение user info |
+| `GetUser` | Получение информации о пользователе по ID |
+| `CheckPermission` | Проверка прав доступа (RBAC) |
+| `IntrospectToken` | Детальная информация о токене |
+
+### Адрес gRPC сервера
+
+- **Локально:** `localhost:50051`
+- **Docker:** `auth-gateway:50051`
+
+### Пример использования gRPC
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+
+    "google.golang.org/grpc"
+    "google.golang.org/grpc/credentials/insecure"
+)
+
+func main() {
+    // Подключение к auth gateway
+    conn, err := grpc.NewClient(
+        "localhost:50051",
+        grpc.WithTransportCredentials(insecure.NewCredentials()),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer conn.Close()
+
+    // Проверка токена
+    // См. examples/grpc-client для полного примера
+}
+```
+
+### Интеграция с другими сервисами
+
+Полные примеры интеграции и middleware для gRPC находятся в:
+- `examples/grpc-client/` - пример клиента
+- `proto/auth.proto` - proto определения
+
+**Подробная документация:** [examples/grpc-client/README.md](examples/grpc-client/README.md)
 
 ## Разработка
 

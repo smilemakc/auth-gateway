@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/smilemakc/auth-gateway/internal/config"
+	grpcserver "github.com/smilemakc/auth-gateway/internal/grpc"
 	"github.com/smilemakc/auth-gateway/internal/handler"
 	"github.com/smilemakc/auth-gateway/internal/middleware"
 	"github.com/smilemakc/auth-gateway/internal/repository"
@@ -120,20 +121,44 @@ func main() {
 	// Start token cleanup routine
 	startTokenCleanup(tokenRepo, cfg.Security.TokenBlacklistCleanupInterval, log)
 
-	// Create server
+	// Create HTTP server
 	srv := &http.Server{
 		Addr:    ":" + cfg.Server.Port,
 		Handler: router,
 	}
 
-	// Start server in a goroutine
+	// Create gRPC server
+	grpcSrv, err := grpcserver.NewServer(
+		cfg.Server.GRPCPort,
+		jwtService,
+		userRepo,
+		tokenRepo,
+		redis,
+		log,
+	)
+	if err != nil {
+		log.Fatal("Failed to create gRPC server", map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
+
+	// Start HTTP server in a goroutine
 	go func() {
-		log.Info("Server starting", map[string]interface{}{
+		log.Info("HTTP server starting", map[string]interface{}{
 			"port": cfg.Server.Port,
 		})
 
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal("Failed to start server", map[string]interface{}{
+			log.Fatal("Failed to start HTTP server", map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+	}()
+
+	// Start gRPC server in a goroutine
+	go func() {
+		if err := grpcSrv.Start(); err != nil {
+			log.Fatal("Failed to start gRPC server", map[string]interface{}{
 				"error": err.Error(),
 			})
 		}
@@ -144,19 +169,23 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Info("Shutting down server...")
+	log.Info("Shutting down servers...")
 
 	// Graceful shutdown with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// Shutdown HTTP server
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Error("Server forced to shutdown", map[string]interface{}{
+		log.Error("HTTP server forced to shutdown", map[string]interface{}{
 			"error": err.Error(),
 		})
 	}
 
-	log.Info("Server exited successfully")
+	// Shutdown gRPC server
+	grpcSrv.Stop()
+
+	log.Info("Servers exited successfully")
 }
 
 // startTokenCleanup starts a background routine to clean up expired tokens

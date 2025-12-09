@@ -43,9 +43,11 @@ services:
     container_name: auth-gateway
     ports:
       - "3000:3000"
+      - "50051:50051"
     environment:
       # Server
       PORT: 3000
+      GRPC_PORT: 50051
       ENV: development
       LOG_LEVEL: info
 
