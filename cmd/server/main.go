@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -70,17 +71,21 @@ func main() {
 	tokenRepo := repository.NewTokenRepository(db)
 	// oauthRepo := repository.NewOAuthRepository(db) // TODO: будет использоваться для OAuth
 	auditRepo := repository.NewAuditRepository(db)
+	apiKeyRepo := repository.NewAPIKeyRepository(db)
 
 	// Initialize services
 	authService := service.NewAuthService(userRepo, tokenRepo, auditRepo, jwtService, redis, cfg.Security.BcryptCost)
 	userService := service.NewUserService(userRepo, auditRepo)
+	apiKeyService := service.NewAPIKeyService(apiKeyRepo, userRepo, auditRepo)
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService, userService, log)
 	healthHandler := handler.NewHealthHandler(db, redis)
+	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService, log)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, redis, tokenRepo)
+	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(apiKeyService)
 	rateLimitMiddleware := middleware.NewRateLimitMiddleware(redis, &cfg.RateLimit)
 
 	// Setup Gin
@@ -118,6 +123,37 @@ func main() {
 		protectedAuth.POST("/change-password", authHandler.ChangePassword)
 	}
 
+	// API Keys endpoints (require JWT authentication)
+	apiKeysGroup := router.Group("/api-keys")
+	apiKeysGroup.Use(authMiddleware.Authenticate())
+	{
+		apiKeysGroup.POST("", apiKeyHandler.Create)
+		apiKeysGroup.GET("", apiKeyHandler.List)
+		apiKeysGroup.GET("/:id", apiKeyHandler.Get)
+		apiKeysGroup.PUT("/:id", apiKeyHandler.Update)
+		apiKeysGroup.POST("/:id/revoke", apiKeyHandler.Revoke)
+		apiKeysGroup.DELETE("/:id", apiKeyHandler.Delete)
+	}
+
+	// Example: Protected endpoint that accepts both JWT and API key
+	protectedAPI := router.Group("/api/v1")
+	// This middleware will try JWT first, then API key
+	protectedAPI.Use(func(c *gin.Context) {
+		// Try JWT authentication first
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" && !strings.HasPrefix(authHeader, "Bearer agw_") {
+			authMiddleware.Authenticate()(c)
+			return
+		}
+
+		// Try API key authentication
+		apiKeyMiddleware.Authenticate()(c)
+	})
+	{
+		// Example endpoint that can be accessed with either JWT or API key
+		protectedAPI.GET("/profile", authHandler.GetProfile)
+	}
+
 	// Start token cleanup routine
 	startTokenCleanup(tokenRepo, cfg.Security.TokenBlacklistCleanupInterval, log)
 
@@ -133,6 +169,7 @@ func main() {
 		jwtService,
 		userRepo,
 		tokenRepo,
+		apiKeyService,
 		redis,
 		log,
 	)

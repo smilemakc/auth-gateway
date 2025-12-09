@@ -15,6 +15,7 @@
 - ✅ CORS поддержка
 - ✅ Structured logging
 - ✅ gRPC API для микросервисов
+- ✅ Постоянные API ключи для внешних сервисов
 - ⏳ OAuth интеграция (Google, Yandex, GitHub, Instagram) - в разработке
 - ⏳ Prometheus метрики - в разработке
 
@@ -93,6 +94,17 @@ curl http://localhost:3000/auth/health
 | PUT | `/auth/profile` | Обновить профиль |
 | POST | `/auth/change-password` | Изменить пароль |
 
+### API Keys Management (требуют JWT токен)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api-keys` | Создать новый API ключ |
+| GET | `/api-keys` | Получить список своих API ключей |
+| GET | `/api-keys/:id` | Получить информацию о ключе |
+| PUT | `/api-keys/:id` | Обновить API ключ |
+| POST | `/api-keys/:id/revoke` | Отозвать API ключ |
+| DELETE | `/api-keys/:id` | Удалить API ключ |
+
 ## Примеры использования
 
 ### Регистрация
@@ -133,18 +145,99 @@ curl -X POST http://localhost:3000/auth/logout \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
+## API Ключи для внешних сервисов
+
+API ключи предназначены для постоянной аутентификации внешних сервисов без необходимости обновления токенов. Ключи поддерживают систему scopes для контроля доступа.
+
+### Создание API ключа
+
+```bash
+curl -X POST http://localhost:3000/api-keys \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Production API Key",
+    "description": "Key for production service integration",
+    "scopes": ["token:validate", "users:read"]
+  }'
+```
+
+**Важно:** API ключ возвращается только один раз при создании. Сохраните его в безопасном месте!
+
+Ответ:
+```json
+{
+  "api_key": {
+    "id": "uuid",
+    "name": "Production API Key",
+    "key_prefix": "agw_AbC1",
+    "scopes": ["token:validate", "users:read"],
+    "is_active": true,
+    "created_at": 1234567890
+  },
+  "plain_key": "agw_AbC123XyZ...полный_ключ..."
+}
+```
+
+### Использование API ключа
+
+API ключи можно использовать двумя способами:
+
+**1. В заголовке X-API-Key:**
+```bash
+curl -X GET http://localhost:3000/auth/profile \
+  -H "X-API-Key: agw_YOUR_API_KEY"
+```
+
+**2. В заголовке Authorization:**
+```bash
+curl -X GET http://localhost:3000/auth/profile \
+  -H "Authorization: Bearer agw_YOUR_API_KEY"
+```
+
+### Доступные scopes
+
+- `users:read` - чтение информации о пользователях
+- `users:write` - изменение информации о пользователях
+- `profile:read` - чтение профиля
+- `profile:write` - изменение профиля
+- `token:validate` - валидация токенов (для gRPC)
+- `token:introspect` - детальная информация о токенах
+- `admin:all` - все административные права
+- `all` - полный доступ ко всем операциям
+
+### Управление API ключами
+
+**Получить список ключей:**
+```bash
+curl -X GET http://localhost:3000/api-keys \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Отозвать ключ:**
+```bash
+curl -X POST http://localhost:3000/api-keys/{key_id}/revoke \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Удалить ключ:**
+```bash
+curl -X DELETE http://localhost:3000/api-keys/{key_id} \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
 ## gRPC API для микросервисов
 
-Auth Gateway предоставляет gRPC API для проверки токенов и авторизации между микросервисами.
+Auth Gateway предоставляет gRPC API для проверки токенов и авторизации между микросервисами. Поддерживает как JWT токены, так и API ключи.
 
 ### gRPC Endpoints
 
 | Метод | Описание |
 |-------|----------|
-| `ValidateToken` | Проверка JWT токена и получение user info |
+| `ValidateToken` | Проверка JWT токена или API ключа и получение user info |
 | `GetUser` | Получение информации о пользователе по ID |
 | `CheckPermission` | Проверка прав доступа (RBAC) |
-| `IntrospectToken` | Детальная информация о токене |
+| `IntrospectToken` | Детальная информация о JWT токене |
 
 ### Адрес gRPC сервера
 
@@ -252,6 +345,7 @@ auth-gateway/
 
 - `users` - пользователи
 - `refresh_tokens` - refresh токены
+- `api_keys` - постоянные API ключи для внешних сервисов
 - `oauth_accounts` - OAuth аккаунты
 - `token_blacklist` - черный список токенов
 - `audit_logs` - логи аудита
@@ -276,6 +370,16 @@ make migrate-down  # Откатить
 - **Refresh Token:** TTL 7 дней
 - Алгоритм: HMAC-SHA256
 - Токены хранятся в базе данных (refresh) и Redis (blacklist)
+
+### API Ключи
+
+- Формат: `agw_<base64_random_32_bytes>`
+- Хешируются с помощью SHA-256 перед сохранением
+- Полный ключ возвращается только один раз при создании
+- Поддержка опциональной даты истечения (NULL = никогда не истекает)
+- Система scopes для гранулярного контроля доступа
+- Автоматическое отслеживание последнего использования
+- Можно отозвать или удалить в любой момент
 
 ### Пароли
 

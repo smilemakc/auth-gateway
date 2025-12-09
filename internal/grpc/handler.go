@@ -15,35 +15,38 @@ import (
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
-// AuthHandler implements the gRPC AuthService
-type AuthHandler struct {
+// AuthHandlerV2 implements the gRPC AuthService with API key support
+type AuthHandlerV2 struct {
 	UnimplementedAuthServiceServer
-	jwtService *jwt.Service
-	userRepo   *repository.UserRepository
-	tokenRepo  *repository.TokenRepository
-	redis      *service.RedisService
-	logger     *logger.Logger
+	jwtService    *jwt.Service
+	userRepo      *repository.UserRepository
+	tokenRepo     *repository.TokenRepository
+	apiKeyService *service.APIKeyService
+	redis         *service.RedisService
+	logger        *logger.Logger
 }
 
-// NewAuthHandler creates a new auth handler
-func NewAuthHandler(
+// NewAuthHandlerV2 creates a new auth handler with API key support
+func NewAuthHandlerV2(
 	jwtService *jwt.Service,
-	userRepo *repository.UserRepository,
-	tokenRepo *repository.TokenRepository,
-	redis *service.RedisService,
-	log *logger.Logger,
-) *AuthHandler {
-	return &AuthHandler{
-		jwtService: jwtService,
-		userRepo:   userRepo,
-		tokenRepo:  tokenRepo,
-		redis:      redis,
-		logger:     log,
+	userRepo   *repository.UserRepository,
+	tokenRepo  *repository.TokenRepository,
+	apiKeyService *service.APIKeyService,
+	redis      *service.RedisService,
+	log        *logger.Logger,
+) *AuthHandlerV2 {
+	return &AuthHandlerV2{
+		jwtService:    jwtService,
+		userRepo:      userRepo,
+		tokenRepo:     tokenRepo,
+		apiKeyService: apiKeyService,
+		redis:         redis,
+		logger:        log,
 	}
 }
 
-// ValidateToken validates a JWT access token and returns user information
-func (h *AuthHandler) ValidateToken(ctx context.Context, req *ValidateTokenRequest) (*ValidateTokenResponse, error) {
+// ValidateToken validates a JWT access token or API key and returns user information
+func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenRequest) (*ValidateTokenResponse, error) {
 	if req.AccessToken == "" {
 		return &ValidateTokenResponse{
 			Valid:        false,
@@ -51,7 +54,32 @@ func (h *AuthHandler) ValidateToken(ctx context.Context, req *ValidateTokenReque
 		}, nil
 	}
 
-	// Validate token
+	// Check if it's an API key (starts with "agw_")
+	if len(req.AccessToken) > 4 && req.AccessToken[:4] == "agw_" {
+		// Validate API key
+		_, user, err := h.apiKeyService.ValidateAPIKey(ctx, req.AccessToken)
+		if err != nil {
+			h.logger.Debug("API key validation failed", map[string]interface{}{
+				"error": err.Error(),
+			})
+			return &ValidateTokenResponse{
+				Valid:        false,
+				ErrorMessage: err.Error(),
+			}, nil
+		}
+
+		// Return successful validation
+		return &ValidateTokenResponse{
+			Valid:     true,
+			UserId:    user.ID.String(),
+			Email:     user.Email,
+			Username:  user.Username,
+			Role:      user.Role,
+			ExpiresAt: 0, // API keys don't have JWT expiration
+		}, nil
+	}
+
+	// Validate JWT token
 	claims, err := h.jwtService.ValidateAccessToken(req.AccessToken)
 	if err != nil {
 		h.logger.Debug("Token validation failed", map[string]interface{}{
@@ -94,7 +122,7 @@ func (h *AuthHandler) ValidateToken(ctx context.Context, req *ValidateTokenReque
 }
 
 // GetUser retrieves user information by ID
-func (h *AuthHandler) GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error) {
+func (h *AuthHandlerV2) GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
@@ -136,7 +164,7 @@ func (h *AuthHandler) GetUser(ctx context.Context, req *GetUserRequest) (*GetUse
 }
 
 // CheckPermission checks if a user has specific permission
-func (h *AuthHandler) CheckPermission(ctx context.Context, req *CheckPermissionRequest) (*CheckPermissionResponse, error) {
+func (h *AuthHandlerV2) CheckPermission(ctx context.Context, req *CheckPermissionRequest) (*CheckPermissionResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
@@ -176,7 +204,6 @@ func (h *AuthHandler) CheckPermission(ctx context.Context, req *CheckPermissionR
 	}
 
 	// Regular users can only read their own resources
-	// This is a simple example - in production, implement proper RBAC/ABAC
 	if user.Role == string(models.RoleUser) && req.Action == "read" {
 		return &CheckPermissionResponse{
 			Allowed: true,
@@ -192,7 +219,7 @@ func (h *AuthHandler) CheckPermission(ctx context.Context, req *CheckPermissionR
 }
 
 // IntrospectToken provides detailed information about a token
-func (h *AuthHandler) IntrospectToken(ctx context.Context, req *IntrospectTokenRequest) (*IntrospectTokenResponse, error) {
+func (h *AuthHandlerV2) IntrospectToken(ctx context.Context, req *IntrospectTokenRequest) (*IntrospectTokenResponse, error) {
 	if req.AccessToken == "" {
 		return nil, status.Error(codes.InvalidArgument, "access_token is required")
 	}

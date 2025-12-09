@@ -1,0 +1,276 @@
+package handler
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/service"
+	"github.com/smilemakc/auth-gateway/internal/utils"
+	"github.com/smilemakc/auth-gateway/pkg/logger"
+)
+
+// APIKeyHandler handles API key-related HTTP requests
+type APIKeyHandler struct {
+	apiKeyService *service.APIKeyService
+	logger        *logger.Logger
+}
+
+// NewAPIKeyHandler creates a new API key handler
+func NewAPIKeyHandler(apiKeyService *service.APIKeyService, log *logger.Logger) *APIKeyHandler {
+	return &APIKeyHandler{
+		apiKeyService: apiKeyService,
+		logger:        log,
+	}
+}
+
+// Create creates a new API key
+// @Summary Create API key
+// @Tags api-keys
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body models.CreateAPIKeyRequest true "API key data"
+// @Success 201 {object} models.CreateAPIKeyResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api-keys [post]
+func (h *APIKeyHandler) Create(c *gin.Context) {
+	userID, exists := utils.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+		return
+	}
+
+	var req models.CreateAPIKeyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid request", err.Error()),
+		))
+		return
+	}
+
+	ip := utils.GetClientIP(c)
+	userAgent := utils.GetUserAgent(c)
+
+	resp, err := h.apiKeyService.Create(c.Request.Context(), *userID, &req, ip, userAgent)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+		} else {
+			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
+		}
+		return
+	}
+
+	c.JSON(http.StatusCreated, resp)
+}
+
+// List lists all API keys for the authenticated user
+// @Summary List API keys
+// @Tags api-keys
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} models.ListAPIKeysResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api-keys [get]
+func (h *APIKeyHandler) List(c *gin.Context) {
+	userID, exists := utils.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+		return
+	}
+
+	apiKeys, err := h.apiKeyService.List(c.Request.Context(), *userID)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+		} else {
+			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, models.ListAPIKeysResponse{
+		APIKeys: apiKeys,
+		Total:   len(apiKeys),
+	})
+}
+
+// Get retrieves a specific API key
+// @Summary Get API key
+// @Tags api-keys
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "API Key ID"
+// @Success 200 {object} models.APIKey
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api-keys/{id} [get]
+func (h *APIKeyHandler) Get(c *gin.Context) {
+	userID, exists := utils.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+		return
+	}
+
+	apiKeyID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
+		))
+		return
+	}
+
+	apiKey, err := h.apiKeyService.GetByID(c.Request.Context(), *userID, apiKeyID)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+		} else {
+			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, apiKey)
+}
+
+// Update updates an API key
+// @Summary Update API key
+// @Tags api-keys
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "API Key ID"
+// @Param request body models.UpdateAPIKeyRequest true "Update data"
+// @Success 200 {object} models.APIKey
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api-keys/{id} [put]
+func (h *APIKeyHandler) Update(c *gin.Context) {
+	userID, exists := utils.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+		return
+	}
+
+	apiKeyID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
+		))
+		return
+	}
+
+	var req models.UpdateAPIKeyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid request", err.Error()),
+		))
+		return
+	}
+
+	ip := utils.GetClientIP(c)
+	userAgent := utils.GetUserAgent(c)
+
+	apiKey, err := h.apiKeyService.Update(c.Request.Context(), *userID, apiKeyID, &req, ip, userAgent)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+		} else {
+			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, apiKey)
+}
+
+// Revoke revokes an API key
+// @Summary Revoke API key
+// @Tags api-keys
+// @Security BearerAuth
+// @Param id path string true "API Key ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api-keys/{id}/revoke [post]
+func (h *APIKeyHandler) Revoke(c *gin.Context) {
+	userID, exists := utils.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+		return
+	}
+
+	apiKeyID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
+		))
+		return
+	}
+
+	ip := utils.GetClientIP(c)
+	userAgent := utils.GetUserAgent(c)
+
+	if err := h.apiKeyService.Revoke(c.Request.Context(), *userID, apiKeyID, ip, userAgent); err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+		} else {
+			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "API key revoked successfully"})
+}
+
+// Delete deletes an API key
+// @Summary Delete API key
+// @Tags api-keys
+// @Security BearerAuth
+// @Param id path string true "API Key ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api-keys/{id} [delete]
+func (h *APIKeyHandler) Delete(c *gin.Context) {
+	userID, exists := utils.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+		return
+	}
+
+	apiKeyID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
+		))
+		return
+	}
+
+	ip := utils.GetClientIP(c)
+	userAgent := utils.GetUserAgent(c)
+
+	if err := h.apiKeyService.Delete(c.Request.Context(), *userID, apiKeyID, ip, userAgent); err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+		} else {
+			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "API key deleted successfully"})
+}
