@@ -37,6 +37,9 @@ var (
 	ErrInvalidAPIKey         = &AppError{Code: http.StatusUnauthorized, Message: "Invalid API key"}
 	ErrAPIKeyExpired         = &AppError{Code: http.StatusUnauthorized, Message: "API key expired"}
 	ErrAPIKeyRevoked         = &AppError{Code: http.StatusUnauthorized, Message: "API key revoked"}
+
+	// Generic errors
+	ErrNotFound              = &AppError{Code: http.StatusNotFound, Message: "Resource not found"}
 )
 
 // NewAppError creates a new application error
