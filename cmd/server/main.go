@@ -75,6 +75,16 @@ func main() {
 	otpRepo := repository.NewOTPRepository(db)
 	backupCodeRepo := repository.NewBackupCodeRepository(db)
 
+	// Advanced feature repositories
+	rbacRepo := repository.NewRBACRepository(db)
+	sessionRepo := repository.NewSessionRepository(db)
+	ipFilterRepo := repository.NewIPFilterRepository(db)
+	// webhookRepo := repository.NewWebhookRepository(db)
+	// templateRepo := repository.NewTemplateRepository(db)
+	brandingRepo := repository.NewBrandingRepository(db)
+	systemRepo := repository.NewSystemRepository(db)
+	geoRepo := repository.NewGeoRepository(db)
+
 	// Initialize services
 	authService := service.NewAuthService(userRepo, tokenRepo, auditRepo, jwtService, redis, cfg.Security.BcryptCost)
 	userService := service.NewUserService(userRepo, auditRepo)
@@ -85,6 +95,11 @@ func main() {
 	twoFAService := service.NewTwoFactorService(userRepo, backupCodeRepo, auditRepo, "Auth Gateway")
 	adminService := service.NewAdminService(userRepo, apiKeyRepo, auditRepo, oauthRepo)
 
+	// Advanced feature services
+	rbacService := service.NewRBACService(rbacRepo)
+	sessionService := service.NewSessionService(sessionRepo)
+	ipFilterService := service.NewIPFilterService(ipFilterRepo)
+
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService, userService, otpService, log)
 	healthHandler := handler.NewHealthHandler(db, redis)
@@ -93,11 +108,17 @@ func main() {
 	oauthHandler := handler.NewOAuthHandler(oauthService, log)
 	twoFAHandler := handler.NewTwoFactorHandler(twoFAService, userService, log)
 	adminHandler := handler.NewAdminHandler(adminService, log)
+	advancedAdminHandler := handler.NewAdvancedAdminHandler(rbacService, sessionService, ipFilterService, brandingRepo, systemRepo, geoRepo)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, redis, tokenRepo)
 	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(apiKeyService)
 	rateLimitMiddleware := middleware.NewRateLimitMiddleware(redis, &cfg.RateLimit)
+
+	// Advanced feature middleware
+	// rbacMiddleware := middleware.NewRBACMiddleware(rbacService)
+	ipFilterMiddleware := middleware.NewIPFilterMiddleware(ipFilterService)
+	maintenanceMiddleware := middleware.NewMaintenanceMiddleware(systemRepo)
 
 	// Setup Gin
 	if cfg.Server.Env == "production" {
@@ -110,6 +131,8 @@ func main() {
 	router.Use(middleware.Recovery(log))
 	router.Use(middleware.Logger(log))
 	router.Use(middleware.SetupCORS(&cfg.CORS))
+	router.Use(maintenanceMiddleware.CheckMaintenance())
+	router.Use(ipFilterMiddleware.CheckIPFilter())
 
 	// Health check endpoints (no auth required)
 	router.GET("/auth/health", healthHandler.Health)
@@ -207,7 +230,64 @@ func main() {
 
 		// Audit logs
 		adminGroup.GET("/audit-logs", adminHandler.ListAuditLogs)
+
+		// RBAC Management
+		rbacGroup := adminGroup.Group("/rbac")
+		{
+			rbacGroup.GET("/permissions", advancedAdminHandler.ListPermissions)
+			rbacGroup.POST("/permissions", advancedAdminHandler.CreatePermission)
+
+			rbacGroup.GET("/roles", advancedAdminHandler.ListRoles)
+			rbacGroup.POST("/roles", advancedAdminHandler.CreateRole)
+			rbacGroup.GET("/roles/:id", advancedAdminHandler.GetRole)
+			rbacGroup.PUT("/roles/:id", advancedAdminHandler.UpdateRole)
+			rbacGroup.DELETE("/roles/:id", advancedAdminHandler.DeleteRole)
+
+			rbacGroup.GET("/permission-matrix", advancedAdminHandler.GetPermissionMatrix)
+		}
+
+		// Session Management (Admin view)
+		adminGroup.GET("/sessions/stats", advancedAdminHandler.GetSessionStats)
+
+		// IP Filter Management
+		ipFilterGroup := adminGroup.Group("/ip-filters")
+		{
+			ipFilterGroup.GET("", advancedAdminHandler.ListIPFilters)
+			ipFilterGroup.POST("", advancedAdminHandler.CreateIPFilter)
+			ipFilterGroup.DELETE("/:id", advancedAdminHandler.DeleteIPFilter)
+		}
+
+		// Branding Management
+		adminGroup.PUT("/branding", advancedAdminHandler.UpdateBranding)
+
+		// System Settings
+		systemGroup := adminGroup.Group("/system")
+		{
+			systemGroup.PUT("/maintenance", advancedAdminHandler.SetMaintenanceMode)
+			systemGroup.GET("/health", advancedAdminHandler.GetSystemHealth)
+		}
+
+		// Analytics
+		analyticsGroup := adminGroup.Group("/analytics")
+		{
+			analyticsGroup.GET("/geo-distribution", advancedAdminHandler.GetGeoDistribution)
+		}
 	}
+
+	// Session Management (User endpoints)
+	sessionsGroup := router.Group("/sessions")
+	sessionsGroup.Use(authMiddleware.Authenticate())
+	{
+		sessionsGroup.GET("", advancedAdminHandler.ListUserSessions)
+		sessionsGroup.DELETE("/:id", advancedAdminHandler.RevokeSession)
+		sessionsGroup.POST("/revoke-all", advancedAdminHandler.RevokeAllSessions)
+	}
+
+	// Public branding endpoint
+	router.GET("/branding", advancedAdminHandler.GetBranding)
+
+	// Public system status endpoint
+	router.GET("/system/maintenance", advancedAdminHandler.GetMaintenanceMode)
 
 	// Example: Protected endpoint that accepts both JWT and API key
 	protectedAPI := router.Group("/api/v1")
