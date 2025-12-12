@@ -9,15 +9,16 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	Redis    RedisConfig
-	JWT      JWTConfig
-	OAuth    OAuthConfig
-	CORS     CORSConfig
+	Server    ServerConfig
+	Database  DatabaseConfig
+	Redis     RedisConfig
+	JWT       JWTConfig
+	OAuth     OAuthConfig
+	SMTP      SMTPConfig
+	CORS      CORSConfig
 	RateLimit RateLimitConfig
-	Security SecurityConfig
-	Metrics  MetricsConfig
+	Security  SecurityConfig
+	Metrics   MetricsConfig
 }
 
 // ServerConfig contains server-related configuration
@@ -70,6 +71,16 @@ type OAuthProvider struct {
 	ClientID     string
 	ClientSecret string
 	CallbackURL  string
+}
+
+// SMTPConfig contains SMTP email configuration
+type SMTPConfig struct {
+	Host      string
+	Port      int
+	Username  string
+	Password  string
+	FromEmail string
+	FromName  string
 }
 
 // CORSConfig contains CORS-related configuration
@@ -155,6 +166,14 @@ func Load() (*Config, error) {
 				CallbackURL:  getEnv("INSTAGRAM_CALLBACK_URL", ""),
 			},
 			FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3001"),
+		},
+		SMTP: SMTPConfig{
+			Host:      getEnv("SMTP_HOST", "smtp.gmail.com"),
+			Port:      getEnvAsInt("SMTP_PORT", 587),
+			Username:  getEnv("SMTP_USERNAME", ""),
+			Password:  getEnv("SMTP_PASSWORD", ""),
+			FromEmail: getEnv("SMTP_FROM_EMAIL", "noreply@authgateway.com"),
+			FromName:  getEnv("SMTP_FROM_NAME", "Auth Gateway"),
 		},
 		CORS: CORSConfig{
 			AllowedOrigins:   getEnvAsSlice("CORS_ALLOWED_ORIGINS", []string{"http://localhost:3001"}),

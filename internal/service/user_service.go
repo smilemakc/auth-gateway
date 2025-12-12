@@ -73,6 +73,16 @@ func (s *UserService) GetByID(ctx context.Context, userID uuid.UUID) (*models.Us
 	return user.PublicUser(), nil
 }
 
+// GetByEmail retrieves a user by email
+func (s *UserService) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+	user, err := s.userRepo.GetByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	return user.PublicUser(), nil
+}
+
 // List retrieves a list of users with pagination
 func (s *UserService) List(ctx context.Context, limit, offset int) ([]*models.User, error) {
 	users, err := s.userRepo.List(limit, offset)

@@ -301,6 +301,37 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 	return nil
 }
 
+// ResetPassword resets a user's password (used for password reset flow)
+func (s *AuthService) ResetPassword(ctx context.Context, userID uuid.UUID, newPassword, ip, userAgent string) error {
+	// Validate new password
+	if !utils.IsPasswordValid(newPassword) {
+		return models.NewAppError(400, "New password must be at least 8 characters")
+	}
+
+	// Hash new password
+	newPasswordHash, err := utils.HashPassword(newPassword, s.bcryptCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash new password: %w", err)
+	}
+
+	// Update password
+	if err := s.userRepo.UpdatePassword(userID, newPasswordHash); err != nil {
+		return err
+	}
+
+	// Revoke all refresh tokens (force re-login)
+	if err := s.tokenRepo.RevokeAllUserTokens(userID); err != nil {
+		return fmt.Errorf("failed to revoke refresh tokens: %w", err)
+	}
+
+	// Log successful password reset
+	s.logAudit(&userID, models.ActionChangePassword, models.StatusSuccess, ip, userAgent, map[string]interface{}{
+		"reset": true,
+	})
+
+	return nil
+}
+
 // generateAuthResponse generates access and refresh tokens and saves refresh token
 func (s *AuthService) generateAuthResponse(ctx context.Context, user *models.User) (*models.AuthResponse, error) {
 	// Generate access token

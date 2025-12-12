@@ -69,19 +69,25 @@ func main() {
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	tokenRepo := repository.NewTokenRepository(db)
-	// oauthRepo := repository.NewOAuthRepository(db) // TODO: будет использоваться для OAuth
+	oauthRepo := repository.NewOAuthRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	apiKeyRepo := repository.NewAPIKeyRepository(db)
+	otpRepo := repository.NewOTPRepository(db)
 
 	// Initialize services
 	authService := service.NewAuthService(userRepo, tokenRepo, auditRepo, jwtService, redis, cfg.Security.BcryptCost)
 	userService := service.NewUserService(userRepo, auditRepo)
 	apiKeyService := service.NewAPIKeyService(apiKeyRepo, userRepo, auditRepo)
+	emailService := service.NewEmailService(&cfg.SMTP)
+	otpService := service.NewOTPService(otpRepo, userRepo, emailService, auditRepo)
+	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, jwtService)
 
 	// Initialize handlers
-	authHandler := handler.NewAuthHandler(authService, userService, log)
+	authHandler := handler.NewAuthHandler(authService, userService, otpService, log)
 	healthHandler := handler.NewHealthHandler(db, redis)
 	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService, log)
+	otpHandler := handler.NewOTPHandler(otpService, authService, jwtService, log)
+	oauthHandler := handler.NewOAuthHandler(oauthService, log)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, redis, tokenRepo)
@@ -111,6 +117,37 @@ func main() {
 		authGroup.POST("/signup", rateLimitMiddleware.LimitSignup(), authHandler.SignUp)
 		authGroup.POST("/signin", rateLimitMiddleware.LimitSignin(), authHandler.SignIn)
 		authGroup.POST("/refresh", authHandler.RefreshToken)
+
+		// Email verification
+		authGroup.POST("/verify/resend", otpHandler.SendOTP)
+		authGroup.POST("/verify/email", authHandler.VerifyEmail)
+
+		// Password reset
+		authGroup.POST("/password/reset/request", authHandler.RequestPasswordReset)
+		authGroup.POST("/password/reset/complete", authHandler.ResetPassword)
+	}
+
+	// OTP endpoints
+	otpGroup := router.Group("/otp")
+	{
+		otpGroup.POST("/send", otpHandler.SendOTP)
+		otpGroup.POST("/verify", otpHandler.VerifyOTP)
+	}
+
+	// Passwordless login endpoints
+	passwordlessGroup := router.Group("/auth/passwordless")
+	{
+		passwordlessGroup.POST("/request", otpHandler.RequestPasswordlessLogin)
+		passwordlessGroup.POST("/verify", otpHandler.VerifyPasswordlessLogin)
+	}
+
+	// OAuth endpoints
+	oauthGroup := router.Group("/auth")
+	{
+		oauthGroup.GET("/providers", oauthHandler.GetProviders)
+		oauthGroup.GET("/:provider", oauthHandler.Login)
+		oauthGroup.GET("/:provider/callback", oauthHandler.Callback)
+		oauthGroup.POST("/telegram/callback", oauthHandler.TelegramCallback)
 	}
 
 	// Protected auth endpoints (require authentication)

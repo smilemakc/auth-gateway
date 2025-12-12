@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"html/template"
 	"net/smtp"
-	"os"
+	"strconv"
+
+	"github.com/smilemakc/auth-gateway/internal/config"
 )
 
 // EmailService handles email sending
@@ -19,22 +21,15 @@ type EmailService struct {
 }
 
 // NewEmailService creates a new email service
-func NewEmailService() *EmailService {
+func NewEmailService(cfg *config.SMTPConfig) *EmailService {
 	return &EmailService{
-		smtpHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
-		smtpPort:     getEnv("SMTP_PORT", "587"),
-		smtpUsername: getEnv("SMTP_USERNAME", ""),
-		smtpPassword: getEnv("SMTP_PASSWORD", ""),
-		fromEmail:    getEnv("SMTP_FROM_EMAIL", "noreply@authgateway.com"),
-		fromName:     getEnv("SMTP_FROM_NAME", "Auth Gateway"),
+		smtpHost:     cfg.Host,
+		smtpPort:     strconv.Itoa(cfg.Port),
+		smtpUsername: cfg.Username,
+		smtpPassword: cfg.Password,
+		fromEmail:    cfg.FromEmail,
+		fromName:     cfg.FromName,
 	}
-}
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }
 
 // SendOTP sends an OTP code via email
