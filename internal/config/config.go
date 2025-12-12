@@ -15,6 +15,7 @@ type Config struct {
 	JWT       JWTConfig
 	OAuth     OAuthConfig
 	SMTP      SMTPConfig
+	SMS       SMSConfig
 	CORS      CORSConfig
 	RateLimit RateLimitConfig
 	Security  SecurityConfig
@@ -81,6 +82,28 @@ type SMTPConfig struct {
 	Password  string
 	FromEmail string
 	FromName  string
+}
+
+// SMSConfig contains SMS provider configuration
+type SMSConfig struct {
+	Provider        string // "twilio", "aws_sns", "vonage", "mock"
+	Enabled         bool
+
+	// Twilio configuration
+	TwilioAccountSID string
+	TwilioAuthToken  string
+	TwilioFromNumber string
+
+	// AWS SNS configuration
+	AWSRegion          string
+	AWSAccessKeyID     string
+	AWSSecretAccessKey string
+	AWSSenderID        string
+
+	// Rate limiting for SMS
+	SMSMaxPerHour   int
+	SMSMaxPerDay    int
+	SMSMaxPerNumber int // Max SMS per phone number per hour
 }
 
 // CORSConfig contains CORS-related configuration
@@ -174,6 +197,20 @@ func Load() (*Config, error) {
 			Password:  getEnv("SMTP_PASSWORD", ""),
 			FromEmail: getEnv("SMTP_FROM_EMAIL", "noreply@authgateway.com"),
 			FromName:  getEnv("SMTP_FROM_NAME", "Auth Gateway"),
+		},
+		SMS: SMSConfig{
+			Provider:           getEnv("SMS_PROVIDER", "mock"),
+			Enabled:            getEnvAsBool("SMS_ENABLED", false),
+			TwilioAccountSID:   getEnv("TWILIO_ACCOUNT_SID", ""),
+			TwilioAuthToken:    getEnv("TWILIO_AUTH_TOKEN", ""),
+			TwilioFromNumber:   getEnv("TWILIO_FROM_NUMBER", ""),
+			AWSRegion:          getEnv("AWS_SNS_REGION", "us-east-1"),
+			AWSAccessKeyID:     getEnv("AWS_ACCESS_KEY_ID", ""),
+			AWSSecretAccessKey: getEnv("AWS_SECRET_ACCESS_KEY", ""),
+			AWSSenderID:        getEnv("AWS_SNS_SENDER_ID", ""),
+			SMSMaxPerHour:      getEnvAsInt("SMS_MAX_PER_HOUR", 10),
+			SMSMaxPerDay:       getEnvAsInt("SMS_MAX_PER_DAY", 50),
+			SMSMaxPerNumber:    getEnvAsInt("SMS_MAX_PER_NUMBER", 5),
 		},
 		CORS: CORSConfig{
 			AllowedOrigins:   getEnvAsSlice("CORS_ALLOWED_ORIGINS", []string{"http://localhost:3001"}),

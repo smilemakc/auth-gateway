@@ -64,7 +64,7 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 	// Send verification email (non-blocking)
 	go func() {
 		otpReq := &models.SendOTPRequest{
-			Email: req.Email,
+			Email: &req.Email,
 			Type:  models.OTPTypeVerification,
 		}
 		if err := h.otpService.SendOTP(c.Request.Context(), otpReq); err != nil {
@@ -327,7 +327,7 @@ func (h *AuthHandler) ResendVerificationEmail(c *gin.Context) {
 	}
 
 	otpReq := &models.SendOTPRequest{
-		Email: req.Email,
+		Email: &req.Email,
 		Type:  models.OTPTypeVerification,
 	}
 
@@ -374,7 +374,7 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 	}
 
 	verifyReq := &models.VerifyOTPRequest{
-		Email: req.Email,
+		Email: &req.Email,
 		Code:  req.Code,
 		Type:  models.OTPTypeVerification,
 	}
@@ -443,7 +443,7 @@ func (h *AuthHandler) RequestPasswordReset(c *gin.Context) {
 	}
 
 	otpReq := &models.SendOTPRequest{
-		Email: email,
+		Email: &email,
 		Type:  models.OTPTypePasswordReset,
 	}
 
@@ -487,7 +487,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 
 	// Verify OTP
 	verifyReq := &models.VerifyOTPRequest{
-		Email: req.Email,
+		Email: &req.Email,
 		Code:  req.Code,
 		Type:  models.OTPTypePasswordReset,
 	}
