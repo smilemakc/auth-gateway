@@ -73,6 +73,7 @@ func main() {
 	auditRepo := repository.NewAuditRepository(db)
 	apiKeyRepo := repository.NewAPIKeyRepository(db)
 	otpRepo := repository.NewOTPRepository(db)
+	backupCodeRepo := repository.NewBackupCodeRepository(db)
 
 	// Initialize services
 	authService := service.NewAuthService(userRepo, tokenRepo, auditRepo, jwtService, redis, cfg.Security.BcryptCost)
@@ -81,6 +82,7 @@ func main() {
 	emailService := service.NewEmailService(&cfg.SMTP)
 	otpService := service.NewOTPService(otpRepo, userRepo, emailService, auditRepo)
 	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, jwtService)
+	twoFAService := service.NewTwoFactorService(userRepo, backupCodeRepo, auditRepo, "Auth Gateway")
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService, userService, otpService, log)
@@ -88,6 +90,7 @@ func main() {
 	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService, log)
 	otpHandler := handler.NewOTPHandler(otpService, authService, jwtService, log)
 	oauthHandler := handler.NewOAuthHandler(oauthService, log)
+	twoFAHandler := handler.NewTwoFactorHandler(twoFAService, userService, log)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, redis, tokenRepo)
@@ -125,6 +128,9 @@ func main() {
 		// Password reset
 		authGroup.POST("/password/reset/request", authHandler.RequestPasswordReset)
 		authGroup.POST("/password/reset/complete", authHandler.ResetPassword)
+
+		// 2FA login verification (public - no auth required)
+		authGroup.POST("/2fa/login/verify", authHandler.Verify2FA)
 	}
 
 	// OTP endpoints
@@ -158,6 +164,13 @@ func main() {
 		protectedAuth.GET("/profile", authHandler.GetProfile)
 		protectedAuth.PUT("/profile", authHandler.UpdateProfile)
 		protectedAuth.POST("/change-password", authHandler.ChangePassword)
+
+		// 2FA management (protected)
+		protectedAuth.POST("/2fa/setup", twoFAHandler.Setup)
+		protectedAuth.POST("/2fa/verify", twoFAHandler.Verify)
+		protectedAuth.POST("/2fa/disable", twoFAHandler.Disable)
+		protectedAuth.GET("/2fa/status", twoFAHandler.GetStatus)
+		protectedAuth.POST("/2fa/backup-codes/regenerate", twoFAHandler.RegenerateBackupCodes)
 	}
 
 	// API Keys endpoints (require JWT authentication)

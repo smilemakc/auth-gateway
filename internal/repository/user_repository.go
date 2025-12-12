@@ -253,3 +253,78 @@ func (r *UserRepository) Count() (int, error) {
 
 	return count, nil
 }
+
+// UpdateTOTPSecret updates the TOTP secret for a user
+func (r *UserRepository) UpdateTOTPSecret(userID uuid.UUID, secret string) error {
+	query := `
+		UPDATE users
+		SET totp_secret = $1, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $2
+	`
+
+	result, err := r.db.Exec(query, secret, userID)
+	if err != nil {
+		return fmt.Errorf("failed to update TOTP secret: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return errors.New("user not found")
+	}
+
+	return nil
+}
+
+// EnableTOTP enables TOTP 2FA for a user
+func (r *UserRepository) EnableTOTP(userID uuid.UUID) error {
+	query := `
+		UPDATE users
+		SET totp_enabled = true, totp_enabled_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1
+	`
+
+	result, err := r.db.Exec(query, userID)
+	if err != nil {
+		return fmt.Errorf("failed to enable TOTP: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return errors.New("user not found")
+	}
+
+	return nil
+}
+
+// DisableTOTP disables TOTP 2FA for a user
+func (r *UserRepository) DisableTOTP(userID uuid.UUID) error {
+	query := `
+		UPDATE users
+		SET totp_enabled = false, totp_secret = NULL, totp_enabled_at = NULL, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1
+	`
+
+	result, err := r.db.Exec(query, userID)
+	if err != nil {
+		return fmt.Errorf("failed to disable TOTP: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return errors.New("user not found")
+	}
+
+	return nil
+}

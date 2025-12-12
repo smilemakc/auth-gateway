@@ -27,10 +27,18 @@ type TokenBlacklist struct {
 
 // AuthResponse represents the response after successful authentication
 type AuthResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	User         *User  `json:"user"`
-	ExpiresIn    int64  `json:"expires_in"` // in seconds
+	AccessToken    string     `json:"access_token,omitempty"`
+	RefreshToken   string     `json:"refresh_token,omitempty"`
+	User           *User      `json:"user,omitempty"`
+	ExpiresIn      int64      `json:"expires_in,omitempty"` // in seconds
+	Requires2FA    bool       `json:"requires_2fa,omitempty"`
+	TwoFactorToken string     `json:"two_factor_token,omitempty"` // Temporary token for 2FA verification
+}
+
+// TwoFactorLoginVerifyRequest represents 2FA verification during login
+type TwoFactorLoginVerifyRequest struct {
+	TwoFactorToken string `json:"two_factor_token" binding:"required"`
+	Code           string `json:"code" binding:"required,len=6"`
 }
 
 // JWTClaims represents custom JWT claims

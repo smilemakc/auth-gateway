@@ -82,6 +82,26 @@ func (s *Service) GenerateRefreshToken(user *models.User) (string, error) {
 	return token.SignedString([]byte(s.refreshSecret))
 }
 
+// GenerateTwoFactorToken generates a short-lived token for 2FA verification
+func (s *Service) GenerateTwoFactorToken(user *models.User) (string, error) {
+	now := time.Now()
+	claims := &Claims{
+		UserID:   user.ID,
+		Email:    user.Email,
+		Username: user.Username,
+		Role:     user.Role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(5 * time.Minute)), // 5 minutes expiration
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			Subject:   user.ID.String(),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(s.accessSecret))
+}
+
 // ValidateAccessToken validates an access token and returns the claims
 func (s *Service) ValidateAccessToken(tokenString string) (*Claims, error) {
 	return s.validateToken(tokenString, s.accessSecret)

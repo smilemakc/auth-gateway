@@ -17,6 +17,9 @@ type User struct {
 	Role              string     `json:"role" db:"role"`
 	EmailVerified     bool       `json:"email_verified" db:"email_verified"`
 	IsActive          bool       `json:"is_active" db:"is_active"`
+	TOTPSecret        *string    `json:"-" db:"totp_secret"` // Never expose TOTP secret
+	TOTPEnabled       bool       `json:"totp_enabled" db:"totp_enabled"`
+	TOTPEnabledAt     *time.Time `json:"totp_enabled_at,omitempty" db:"totp_enabled_at"`
 	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
 }

@@ -543,3 +543,38 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		"message": "Password reset successfully",
 	})
 }
+
+// Verify2FA verifies 2FA code during login
+// @Summary Verify 2FA during login
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body models.TwoFactorLoginVerifyRequest true "2FA verification"
+// @Success 200 {object} models.AuthResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Router /auth/2fa/login/verify [post]
+func (h *AuthHandler) Verify2FA(c *gin.Context) {
+	var req models.TwoFactorLoginVerifyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid request", err.Error()),
+		))
+		return
+	}
+
+	ip := utils.GetClientIP(c)
+	userAgent := utils.GetUserAgent(c)
+
+	authResp, err := h.authService.Verify2FALogin(c.Request.Context(), req.TwoFactorToken, req.Code, ip, userAgent)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, authResp)
+}

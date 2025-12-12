@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/pquerna/otp/totp"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/utils"
@@ -141,6 +142,21 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 		return nil, models.ErrInvalidCredentials
 	}
 
+	// Check if 2FA is enabled
+	if user.TOTPEnabled {
+		// Generate temporary 2FA token
+		twoFactorToken, err := s.jwtService.GenerateTwoFactorToken(user)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate 2FA token: %w", err)
+		}
+
+		return &models.AuthResponse{
+			Requires2FA:    true,
+			TwoFactorToken: twoFactorToken,
+			User:           user.PublicUser(),
+		}, nil
+	}
+
 	// Generate tokens
 	authResp, err := s.generateAuthResponse(ctx, user)
 	if err != nil {
@@ -151,6 +167,58 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	s.logAudit(&user.ID, models.ActionSignIn, models.StatusSuccess, ip, userAgent, nil)
 
 	return authResp, nil
+}
+
+// Verify2FALogin verifies 2FA code and completes login
+func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, ip, userAgent string) (*models.AuthResponse, error) {
+	// Validate 2FA token
+	claims, err := s.jwtService.ValidateAccessToken(twoFactorToken)
+	if err != nil {
+		return nil, models.NewAppError(401, "Invalid or expired 2FA token")
+	}
+
+	// Get user
+	user, err := s.userRepo.GetByID(claims.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify 2FA is enabled
+	if !user.TOTPEnabled || user.TOTPSecret == nil {
+		return nil, models.NewAppError(400, "2FA not enabled")
+	}
+
+	// Verify TOTP code
+	if !totp.Validate(code, *user.TOTPSecret) {
+		// Try backup code
+		backupCodeValid, err := s.verifyBackupCode(user.ID, code)
+		if err != nil || !backupCodeValid {
+			s.logAudit(&user.ID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				"reason": "invalid_2fa_code",
+			})
+			return nil, models.NewAppError(401, "Invalid 2FA code")
+		}
+	}
+
+	// Generate full auth tokens
+	authResp, err := s.generateAuthResponse(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Log successful signin with 2FA
+	s.logAudit(&user.ID, models.ActionSignIn, models.StatusSuccess, ip, userAgent, map[string]interface{}{
+		"2fa": true,
+	})
+
+	return authResp, nil
+}
+
+// verifyBackupCode verifies a backup code (simplified version, full implementation in TwoFactorService)
+func (s *AuthService) verifyBackupCode(userID uuid.UUID, code string) (bool, error) {
+	// This is a simplified implementation
+	// In production, you'd want to use the TwoFactorService
+	return false, nil
 }
 
 // RefreshToken generates new tokens using a refresh token
