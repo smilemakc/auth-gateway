@@ -196,6 +196,33 @@ func (r *UserRepository) UsernameExists(username string) (bool, error) {
 	return exists, nil
 }
 
+// MarkEmailVerified marks a user's email as verified
+func (r *UserRepository) MarkEmailVerified(userID uuid.UUID) error {
+	query := `
+		UPDATE users
+		SET email_verified = true,
+		    email_verified_at = CURRENT_TIMESTAMP,
+		    updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1
+	`
+
+	result, err := r.db.Exec(query, userID)
+	if err != nil {
+		return fmt.Errorf("failed to mark email as verified: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return models.ErrUserNotFound
+	}
+
+	return nil
+}
+
 // List retrieves a list of users with pagination
 func (r *UserRepository) List(limit, offset int) ([]*models.User, error) {
 	var users []*models.User
