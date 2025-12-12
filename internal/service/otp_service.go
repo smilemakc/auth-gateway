@@ -58,8 +58,21 @@ func (s *OTPService) GenerateOTPCode() (string, error) {
 
 // SendOTP generates and sends an OTP code
 func (s *OTPService) SendOTP(ctx context.Context, req *models.SendOTPRequest) error {
+	// Validate that either email or phone is provided
+	if (req.Email == nil || *req.Email == "") && (req.Phone == nil || *req.Phone == "") {
+		return models.NewAppError(400, "Either email or phone is required")
+	}
+
+	// Only email OTP is supported in this service
+	// Phone OTP should use SMSService
+	if req.Email == nil || *req.Email == "" {
+		return models.NewAppError(400, "Email is required for email OTP")
+	}
+
+	email := *req.Email
+
 	// Check rate limiting
-	count, err := s.otpRepo.CountRecentByEmail(req.Email, req.Type, 1*time.Hour)
+	count, err := s.otpRepo.CountRecentByEmail(email, req.Type, 1*time.Hour)
 	if err != nil {
 		return err
 	}
@@ -81,14 +94,14 @@ func (s *OTPService) SendOTP(ctx context.Context, req *models.SendOTPRequest) er
 	}
 
 	// Invalidate all previous OTPs for this email and type
-	if err := s.otpRepo.InvalidateAllForEmail(req.Email, req.Type); err != nil {
+	if err := s.otpRepo.InvalidateAllForEmail(email, req.Type); err != nil {
 		return err
 	}
 
 	// Create OTP record
 	otp := &models.OTP{
 		ID:        uuid.New(),
-		Email:     req.Email,
+		Email:     &email,
 		Code:      codeHash,
 		Type:      req.Type,
 		Used:      false,
@@ -100,14 +113,14 @@ func (s *OTPService) SendOTP(ctx context.Context, req *models.SendOTPRequest) er
 	}
 
 	// Send email
-	if err := s.emailService.SendOTP(req.Email, plainCode, string(req.Type)); err != nil {
+	if err := s.emailService.SendOTP(email, plainCode, string(req.Type)); err != nil {
 		// Log error but don't fail - OTP is already created
 		fmt.Printf("Failed to send OTP email: %v\n", err)
 	}
 
 	// Audit log
 	s.logAudit(nil, "otp_sent", "success", "", "", map[string]interface{}{
-		"email": req.Email,
+		"email": email,
 		"type":  req.Type,
 	})
 
@@ -116,11 +129,23 @@ func (s *OTPService) SendOTP(ctx context.Context, req *models.SendOTPRequest) er
 
 // VerifyOTP verifies an OTP code
 func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest) (*models.VerifyOTPResponse, error) {
+	// Validate that either email or phone is provided
+	if (req.Email == nil || *req.Email == "") && (req.Phone == nil || *req.Phone == "") {
+		return nil, models.NewAppError(400, "Either email or phone is required")
+	}
+
+	// Only email OTP is supported in this service
+	if req.Email == nil || *req.Email == "" {
+		return nil, models.NewAppError(400, "Email is required for email OTP verification")
+	}
+
+	email := *req.Email
+
 	// Get the latest valid OTP
-	otp, err := s.otpRepo.GetByEmailAndType(req.Email, req.Type)
+	otp, err := s.otpRepo.GetByEmailAndType(email, req.Type)
 	if err != nil {
 		s.logAudit(nil, "otp_verify", "failed", "", "", map[string]interface{}{
-			"email":  req.Email,
+			"email":  email,
 			"type":   req.Type,
 			"reason": "otp_not_found",
 		})
@@ -130,7 +155,7 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 	// Check if expired
 	if otp.IsExpired() {
 		s.logAudit(nil, "otp_verify", "failed", "", "", map[string]interface{}{
-			"email":  req.Email,
+			"email":  email,
 			"type":   req.Type,
 			"reason": "expired",
 		})
@@ -140,7 +165,7 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 	// Verify code
 	if err := utils.CheckPassword(otp.Code, req.Code); err != nil {
 		s.logAudit(nil, "otp_verify", "failed", "", "", map[string]interface{}{
-			"email":  req.Email,
+			"email":  email,
 			"type":   req.Type,
 			"reason": "invalid_code",
 		})
@@ -158,7 +183,7 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 	switch req.Type {
 	case models.OTPTypeVerification:
 		// Mark email as verified
-		user, err := s.userRepo.GetByEmail(req.Email)
+		user, err := s.userRepo.GetByEmail(email)
 		if err == nil && user != nil {
 			if err := s.userRepo.MarkEmailVerified(user.ID); err != nil {
 				return nil, err
@@ -168,7 +193,7 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 
 	case models.OTPTypeLogin:
 		// For passwordless login, create session
-		user, err := s.userRepo.GetByEmail(req.Email)
+		user, err := s.userRepo.GetByEmail(email)
 		if err != nil {
 			return nil, err
 		}
@@ -186,7 +211,7 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 	}
 
 	s.logAudit(nil, "otp_verify", "success", "", "", map[string]interface{}{
-		"email": req.Email,
+		"email": email,
 		"type":  req.Type,
 	})
 

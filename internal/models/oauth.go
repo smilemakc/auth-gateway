@@ -59,12 +59,13 @@ type OAuthUserInfo struct {
 	Provider       string
 }
 
-// OTP represents a one-time password for email verification
+// OTP represents a one-time password for email or phone verification
 type OTP struct {
 	ID        uuid.UUID `json:"id" db:"id"`
-	Email     string    `json:"email" db:"email"`
-	Code      string    `json:"-" db:"code"`             // Hashed OTP code
-	Type      OTPType   `json:"type" db:"type"`          // verification, password_reset, 2fa
+	Email     *string   `json:"email,omitempty" db:"email"`  // Either email or phone is required
+	Phone     *string   `json:"phone,omitempty" db:"phone"`  // Either email or phone is required
+	Code      string    `json:"-" db:"code"`                 // Hashed OTP code
+	Type      OTPType   `json:"type" db:"type"`              // verification, password_reset, 2fa
 	Used      bool      `json:"used" db:"used"`
 	ExpiresAt time.Time `json:"expires_at" db:"expires_at"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
@@ -92,13 +93,15 @@ func (o *OTP) IsValid() bool {
 
 // SendOTPRequest represents OTP send request
 type SendOTPRequest struct {
-	Email string  `json:"email" binding:"required,email"`
+	Email *string `json:"email,omitempty" binding:"omitempty,email"`
+	Phone *string `json:"phone,omitempty"`
 	Type  OTPType `json:"type" binding:"required"`
 }
 
 // VerifyOTPRequest represents OTP verification request
 type VerifyOTPRequest struct {
-	Email string  `json:"email" binding:"required,email"`
+	Email *string `json:"email,omitempty" binding:"omitempty,email"`
+	Phone *string `json:"phone,omitempty"`
 	Code  string  `json:"code" binding:"required,len=6"`
 	Type  OTPType `json:"type" binding:"required"`
 }

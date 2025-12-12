@@ -157,7 +157,7 @@ func (h *OTPHandler) RequestPasswordlessLogin(c *gin.Context) {
 	}
 
 	otpReq := &models.SendOTPRequest{
-		Email: req.Email,
+		Email: &req.Email,
 		Type:  models.OTPTypeLogin,
 	}
 
@@ -198,7 +198,7 @@ func (h *OTPHandler) VerifyPasswordlessLogin(c *gin.Context) {
 	}
 
 	verifyReq := &models.VerifyOTPRequest{
-		Email: req.Email,
+		Email: &req.Email,
 		Code:  req.Code,
 		Type:  models.OTPTypeLogin,
 	}
