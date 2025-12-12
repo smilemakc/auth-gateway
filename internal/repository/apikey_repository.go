@@ -252,3 +252,19 @@ func (r *APIKeyRepository) CountActive(userID uuid.UUID) (int, error) {
 
 	return count, nil
 }
+
+// ListAll returns all API keys (admin only)
+func (r *APIKeyRepository) ListAll() ([]*models.APIKey, error) {
+	var keys []*models.APIKey
+	query := `
+		SELECT * FROM api_keys
+		ORDER BY created_at DESC
+	`
+
+	err := r.db.Select(&keys, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all API keys: %w", err)
+	}
+
+	return keys, nil
+}

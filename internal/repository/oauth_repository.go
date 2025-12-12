@@ -152,3 +152,29 @@ func (r *OAuthRepository) DeleteOAuthAccountsByProvider(userID uuid.UUID, provid
 
 	return nil
 }
+
+// GetByUserID returns all OAuth accounts for a user
+func (r *OAuthRepository) GetByUserID(userID uuid.UUID) ([]*models.OAuthAccount, error) {
+	var accounts []*models.OAuthAccount
+	query := `SELECT * FROM oauth_accounts WHERE user_id = $1 ORDER BY created_at DESC`
+
+	err := r.db.Select(&accounts, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get oauth accounts by user ID: %w", err)
+	}
+
+	return accounts, nil
+}
+
+// ListAll returns all OAuth accounts (admin only)
+func (r *OAuthRepository) ListAll() ([]*models.OAuthAccount, error) {
+	var accounts []*models.OAuthAccount
+	query := `SELECT * FROM oauth_accounts ORDER BY created_at DESC`
+
+	err := r.db.Select(&accounts, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all oauth accounts: %w", err)
+	}
+
+	return accounts, nil
+}

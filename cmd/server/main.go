@@ -83,6 +83,7 @@ func main() {
 	otpService := service.NewOTPService(otpRepo, userRepo, emailService, auditRepo)
 	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, jwtService)
 	twoFAService := service.NewTwoFactorService(userRepo, backupCodeRepo, auditRepo, "Auth Gateway")
+	adminService := service.NewAdminService(userRepo, apiKeyRepo, auditRepo, oauthRepo)
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService, userService, otpService, log)
@@ -91,6 +92,7 @@ func main() {
 	otpHandler := handler.NewOTPHandler(otpService, authService, jwtService, log)
 	oauthHandler := handler.NewOAuthHandler(oauthService, log)
 	twoFAHandler := handler.NewTwoFactorHandler(twoFAService, userService, log)
+	adminHandler := handler.NewAdminHandler(adminService, log)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, redis, tokenRepo)
@@ -183,6 +185,28 @@ func main() {
 		apiKeysGroup.PUT("/:id", apiKeyHandler.Update)
 		apiKeysGroup.POST("/:id/revoke", apiKeyHandler.Revoke)
 		apiKeysGroup.DELETE("/:id", apiKeyHandler.Delete)
+	}
+
+	// Admin endpoints (require admin role)
+	adminGroup := router.Group("/admin")
+	adminGroup.Use(authMiddleware.Authenticate())
+	adminGroup.Use(middleware.RequireAdmin())
+	{
+		// Statistics
+		adminGroup.GET("/stats", adminHandler.GetStats)
+
+		// User management
+		adminGroup.GET("/users", adminHandler.ListUsers)
+		adminGroup.GET("/users/:id", adminHandler.GetUser)
+		adminGroup.PUT("/users/:id", adminHandler.UpdateUser)
+		adminGroup.DELETE("/users/:id", adminHandler.DeleteUser)
+
+		// API key management
+		adminGroup.GET("/api-keys", adminHandler.ListAPIKeys)
+		adminGroup.POST("/api-keys/:id/revoke", adminHandler.RevokeAPIKey)
+
+		// Audit logs
+		adminGroup.GET("/audit-logs", adminHandler.ListAuditLogs)
 	}
 
 	// Example: Protected endpoint that accepts both JWT and API key

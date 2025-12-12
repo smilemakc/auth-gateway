@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
@@ -141,4 +142,17 @@ func (r *AuditRepository) DeleteOlderThan(days int) error {
 	}
 
 	return nil
+}
+
+// CountByActionSince counts audit log entries for a specific action since a time
+func (r *AuditRepository) CountByActionSince(action models.AuditAction, since time.Time) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM audit_logs WHERE action = $1 AND created_at >= $2`
+
+	err := r.db.QueryRow(query, action, since).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count audit logs by action: %w", err)
+	}
+
+	return count, nil
 }
