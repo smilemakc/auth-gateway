@@ -45,14 +45,53 @@ func NewAuthService(
 
 // SignUp creates a new user account
 func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest, ip, userAgent string) (*models.AuthResponse, error) {
-	// Normalize email and username
-	email := utils.NormalizeEmail(req.Email)
-	username := utils.NormalizeUsername(req.Username)
-
-	// Validate input
-	if !utils.IsValidEmail(email) {
-		return nil, models.NewAppError(400, "Invalid email format")
+	// Require either email or phone
+	if req.Email == "" && (req.Phone == nil || *req.Phone == "") {
+		return nil, models.NewAppError(400, "Either email or phone is required")
 	}
+
+	// Normalize inputs
+	var email string
+	var normalizedPhone *string
+
+	if req.Email != "" {
+		email = utils.NormalizeEmail(req.Email)
+		// Validate email
+		if !utils.IsValidEmail(email) {
+			return nil, models.NewAppError(400, "Invalid email format")
+		}
+		// Check if email exists
+		if exists, err := s.userRepo.EmailExists(email); err != nil {
+			return nil, err
+		} else if exists {
+			s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				"reason": "email_exists",
+				"email":  email,
+			})
+			return nil, models.ErrEmailAlreadyExists
+		}
+	}
+
+	if req.Phone != nil && *req.Phone != "" {
+		phone := utils.NormalizePhone(*req.Phone)
+		normalizedPhone = &phone
+		// Validate phone
+		if !utils.IsValidPhone(phone) {
+			return nil, models.NewAppError(400, "Invalid phone format")
+		}
+		// Check if phone exists
+		if exists, err := s.userRepo.PhoneExists(phone); err != nil {
+			return nil, err
+		} else if exists {
+			s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				"reason": "phone_exists",
+				"phone":  phone,
+			})
+			return nil, models.ErrPhoneAlreadyExists
+		}
+	}
+
+	username := utils.NormalizeUsername(req.Username)
 
 	if !utils.IsValidUsername(username) {
 		return nil, models.NewAppError(400, "Invalid username format")
@@ -62,17 +101,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		return nil, models.NewAppError(400, "Password must be at least 8 characters")
 	}
 
-	// Check if email or username already exists
-	if exists, err := s.userRepo.EmailExists(email); err != nil {
-		return nil, err
-	} else if exists {
-		s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
-			"reason": "email_exists",
-			"email":  email,
-		})
-		return nil, models.ErrEmailAlreadyExists
-	}
-
+	// Check if username already exists
 	if exists, err := s.userRepo.UsernameExists(username); err != nil {
 		return nil, err
 	} else if exists {
@@ -93,6 +122,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 	user := &models.User{
 		ID:           uuid.New(),
 		Email:        email,
+		Phone:        normalizedPhone,
 		Username:     username,
 		PasswordHash: passwordHash,
 		FullName:     req.FullName,
@@ -122,16 +152,35 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 
 // SignIn authenticates a user and returns tokens
 func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip, userAgent string) (*models.AuthResponse, error) {
-	email := utils.NormalizeEmail(req.Email)
+	// Require either email or phone
+	if req.Email == "" && (req.Phone == nil || *req.Phone == "") {
+		return nil, models.NewAppError(400, "Either email or phone is required")
+	}
 
-	// Get user by email
-	user, err := s.userRepo.GetByEmail(email)
-	if err != nil {
-		s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
-			"reason": "user_not_found",
-			"email":  email,
-		})
-		return nil, models.ErrInvalidCredentials
+	var user *models.User
+	var err error
+
+	// Get user by email or phone
+	if req.Email != "" {
+		email := utils.NormalizeEmail(req.Email)
+		user, err = s.userRepo.GetByEmail(email)
+		if err != nil {
+			s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				"reason": "user_not_found",
+				"email":  email,
+			})
+			return nil, models.ErrInvalidCredentials
+		}
+	} else if req.Phone != nil && *req.Phone != "" {
+		phone := utils.NormalizePhone(*req.Phone)
+		user, err = s.userRepo.GetByPhone(phone)
+		if err != nil {
+			s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				"reason": "user_not_found",
+				"phone":  phone,
+			})
+			return nil, models.ErrInvalidCredentials
+		}
 	}
 
 	// Check password

@@ -20,6 +20,7 @@ var (
 	ErrUserNotFound          = &AppError{Code: http.StatusNotFound, Message: "User not found"}
 	ErrUserAlreadyExists     = &AppError{Code: http.StatusConflict, Message: "User already exists"}
 	ErrEmailAlreadyExists    = &AppError{Code: http.StatusConflict, Message: "Email already exists"}
+	ErrPhoneAlreadyExists    = &AppError{Code: http.StatusConflict, Message: "Phone already exists"}
 	ErrUsernameAlreadyExists = &AppError{Code: http.StatusConflict, Message: "Username already exists"}
 	ErrInvalidToken          = &AppError{Code: http.StatusUnauthorized, Message: "Invalid token"}
 	ErrTokenExpired          = &AppError{Code: http.StatusUnauthorized, Message: "Token expired"}

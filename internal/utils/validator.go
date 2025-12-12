@@ -8,6 +8,7 @@ import (
 var (
 	emailRegex    = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
 	usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]{3,100}$`)
+	phoneRegex    = regexp.MustCompile(`^\+?[1-9]\d{1,14}$`) // E.164 format
 )
 
 // IsValidEmail checks if an email is valid
@@ -32,4 +33,31 @@ func NormalizeEmail(email string) string {
 // NormalizeUsername normalizes a username (lowercase, trimmed)
 func NormalizeUsername(username string) string {
 	return strings.ToLower(strings.TrimSpace(username))
+}
+
+// IsValidPhone checks if a phone number is valid (E.164 format)
+// Accepts: +79991234567 or 79991234567
+func IsValidPhone(phone string) bool {
+	normalized := NormalizePhone(phone)
+	return phoneRegex.MatchString(normalized)
+}
+
+// NormalizePhone normalizes a phone number (removes spaces, adds + if missing)
+func NormalizePhone(phone string) string {
+	// Remove all spaces, dashes, parentheses
+	phone = strings.Map(func(r rune) rune {
+		if r == ' ' || r == '-' || r == '(' || r == ')' {
+			return -1
+		}
+		return r
+	}, phone)
+
+	phone = strings.TrimSpace(phone)
+
+	// Add + if missing and starts with digit
+	if len(phone) > 0 && phone[0] != '+' && phone[0] >= '0' && phone[0] <= '9' {
+		phone = "+" + phone
+	}
+
+	return phone
 }

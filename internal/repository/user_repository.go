@@ -23,8 +23,8 @@ func NewUserRepository(db *Database) *UserRepository {
 // Create creates a new user
 func (r *UserRepository) Create(user *models.User) error {
 	query := `
-		INSERT INTO users (id, email, username, password_hash, full_name, profile_picture_url, role, email_verified, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO users (id, email, phone, username, password_hash, full_name, profile_picture_url, role, email_verified, phone_verified, is_active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING created_at, updated_at
 	`
 
@@ -32,12 +32,14 @@ func (r *UserRepository) Create(user *models.User) error {
 		query,
 		user.ID,
 		user.Email,
+		user.Phone,
 		user.Username,
 		user.PasswordHash,
 		user.FullName,
 		user.ProfilePictureURL,
 		user.Role,
 		user.EmailVerified,
+		user.PhoneVerified,
 		user.IsActive,
 	).Scan(&user.CreatedAt, &user.UpdatedAt)
 
@@ -50,6 +52,9 @@ func (r *UserRepository) Create(user *models.User) error {
 				}
 				if pqErr.Constraint == "users_username_key" {
 					return models.ErrUsernameAlreadyExists
+				}
+				if pqErr.Constraint == "idx_users_phone_unique" {
+					return models.ErrPhoneAlreadyExists
 				}
 				return models.ErrUserAlreadyExists
 			}
@@ -315,6 +320,61 @@ func (r *UserRepository) DisableTOTP(userID uuid.UUID) error {
 	result, err := r.db.Exec(query, userID)
 	if err != nil {
 		return fmt.Errorf("failed to disable TOTP: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return errors.New("user not found")
+	}
+
+	return nil
+}
+
+// GetByPhone retrieves a user by phone number
+func (r *UserRepository) GetByPhone(phone string) (*models.User, error) {
+	var user models.User
+	query := `SELECT * FROM users WHERE phone = $1 AND is_active = true`
+
+	err := r.db.Get(&user, query, phone)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrUserNotFound
+		}
+		return nil, fmt.Errorf("failed to get user by phone: %w", err)
+	}
+
+	return &user, nil
+}
+
+// PhoneExists checks if a phone number already exists
+func (r *UserRepository) PhoneExists(phone string) (bool, error) {
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM users WHERE phone = $1)`
+
+	err := r.db.QueryRow(query, phone).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check phone existence: %w", err)
+	}
+
+	return exists, nil
+}
+
+// MarkPhoneVerified marks a user's phone as verified
+func (r *UserRepository) MarkPhoneVerified(userID uuid.UUID) error {
+	query := `
+		UPDATE users
+		SET phone_verified = true,
+		    updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1
+	`
+
+	result, err := r.db.Exec(query, userID)
+	if err != nil {
+		return fmt.Errorf("failed to mark phone as verified: %w", err)
 	}
 
 	rows, err := result.RowsAffected()

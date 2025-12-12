@@ -10,12 +10,14 @@ import (
 type User struct {
 	ID                uuid.UUID  `json:"id" db:"id"`
 	Email             string     `json:"email" db:"email"`
+	Phone             *string    `json:"phone,omitempty" db:"phone"`
 	Username          string     `json:"username" db:"username"`
 	PasswordHash      string     `json:"-" db:"password_hash"` // Never expose password hash
 	FullName          string     `json:"full_name,omitempty" db:"full_name"`
 	ProfilePictureURL string     `json:"profile_picture_url,omitempty" db:"profile_picture_url"`
 	Role              string     `json:"role" db:"role"`
 	EmailVerified     bool       `json:"email_verified" db:"email_verified"`
+	PhoneVerified     bool       `json:"phone_verified" db:"phone_verified"`
 	IsActive          bool       `json:"is_active" db:"is_active"`
 	TOTPSecret        *string    `json:"-" db:"totp_secret"` // Never expose TOTP secret
 	TOTPEnabled       bool       `json:"totp_enabled" db:"totp_enabled"`
@@ -45,10 +47,11 @@ func IsValidRole(role string) bool {
 
 // CreateUserRequest represents a request to create a new user
 type CreateUserRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Username string `json:"username" binding:"required,min=3,max=100"`
-	Password string `json:"password" binding:"required,min=8"`
-	FullName string `json:"full_name,omitempty"`
+	Email    string  `json:"email" binding:"omitempty,email"`
+	Phone    *string `json:"phone,omitempty"`
+	Username string  `json:"username" binding:"required,min=3,max=100"`
+	Password string  `json:"password" binding:"required,min=8"`
+	FullName string  `json:"full_name,omitempty"`
 }
 
 // UpdateUserRequest represents a request to update user profile
@@ -65,8 +68,9 @@ type ChangePasswordRequest struct {
 
 // SignInRequest represents a sign-in request
 type SignInRequest struct {
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Email    string  `json:"email" binding:"omitempty"`
+	Phone    *string `json:"phone,omitempty"`
+	Password string  `json:"password" binding:"required"`
 }
 
 // RefreshTokenRequest represents a token refresh request
@@ -91,12 +95,16 @@ func (u *User) PublicUser() *User {
 	return &User{
 		ID:                u.ID,
 		Email:             u.Email,
+		Phone:             u.Phone,
 		Username:          u.Username,
 		FullName:          u.FullName,
 		ProfilePictureURL: u.ProfilePictureURL,
 		Role:              u.Role,
 		EmailVerified:     u.EmailVerified,
+		PhoneVerified:     u.PhoneVerified,
 		IsActive:          u.IsActive,
+		TOTPEnabled:       u.TOTPEnabled,
+		TOTPEnabledAt:     u.TOTPEnabledAt,
 		CreatedAt:         u.CreatedAt,
 		UpdatedAt:         u.UpdatedAt,
 	}
