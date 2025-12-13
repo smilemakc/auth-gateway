@@ -1,11 +1,33 @@
 
 import React from 'react';
-import { mockLogs } from '../services/mockData';
 import { Clock, Shield, Globe, User } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useAuditLogs } from '../hooks/useAuditLogs';
 
 const AuditLogs: React.FC = () => {
   const { t } = useLanguage();
+
+  // Fetch audit logs with React Query
+  const { data, isLoading, error } = useAuditLogs(1, 100);
+
+  const logs = data?.logs || data?.items || [];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600">Error loading audit logs: {(error as Error).message}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">{t('nav.audit_logs')}</h1>
@@ -23,7 +45,7 @@ const AuditLogs: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {mockLogs.map((log) => (
+              {logs.map((log: any) => (
                 <tr key={log.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">

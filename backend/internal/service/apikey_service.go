@@ -67,7 +67,7 @@ func (s *APIKeyService) Create(ctx context.Context, userID uuid.UUID, req *model
 	}
 
 	// Verify user exists
-	_, err := s.userRepo.GetByID(userID)
+	_, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (s *APIKeyService) Create(ctx context.Context, userID uuid.UUID, req *model
 		ExpiresAt:   req.ExpiresAt,
 	}
 
-	if err := s.apiKeyRepo.Create(apiKey); err != nil {
+	if err := s.apiKeyRepo.Create(ctx, apiKey); err != nil {
 		s.logAudit(&userID, "api_key_create", "failed", ip, userAgent, map[string]interface{}{
 			"name":  req.Name,
 			"error": err.Error(),
@@ -130,7 +130,7 @@ func (s *APIKeyService) ValidateAPIKey(ctx context.Context, plainKey string) (*m
 	keyHash := utils.HashToken(plainKey)
 
 	// Get API key from database
-	apiKey, err := s.apiKeyRepo.GetByKeyHash(keyHash)
+	apiKey, err := s.apiKeyRepo.GetByKeyHash(ctx, keyHash)
 	if err != nil {
 		return nil, nil, models.ErrInvalidToken
 	}
@@ -146,14 +146,14 @@ func (s *APIKeyService) ValidateAPIKey(ctx context.Context, plainKey string) (*m
 	}
 
 	// Get user
-	user, err := s.userRepo.GetByID(apiKey.UserID)
+	user, err := s.userRepo.GetByID(ctx, apiKey.UserID)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Update last used timestamp (async)
 	go func() {
-		_ = s.apiKeyRepo.UpdateLastUsed(apiKey.ID)
+		_ = s.apiKeyRepo.UpdateLastUsed(ctx, apiKey.ID)
 	}()
 
 	return apiKey, user, nil
@@ -161,7 +161,7 @@ func (s *APIKeyService) ValidateAPIKey(ctx context.Context, plainKey string) (*m
 
 // GetByID retrieves an API key by ID
 func (s *APIKeyService) GetByID(ctx context.Context, userID, apiKeyID uuid.UUID) (*models.APIKey, error) {
-	apiKey, err := s.apiKeyRepo.GetByID(apiKeyID)
+	apiKey, err := s.apiKeyRepo.GetByID(ctx, apiKeyID)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (s *APIKeyService) GetByID(ctx context.Context, userID, apiKeyID uuid.UUID)
 
 // List retrieves all API keys for a user
 func (s *APIKeyService) List(ctx context.Context, userID uuid.UUID) ([]*models.APIKey, error) {
-	apiKeys, err := s.apiKeyRepo.GetByUserID(userID)
+	apiKeys, err := s.apiKeyRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (s *APIKeyService) List(ctx context.Context, userID uuid.UUID) ([]*models.A
 // Update updates an API key
 func (s *APIKeyService) Update(ctx context.Context, userID, apiKeyID uuid.UUID, req *models.UpdateAPIKeyRequest, ip, userAgent string) (*models.APIKey, error) {
 	// Get existing API key
-	apiKey, err := s.apiKeyRepo.GetByID(apiKeyID)
+	apiKey, err := s.apiKeyRepo.GetByID(ctx, apiKeyID)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func (s *APIKeyService) Update(ctx context.Context, userID, apiKeyID uuid.UUID, 
 	}
 
 	// Save changes
-	if err := s.apiKeyRepo.Update(apiKey); err != nil {
+	if err := s.apiKeyRepo.Update(ctx, apiKey); err != nil {
 		s.logAudit(&userID, "api_key_update", "failed", ip, userAgent, map[string]interface{}{
 			"api_key_id": apiKeyID.String(),
 			"error":      err.Error(),
@@ -249,7 +249,7 @@ func (s *APIKeyService) Update(ctx context.Context, userID, apiKeyID uuid.UUID, 
 // Revoke revokes an API key
 func (s *APIKeyService) Revoke(ctx context.Context, userID, apiKeyID uuid.UUID, ip, userAgent string) error {
 	// Get API key
-	apiKey, err := s.apiKeyRepo.GetByID(apiKeyID)
+	apiKey, err := s.apiKeyRepo.GetByID(ctx, apiKeyID)
 	if err != nil {
 		return err
 	}
@@ -260,7 +260,7 @@ func (s *APIKeyService) Revoke(ctx context.Context, userID, apiKeyID uuid.UUID, 
 	}
 
 	// Revoke
-	if err := s.apiKeyRepo.Revoke(apiKeyID); err != nil {
+	if err := s.apiKeyRepo.Revoke(ctx, apiKeyID); err != nil {
 		s.logAudit(&userID, "api_key_revoke", "failed", ip, userAgent, map[string]interface{}{
 			"api_key_id": apiKeyID.String(),
 			"error":      err.Error(),
@@ -280,7 +280,7 @@ func (s *APIKeyService) Revoke(ctx context.Context, userID, apiKeyID uuid.UUID, 
 // Delete permanently deletes an API key
 func (s *APIKeyService) Delete(ctx context.Context, userID, apiKeyID uuid.UUID, ip, userAgent string) error {
 	// Get API key
-	apiKey, err := s.apiKeyRepo.GetByID(apiKeyID)
+	apiKey, err := s.apiKeyRepo.GetByID(ctx, apiKeyID)
 	if err != nil {
 		return err
 	}
@@ -291,7 +291,7 @@ func (s *APIKeyService) Delete(ctx context.Context, userID, apiKeyID uuid.UUID, 
 	}
 
 	// Delete
-	if err := s.apiKeyRepo.Delete(apiKeyID); err != nil {
+	if err := s.apiKeyRepo.Delete(ctx, apiKeyID); err != nil {
 		s.logAudit(&userID, "api_key_delete", "failed", ip, userAgent, map[string]interface{}{
 			"api_key_id": apiKeyID.String(),
 			"error":      err.Error(),
@@ -347,6 +347,6 @@ func (s *APIKeyService) logAudit(userID *uuid.UUID, action, status, ip, userAgen
 
 	// Log asynchronously
 	go func() {
-		_ = s.auditRepo.Create(auditLog)
+		_ = s.auditRepo.Create(context.Background(), auditLog)
 	}()
 }

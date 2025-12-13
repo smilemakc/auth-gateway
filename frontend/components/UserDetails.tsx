@@ -1,17 +1,17 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Mail, 
-  Phone, 
-  Shield, 
-  Calendar, 
-  Clock, 
-  Edit, 
-  Key, 
-  Globe, 
-  CheckCircle, 
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  Shield,
+  Calendar,
+  Clock,
+  Edit,
+  Key,
+  Globe,
+  CheckCircle,
   XCircle,
   Activity,
   User as UserIcon,
@@ -23,56 +23,70 @@ import {
   RotateCcw,
   Send
 } from 'lucide-react';
-import { getUser, getUserApiKeys, getUserLogs, getUserOAuthAccounts, getUserSessions, revokeUserSession, resetUserTwoFA, sendPasswordResetEmail } from '../services/mockData';
-import { User, ApiKey, AuditLog, OAuthAccount, UserSession } from '../types';
 import { useLanguage } from '../services/i18n';
+import { useUserDetail, useResetUser2FA, useSendPasswordReset } from '../hooks/useUsers';
+import { useUserSessions, useRevokeSession } from '../hooks/useSessions';
+import { useApiKeys } from '../hooks/useApiKeys';
+import { useUserAuditLogs } from '../hooks/useAuditLogs';
 
 const UserDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [user, setUser] = useState<User | undefined>();
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [oauthAccounts, setOAuthAccounts] = useState<OAuthAccount[]>([]);
-  const [sessions, setSessions] = useState<UserSession[]>([]);
 
-  useEffect(() => {
-    if (id) {
-      const foundUser = getUser(id);
-      if (foundUser) {
-        setUser(foundUser);
-        setApiKeys(getUserApiKeys(id));
-        setLogs(getUserLogs(id).slice(0, 5)); // Just show last 5
-        setOAuthAccounts(getUserOAuthAccounts(id));
-        setSessions(getUserSessions(id));
-      } else {
-        navigate('/users');
-      }
-    }
-  }, [id, navigate]);
+  // Fetch user data with React Query
+  const { data: user, isLoading: userLoading, error: userError } = useUserDetail(id!);
+  const { data: sessionsData } = useUserSessions(id!, 1, 50);
+  const { data: apiKeysData } = useApiKeys(1, 50);
+  const { data: logsData } = useUserAuditLogs(id!, 1, 5);
 
-  const handleRevokeSession = (sessionId: string) => {
+  // Mutations
+  const revokeSessionMutation = useRevokeSession();
+  const reset2FAMutation = useResetUser2FA();
+  const sendPasswordResetMutation = useSendPasswordReset();
+
+  // Extract data from responses
+  const sessions = sessionsData?.sessions || sessionsData?.items || [];
+  const apiKeys = (apiKeysData?.apiKeys || apiKeysData?.items || []).filter(
+    (key: any) => key.userId === id
+  );
+  const logs = (logsData?.logs || logsData?.items || []).slice(0, 5);
+  const oauthAccounts: any[] = []; // TODO: Add OAuth accounts API
+
+  const handleRevokeSession = async (sessionId: string) => {
     if (window.confirm('Are you sure you want to revoke this session?')) {
-      if (revokeUserSession(sessionId)) {
-        setSessions(prev => prev.filter(s => s.id !== sessionId));
+      try {
+        await revokeSessionMutation.mutateAsync(sessionId);
+        alert('Session revoked successfully');
+      } catch (error) {
+        console.error('Failed to revoke session:', error);
+        alert('Failed to revoke session');
       }
     }
   };
 
-  const handleReset2FA = () => {
+  const handleReset2FA = async () => {
     if (!user) return;
     if (window.confirm(t('user.reset_2fa_confirm'))) {
-      resetUserTwoFA(user.id);
-      setUser(prev => prev ? ({ ...prev, is2FAEnabled: false }) : undefined);
-      alert('2FA has been reset.');
+      try {
+        await reset2FAMutation.mutateAsync(user.id);
+        alert('2FA has been reset.');
+      } catch (error) {
+        console.error('Failed to reset 2FA:', error);
+        alert('Failed to reset 2FA');
+      }
     }
   };
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     if (!user) return;
-    sendPasswordResetEmail(user.id);
-    alert('Password reset email sent.');
+    try {
+      await sendPasswordResetMutation.mutateAsync(user.id);
+      alert('Password reset email sent.');
+    } catch (error) {
+      console.error('Failed to send password reset:', error);
+      alert('Failed to send password reset email');
+    }
   };
 
   const getDeviceIcon = (type: string) => {
@@ -84,7 +98,29 @@ const UserDetails: React.FC = () => {
     }
   };
 
-  if (!user) return <div className="p-6">{t('common.loading')}</div>;
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (userError || !user) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600">
+          {userError ? `Error loading user: ${(userError as Error).message}` : 'User not found'}
+        </p>
+        <button
+          onClick={() => navigate('/users')}
+          className="mt-4 text-blue-600 hover:underline"
+        >
+          Back to Users
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">

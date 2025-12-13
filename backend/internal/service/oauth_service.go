@@ -294,12 +294,12 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuth
 	}
 
 	// Find or create OAuth account
-	oauthAccount, err := s.oauthRepo.GetOAuthAccount(string(provider), userInfo.ProviderUserID)
+	oauthAccount, err := s.oauthRepo.GetOAuthAccount(ctx, string(provider), userInfo.ProviderUserID)
 	isNewUser := false
 
 	if oauthAccount == nil {
 		// OAuth account doesn't exist, create new user
-		user, err := s.createUserFromOAuth(userInfo)
+		user, err := s.createUserFromOAuth(ctx, userInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -323,7 +323,7 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuth
 		profileData, _ := json.Marshal(userInfo)
 		oauthAccount.ProfileData = profileData
 
-		if err := s.oauthRepo.CreateOAuthAccount(oauthAccount); err != nil {
+		if err := s.oauthRepo.CreateOAuthAccount(ctx, oauthAccount); err != nil {
 			return nil, err
 		}
 
@@ -342,13 +342,13 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuth
 		profileData, _ := json.Marshal(userInfo)
 		oauthAccount.ProfileData = profileData
 
-		if err := s.oauthRepo.UpdateOAuthAccount(oauthAccount); err != nil {
+		if err := s.oauthRepo.UpdateOAuthAccount(ctx, oauthAccount); err != nil {
 			return nil, err
 		}
 	}
 
 	// Get user
-	user, err := s.userRepo.GetByID(oauthAccount.UserID)
+	user, err := s.userRepo.GetByID(ctx, oauthAccount.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuth
 		ExpiresAt: time.Now().Add(s.jwtService.GetRefreshTokenExpiration()),
 	}
 
-	if err := s.tokenRepo.CreateRefreshToken(dbToken); err != nil {
+	if err := s.tokenRepo.CreateRefreshToken(ctx, dbToken); err != nil {
 		return nil, err
 	}
 
@@ -386,7 +386,7 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuth
 }
 
 // createUserFromOAuth creates a new user from OAuth data
-func (s *OAuthService) createUserFromOAuth(userInfo *models.OAuthUserInfo) (*models.User, error) {
+func (s *OAuthService) createUserFromOAuth(ctx context.Context, userInfo *models.OAuthUserInfo) (*models.User, error) {
 	email := userInfo.Email
 	if email == "" {
 		// Generate a placeholder email if provider doesn't provide one
@@ -406,7 +406,7 @@ func (s *OAuthService) createUserFromOAuth(userInfo *models.OAuthUserInfo) (*mod
 	originalUsername := username
 	counter := 1
 	for {
-		exists, err := s.userRepo.UsernameExists(username)
+		exists, err := s.userRepo.UsernameExists(ctx, username)
 		if err != nil {
 			return nil, err
 		}
@@ -428,7 +428,7 @@ func (s *OAuthService) createUserFromOAuth(userInfo *models.OAuthUserInfo) (*mod
 		EmailVerified: userInfo.Email != "", // Mark as verified if email provided by OAuth
 	}
 
-	if err := s.userRepo.Create(user); err != nil {
+	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, err
 	}
 

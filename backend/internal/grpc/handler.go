@@ -100,7 +100,7 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenReq
 		h.logger.Warn("Redis blacklist check failed", map[string]interface{}{
 			"error": err.Error(),
 		})
-		blacklisted, _ = h.tokenRepo.IsBlacklisted(tokenHash)
+		blacklisted, _ = h.tokenRepo.IsBlacklisted(ctx, tokenHash)
 	}
 
 	if blacklisted {
@@ -134,7 +134,7 @@ func (h *AuthHandlerV2) GetUser(ctx context.Context, req *GetUserRequest) (*GetU
 	}
 
 	// Get user from repository
-	user, err := h.userRepo.GetByID(userID)
+	user, err := h.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		if err == models.ErrUserNotFound {
 			return nil, status.Error(codes.NotFound, "user not found")
@@ -176,7 +176,7 @@ func (h *AuthHandlerV2) CheckPermission(ctx context.Context, req *CheckPermissio
 	}
 
 	// Get user to check role
-	user, err := h.userRepo.GetByID(userID)
+	user, err := h.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		if err == models.ErrUserNotFound {
 			return &CheckPermissionResponse{
@@ -237,7 +237,7 @@ func (h *AuthHandlerV2) IntrospectToken(ctx context.Context, req *IntrospectToke
 	tokenHash := utils.HashToken(req.AccessToken)
 	blacklisted, err := h.redis.IsBlacklisted(ctx, tokenHash)
 	if err != nil {
-		blacklisted, _ = h.tokenRepo.IsBlacklisted(tokenHash)
+		blacklisted, _ = h.tokenRepo.IsBlacklisted(ctx, tokenHash)
 	}
 
 	// Return detailed token information

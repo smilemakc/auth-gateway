@@ -72,7 +72,7 @@ func (s *OTPService) SendOTP(ctx context.Context, req *models.SendOTPRequest) er
 	email := *req.Email
 
 	// Check rate limiting
-	count, err := s.otpRepo.CountRecentByEmail(email, req.Type, 1*time.Hour)
+	count, err := s.otpRepo.CountRecentByEmail(ctx, email, req.Type, 1*time.Hour)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (s *OTPService) SendOTP(ctx context.Context, req *models.SendOTPRequest) er
 	}
 
 	// Invalidate all previous OTPs for this email and type
-	if err := s.otpRepo.InvalidateAllForEmail(email, req.Type); err != nil {
+	if err := s.otpRepo.InvalidateAllForEmail(ctx, email, req.Type); err != nil {
 		return err
 	}
 
@@ -108,7 +108,7 @@ func (s *OTPService) SendOTP(ctx context.Context, req *models.SendOTPRequest) er
 		ExpiresAt: time.Now().Add(OTPExpiration),
 	}
 
-	if err := s.otpRepo.Create(otp); err != nil {
+	if err := s.otpRepo.Create(ctx, otp); err != nil {
 		return err
 	}
 
@@ -142,7 +142,7 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 	email := *req.Email
 
 	// Get the latest valid OTP
-	otp, err := s.otpRepo.GetByEmailAndType(email, req.Type)
+	otp, err := s.otpRepo.GetByEmailAndType(ctx, email, req.Type)
 	if err != nil {
 		s.logAudit(nil, "otp_verify", "failed", "", "", map[string]interface{}{
 			"email":  email,
@@ -173,7 +173,7 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 	}
 
 	// Mark as used
-	if err := s.otpRepo.MarkAsUsed(otp.ID); err != nil {
+	if err := s.otpRepo.MarkAsUsed(ctx, otp.ID); err != nil {
 		return nil, err
 	}
 
@@ -183,9 +183,9 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 	switch req.Type {
 	case models.OTPTypeVerification:
 		// Mark email as verified
-		user, err := s.userRepo.GetByEmail(email)
+		user, err := s.userRepo.GetByEmail(ctx, email)
 		if err == nil && user != nil {
-			if err := s.userRepo.MarkEmailVerified(user.ID); err != nil {
+			if err := s.userRepo.MarkEmailVerified(ctx, user.ID); err != nil {
 				return nil, err
 			}
 			response.User = user
@@ -193,7 +193,7 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 
 	case models.OTPTypeLogin:
 		// For passwordless login, create session
-		user, err := s.userRepo.GetByEmail(email)
+		user, err := s.userRepo.GetByEmail(ctx, email)
 		if err != nil {
 			return nil, err
 		}
@@ -221,7 +221,7 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 // CleanupExpiredOTPs removes expired OTPs
 func (s *OTPService) CleanupExpiredOTPs() error {
 	// Delete OTPs older than 7 days
-	return s.otpRepo.DeleteExpired(7 * 24 * time.Hour)
+	return s.otpRepo.DeleteExpired(context.Background(), 7*24*time.Hour)
 }
 
 // logAudit logs an audit entry

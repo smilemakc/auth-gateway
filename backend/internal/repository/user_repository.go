@@ -1,13 +1,13 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/uptrace/bun"
 )
 
 // UserRepository handles user-related database operations
@@ -21,123 +21,106 @@ func NewUserRepository(db *Database) *UserRepository {
 }
 
 // Create creates a new user
-func (r *UserRepository) Create(user *models.User) error {
-	query := `
-		INSERT INTO users (id, email, phone, username, password_hash, full_name, profile_picture_url, role, email_verified, phone_verified, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		RETURNING created_at, updated_at
-	`
+func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
+	_, err := r.db.NewInsert().
+		Model(user).
+		Returning("*").
+		Exec(ctx)
 
-	err := r.db.QueryRow(
-		query,
-		user.ID,
-		user.Email,
-		user.Phone,
-		user.Username,
-		user.PasswordHash,
-		user.FullName,
-		user.ProfilePictureURL,
-		user.Role,
-		user.EmailVerified,
-		user.PhoneVerified,
-		user.IsActive,
-	).Scan(&user.CreatedAt, &user.UpdatedAt)
-
-	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			// PostgreSQL error code 23505 = unique_violation
-			if pqErr.Code == "23505" {
-				if pqErr.Constraint == "users_email_key" {
-					return models.ErrEmailAlreadyExists
-				}
-				if pqErr.Constraint == "users_username_key" {
-					return models.ErrUsernameAlreadyExists
-				}
-				if pqErr.Constraint == "idx_users_phone_unique" {
-					return models.ErrPhoneAlreadyExists
-				}
-				return models.ErrUserAlreadyExists
-			}
-		}
-		return fmt.Errorf("failed to create user: %w", err)
-	}
-
-	return nil
+	return handlePgError(err)
 }
 
 // GetByID retrieves a user by ID
-func (r *UserRepository) GetByID(id uuid.UUID) (*models.User, error) {
-	var user models.User
-	query := `SELECT * FROM users WHERE id = $1 AND is_active = true`
+func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	user := new(models.User)
 
-	err := r.db.Get(&user, query, id)
+	err := r.db.NewSelect().
+		Model(user).
+		Where("id = ? AND is_active = ?", id, true).
+		Scan(ctx)
+
+	if err == sql.ErrNoRows {
+		return nil, models.ErrUserNotFound
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, models.ErrUserNotFound
-		}
 		return nil, fmt.Errorf("failed to get user by id: %w", err)
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 // GetByEmail retrieves a user by email
-func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
-	var user models.User
-	query := `SELECT * FROM users WHERE email = $1 AND is_active = true`
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+	user := new(models.User)
 
-	err := r.db.Get(&user, query, email)
+	err := r.db.NewSelect().
+		Model(user).
+		Where("email = ? AND is_active = ?", email, true).
+		Scan(ctx)
+
+	if err == sql.ErrNoRows {
+		return nil, models.ErrUserNotFound
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, models.ErrUserNotFound
-		}
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 // GetByUsername retrieves a user by username
-func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
-	var user models.User
-	query := `SELECT * FROM users WHERE username = $1 AND is_active = true`
+func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
+	user := new(models.User)
 
-	err := r.db.Get(&user, query, username)
+	err := r.db.NewSelect().
+		Model(user).
+		Where("username = ? AND is_active = ?", username, true).
+		Scan(ctx)
+
+	if err == sql.ErrNoRows {
+		return nil, models.ErrUserNotFound
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, models.ErrUserNotFound
-		}
 		return nil, fmt.Errorf("failed to get user by username: %w", err)
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 // Update updates a user
-func (r *UserRepository) Update(user *models.User) error {
-	query := `
-		UPDATE users
-		SET full_name = $1, profile_picture_url = $2, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $3
-		RETURNING updated_at
-	`
+func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
+	result, err := r.db.NewUpdate().
+		Model(user).
+		Column("full_name", "profile_picture_url", "updated_at").
+		WherePK().
+		Returning("updated_at").
+		Exec(ctx)
 
-	err := r.db.QueryRow(query, user.FullName, user.ProfilePictureURL, user.ID).Scan(&user.UpdatedAt)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return models.ErrUserNotFound
-		}
 		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return models.ErrUserNotFound
 	}
 
 	return nil
 }
 
 // UpdatePassword updates a user's password
-func (r *UserRepository) UpdatePassword(userID uuid.UUID, passwordHash string) error {
-	query := `UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`
+func (r *UserRepository) UpdatePassword(ctx context.Context, userID uuid.UUID, passwordHash string) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.User)(nil)).
+		Set("password_hash = ?", passwordHash).
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("id = ?", userID).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, passwordHash, userID)
 	if err != nil {
 		return fmt.Errorf("failed to update password: %w", err)
 	}
@@ -155,10 +138,14 @@ func (r *UserRepository) UpdatePassword(userID uuid.UUID, passwordHash string) e
 }
 
 // Delete soft deletes a user (sets is_active to false)
-func (r *UserRepository) Delete(id uuid.UUID) error {
-	query := `UPDATE users SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1`
+func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.User)(nil)).
+		Set("is_active = ?", false).
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("id = ?", id).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
@@ -176,11 +163,12 @@ func (r *UserRepository) Delete(id uuid.UUID) error {
 }
 
 // EmailExists checks if an email already exists
-func (r *UserRepository) EmailExists(email string) (bool, error) {
-	var exists bool
-	query := `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`
+func (r *UserRepository) EmailExists(ctx context.Context, email string) (bool, error) {
+	exists, err := r.db.NewSelect().
+		Model((*models.User)(nil)).
+		Where("email = ?", email).
+		Exists(ctx)
 
-	err := r.db.QueryRow(query, email).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("failed to check email existence: %w", err)
 	}
@@ -189,11 +177,12 @@ func (r *UserRepository) EmailExists(email string) (bool, error) {
 }
 
 // UsernameExists checks if a username already exists
-func (r *UserRepository) UsernameExists(username string) (bool, error) {
-	var exists bool
-	query := `SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)`
+func (r *UserRepository) UsernameExists(ctx context.Context, username string) (bool, error) {
+	exists, err := r.db.NewSelect().
+		Model((*models.User)(nil)).
+		Where("username = ?", username).
+		Exists(ctx)
 
-	err := r.db.QueryRow(query, username).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("failed to check username existence: %w", err)
 	}
@@ -202,16 +191,15 @@ func (r *UserRepository) UsernameExists(username string) (bool, error) {
 }
 
 // MarkEmailVerified marks a user's email as verified
-func (r *UserRepository) MarkEmailVerified(userID uuid.UUID) error {
-	query := `
-		UPDATE users
-		SET email_verified = true,
-		    email_verified_at = CURRENT_TIMESTAMP,
-		    updated_at = CURRENT_TIMESTAMP
-		WHERE id = $1
-	`
+func (r *UserRepository) MarkEmailVerified(ctx context.Context, userID uuid.UUID) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.User)(nil)).
+		Set("email_verified = ?", true).
+		Set("email_verified_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("id = ?", userID).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, userID)
 	if err != nil {
 		return fmt.Errorf("failed to mark email as verified: %w", err)
 	}
@@ -229,16 +217,17 @@ func (r *UserRepository) MarkEmailVerified(userID uuid.UUID) error {
 }
 
 // List retrieves a list of users with pagination
-func (r *UserRepository) List(limit, offset int) ([]*models.User, error) {
-	var users []*models.User
-	query := `
-		SELECT * FROM users
-		WHERE is_active = true
-		ORDER BY created_at DESC
-		LIMIT $1 OFFSET $2
-	`
+func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*models.User, error) {
+	users := make([]*models.User, 0)
 
-	err := r.db.Select(&users, query, limit, offset)
+	err := r.db.NewSelect().
+		Model(&users).
+		Where("is_active = ?", true).
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
@@ -247,11 +236,12 @@ func (r *UserRepository) List(limit, offset int) ([]*models.User, error) {
 }
 
 // Count returns the total number of active users
-func (r *UserRepository) Count() (int, error) {
-	var count int
-	query := `SELECT COUNT(*) FROM users WHERE is_active = true`
+func (r *UserRepository) Count(ctx context.Context) (int, error) {
+	count, err := r.db.NewSelect().
+		Model((*models.User)(nil)).
+		Where("is_active = ?", true).
+		Count(ctx)
 
-	err := r.db.QueryRow(query).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count users: %w", err)
 	}
@@ -260,14 +250,14 @@ func (r *UserRepository) Count() (int, error) {
 }
 
 // UpdateTOTPSecret updates the TOTP secret for a user
-func (r *UserRepository) UpdateTOTPSecret(userID uuid.UUID, secret string) error {
-	query := `
-		UPDATE users
-		SET totp_secret = $1, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $2
-	`
+func (r *UserRepository) UpdateTOTPSecret(ctx context.Context, userID uuid.UUID, secret string) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.User)(nil)).
+		Set("totp_secret = ?", secret).
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("id = ?", userID).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, secret, userID)
 	if err != nil {
 		return fmt.Errorf("failed to update TOTP secret: %w", err)
 	}
@@ -278,21 +268,22 @@ func (r *UserRepository) UpdateTOTPSecret(userID uuid.UUID, secret string) error
 	}
 
 	if rows == 0 {
-		return errors.New("user not found")
+		return models.ErrUserNotFound
 	}
 
 	return nil
 }
 
 // EnableTOTP enables TOTP 2FA for a user
-func (r *UserRepository) EnableTOTP(userID uuid.UUID) error {
-	query := `
-		UPDATE users
-		SET totp_enabled = true, totp_enabled_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $1
-	`
+func (r *UserRepository) EnableTOTP(ctx context.Context, userID uuid.UUID) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.User)(nil)).
+		Set("totp_enabled = ?", true).
+		Set("totp_enabled_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("id = ?", userID).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, userID)
 	if err != nil {
 		return fmt.Errorf("failed to enable TOTP: %w", err)
 	}
@@ -303,21 +294,23 @@ func (r *UserRepository) EnableTOTP(userID uuid.UUID) error {
 	}
 
 	if rows == 0 {
-		return errors.New("user not found")
+		return models.ErrUserNotFound
 	}
 
 	return nil
 }
 
 // DisableTOTP disables TOTP 2FA for a user
-func (r *UserRepository) DisableTOTP(userID uuid.UUID) error {
-	query := `
-		UPDATE users
-		SET totp_enabled = false, totp_secret = NULL, totp_enabled_at = NULL, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $1
-	`
+func (r *UserRepository) DisableTOTP(ctx context.Context, userID uuid.UUID) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.User)(nil)).
+		Set("totp_enabled = ?", false).
+		Set("totp_secret = ?", nil).
+		Set("totp_enabled_at = ?", nil).
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("id = ?", userID).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, userID)
 	if err != nil {
 		return fmt.Errorf("failed to disable TOTP: %w", err)
 	}
@@ -328,34 +321,38 @@ func (r *UserRepository) DisableTOTP(userID uuid.UUID) error {
 	}
 
 	if rows == 0 {
-		return errors.New("user not found")
+		return models.ErrUserNotFound
 	}
 
 	return nil
 }
 
 // GetByPhone retrieves a user by phone number
-func (r *UserRepository) GetByPhone(phone string) (*models.User, error) {
-	var user models.User
-	query := `SELECT * FROM users WHERE phone = $1 AND is_active = true`
+func (r *UserRepository) GetByPhone(ctx context.Context, phone string) (*models.User, error) {
+	user := new(models.User)
 
-	err := r.db.Get(&user, query, phone)
+	err := r.db.NewSelect().
+		Model(user).
+		Where("phone = ? AND is_active = ?", phone, true).
+		Scan(ctx)
+
+	if err == sql.ErrNoRows {
+		return nil, models.ErrUserNotFound
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, models.ErrUserNotFound
-		}
 		return nil, fmt.Errorf("failed to get user by phone: %w", err)
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 // PhoneExists checks if a phone number already exists
-func (r *UserRepository) PhoneExists(phone string) (bool, error) {
-	var exists bool
-	query := `SELECT EXISTS(SELECT 1 FROM users WHERE phone = $1)`
+func (r *UserRepository) PhoneExists(ctx context.Context, phone string) (bool, error) {
+	exists, err := r.db.NewSelect().
+		Model((*models.User)(nil)).
+		Where("phone = ?", phone).
+		Exists(ctx)
 
-	err := r.db.QueryRow(query, phone).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("failed to check phone existence: %w", err)
 	}
@@ -364,15 +361,14 @@ func (r *UserRepository) PhoneExists(phone string) (bool, error) {
 }
 
 // MarkPhoneVerified marks a user's phone as verified
-func (r *UserRepository) MarkPhoneVerified(userID uuid.UUID) error {
-	query := `
-		UPDATE users
-		SET phone_verified = true,
-		    updated_at = CURRENT_TIMESTAMP
-		WHERE id = $1
-	`
+func (r *UserRepository) MarkPhoneVerified(ctx context.Context, userID uuid.UUID) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.User)(nil)).
+		Set("phone_verified = ?", true).
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("id = ?", userID).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, userID)
 	if err != nil {
 		return fmt.Errorf("failed to mark phone as verified: %w", err)
 	}
@@ -383,7 +379,7 @@ func (r *UserRepository) MarkPhoneVerified(userID uuid.UUID) error {
 	}
 
 	if rows == 0 {
-		return errors.New("user not found")
+		return models.ErrUserNotFound
 	}
 
 	return nil

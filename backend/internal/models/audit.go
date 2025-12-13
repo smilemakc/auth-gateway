@@ -8,16 +8,21 @@ import (
 
 // AuditLog represents an audit log entry
 type AuditLog struct {
-	ID           uuid.UUID  `json:"id" db:"id"`
-	UserID       *uuid.UUID `json:"user_id,omitempty" db:"user_id"`
-	Action       string     `json:"action" db:"action"`
-	ResourceType string     `json:"resource_type,omitempty" db:"resource_type"`
-	ResourceID   string     `json:"resource_id,omitempty" db:"resource_id"`
-	IPAddress    string     `json:"ip_address,omitempty" db:"ip_address"`
-	UserAgent    string     `json:"user_agent,omitempty" db:"user_agent"`
-	Status       string     `json:"status" db:"status"`
-	Details      []byte     `json:"details,omitempty" db:"details"` // JSONB in PostgreSQL
-	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
+	ID           uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	UserID       *uuid.UUID `json:"user_id,omitempty" bun:"user_id,type:uuid"`
+	Action       string     `json:"action" bun:"action"`
+	ResourceType string     `json:"resource_type,omitempty" bun:"resource_type"`
+	ResourceID   string     `json:"resource_id,omitempty" bun:"resource_id"`
+	IPAddress    string     `json:"ip_address,omitempty" bun:"ip_address"`
+	UserAgent    string     `json:"user_agent,omitempty" bun:"user_agent"`
+	Status       string     `json:"status" bun:"status"`
+	Details      []byte     `json:"details,omitempty" bun:"details,type:jsonb"` // JSONB in PostgreSQL
+	CountryCode  string     `json:"country_code,omitempty" bun:"country_code"`
+	CountryName  string     `json:"country_name,omitempty" bun:"country_name"`
+	City         string     `json:"city,omitempty" bun:"city"`
+	Latitude     float64    `json:"latitude,omitempty" bun:"latitude"`
+	Longitude    float64    `json:"longitude,omitempty" bun:"longitude"`
+	CreatedAt    time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
 }
 
 // AuditAction represents the type of action being logged

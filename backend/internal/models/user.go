@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -8,24 +9,46 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID                uuid.UUID  `json:"id" db:"id"`
-	Email             string     `json:"email" db:"email"`
-	Phone             *string    `json:"phone,omitempty" db:"phone"`
-	Username          string     `json:"username" db:"username"`
-	PasswordHash      string     `json:"-" db:"password_hash"` // Never expose password hash
-	FullName          string     `json:"full_name,omitempty" db:"full_name"`
-	ProfilePictureURL string     `json:"profile_picture_url,omitempty" db:"profile_picture_url"`
-	Role              string     `json:"role" db:"role"`                 // Deprecated: use RoleID instead
-	RoleID            *uuid.UUID `json:"role_id,omitempty" db:"role_id"` // New RBAC role reference
-	AccountType       string     `json:"account_type" db:"account_type"` // "human" or "service"
-	EmailVerified     bool       `json:"email_verified" db:"email_verified"`
-	PhoneVerified     bool       `json:"phone_verified" db:"phone_verified"`
-	IsActive          bool       `json:"is_active" db:"is_active"`
-	TOTPSecret        *string    `json:"-" db:"totp_secret"` // Never expose TOTP secret
-	TOTPEnabled       bool       `json:"totp_enabled" db:"totp_enabled"`
-	TOTPEnabledAt     *time.Time `json:"totp_enabled_at,omitempty" db:"totp_enabled_at"`
-	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
+	ID                uuid.UUID  `json:"id" bun:"id,pk,type:uuid"`
+	Email             string     `json:"email" bun:"email,notnull,unique"`
+	Phone             *string    `json:"phone,omitempty" bun:"phone"`
+	Username          string     `json:"username" bun:"username,notnull,unique"`
+	PasswordHash      string     `json:"-" bun:"password_hash,notnull"` // Never expose password hash
+	FullName          string     `json:"full_name,omitempty" bun:"full_name"`
+	ProfilePictureURL string     `json:"profile_picture_url,omitempty" bun:"profile_picture_url"`
+	Role              string     `json:"role" bun:"role"`                           // Deprecated: use RoleID instead
+	RoleID            *uuid.UUID `json:"role_id,omitempty" bun:"role_id,type:uuid"` // New RBAC role reference
+	AccountType       string     `json:"account_type" bun:"account_type"`           // "human" or "service"
+	EmailVerified     bool       `json:"email_verified" bun:"email_verified"`
+	EmailVerifiedAt   *time.Time `json:"email_verified_at,omitempty" bun:"email_verified_at"`
+	PhoneVerified     bool       `json:"phone_verified" bun:"phone_verified"`
+	IsActive          bool       `json:"is_active" bun:"is_active"`
+	TOTPSecret        *string    `json:"-" bun:"totp_secret"` // Never expose TOTP secret
+	TOTPEnabled       bool       `json:"totp_enabled" bun:"totp_enabled"`
+	TOTPEnabledAt     *time.Time `json:"totp_enabled_at,omitempty" bun:"totp_enabled_at"`
+	CreatedAt         time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	UpdatedAt         time.Time  `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
+
+	// Relations
+	RoleRel *Role `json:"role_rel,omitempty" bun:"rel:belongs-to,join:role_id=id"`
+}
+
+// BeforeInsert hook for automatic timestamp management
+func (u *User) BeforeInsert(ctx context.Context) error {
+	now := time.Now()
+	if u.CreatedAt.IsZero() {
+		u.CreatedAt = now
+	}
+	if u.UpdatedAt.IsZero() {
+		u.UpdatedAt = now
+	}
+	return nil
+}
+
+// BeforeUpdate hook for automatic timestamp management
+func (u *User) BeforeUpdate(ctx context.Context) error {
+	u.UpdatedAt = time.Now()
+	return nil
 }
 
 // UserRole defines available user roles

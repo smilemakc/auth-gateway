@@ -9,27 +9,27 @@ import (
 
 // EmailTemplate represents a customizable email template
 type EmailTemplate struct {
-	ID        uuid.UUID       `json:"id" db:"id"`
-	Type      string          `json:"type" db:"type" binding:"required,oneof=verification password_reset welcome 2fa"`
-	Name      string          `json:"name" db:"name" binding:"required,max=100"`
-	Subject   string          `json:"subject" db:"subject" binding:"required,max=200"`
-	HTMLBody  string          `json:"html_body" db:"html_body" binding:"required"`
-	TextBody  string          `json:"text_body,omitempty" db:"text_body"`
-	Variables json.RawMessage `json:"variables" db:"variables"` // Available variables as JSON array
-	IsActive  bool            `json:"is_active" db:"is_active"`
-	CreatedAt time.Time       `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time       `json:"updated_at" db:"updated_at"`
+	ID        uuid.UUID       `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	Type      string          `json:"type" bun:"type" binding:"required,oneof=verification password_reset welcome 2fa"`
+	Name      string          `json:"name" bun:"name" binding:"required,max=100"`
+	Subject   string          `json:"subject" bun:"subject" binding:"required,max=200"`
+	HTMLBody  string          `json:"html_body" bun:"html_body" binding:"required"`
+	TextBody  string          `json:"text_body,omitempty" bun:"text_body"`
+	Variables json.RawMessage `json:"variables" bun:"variables,type:jsonb"` // Available variables as JSON array
+	IsActive  bool            `json:"is_active" bun:"is_active"`
+	CreatedAt time.Time       `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	UpdatedAt time.Time       `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
 }
 
 // EmailTemplateVersion represents a historical version of a template
 type EmailTemplateVersion struct {
-	ID         uuid.UUID  `json:"id" db:"id"`
-	TemplateID uuid.UUID  `json:"template_id" db:"template_id"`
-	Subject    string     `json:"subject" db:"subject"`
-	HTMLBody   string     `json:"html_body" db:"html_body"`
-	TextBody   string     `json:"text_body,omitempty" db:"text_body"`
-	CreatedBy  *uuid.UUID `json:"created_by,omitempty" db:"created_by"`
-	CreatedAt  time.Time  `json:"created_at" db:"created_at"`
+	ID         uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	TemplateID uuid.UUID  `json:"template_id" bun:"template_id,type:uuid"`
+	Subject    string     `json:"subject" bun:"subject"`
+	HTMLBody   string     `json:"html_body" bun:"html_body"`
+	TextBody   string     `json:"text_body,omitempty" bun:"text_body"`
+	CreatedBy  *uuid.UUID `json:"created_by,omitempty" bun:"created_by,type:uuid"`
+	CreatedAt  time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
 }
 
 // CreateEmailTemplateRequest is the request to create an email template

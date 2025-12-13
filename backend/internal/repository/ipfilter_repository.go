@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/smilemakc/auth-gateway/internal/models"
-
 	"github.com/google/uuid"
+	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/uptrace/bun"
 )
 
 // IPFilterRepository handles IP filter database operations
@@ -22,152 +22,163 @@ func NewIPFilterRepository(db *Database) *IPFilterRepository {
 
 // CreateIPFilter creates a new IP filter
 func (r *IPFilterRepository) CreateIPFilter(ctx context.Context, filter *models.IPFilter) error {
-	query := `
-		INSERT INTO ip_filters (ip_cidr, filter_type, reason, created_by, is_active, expires_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, created_at, updated_at
-	`
-	return r.db.QueryRowContext(
-		ctx, query,
-		filter.IPCIDR, filter.FilterType, filter.Reason, filter.CreatedBy,
-		filter.IsActive, filter.ExpiresAt,
-	).Scan(&filter.ID, &filter.CreatedAt, &filter.UpdatedAt)
+	_, err := r.db.NewInsert().
+		Model(filter).
+		Returning("*").
+		Exec(ctx)
+
+	return err
 }
 
 // GetIPFilterByID retrieves an IP filter by ID
 func (r *IPFilterRepository) GetIPFilterByID(ctx context.Context, id uuid.UUID) (*models.IPFilter, error) {
-	var filter models.IPFilter
-	query := `SELECT * FROM ip_filters WHERE id = $1`
-	err := r.db.GetContext(ctx, &filter, query, id)
+	filter := new(models.IPFilter)
+
+	err := r.db.NewSelect().
+		Model(filter).
+		Where("id = ?", id).
+		Scan(ctx)
+
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("IP filter not found")
 	}
-	return &filter, err
+
+	return filter, err
 }
 
 // ListIPFilters retrieves all IP filters with pagination
 func (r *IPFilterRepository) ListIPFilters(ctx context.Context, page, perPage int, filterType string) ([]models.IPFilterWithCreator, int, error) {
 	offset := (page - 1) * perPage
 
-	// Build query based on filter type
-	var countQuery, selectQuery string
-	var args []interface{}
-
-	if filterType != "" {
-		countQuery = `SELECT COUNT(*) FROM ip_filters WHERE filter_type = $1`
-		selectQuery = `
-			SELECT
-				f.*,
-				u.username as creator_username,
-				u.email as creator_email
-			FROM ip_filters f
-			LEFT JOIN users u ON f.created_by = u.id
-			WHERE f.filter_type = $1
-			ORDER BY f.created_at DESC
-			LIMIT $2 OFFSET $3
-		`
-		args = []interface{}{filterType, perPage, offset}
-	} else {
-		countQuery = `SELECT COUNT(*) FROM ip_filters`
-		selectQuery = `
-			SELECT
-				f.*,
-				u.username as creator_username,
-				u.email as creator_email
-			FROM ip_filters f
-			LEFT JOIN users u ON f.created_by = u.id
-			ORDER BY f.created_at DESC
-			LIMIT $1 OFFSET $2
-		`
-		args = []interface{}{perPage, offset}
-	}
-
 	// Get total count
-	var total int
-	var err error
+	countQuery := r.db.NewSelect().
+		Model((*models.IPFilter)(nil))
+
 	if filterType != "" {
-		err = r.db.GetContext(ctx, &total, countQuery, filterType)
-	} else {
-		err = r.db.GetContext(ctx, &total, countQuery)
+		countQuery = countQuery.Where("filter_type = ?", filterType)
 	}
+
+	total, err := countQuery.Count(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// Get filters
-	var filters []models.IPFilterWithCreator
-	err = r.db.SelectContext(ctx, &filters, selectQuery, args...)
+	// Get filters with creator info
+	filters := make([]models.IPFilterWithCreator, 0)
+
+	query := r.db.NewSelect().
+		Model((*models.IPFilter)(nil)).
+		ColumnExpr("f.*").
+		ColumnExpr("u.username as creator_username").
+		ColumnExpr("u.email as creator_email").
+		TableExpr("ip_filters AS f").
+		Join("LEFT JOIN users AS u ON f.created_by = u.id").
+		Order("f.created_at DESC").
+		Limit(perPage).
+		Offset(offset)
+
+	if filterType != "" {
+		query = query.Where("f.filter_type = ?", filterType)
+	}
+
+	err = query.Scan(ctx, &filters)
+
 	return filters, total, err
 }
 
 // GetActiveIPFilters retrieves all active IP filters
 func (r *IPFilterRepository) GetActiveIPFilters(ctx context.Context) ([]models.IPFilter, error) {
-	var filters []models.IPFilter
-	query := `
-		SELECT * FROM ip_filters
-		WHERE is_active = true
-		  AND (expires_at IS NULL OR expires_at > NOW())
-		ORDER BY filter_type, created_at DESC
-	`
-	err := r.db.SelectContext(ctx, &filters, query)
+	filters := make([]models.IPFilter, 0)
+
+	err := r.db.NewSelect().
+		Model(&filters).
+		Where("is_active = ?", true).
+		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
+			return q.
+				Where("expires_at IS NULL").
+				WhereOr("expires_at > ?", bun.Ident("NOW()"))
+		}).
+		Order("filter_type", "created_at DESC").
+		Scan(ctx)
+
 	return filters, err
 }
 
 // GetActiveFiltersByType retrieves active filters by type
 func (r *IPFilterRepository) GetActiveFiltersByType(ctx context.Context, filterType string) ([]models.IPFilter, error) {
-	var filters []models.IPFilter
-	query := `
-		SELECT * FROM ip_filters
-		WHERE filter_type = $1
-		  AND is_active = true
-		  AND (expires_at IS NULL OR expires_at > NOW())
-		ORDER BY created_at DESC
-	`
-	err := r.db.SelectContext(ctx, &filters, query, filterType)
+	filters := make([]models.IPFilter, 0)
+
+	err := r.db.NewSelect().
+		Model(&filters).
+		Where("filter_type = ?", filterType).
+		Where("is_active = ?", true).
+		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
+			return q.
+				Where("expires_at IS NULL").
+				WhereOr("expires_at > ?", bun.Ident("NOW()"))
+		}).
+		Order("created_at DESC").
+		Scan(ctx)
+
 	return filters, err
 }
 
 // UpdateIPFilter updates an IP filter
 func (r *IPFilterRepository) UpdateIPFilter(ctx context.Context, id uuid.UUID, reason string, isActive bool) error {
-	query := `
-		UPDATE ip_filters
-		SET reason = $1, is_active = $2, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $3
-	`
-	result, err := r.db.ExecContext(ctx, query, reason, isActive, id)
+	result, err := r.db.NewUpdate().
+		Model((*models.IPFilter)(nil)).
+		Set("reason = ?", reason).
+		Set("is_active = ?", isActive).
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("id = ?", id).
+		Exec(ctx)
+
 	if err != nil {
 		return err
 	}
+
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
+
 	if rows == 0 {
 		return fmt.Errorf("IP filter not found")
 	}
+
 	return nil
 }
 
 // DeleteIPFilter deletes an IP filter
 func (r *IPFilterRepository) DeleteIPFilter(ctx context.Context, id uuid.UUID) error {
-	query := `DELETE FROM ip_filters WHERE id = $1`
-	result, err := r.db.ExecContext(ctx, query, id)
+	result, err := r.db.NewDelete().
+		Model((*models.IPFilter)(nil)).
+		Where("id = ?", id).
+		Exec(ctx)
+
 	if err != nil {
 		return err
 	}
+
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
+
 	if rows == 0 {
 		return fmt.Errorf("IP filter not found")
 	}
+
 	return nil
 }
 
 // DeleteExpiredFilters deletes expired IP filters
 func (r *IPFilterRepository) DeleteExpiredFilters(ctx context.Context) error {
-	query := `DELETE FROM ip_filters WHERE expires_at IS NOT NULL AND expires_at < NOW()`
-	_, err := r.db.ExecContext(ctx, query)
+	_, err := r.db.NewDelete().
+		Model((*models.IPFilter)(nil)).
+		Where("expires_at IS NOT NULL").
+		Where("expires_at < ?", bun.Ident("NOW()")).
+		Exec(ctx)
+
 	return err
 }

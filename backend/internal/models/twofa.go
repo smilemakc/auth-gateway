@@ -44,10 +44,10 @@ type TwoFactorLoginRequest struct {
 
 // BackupCode represents a backup code for 2FA
 type BackupCode struct {
-	ID        uuid.UUID  `json:"id" db:"id"`
-	UserID    uuid.UUID  `json:"user_id" db:"user_id"`
-	CodeHash  string     `json:"-" db:"code_hash"` // Never expose the hash
-	Used      bool       `json:"used" db:"used"`
-	UsedAt    *time.Time `json:"used_at,omitempty" db:"used_at"`
-	CreatedAt time.Time  `json:"created_at" db:"created_at"`
+	ID        uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	UserID    uuid.UUID  `json:"user_id" bun:"user_id,type:uuid"`
+	CodeHash  string     `json:"-" bun:"code_hash"` // Never expose the hash
+	Used      bool       `json:"used" bun:"used"`
+	UsedAt    *time.Time `json:"used_at,omitempty" bun:"used_at"`
+	CreatedAt time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
 }

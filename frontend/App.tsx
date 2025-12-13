@@ -1,6 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { queryClient } from './services/queryClient';
+import { AuthProvider, useAuth } from './services/authContext';
 import { LanguageProvider } from './services/i18n';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
@@ -28,67 +32,67 @@ import SmsSettings from './components/SmsSettings';
 import TokenInspector from './components/TokenInspector';
 import Login from './components/Login';
 
-const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+const AppRoutes: React.FC = () => {
+  const { isAuthenticated, isLoading, logout } = useAuth();
 
-  // Check for existing session (mock)
-  useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      setIsAuthenticated(true);
-    }
-  }, []);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
-  const handleLogin = () => {
-    localStorage.setItem('auth_token', 'mock_jwt_token');
-    setIsAuthenticated(true);
-  };
+  if (!isAuthenticated) {
+    return <Login />;
+  }
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    setIsAuthenticated(false);
-  };
-
-  // We wrap Login inside LanguageProvider as well to translate the login screen
   return (
-    <LanguageProvider>
-      {!isAuthenticated ? (
-         <Login onLogin={handleLogin} />
-      ) : (
-        <Router>
-          <Layout onLogout={handleLogout}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/users" element={<Users />} />
-              <Route path="/users/new" element={<UserEdit />} />
-              <Route path="/users/:id" element={<UserDetails />} />
-              <Route path="/users/:id/edit" element={<UserEdit />} />
-              <Route path="/api-keys" element={<ApiKeys />} />
-              <Route path="/oauth" element={<OAuthProviders />} />
-              <Route path="/oauth/new" element={<OAuthProviderEdit />} />
-              <Route path="/oauth/:id" element={<OAuthProviderEdit />} />
-              <Route path="/audit-logs" element={<AuditLogs />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/settings/branding" element={<Branding />} />
-              <Route path="/settings/email-templates" element={<EmailTemplates />} />
-              <Route path="/settings/email-templates/:id" element={<EmailTemplateEditor />} />
-              <Route path="/settings/roles" element={<Roles />} />
-              <Route path="/settings/roles/:id" element={<RoleEditor />} />
-              <Route path="/settings/permissions" element={<Permissions />} />
-              <Route path="/settings/permissions/:id" element={<PermissionEdit />} />
-              <Route path="/settings/security/ip-rules" element={<IpSecurity />} />
-              <Route path="/settings/sms" element={<SmsSettings />} />
-              <Route path="/developers/webhooks" element={<Webhooks />} />
-              <Route path="/developers/webhooks/:id" element={<WebhookEdit />} />
-              <Route path="/developers/service-accounts" element={<ServiceAccounts />} />
-              <Route path="/developers/service-accounts/:id" element={<ServiceAccountEdit />} />
-              <Route path="/developers/token-inspector" element={<TokenInspector />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Layout>
-        </Router>
-      )}
-    </LanguageProvider>
+    <Router>
+      <Layout onLogout={logout}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/users/new" element={<UserEdit />} />
+          <Route path="/users/:id" element={<UserDetails />} />
+          <Route path="/users/:id/edit" element={<UserEdit />} />
+          <Route path="/api-keys" element={<ApiKeys />} />
+          <Route path="/oauth" element={<OAuthProviders />} />
+          <Route path="/oauth/new" element={<OAuthProviderEdit />} />
+          <Route path="/oauth/:id" element={<OAuthProviderEdit />} />
+          <Route path="/audit-logs" element={<AuditLogs />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/branding" element={<Branding />} />
+          <Route path="/settings/email-templates" element={<EmailTemplates />} />
+          <Route path="/settings/email-templates/:id" element={<EmailTemplateEditor />} />
+          <Route path="/settings/roles" element={<Roles />} />
+          <Route path="/settings/roles/:id" element={<RoleEditor />} />
+          <Route path="/settings/permissions" element={<Permissions />} />
+          <Route path="/settings/permissions/:id" element={<PermissionEdit />} />
+          <Route path="/settings/security/ip-rules" element={<IpSecurity />} />
+          <Route path="/settings/sms" element={<SmsSettings />} />
+          <Route path="/developers/webhooks" element={<Webhooks />} />
+          <Route path="/developers/webhooks/:id" element={<WebhookEdit />} />
+          <Route path="/developers/service-accounts" element={<ServiceAccounts />} />
+          <Route path="/developers/service-accounts/:id" element={<ServiceAccountEdit />} />
+          <Route path="/developers/token-inspector" element={<TokenInspector />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
+    </Router>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </LanguageProvider>
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+    </QueryClientProvider>
   );
 };
 

@@ -61,7 +61,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 			return nil, models.NewAppError(400, "Invalid email format")
 		}
 		// Check if email exists
-		if exists, err := s.userRepo.EmailExists(email); err != nil {
+		if exists, err := s.userRepo.EmailExists(ctx, email); err != nil {
 			return nil, err
 		} else if exists {
 			s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
@@ -80,7 +80,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 			return nil, models.NewAppError(400, "Invalid phone format")
 		}
 		// Check if phone exists
-		if exists, err := s.userRepo.PhoneExists(phone); err != nil {
+		if exists, err := s.userRepo.PhoneExists(ctx, phone); err != nil {
 			return nil, err
 		} else if exists {
 			s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
@@ -102,7 +102,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 	}
 
 	// Check if username already exists
-	if exists, err := s.userRepo.UsernameExists(username); err != nil {
+	if exists, err := s.userRepo.UsernameExists(ctx, username); err != nil {
 		return nil, err
 	} else if exists {
 		s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
@@ -130,7 +130,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		IsActive:     true,
 	}
 
-	if err := s.userRepo.Create(user); err != nil {
+	if err := s.userRepo.Create(ctx, user); err != nil {
 		s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "create_failed",
 			"error":  err.Error(),
@@ -163,20 +163,20 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	// Get user by email or phone
 	if req.Email != "" {
 		email := utils.NormalizeEmail(req.Email)
-		user, err = s.userRepo.GetByEmail(email)
+		user, err = s.userRepo.GetByEmail(ctx, email)
 		if err != nil {
 			s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
-				"reason": "user_not_found",
+				"reason": err,
 				"email":  email,
 			})
 			return nil, models.ErrInvalidCredentials
 		}
 	} else if req.Phone != nil && *req.Phone != "" {
 		phone := utils.NormalizePhone(*req.Phone)
-		user, err = s.userRepo.GetByPhone(phone)
+		user, err = s.userRepo.GetByPhone(ctx, phone)
 		if err != nil {
 			s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
-				"reason": "user_not_found",
+				"reason": err,
 				"phone":  phone,
 			})
 			return nil, models.ErrInvalidCredentials
@@ -186,7 +186,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	// Check password
 	if err := utils.CheckPassword(user.PasswordHash, req.Password); err != nil {
 		s.logAudit(&user.ID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
-			"reason": "invalid_password",
+			"reason": err.Error(),
 		})
 		return nil, models.ErrInvalidCredentials
 	}
@@ -227,7 +227,7 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 	}
 
 	// Get user
-	user, err := s.userRepo.GetByID(claims.UserID)
+	user, err := s.userRepo.GetByID(ctx, claims.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +291,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	}
 
 	// Check if token exists and is not revoked in database
-	dbToken, err := s.tokenRepo.GetRefreshToken(tokenHash)
+	dbToken, err := s.tokenRepo.GetRefreshToken(ctx, tokenHash)
 	if err != nil {
 		s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "token_not_found",
@@ -314,13 +314,13 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	}
 
 	// Get user
-	user, err := s.userRepo.GetByID(claims.UserID)
+	user, err := s.userRepo.GetByID(ctx, claims.UserID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Revoke old refresh token
-	if err := s.tokenRepo.RevokeRefreshToken(tokenHash); err != nil {
+	if err := s.tokenRepo.RevokeRefreshToken(ctx, tokenHash); err != nil {
 		return nil, err
 	}
 
@@ -359,13 +359,13 @@ func (s *AuthService) Logout(ctx context.Context, accessToken, ip, userAgent str
 		ExpiresAt: time.Now().Add(expiration),
 	}
 
-	if err := s.tokenRepo.AddToBlacklist(blacklistEntry); err != nil {
+	if err := s.tokenRepo.AddToBlacklist(ctx, blacklistEntry); err != nil {
 		// Log but don't fail - Redis blacklist is primary
 		fmt.Printf("Failed to add token to DB blacklist: %v\n", err)
 	}
 
 	// Revoke all refresh tokens for this user
-	if err := s.tokenRepo.RevokeAllUserTokens(claims.UserID); err != nil {
+	if err := s.tokenRepo.RevokeAllUserTokens(ctx, claims.UserID); err != nil {
 		return fmt.Errorf("failed to revoke refresh tokens: %w", err)
 	}
 
@@ -378,7 +378,7 @@ func (s *AuthService) Logout(ctx context.Context, accessToken, ip, userAgent str
 // ChangePassword changes a user's password
 func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword, ip, userAgent string) error {
 	// Get user
-	user, err := s.userRepo.GetByID(userID)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -403,12 +403,12 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 	}
 
 	// Update password
-	if err := s.userRepo.UpdatePassword(userID, newPasswordHash); err != nil {
+	if err := s.userRepo.UpdatePassword(ctx, userID, newPasswordHash); err != nil {
 		return err
 	}
 
 	// Revoke all refresh tokens (force re-login)
-	if err := s.tokenRepo.RevokeAllUserTokens(userID); err != nil {
+	if err := s.tokenRepo.RevokeAllUserTokens(ctx, userID); err != nil {
 		return fmt.Errorf("failed to revoke refresh tokens: %w", err)
 	}
 
@@ -432,12 +432,12 @@ func (s *AuthService) ResetPassword(ctx context.Context, userID uuid.UUID, newPa
 	}
 
 	// Update password
-	if err := s.userRepo.UpdatePassword(userID, newPasswordHash); err != nil {
+	if err := s.userRepo.UpdatePassword(ctx, userID, newPasswordHash); err != nil {
 		return err
 	}
 
 	// Revoke all refresh tokens (force re-login)
-	if err := s.tokenRepo.RevokeAllUserTokens(userID); err != nil {
+	if err := s.tokenRepo.RevokeAllUserTokens(ctx, userID); err != nil {
 		return fmt.Errorf("failed to revoke refresh tokens: %w", err)
 	}
 
@@ -472,7 +472,7 @@ func (s *AuthService) generateAuthResponse(ctx context.Context, user *models.Use
 		ExpiresAt: time.Now().Add(s.jwtService.GetRefreshTokenExpiration()),
 	}
 
-	if err := s.tokenRepo.CreateRefreshToken(dbToken); err != nil {
+	if err := s.tokenRepo.CreateRefreshToken(ctx, dbToken); err != nil {
 		return nil, fmt.Errorf("failed to save refresh token: %w", err)
 	}
 
@@ -495,7 +495,7 @@ func (s *AuthService) logAudit(userID *uuid.UUID, action models.AuditAction, sta
 
 	// Log asynchronously to avoid blocking
 	go func() {
-		if err := s.auditRepo.Create(auditLog); err != nil {
+		if err := s.auditRepo.Create(context.Background(), auditLog); err != nil {
 			fmt.Printf("Failed to create audit log: %v\n", err)
 		}
 	}()

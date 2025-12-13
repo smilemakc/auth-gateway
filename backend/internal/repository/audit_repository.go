@@ -1,11 +1,13 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/uptrace/bun"
 )
 
 // AuditRepository handles audit log database operations
@@ -19,25 +21,11 @@ func NewAuditRepository(db *Database) *AuditRepository {
 }
 
 // Create creates a new audit log entry
-func (r *AuditRepository) Create(log *models.AuditLog) error {
-	query := `
-		INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, ip_address, user_agent, status, details)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING created_at
-	`
-
-	err := r.db.QueryRow(
-		query,
-		log.ID,
-		log.UserID,
-		log.Action,
-		log.ResourceType,
-		log.ResourceID,
-		log.IPAddress,
-		log.UserAgent,
-		log.Status,
-		log.Details,
-	).Scan(&log.CreatedAt)
+func (r *AuditRepository) Create(ctx context.Context, log *models.AuditLog) error {
+	_, err := r.db.NewInsert().
+		Model(log).
+		Returning("*").
+		Exec(ctx)
 
 	if err != nil {
 		return fmt.Errorf("failed to create audit log: %w", err)
@@ -47,16 +35,17 @@ func (r *AuditRepository) Create(log *models.AuditLog) error {
 }
 
 // GetByUserID retrieves audit logs for a specific user
-func (r *AuditRepository) GetByUserID(userID uuid.UUID, limit, offset int) ([]*models.AuditLog, error) {
-	var logs []*models.AuditLog
-	query := `
-		SELECT * FROM audit_logs
-		WHERE user_id = $1
-		ORDER BY created_at DESC
-		LIMIT $2 OFFSET $3
-	`
+func (r *AuditRepository) GetByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*models.AuditLog, error) {
+	logs := make([]*models.AuditLog, 0)
 
-	err := r.db.Select(&logs, query, userID, limit, offset)
+	err := r.db.NewSelect().
+		Model(&logs).
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get audit logs by user id: %w", err)
 	}
@@ -65,16 +54,17 @@ func (r *AuditRepository) GetByUserID(userID uuid.UUID, limit, offset int) ([]*m
 }
 
 // GetByAction retrieves audit logs for a specific action
-func (r *AuditRepository) GetByAction(action string, limit, offset int) ([]*models.AuditLog, error) {
-	var logs []*models.AuditLog
-	query := `
-		SELECT * FROM audit_logs
-		WHERE action = $1
-		ORDER BY created_at DESC
-		LIMIT $2 OFFSET $3
-	`
+func (r *AuditRepository) GetByAction(ctx context.Context, action string, limit, offset int) ([]*models.AuditLog, error) {
+	logs := make([]*models.AuditLog, 0)
 
-	err := r.db.Select(&logs, query, action, limit, offset)
+	err := r.db.NewSelect().
+		Model(&logs).
+		Where("action = ?", action).
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get audit logs by action: %w", err)
 	}
@@ -83,18 +73,18 @@ func (r *AuditRepository) GetByAction(action string, limit, offset int) ([]*mode
 }
 
 // GetFailedLoginAttempts retrieves failed login attempts for an IP or user
-func (r *AuditRepository) GetFailedLoginAttempts(ipAddress string, limit int) ([]*models.AuditLog, error) {
-	var logs []*models.AuditLog
-	query := `
-		SELECT * FROM audit_logs
-		WHERE action = 'signin_failed'
-		AND ip_address = $1
-		AND created_at > NOW() - INTERVAL '15 minutes'
-		ORDER BY created_at DESC
-		LIMIT $2
-	`
+func (r *AuditRepository) GetFailedLoginAttempts(ctx context.Context, ipAddress string, limit int) ([]*models.AuditLog, error) {
+	logs := make([]*models.AuditLog, 0)
 
-	err := r.db.Select(&logs, query, ipAddress, limit)
+	err := r.db.NewSelect().
+		Model(&logs).
+		Where("action = ?", "signin_failed").
+		Where("ip_address = ?", ipAddress).
+		Where("created_at > ?", bun.Safe("NOW() - INTERVAL '15 minutes'")).
+		Order("created_at DESC").
+		Limit(limit).
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get failed login attempts: %w", err)
 	}
@@ -103,15 +93,16 @@ func (r *AuditRepository) GetFailedLoginAttempts(ipAddress string, limit int) ([
 }
 
 // List retrieves all audit logs with pagination
-func (r *AuditRepository) List(limit, offset int) ([]*models.AuditLog, error) {
-	var logs []*models.AuditLog
-	query := `
-		SELECT * FROM audit_logs
-		ORDER BY created_at DESC
-		LIMIT $1 OFFSET $2
-	`
+func (r *AuditRepository) List(ctx context.Context, limit, offset int) ([]*models.AuditLog, error) {
+	logs := make([]*models.AuditLog, 0)
 
-	err := r.db.Select(&logs, query, limit, offset)
+	err := r.db.NewSelect().
+		Model(&logs).
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to list audit logs: %w", err)
 	}
@@ -120,11 +111,11 @@ func (r *AuditRepository) List(limit, offset int) ([]*models.AuditLog, error) {
 }
 
 // Count returns the total number of audit logs
-func (r *AuditRepository) Count() (int, error) {
-	var count int
-	query := `SELECT COUNT(*) FROM audit_logs`
+func (r *AuditRepository) Count(ctx context.Context) (int, error) {
+	count, err := r.db.NewSelect().
+		Model((*models.AuditLog)(nil)).
+		Count(ctx)
 
-	err := r.db.QueryRow(query).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count audit logs: %w", err)
 	}
@@ -133,10 +124,12 @@ func (r *AuditRepository) Count() (int, error) {
 }
 
 // DeleteOlderThan deletes audit logs older than a specified duration (for cleanup)
-func (r *AuditRepository) DeleteOlderThan(days int) error {
-	query := `DELETE FROM audit_logs WHERE created_at < NOW() - INTERVAL '$1 days'`
+func (r *AuditRepository) DeleteOlderThan(ctx context.Context, days int) error {
+	_, err := r.db.NewDelete().
+		Model((*models.AuditLog)(nil)).
+		Where("created_at < ?", bun.Safe(fmt.Sprintf("NOW() - INTERVAL '%d days'", days))).
+		Exec(ctx)
 
-	_, err := r.db.Exec(query, days)
 	if err != nil {
 		return fmt.Errorf("failed to delete old audit logs: %w", err)
 	}
@@ -145,11 +138,13 @@ func (r *AuditRepository) DeleteOlderThan(days int) error {
 }
 
 // CountByActionSince counts audit log entries for a specific action since a time
-func (r *AuditRepository) CountByActionSince(action models.AuditAction, since time.Time) (int, error) {
-	var count int
-	query := `SELECT COUNT(*) FROM audit_logs WHERE action = $1 AND created_at >= $2`
+func (r *AuditRepository) CountByActionSince(ctx context.Context, action models.AuditAction, since time.Time) (int, error) {
+	count, err := r.db.NewSelect().
+		Model((*models.AuditLog)(nil)).
+		Where("action = ?", action).
+		Where("created_at >= ?", since).
+		Count(ctx)
 
-	err := r.db.QueryRow(query, action, since).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count audit logs by action: %w", err)
 	}

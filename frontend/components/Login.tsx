@@ -2,25 +2,31 @@
 import React, { useState } from 'react';
 import { Lock } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useAuth } from '../services/authContext';
+import { getUserFriendlyError } from '../services/errorHandler';
 
-interface LoginProps {
-  onLogin: () => void;
-}
-
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
+  const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API delay
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      await login(email, password);
+      // Auth context will handle navigation
+    } catch (err) {
+      const friendlyError = getUserFriendlyError(err);
+      setError(friendlyError.message);
+    } finally {
       setLoading(false);
-      onLogin();
-    }, 1000);
+    }
   };
 
   return (
@@ -35,6 +41,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
         
         <div className="p-8">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.email')}</label>

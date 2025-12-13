@@ -5,7 +5,7 @@ ALTER TABLE otps ADD COLUMN IF NOT EXISTS phone VARCHAR(20);
 CREATE INDEX IF NOT EXISTS idx_otps_phone ON otps(phone);
 
 -- Create composite index for phone + type queries
-CREATE INDEX IF NOT EXISTS idx_otps_phone_type ON otps(phone, type) WHERE used = FALSE AND expires_at > CURRENT_TIMESTAMP;
+CREATE INDEX IF NOT EXISTS idx_otps_phone_type ON otps(phone, type) WHERE used = FALSE;
 
 -- Modify the existing unique constraint to handle both email and phone
 -- Drop the old constraint if it exists

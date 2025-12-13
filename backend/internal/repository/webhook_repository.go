@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/uptrace/bun"
 
 	"github.com/google/uuid"
 )
@@ -23,27 +24,28 @@ func NewWebhookRepository(db *Database) *WebhookRepository {
 
 // CreateWebhook creates a new webhook
 func (r *WebhookRepository) CreateWebhook(ctx context.Context, webhook *models.Webhook) error {
-	query := `
-		INSERT INTO webhooks (name, url, secret_key, events, headers, is_active, retry_config, created_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id, created_at, updated_at
-	`
-	return r.db.QueryRowContext(
-		ctx, query,
-		webhook.Name, webhook.URL, webhook.SecretKey, webhook.Events,
-		webhook.Headers, webhook.IsActive, webhook.RetryConfig, webhook.CreatedBy,
-	).Scan(&webhook.ID, &webhook.CreatedAt, &webhook.UpdatedAt)
+	_, err := r.db.NewInsert().
+		Model(webhook).
+		Returning("*").
+		Exec(ctx)
+
+	return err
 }
 
 // GetWebhookByID retrieves a webhook by ID
 func (r *WebhookRepository) GetWebhookByID(ctx context.Context, id uuid.UUID) (*models.Webhook, error) {
-	var webhook models.Webhook
-	query := `SELECT * FROM webhooks WHERE id = $1`
-	err := r.db.GetContext(ctx, &webhook, query, id)
+	webhook := new(models.Webhook)
+
+	err := r.db.NewSelect().
+		Model(webhook).
+		Where("id = ?", id).
+		Scan(ctx)
+
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("webhook not found")
 	}
-	return &webhook, err
+
+	return webhook, err
 }
 
 // ListWebhooks retrieves all webhooks with pagination
@@ -51,85 +53,107 @@ func (r *WebhookRepository) ListWebhooks(ctx context.Context, page, perPage int)
 	offset := (page - 1) * perPage
 
 	// Get total count
-	var total int
-	countQuery := `SELECT COUNT(*) FROM webhooks`
-	err := r.db.GetContext(ctx, &total, countQuery)
+	total, err := r.db.NewSelect().
+		Model((*models.Webhook)(nil)).
+		Count(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// Get webhooks
-	var webhooks []models.WebhookWithCreator
-	query := `
-		SELECT
-			w.*,
-			u.username as creator_username,
-			u.email as creator_email
-		FROM webhooks w
-		LEFT JOIN users u ON w.created_by = u.id
-		ORDER BY w.created_at DESC
-		LIMIT $1 OFFSET $2
-	`
-	err = r.db.SelectContext(ctx, &webhooks, query, perPage, offset)
+	// Get webhooks with creator info
+	webhooks := make([]models.WebhookWithCreator, 0)
+
+	err = r.db.NewSelect().
+		Model((*models.Webhook)(nil)).
+		ColumnExpr("w.*").
+		ColumnExpr("u.username as creator_username").
+		ColumnExpr("u.email as creator_email").
+		TableExpr("webhooks AS w").
+		Join("LEFT JOIN users AS u ON w.created_by = u.id").
+		Order("w.created_at DESC").
+		Limit(perPage).
+		Offset(offset).
+		Scan(ctx, &webhooks)
+
 	return webhooks, total, err
 }
 
 // GetActiveWebhooksByEvent retrieves active webhooks subscribed to an event
 func (r *WebhookRepository) GetActiveWebhooksByEvent(ctx context.Context, eventType string) ([]models.Webhook, error) {
-	var webhooks []models.Webhook
-	query := `
-		SELECT * FROM webhooks
-		WHERE is_active = true
-		  AND events @> $1::jsonb
-		ORDER BY created_at
-	`
+	webhooks := make([]models.Webhook, 0)
+
 	eventJSON, _ := json.Marshal([]string{eventType})
-	err := r.db.SelectContext(ctx, &webhooks, query, eventJSON)
+
+	err := r.db.NewSelect().
+		Model(&webhooks).
+		Where("is_active = ?", true).
+		Where("events @> ?::jsonb", eventJSON).
+		Order("created_at").
+		Scan(ctx)
+
 	return webhooks, err
 }
 
 // UpdateWebhook updates a webhook
 func (r *WebhookRepository) UpdateWebhook(ctx context.Context, id uuid.UUID, name, url string, events, headers json.RawMessage, isActive bool) error {
-	query := `
-		UPDATE webhooks
-		SET name = $1, url = $2, events = $3, headers = $4, is_active = $5, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $6
-	`
-	result, err := r.db.ExecContext(ctx, query, name, url, events, headers, isActive, id)
+	result, err := r.db.NewUpdate().
+		Model((*models.Webhook)(nil)).
+		Set("name = ?", name).
+		Set("url = ?", url).
+		Set("events = ?", events).
+		Set("headers = ?", headers).
+		Set("is_active = ?", isActive).
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("id = ?", id).
+		Exec(ctx)
+
 	if err != nil {
 		return err
 	}
+
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
+
 	if rows == 0 {
 		return fmt.Errorf("webhook not found")
 	}
+
 	return nil
 }
 
 // UpdateWebhookLastTriggered updates the last triggered timestamp
 func (r *WebhookRepository) UpdateWebhookLastTriggered(ctx context.Context, id uuid.UUID) error {
-	query := `UPDATE webhooks SET last_triggered_at = NOW() WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, id)
+	_, err := r.db.NewUpdate().
+		Model((*models.Webhook)(nil)).
+		Set("last_triggered_at = ?", bun.Ident("NOW()")).
+		Where("id = ?", id).
+		Exec(ctx)
+
 	return err
 }
 
 // DeleteWebhook deletes a webhook
 func (r *WebhookRepository) DeleteWebhook(ctx context.Context, id uuid.UUID) error {
-	query := `DELETE FROM webhooks WHERE id = $1`
-	result, err := r.db.ExecContext(ctx, query, id)
+	result, err := r.db.NewDelete().
+		Model((*models.Webhook)(nil)).
+		Where("id = ?", id).
+		Exec(ctx)
+
 	if err != nil {
 		return err
 	}
+
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
+
 	if rows == 0 {
 		return fmt.Errorf("webhook not found")
 	}
+
 	return nil
 }
 
@@ -139,27 +163,28 @@ func (r *WebhookRepository) DeleteWebhook(ctx context.Context, id uuid.UUID) err
 
 // CreateWebhookDelivery creates a new webhook delivery record
 func (r *WebhookRepository) CreateWebhookDelivery(ctx context.Context, delivery *models.WebhookDelivery) error {
-	query := `
-		INSERT INTO webhook_deliveries (webhook_id, event_type, payload, status, attempts, next_retry_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, created_at
-	`
-	return r.db.QueryRowContext(
-		ctx, query,
-		delivery.WebhookID, delivery.EventType, delivery.Payload,
-		delivery.Status, delivery.Attempts, delivery.NextRetryAt,
-	).Scan(&delivery.ID, &delivery.CreatedAt)
+	_, err := r.db.NewInsert().
+		Model(delivery).
+		Returning("*").
+		Exec(ctx)
+
+	return err
 }
 
 // GetWebhookDeliveryByID retrieves a delivery by ID
 func (r *WebhookRepository) GetWebhookDeliveryByID(ctx context.Context, id uuid.UUID) (*models.WebhookDelivery, error) {
-	var delivery models.WebhookDelivery
-	query := `SELECT * FROM webhook_deliveries WHERE id = $1`
-	err := r.db.GetContext(ctx, &delivery, query, id)
+	delivery := new(models.WebhookDelivery)
+
+	err := r.db.NewSelect().
+		Model(delivery).
+		Where("id = ?", id).
+		Scan(ctx)
+
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("webhook delivery not found")
 	}
-	return &delivery, err
+
+	return delivery, err
 }
 
 // ListWebhookDeliveries retrieves deliveries for a webhook with pagination
@@ -167,73 +192,74 @@ func (r *WebhookRepository) ListWebhookDeliveries(ctx context.Context, webhookID
 	offset := (page - 1) * perPage
 
 	// Get total count
-	var total int
-	countQuery := `SELECT COUNT(*) FROM webhook_deliveries WHERE webhook_id = $1`
-	err := r.db.GetContext(ctx, &total, countQuery, webhookID)
+	total, err := r.db.NewSelect().
+		Model((*models.WebhookDelivery)(nil)).
+		Where("webhook_id = ?", webhookID).
+		Count(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Get deliveries
-	var deliveries []models.WebhookDelivery
-	query := `
-		SELECT * FROM webhook_deliveries
-		WHERE webhook_id = $1
-		ORDER BY created_at DESC
-		LIMIT $2 OFFSET $3
-	`
-	err = r.db.SelectContext(ctx, &deliveries, query, webhookID, perPage, offset)
+	deliveries := make([]models.WebhookDelivery, 0)
+
+	err = r.db.NewSelect().
+		Model(&deliveries).
+		Where("webhook_id = ?", webhookID).
+		Order("created_at DESC").
+		Limit(perPage).
+		Offset(offset).
+		Scan(ctx)
+
 	return deliveries, total, err
 }
 
 // GetPendingDeliveries retrieves pending/failed deliveries ready for retry
 func (r *WebhookRepository) GetPendingDeliveries(ctx context.Context, limit int) ([]models.WebhookDelivery, error) {
-	var deliveries []models.WebhookDelivery
-	query := `
-		SELECT * FROM webhook_deliveries
-		WHERE status IN ('pending', 'failed')
-		  AND (next_retry_at IS NULL OR next_retry_at <= NOW())
-		ORDER BY created_at
-		LIMIT $1
-	`
-	err := r.db.SelectContext(ctx, &deliveries, query, limit)
+	deliveries := make([]models.WebhookDelivery, 0)
+
+	err := r.db.NewSelect().
+		Model(&deliveries).
+		Where("status IN (?)", bun.In([]string{"pending", "failed"})).
+		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
+			return q.
+				Where("next_retry_at IS NULL").
+				WhereOr("next_retry_at <= ?", bun.Ident("NOW()"))
+		}).
+		Order("created_at").
+		Limit(limit).
+		Scan(ctx)
+
 	return deliveries, err
 }
 
 // UpdateDeliveryStatus updates a delivery's status
 func (r *WebhookRepository) UpdateDeliveryStatus(ctx context.Context, id uuid.UUID, status string, httpStatus *int, responseBody string, nextRetry *interface{}) error {
-	var query string
-	var args []interface{}
+	query := r.db.NewUpdate().
+		Model((*models.WebhookDelivery)(nil)).
+		Set("status = ?", status).
+		Set("http_status_code = ?", httpStatus).
+		Set("response_body = ?", responseBody).
+		SetColumn("attempts", "attempts + 1").
+		Where("id = ?", id)
 
 	if nextRetry != nil {
-		query = `
-			UPDATE webhook_deliveries
-			SET status = $1, http_status_code = $2, response_body = $3,
-			    attempts = attempts + 1, next_retry_at = $4
-			WHERE id = $5
-		`
-		args = []interface{}{status, httpStatus, responseBody, nextRetry, id}
+		query = query.Set("next_retry_at = ?", nextRetry)
 	} else {
-		query = `
-			UPDATE webhook_deliveries
-			SET status = $1, http_status_code = $2, response_body = $3,
-			    attempts = attempts + 1, completed_at = NOW()
-			WHERE id = $4
-		`
-		args = []interface{}{status, httpStatus, responseBody, id}
+		query = query.Set("completed_at = ?", bun.Ident("NOW()"))
 	}
 
-	_, err := r.db.ExecContext(ctx, query, args...)
+	_, err := query.Exec(ctx)
 	return err
 }
 
 // DeleteOldDeliveries deletes old completed deliveries
 func (r *WebhookRepository) DeleteOldDeliveries(ctx context.Context, olderThanDays int) error {
-	query := `
-		DELETE FROM webhook_deliveries
-		WHERE completed_at IS NOT NULL
-		  AND completed_at < NOW() - INTERVAL '1 day' * $1
-	`
-	_, err := r.db.ExecContext(ctx, query, olderThanDays)
+	_, err := r.db.NewDelete().
+		Model((*models.WebhookDelivery)(nil)).
+		Where("completed_at IS NOT NULL").
+		Where("completed_at < ?", bun.Safe("NOW() - INTERVAL '1 day' * ?"), olderThanDays).
+		Exec(ctx)
+
 	return err
 }

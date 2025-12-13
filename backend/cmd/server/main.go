@@ -388,7 +388,7 @@ func startTokenCleanup(tokenRepo *repository.TokenRepository, interval time.Dura
 		for range ticker.C {
 			log.Debug("Running token cleanup")
 
-			if err := tokenRepo.CleanupExpiredTokens(); err != nil {
+			if err := tokenRepo.CleanupExpiredTokens(context.Background()); err != nil {
 				log.Error("Token cleanup failed", map[string]interface{}{
 					"error": err.Error(),
 				})

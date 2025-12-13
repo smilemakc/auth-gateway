@@ -1,13 +1,13 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/uptrace/bun"
 )
 
 // OAuthRepository handles OAuth-related database operations
@@ -21,42 +21,19 @@ func NewOAuthRepository(db *Database) *OAuthRepository {
 }
 
 // CreateOAuthAccount creates a new OAuth account
-func (r *OAuthRepository) CreateOAuthAccount(account *models.OAuthAccount) error {
-	query := `
-		INSERT INTO oauth_accounts (id, user_id, provider, provider_user_id, access_token, refresh_token, token_expires_at, profile_data)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		ON CONFLICT (provider, provider_user_id)
-		DO UPDATE SET
-			access_token = EXCLUDED.access_token,
-			refresh_token = EXCLUDED.refresh_token,
-			token_expires_at = EXCLUDED.token_expires_at,
-			profile_data = EXCLUDED.profile_data,
-			updated_at = CURRENT_TIMESTAMP
-		RETURNING created_at, updated_at
-	`
-
-	err := r.db.QueryRow(
-		query,
-		account.ID,
-		account.UserID,
-		account.Provider,
-		account.ProviderUserID,
-		account.AccessToken,
-		account.RefreshToken,
-		account.TokenExpiresAt,
-		account.ProfileData,
-	).Scan(&account.CreatedAt, &account.UpdatedAt)
+func (r *OAuthRepository) CreateOAuthAccount(ctx context.Context, account *models.OAuthAccount) error {
+	_, err := r.db.NewInsert().
+		Model(account).
+		On("CONFLICT (provider, provider_user_id) DO UPDATE").
+		Set("access_token = EXCLUDED.access_token").
+		Set("refresh_token = EXCLUDED.refresh_token").
+		Set("token_expires_at = EXCLUDED.token_expires_at").
+		Set("profile_data = EXCLUDED.profile_data").
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Returning("*").
+		Exec(ctx)
 
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Code == "23505" {
-				// Unique violation - account already exists and was updated
-				// Query again to get the timestamps
-				return r.db.Get(account,
-					`SELECT * FROM oauth_accounts WHERE provider = $1 AND provider_user_id = $2`,
-					account.Provider, account.ProviderUserID)
-			}
-		}
 		return fmt.Errorf("failed to create oauth account: %w", err)
 	}
 
@@ -64,27 +41,35 @@ func (r *OAuthRepository) CreateOAuthAccount(account *models.OAuthAccount) error
 }
 
 // GetOAuthAccount retrieves an OAuth account by provider and provider user ID
-func (r *OAuthRepository) GetOAuthAccount(provider, providerUserID string) (*models.OAuthAccount, error) {
-	var account models.OAuthAccount
-	query := `SELECT * FROM oauth_accounts WHERE provider = $1 AND provider_user_id = $2`
+func (r *OAuthRepository) GetOAuthAccount(ctx context.Context, provider, providerUserID string) (*models.OAuthAccount, error) {
+	account := new(models.OAuthAccount)
 
-	err := r.db.Get(&account, query, provider, providerUserID)
+	err := r.db.NewSelect().
+		Model(account).
+		Where("provider = ?", provider).
+		Where("provider_user_id = ?", providerUserID).
+		Scan(ctx)
+
+	if err == sql.ErrNoRows {
+		return nil, nil // Not found, but not an error
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil // Not found, but not an error
-		}
 		return nil, fmt.Errorf("failed to get oauth account: %w", err)
 	}
 
-	return &account, nil
+	return account, nil
 }
 
 // GetOAuthAccountsByUserID retrieves all OAuth accounts for a user
-func (r *OAuthRepository) GetOAuthAccountsByUserID(userID uuid.UUID) ([]*models.OAuthAccount, error) {
-	var accounts []*models.OAuthAccount
-	query := `SELECT * FROM oauth_accounts WHERE user_id = $1 ORDER BY created_at DESC`
+func (r *OAuthRepository) GetOAuthAccountsByUserID(ctx context.Context, userID uuid.UUID) ([]*models.OAuthAccount, error) {
+	accounts := make([]*models.OAuthAccount, 0)
 
-	err := r.db.Select(&accounts, query, userID)
+	err := r.db.NewSelect().
+		Model(&accounts).
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get oauth accounts by user id: %w", err)
 	}
@@ -93,38 +78,41 @@ func (r *OAuthRepository) GetOAuthAccountsByUserID(userID uuid.UUID) ([]*models.
 }
 
 // UpdateOAuthAccount updates an OAuth account
-func (r *OAuthRepository) UpdateOAuthAccount(account *models.OAuthAccount) error {
-	query := `
-		UPDATE oauth_accounts
-		SET access_token = $1, refresh_token = $2, token_expires_at = $3, profile_data = $4, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $5
-		RETURNING updated_at
-	`
+func (r *OAuthRepository) UpdateOAuthAccount(ctx context.Context, account *models.OAuthAccount) error {
+	result, err := r.db.NewUpdate().
+		Model(account).
+		Column("access_token", "refresh_token", "token_expires_at", "profile_data").
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		WherePK().
+		Returning("updated_at").
+		Exec(ctx)
 
-	err := r.db.QueryRow(
-		query,
-		account.AccessToken,
-		account.RefreshToken,
-		account.TokenExpiresAt,
-		account.ProfileData,
-		account.ID,
-	).Scan(&account.UpdatedAt)
-
+	if err == sql.ErrNoRows {
+		return fmt.Errorf("oauth account not found")
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("oauth account not found")
-		}
 		return fmt.Errorf("failed to update oauth account: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("oauth account not found")
 	}
 
 	return nil
 }
 
 // DeleteOAuthAccount deletes an OAuth account
-func (r *OAuthRepository) DeleteOAuthAccount(id uuid.UUID) error {
-	query := `DELETE FROM oauth_accounts WHERE id = $1`
+func (r *OAuthRepository) DeleteOAuthAccount(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.NewDelete().
+		Model((*models.OAuthAccount)(nil)).
+		Where("id = ?", id).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete oauth account: %w", err)
 	}
@@ -142,10 +130,13 @@ func (r *OAuthRepository) DeleteOAuthAccount(id uuid.UUID) error {
 }
 
 // DeleteOAuthAccountsByProvider deletes all OAuth accounts for a user by provider
-func (r *OAuthRepository) DeleteOAuthAccountsByProvider(userID uuid.UUID, provider string) error {
-	query := `DELETE FROM oauth_accounts WHERE user_id = $1 AND provider = $2`
+func (r *OAuthRepository) DeleteOAuthAccountsByProvider(ctx context.Context, userID uuid.UUID, provider string) error {
+	_, err := r.db.NewDelete().
+		Model((*models.OAuthAccount)(nil)).
+		Where("user_id = ?", userID).
+		Where("provider = ?", provider).
+		Exec(ctx)
 
-	_, err := r.db.Exec(query, userID, provider)
 	if err != nil {
 		return fmt.Errorf("failed to delete oauth accounts by provider: %w", err)
 	}
@@ -154,11 +145,15 @@ func (r *OAuthRepository) DeleteOAuthAccountsByProvider(userID uuid.UUID, provid
 }
 
 // GetByUserID returns all OAuth accounts for a user
-func (r *OAuthRepository) GetByUserID(userID uuid.UUID) ([]*models.OAuthAccount, error) {
-	var accounts []*models.OAuthAccount
-	query := `SELECT * FROM oauth_accounts WHERE user_id = $1 ORDER BY created_at DESC`
+func (r *OAuthRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*models.OAuthAccount, error) {
+	accounts := make([]*models.OAuthAccount, 0)
 
-	err := r.db.Select(&accounts, query, userID)
+	err := r.db.NewSelect().
+		Model(&accounts).
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get oauth accounts by user ID: %w", err)
 	}
@@ -167,11 +162,14 @@ func (r *OAuthRepository) GetByUserID(userID uuid.UUID) ([]*models.OAuthAccount,
 }
 
 // ListAll returns all OAuth accounts (admin only)
-func (r *OAuthRepository) ListAll() ([]*models.OAuthAccount, error) {
-	var accounts []*models.OAuthAccount
-	query := `SELECT * FROM oauth_accounts ORDER BY created_at DESC`
+func (r *OAuthRepository) ListAll(ctx context.Context) ([]*models.OAuthAccount, error) {
+	accounts := make([]*models.OAuthAccount, 0)
 
-	err := r.db.Select(&accounts, query)
+	err := r.db.NewSelect().
+		Model(&accounts).
+		Order("created_at DESC").
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to list all oauth accounts: %w", err)
 	}

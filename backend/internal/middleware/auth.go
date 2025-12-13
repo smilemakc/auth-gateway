@@ -66,7 +66,7 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 		blacklisted, err := m.redis.IsBlacklisted(c.Request.Context(), tokenHash)
 		if err != nil {
 			// Log error but don't fail - check database as fallback
-			blacklisted, _ = m.tokenRepo.IsBlacklisted(tokenHash)
+			blacklisted, _ = m.tokenRepo.IsBlacklisted(c.Request.Context(), tokenHash)
 		}
 
 		if blacklisted {

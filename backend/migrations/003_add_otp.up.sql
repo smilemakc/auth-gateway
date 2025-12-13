@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS otps (
 CREATE INDEX idx_otps_expires_at ON otps(expires_at) WHERE used = FALSE;
 
 -- Index for quick lookups
-CREATE INDEX idx_otps_email_type ON otps(email, type) WHERE used = FALSE AND expires_at > CURRENT_TIMESTAMP;
+CREATE INDEX idx_otps_email_type ON otps(email, type) WHERE used = FALSE;
 
 -- Add email_verified field to users table
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;

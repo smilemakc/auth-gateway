@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/uptrace/bun"
 )
 
 // BackupCodeRepository handles backup code database operations
@@ -20,44 +22,36 @@ func NewBackupCodeRepository(db *Database) *BackupCodeRepository {
 	return &BackupCodeRepository{db: db}
 }
 
-// Create creates multiple backup codes
-func (r *BackupCodeRepository) CreateBatch(codes []*models.BackupCode) error {
-	query := `
-		INSERT INTO backup_codes (id, user_id, code_hash, used, created_at)
-		VALUES ($1, $2, $3, $4, $5)
-	`
-
-	tx, err := r.db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+// CreateBatch creates multiple backup codes
+func (r *BackupCodeRepository) CreateBatch(ctx context.Context, codes []*models.BackupCode) error {
+	if len(codes) == 0 {
+		return nil
 	}
-	defer tx.Rollback()
 
-	for _, code := range codes {
-		_, err := tx.Exec(query, code.ID, code.UserID, code.CodeHash, code.Used, code.CreatedAt)
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		_, err := tx.NewInsert().
+			Model(&codes).
+			Exec(ctx)
+
 		if err != nil {
-			return fmt.Errorf("failed to create backup code: %w", err)
+			return fmt.Errorf("failed to create backup codes: %w", err)
 		}
-	}
 
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	return nil
+		return nil
+	})
 }
 
 // GetUnusedByUserID retrieves all unused backup codes for a user
-func (r *BackupCodeRepository) GetUnusedByUserID(userID uuid.UUID) ([]*models.BackupCode, error) {
-	var codes []*models.BackupCode
-	query := `
-		SELECT id, user_id, code_hash, used, used_at, created_at
-		FROM backup_codes
-		WHERE user_id = $1 AND used = FALSE
-		ORDER BY created_at DESC
-	`
+func (r *BackupCodeRepository) GetUnusedByUserID(ctx context.Context, userID uuid.UUID) ([]*models.BackupCode, error) {
+	codes := make([]*models.BackupCode, 0)
 
-	err := r.db.Select(&codes, query, userID)
+	err := r.db.NewSelect().
+		Model(&codes).
+		Where("user_id = ?", userID).
+		Where("used = ?", false).
+		Order("created_at DESC").
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get backup codes: %w", err)
 	}
@@ -66,11 +60,13 @@ func (r *BackupCodeRepository) GetUnusedByUserID(userID uuid.UUID) ([]*models.Ba
 }
 
 // CountUnusedByUserID counts unused backup codes for a user
-func (r *BackupCodeRepository) CountUnusedByUserID(userID uuid.UUID) (int, error) {
-	var count int
-	query := `SELECT COUNT(*) FROM backup_codes WHERE user_id = $1 AND used = FALSE`
+func (r *BackupCodeRepository) CountUnusedByUserID(ctx context.Context, userID uuid.UUID) (int, error) {
+	count, err := r.db.NewSelect().
+		Model((*models.BackupCode)(nil)).
+		Where("user_id = ?", userID).
+		Where("used = ?", false).
+		Count(ctx)
 
-	err := r.db.QueryRow(query, userID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count backup codes: %w", err)
 	}
@@ -79,14 +75,15 @@ func (r *BackupCodeRepository) CountUnusedByUserID(userID uuid.UUID) (int, error
 }
 
 // MarkAsUsed marks a backup code as used
-func (r *BackupCodeRepository) MarkAsUsed(id uuid.UUID) error {
-	query := `
-		UPDATE backup_codes
-		SET used = TRUE, used_at = $1
-		WHERE id = $2 AND used = FALSE
-	`
+func (r *BackupCodeRepository) MarkAsUsed(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.BackupCode)(nil)).
+		Set("used = ?", true).
+		Set("used_at = ?", time.Now()).
+		Where("id = ?", id).
+		Where("used = ?", false).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, time.Now(), id)
 	if err != nil {
 		return fmt.Errorf("failed to mark backup code as used: %w", err)
 	}
@@ -104,10 +101,12 @@ func (r *BackupCodeRepository) MarkAsUsed(id uuid.UUID) error {
 }
 
 // DeleteAllByUserID deletes all backup codes for a user
-func (r *BackupCodeRepository) DeleteAllByUserID(userID uuid.UUID) error {
-	query := `DELETE FROM backup_codes WHERE user_id = $1`
+func (r *BackupCodeRepository) DeleteAllByUserID(ctx context.Context, userID uuid.UUID) error {
+	_, err := r.db.NewDelete().
+		Model((*models.BackupCode)(nil)).
+		Where("user_id = ?", userID).
+		Exec(ctx)
 
-	_, err := r.db.Exec(query, userID)
 	if err != nil {
 		return fmt.Errorf("failed to delete backup codes: %w", err)
 	}
@@ -116,21 +115,21 @@ func (r *BackupCodeRepository) DeleteAllByUserID(userID uuid.UUID) error {
 }
 
 // GetByCodeHash retrieves a backup code by its hash
-func (r *BackupCodeRepository) GetByCodeHash(userID uuid.UUID, codeHash string) (*models.BackupCode, error) {
-	var code models.BackupCode
-	query := `
-		SELECT id, user_id, code_hash, used, used_at, created_at
-		FROM backup_codes
-		WHERE user_id = $1 AND code_hash = $2
-	`
+func (r *BackupCodeRepository) GetByCodeHash(ctx context.Context, userID uuid.UUID, codeHash string) (*models.BackupCode, error) {
+	code := new(models.BackupCode)
 
-	err := r.db.Get(&code, query, userID, codeHash)
+	err := r.db.NewSelect().
+		Model(code).
+		Where("user_id = ?", userID).
+		Where("code_hash = ?", codeHash).
+		Scan(ctx)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, fmt.Errorf("failed to get backup code: %w", err)
 	}
 
-	return &code, nil
+	return code, nil
 }

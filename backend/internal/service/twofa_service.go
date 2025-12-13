@@ -46,7 +46,7 @@ func NewTwoFactorService(
 // SetupTOTP generates a new TOTP secret and backup codes for a user
 func (s *TwoFactorService) SetupTOTP(ctx context.Context, userID uuid.UUID, password string) (*models.TwoFactorSetupResponse, error) {
 	// Get user
-	user, err := s.userRepo.GetByID(userID)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (s *TwoFactorService) SetupTOTP(ctx context.Context, userID uuid.UUID, pass
 	}
 
 	// Store TOTP secret (but don't enable yet - requires verification)
-	if err := s.userRepo.UpdateTOTPSecret(userID, key.Secret()); err != nil {
+	if err := s.userRepo.UpdateTOTPSecret(ctx, userID, key.Secret()); err != nil {
 		return nil, err
 	}
 
@@ -94,7 +94,7 @@ func (s *TwoFactorService) SetupTOTP(ctx context.Context, userID uuid.UUID, pass
 	}
 
 	// Store backup codes
-	if err := s.backupCodeRepo.CreateBatch(backupCodes); err != nil {
+	if err := s.backupCodeRepo.CreateBatch(ctx, backupCodes); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +108,7 @@ func (s *TwoFactorService) SetupTOTP(ctx context.Context, userID uuid.UUID, pass
 // VerifyTOTPSetup verifies the initial TOTP code and enables 2FA
 func (s *TwoFactorService) VerifyTOTPSetup(ctx context.Context, userID uuid.UUID, code string) error {
 	// Get user
-	user, err := s.userRepo.GetByID(userID)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (s *TwoFactorService) VerifyTOTPSetup(ctx context.Context, userID uuid.UUID
 	}
 
 	// Enable 2FA
-	if err := s.userRepo.EnableTOTP(userID); err != nil {
+	if err := s.userRepo.EnableTOTP(ctx, userID); err != nil {
 		return err
 	}
 
@@ -134,7 +134,7 @@ func (s *TwoFactorService) VerifyTOTPSetup(ctx context.Context, userID uuid.UUID
 // VerifyTOTP verifies a TOTP code for login
 func (s *TwoFactorService) VerifyTOTP(ctx context.Context, userID uuid.UUID, code string) (bool, error) {
 	// Get user
-	user, err := s.userRepo.GetByID(userID)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return false, err
 	}
@@ -161,7 +161,7 @@ func (s *TwoFactorService) VerifyTOTP(ctx context.Context, userID uuid.UUID, cod
 // verifyBackupCode verifies and marks a backup code as used
 func (s *TwoFactorService) verifyBackupCode(userID uuid.UUID, code string) (bool, error) {
 	// Get all unused backup codes
-	codes, err := s.backupCodeRepo.GetUnusedByUserID(userID)
+	codes, err := s.backupCodeRepo.GetUnusedByUserID(context.Background(), userID)
 	if err != nil {
 		return false, err
 	}
@@ -170,7 +170,7 @@ func (s *TwoFactorService) verifyBackupCode(userID uuid.UUID, code string) (bool
 	for _, backupCode := range codes {
 		if err := utils.CheckPassword(backupCode.CodeHash, code); err == nil {
 			// Mark as used
-			if err := s.backupCodeRepo.MarkAsUsed(backupCode.ID); err != nil {
+			if err := s.backupCodeRepo.MarkAsUsed(context.Background(), backupCode.ID); err != nil {
 				return false, err
 			}
 			return true, nil
@@ -183,7 +183,7 @@ func (s *TwoFactorService) verifyBackupCode(userID uuid.UUID, code string) (bool
 // DisableTOTP disables 2FA for a user
 func (s *TwoFactorService) DisableTOTP(ctx context.Context, userID uuid.UUID, password, code string) error {
 	// Get user
-	user, err := s.userRepo.GetByID(userID)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -204,12 +204,12 @@ func (s *TwoFactorService) DisableTOTP(ctx context.Context, userID uuid.UUID, pa
 	}
 
 	// Disable 2FA
-	if err := s.userRepo.DisableTOTP(userID); err != nil {
+	if err := s.userRepo.DisableTOTP(ctx, userID); err != nil {
 		return err
 	}
 
 	// Delete all backup codes
-	if err := s.backupCodeRepo.DeleteAllByUserID(userID); err != nil {
+	if err := s.backupCodeRepo.DeleteAllByUserID(ctx, userID); err != nil {
 		return err
 	}
 
@@ -219,13 +219,13 @@ func (s *TwoFactorService) DisableTOTP(ctx context.Context, userID uuid.UUID, pa
 // GetStatus returns the user's 2FA status
 func (s *TwoFactorService) GetStatus(ctx context.Context, userID uuid.UUID) (*models.TwoFactorStatusResponse, error) {
 	// Get user
-	user, err := s.userRepo.GetByID(userID)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Count unused backup codes
-	backupCodeCount, err := s.backupCodeRepo.CountUnusedByUserID(userID)
+	backupCodeCount, err := s.backupCodeRepo.CountUnusedByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +240,7 @@ func (s *TwoFactorService) GetStatus(ctx context.Context, userID uuid.UUID) (*mo
 // RegenerateBackupCodes generates new backup codes for a user
 func (s *TwoFactorService) RegenerateBackupCodes(ctx context.Context, userID uuid.UUID, password string) ([]string, error) {
 	// Get user
-	user, err := s.userRepo.GetByID(userID)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +256,7 @@ func (s *TwoFactorService) RegenerateBackupCodes(ctx context.Context, userID uui
 	}
 
 	// Delete old backup codes
-	if err := s.backupCodeRepo.DeleteAllByUserID(userID); err != nil {
+	if err := s.backupCodeRepo.DeleteAllByUserID(ctx, userID); err != nil {
 		return nil, err
 	}
 
@@ -282,7 +282,7 @@ func (s *TwoFactorService) RegenerateBackupCodes(ctx context.Context, userID uui
 	}
 
 	// Store backup codes
-	if err := s.backupCodeRepo.CreateBatch(backupCodes); err != nil {
+	if err := s.backupCodeRepo.CreateBatch(ctx, backupCodes); err != nil {
 		return nil, err
 	}
 

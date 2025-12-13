@@ -6,22 +6,22 @@ import (
 
 // GeoLocation represents geographic location information
 type GeoLocation struct {
-	CountryCode string  `json:"country_code,omitempty" db:"country_code"` // ISO 3166-1 alpha-2
-	CountryName string  `json:"country_name,omitempty" db:"country_name"`
-	City        string  `json:"city,omitempty" db:"city"`
-	Latitude    float64 `json:"latitude,omitempty" db:"latitude"`
-	Longitude   float64 `json:"longitude,omitempty" db:"longitude"`
+	CountryCode string  `json:"country_code,omitempty" bun:"country_code"` // ISO 3166-1 alpha-2
+	CountryName string  `json:"country_name,omitempty" bun:"country_name"`
+	City        string  `json:"city,omitempty" bun:"city"`
+	Latitude    float64 `json:"latitude,omitempty" bun:"latitude"`
+	Longitude   float64 `json:"longitude,omitempty" bun:"longitude"`
 }
 
 // LoginLocation represents aggregated login location data
 type LoginLocation struct {
-	CountryCode string    `json:"country_code" db:"country_code"`
-	CountryName string    `json:"country_name" db:"country_name"`
-	City        string    `json:"city,omitempty" db:"city"`
-	Latitude    float64   `json:"latitude,omitempty" db:"latitude"`
-	Longitude   float64   `json:"longitude,omitempty" db:"longitude"`
-	LoginCount  int       `json:"login_count" db:"login_count"`
-	LastLoginAt time.Time `json:"last_login_at" db:"last_login_at"`
+	CountryCode string    `json:"country_code" bun:"country_code"`
+	CountryName string    `json:"country_name" bun:"country_name"`
+	City        string    `json:"city,omitempty" bun:"city"`
+	Latitude    float64   `json:"latitude,omitempty" bun:"latitude"`
+	Longitude   float64   `json:"longitude,omitempty" bun:"longitude"`
+	LoginCount  int       `json:"login_count" bun:"login_count"`
+	LastLoginAt time.Time `json:"last_login_at" bun:"last_login_at"`
 }
 
 // GeoDistributionResponse contains login distribution for map visualization

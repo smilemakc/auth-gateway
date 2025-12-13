@@ -1,23 +1,29 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Save,
   AlertCircle
 } from 'lucide-react';
-import { getUser, updateUser, createUser } from '../services/mockData';
-import { User, UserRole } from '../types';
+import { UserRole } from '../types';
 import { useLanguage } from '../services/i18n';
+import { useUserDetail, useUpdateUser, useCreateUser } from '../hooks/useUsers';
 
 const UserEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  const [formData, setFormData] = useState<Partial<User>>({
+
+  const isEditMode = !!id;
+
+  // Fetch user data if in edit mode
+  const { data: user, isLoading: userLoading } = useUserDetail(id!, { enabled: isEditMode });
+  const updateUserMutation = useUpdateUser();
+  const createUserMutation = useCreateUser();
+
+  const [formData, setFormData] = useState<any>({
     fullName: '',
     username: '',
     email: '',
@@ -28,18 +34,12 @@ const UserEdit: React.FC = () => {
     is2FAEnabled: false
   });
 
-  const isEditMode = !!id;
-
+  // Sync user data to form when loaded
   useEffect(() => {
-    if (isEditMode) {
-      const user = getUser(id);
-      if (user) {
-        setFormData(user);
-      } else {
-        navigate('/users');
-      }
+    if (isEditMode && user) {
+      setFormData(user);
     }
-  }, [id, isEditMode, navigate]);
+  }, [isEditMode, user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -52,24 +52,31 @@ const UserEdit: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
+    setError('');
+
+    try {
       if (isEditMode) {
-        updateUser(id, formData);
-        setLoading(false);
+        await updateUserMutation.mutateAsync({ id: id!, data: formData });
         navigate(`/users/${id}`);
       } else {
-        // Create mode
-        const newUser = createUser(formData);
-        setLoading(false);
+        const newUser = await createUserMutation.mutateAsync(formData);
         navigate(`/users/${newUser.id}`);
       }
-    }, 800);
+    } catch (err: any) {
+      console.error('Failed to save user:', err);
+      setError(err.message || 'Failed to save user');
+    }
   };
+
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -242,11 +249,11 @@ const UserEdit: React.FC = () => {
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={updateUserMutation.isPending || createUserMutation.isPending}
             className={`flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-              ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              ${updateUserMutation.isPending || createUserMutation.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {loading ? t('common.saving') : (
+            {(updateUserMutation.isPending || createUserMutation.isPending) ? t('common.saving') : (
               <>
                 <Save size={16} className="mr-2" />
                 {isEditMode ? t('user.form.save') : t('users.create_new')}

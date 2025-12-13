@@ -8,19 +8,22 @@ import (
 
 // Session represents an enhanced refresh token with device tracking
 type Session struct {
-	ID           uuid.UUID  `json:"id" db:"id"`
-	UserID       uuid.UUID  `json:"user_id" db:"user_id"`
-	TokenHash    string     `json:"-" db:"token_hash"`                      // Never expose hash
-	DeviceType   string     `json:"device_type,omitempty" db:"device_type"` // "mobile", "desktop", "tablet"
-	OS           string     `json:"os,omitempty" db:"os"`                   // "iOS 17.2", "Windows 11", "Ubuntu 22.04"
-	Browser      string     `json:"browser,omitempty" db:"browser"`         // "Chrome 120", "Safari 17"
-	IPAddress    string     `json:"ip_address,omitempty" db:"ip_address"`
-	UserAgent    string     `json:"user_agent,omitempty" db:"user_agent"`
-	SessionName  string     `json:"session_name,omitempty" db:"session_name"`
-	LastActiveAt time.Time  `json:"last_active_at" db:"last_active_at"`
-	ExpiresAt    time.Time  `json:"expires_at" db:"expires_at"`
-	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
-	RevokedAt    *time.Time `json:"revoked_at,omitempty" db:"revoked_at"`
+	ID           uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	UserID       uuid.UUID  `json:"user_id" bun:"user_id,type:uuid,notnull"`
+	TokenHash    string     `json:"-" bun:"token_hash,notnull"`              // Never expose hash
+	DeviceType   string     `json:"device_type,omitempty" bun:"device_type"` // "mobile", "desktop", "tablet"
+	OS           string     `json:"os,omitempty" bun:"os"`                   // "iOS 17.2", "Windows 11", "Ubuntu 22.04"
+	Browser      string     `json:"browser,omitempty" bun:"browser"`         // "Chrome 120", "Safari 17"
+	IPAddress    string     `json:"ip_address,omitempty" bun:"ip_address"`
+	UserAgent    string     `json:"user_agent,omitempty" bun:"user_agent"`
+	SessionName  string     `json:"session_name,omitempty" bun:"session_name"`
+	LastActiveAt time.Time  `json:"last_active_at" bun:"last_active_at,nullzero,notnull"`
+	ExpiresAt    time.Time  `json:"expires_at" bun:"expires_at,nullzero,notnull"`
+	CreatedAt    time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	RevokedAt    *time.Time `json:"revoked_at,omitempty" bun:"revoked_at"`
+
+	// Relation to User
+	User *User `json:"user,omitempty" bun:"rel:belongs-to,join:user_id=id"`
 }
 
 // ActiveSessionResponse is returned to the user

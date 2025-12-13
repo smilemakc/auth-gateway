@@ -8,18 +8,18 @@ import (
 
 // APIKey represents an API key for external service integration
 type APIKey struct {
-	ID          uuid.UUID  `json:"id" db:"id"`
-	UserID      uuid.UUID  `json:"user_id" db:"user_id"`
-	Name        string     `json:"name" db:"name"`
-	Description string     `json:"description,omitempty" db:"description"`
-	KeyHash     string     `json:"-" db:"key_hash"`            // Never expose key hash
-	KeyPrefix   string     `json:"key_prefix" db:"key_prefix"` // First 8 chars for identification
-	Scopes      []byte     `json:"scopes" db:"scopes"`         // JSON array of permissions
-	IsActive    bool       `json:"is_active" db:"is_active"`
-	LastUsedAt  *time.Time `json:"last_used_at,omitempty" db:"last_used_at"`
-	ExpiresAt   *time.Time `json:"expires_at,omitempty" db:"expires_at"` // NULL = never expires
-	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
+	ID          uuid.UUID  `json:"id" bun:"id"`
+	UserID      uuid.UUID  `json:"user_id" bun:"user_id"`
+	Name        string     `json:"name" bun:"name"`
+	Description string     `json:"description,omitempty" bun:"description"`
+	KeyHash     string     `json:"-" bun:"key_hash"`            // Never expose key hash
+	KeyPrefix   string     `json:"key_prefix" bun:"key_prefix"` // First 8 chars for identification
+	Scopes      []byte     `json:"scopes" bun:"scopes"`         // JSON array of permissions
+	IsActive    bool       `json:"is_active" bun:"is_active"`
+	LastUsedAt  *time.Time `json:"last_used_at,omitempty" bun:"last_used_at"`
+	ExpiresAt   *time.Time `json:"expires_at,omitempty" bun:"expires_at"` // NULL = never expires
+	CreatedAt   time.Time  `json:"created_at" bun:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at" bun:"updated_at"`
 }
 
 // APIKeyScope represents available scopes for API keys

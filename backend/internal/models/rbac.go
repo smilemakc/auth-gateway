@@ -8,31 +8,37 @@ import (
 
 // Permission represents a system permission
 type Permission struct {
-	ID          uuid.UUID `json:"id" db:"id"`
-	Name        string    `json:"name" db:"name" binding:"required"`         // e.g., "users.delete", "api_keys.view"
-	Resource    string    `json:"resource" db:"resource" binding:"required"` // e.g., "users", "api_keys"
-	Action      string    `json:"action" db:"action" binding:"required"`     // e.g., "create", "read", "update", "delete"
-	Description string    `json:"description,omitempty" db:"description"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	ID          uuid.UUID `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	Name        string    `json:"name" bun:"name,notnull,unique" binding:"required"`  // e.g., "users.delete", "api_keys.view"
+	Resource    string    `json:"resource" bun:"resource,notnull" binding:"required"` // e.g., "users", "api_keys"
+	Action      string    `json:"action" bun:"action,notnull" binding:"required"`     // e.g., "create", "read", "update", "delete"
+	Description string    `json:"description,omitempty" bun:"description"`
+	CreatedAt   time.Time `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
 }
 
 // Role represents a user role
 type Role struct {
-	ID           uuid.UUID    `json:"id" db:"id"`
-	Name         string       `json:"name" db:"name" binding:"required"`
-	DisplayName  string       `json:"display_name" db:"display_name" binding:"required"`
-	Description  string       `json:"description,omitempty" db:"description"`
-	IsSystemRole bool         `json:"is_system_role" db:"is_system_role"`
-	CreatedAt    time.Time    `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time    `json:"updated_at" db:"updated_at"`
-	Permissions  []Permission `json:"permissions,omitempty" db:"-"` // Populated via join
+	ID           uuid.UUID `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	Name         string    `json:"name" bun:"name,notnull,unique" binding:"required"`
+	DisplayName  string    `json:"display_name" bun:"display_name,notnull" binding:"required"`
+	Description  string    `json:"description,omitempty" bun:"description"`
+	IsSystemRole bool      `json:"is_system_role" bun:"is_system_role"`
+	CreatedAt    time.Time `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	UpdatedAt    time.Time `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
+
+	// Many-to-many relation with Permission
+	Permissions []Permission `json:"permissions,omitempty" bun:"m2m:role_permissions,join:Role=Permission"`
 }
 
-// RolePermission represents the many-to-many relationship
+// RolePermission represents the many-to-many relationship join table
 type RolePermission struct {
-	RoleID       uuid.UUID `json:"role_id" db:"role_id"`
-	PermissionID uuid.UUID `json:"permission_id" db:"permission_id"`
-	GrantedAt    time.Time `json:"granted_at" db:"granted_at"`
+	RoleID       uuid.UUID `json:"role_id" bun:"role_id,pk,type:uuid"`
+	PermissionID uuid.UUID `json:"permission_id" bun:"permission_id,pk,type:uuid"`
+	GrantedAt    time.Time `json:"granted_at" bun:"granted_at,nullzero,notnull,default:current_timestamp"`
+
+	// Belongs-to relations
+	Role       *Role       `bun:"rel:belongs-to,join:role_id=id"`
+	Permission *Permission `bun:"rel:belongs-to,join:permission_id=id"`
 }
 
 // ============================================================
@@ -106,13 +112,13 @@ type PermissionWithRoles struct {
 
 // UserRolePermissions combines user, role, and permission information
 type UserRolePermissions struct {
-	UserID          uuid.UUID    `json:"user_id" db:"user_id"`
-	Username        string       `json:"username" db:"username"`
-	Email           string       `json:"email" db:"email"`
-	RoleID          uuid.UUID    `json:"role_id" db:"role_id"`
-	RoleName        string       `json:"role_name" db:"role_name"`
-	RoleDisplayName string       `json:"role_display_name" db:"role_display_name"`
-	Permissions     []Permission `json:"permissions" db:"permissions"`
+	UserID          uuid.UUID    `json:"user_id" bun:"user_id,type:uuid"`
+	Username        string       `json:"username" bun:"username"`
+	Email           string       `json:"email" bun:"email"`
+	RoleID          uuid.UUID    `json:"role_id" bun:"role_id,type:uuid"`
+	RoleName        string       `json:"role_name" bun:"role_name"`
+	RoleDisplayName string       `json:"role_display_name" bun:"role_display_name"`
+	Permissions     []Permission `json:"permissions" bun:"permissions"`
 }
 
 // CheckPermissionRequest is used to check if a user has a specific permission

@@ -8,19 +8,19 @@ import (
 
 // BrandingSettings represents the system branding configuration
 type BrandingSettings struct {
-	ID              uuid.UUID  `json:"id" db:"id"`
-	LogoURL         string     `json:"logo_url,omitempty" db:"logo_url"`
-	FaviconURL      string     `json:"favicon_url,omitempty" db:"favicon_url"`
-	PrimaryColor    string     `json:"primary_color" db:"primary_color"`       // Hex color
-	SecondaryColor  string     `json:"secondary_color" db:"secondary_color"`   // Hex color
-	BackgroundColor string     `json:"background_color" db:"background_color"` // Hex color
-	CustomCSS       string     `json:"custom_css,omitempty" db:"custom_css"`
-	CompanyName     string     `json:"company_name,omitempty" db:"company_name"`
-	SupportEmail    string     `json:"support_email,omitempty" db:"support_email"`
-	TermsURL        string     `json:"terms_url,omitempty" db:"terms_url"`
-	PrivacyURL      string     `json:"privacy_url,omitempty" db:"privacy_url"`
-	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
-	UpdatedBy       *uuid.UUID `json:"updated_by,omitempty" db:"updated_by"`
+	ID              uuid.UUID  `json:"id" bun:"id"`
+	LogoURL         string     `json:"logo_url,omitempty" bun:"logo_url"`
+	FaviconURL      string     `json:"favicon_url,omitempty" bun:"favicon_url"`
+	PrimaryColor    string     `json:"primary_color" bun:"primary_color"`       // Hex color
+	SecondaryColor  string     `json:"secondary_color" bun:"secondary_color"`   // Hex color
+	BackgroundColor string     `json:"background_color" bun:"background_color"` // Hex color
+	CustomCSS       string     `json:"custom_css,omitempty" bun:"custom_css"`
+	CompanyName     string     `json:"company_name,omitempty" bun:"company_name"`
+	SupportEmail    string     `json:"support_email,omitempty" bun:"support_email"`
+	TermsURL        string     `json:"terms_url,omitempty" bun:"terms_url"`
+	PrivacyURL      string     `json:"privacy_url,omitempty" bun:"privacy_url"`
+	UpdatedAt       time.Time  `json:"updated_at" bun:"updated_at"`
+	UpdatedBy       *uuid.UUID `json:"updated_by,omitempty" bun:"updated_by"`
 }
 
 // UpdateBrandingRequest is the request to update branding settings

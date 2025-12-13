@@ -8,13 +8,13 @@ import (
 
 // SystemSetting represents a system-wide configuration setting
 type SystemSetting struct {
-	Key         string     `json:"key" db:"key"`
-	Value       string     `json:"value" db:"value" binding:"required"`
-	Description string     `json:"description,omitempty" db:"description"`
-	SettingType string     `json:"setting_type" db:"setting_type"` // "string", "boolean", "integer", "json"
-	IsPublic    bool       `json:"is_public" db:"is_public"`       // Can be exposed to public API
-	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
-	UpdatedBy   *uuid.UUID `json:"updated_by,omitempty" db:"updated_by"`
+	Key         string     `json:"key" bun:"key,pk"`
+	Value       string     `json:"value" bun:"value" binding:"required"`
+	Description string     `json:"description,omitempty" bun:"description"`
+	SettingType string     `json:"setting_type" bun:"setting_type"` // "string", "boolean", "integer", "json"
+	IsPublic    bool       `json:"is_public" bun:"is_public"`       // Can be exposed to public API
+	UpdatedAt   time.Time  `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
+	UpdatedBy   *uuid.UUID `json:"updated_by,omitempty" bun:"updated_by,type:uuid"`
 }
 
 // UpdateSystemSettingRequest is the request to update a system setting
@@ -51,12 +51,12 @@ const (
 
 // HealthMetric represents a system health metric
 type HealthMetric struct {
-	ID          uuid.UUID `json:"id" db:"id"`
-	MetricName  string    `json:"metric_name" db:"metric_name"`
-	MetricValue float64   `json:"metric_value" db:"metric_value"`
-	MetricUnit  string    `json:"metric_unit,omitempty" db:"metric_unit"` // "bytes", "percentage", "count", "milliseconds"
-	Metadata    string    `json:"metadata,omitempty" db:"metadata"`       // JSON metadata
-	RecordedAt  time.Time `json:"recorded_at" db:"recorded_at"`
+	ID          uuid.UUID `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	MetricName  string    `json:"metric_name" bun:"metric_name"`
+	MetricValue float64   `json:"metric_value" bun:"metric_value"`
+	MetricUnit  string    `json:"metric_unit,omitempty" bun:"metric_unit"` // "bytes", "percentage", "count", "milliseconds"
+	Metadata    string    `json:"metadata,omitempty" bun:"metadata"`       // JSON metadata
+	RecordedAt  time.Time `json:"recorded_at" bun:"recorded_at,nullzero,notnull,default:current_timestamp"`
 }
 
 // SystemHealthResponse contains current system health metrics

@@ -1,13 +1,19 @@
 
 import React, { useState } from 'react';
-import { mockApiKeys } from '../services/mockData';
 import { Trash2, Ban, Copy, CheckCircle } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useApiKeys, useRevokeApiKey, useDeleteApiKey } from '../hooks/useApiKeys';
 
 const ApiKeys: React.FC = () => {
-  const [keys, setKeys] = useState(mockApiKeys);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { t } = useLanguage();
+
+  // Fetch API keys with React Query
+  const { data, isLoading, error } = useApiKeys(1, 100);
+  const revokeApiKeyMutation = useRevokeApiKey();
+  const deleteApiKeyMutation = useDeleteApiKey();
+
+  const keys = data?.apiKeys || data?.items || [];
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -15,17 +21,43 @@ const ApiKeys: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleRevoke = (id: string) => {
-    if(window.confirm(t('keys.revoke_confirm'))) {
-      setKeys(prev => prev.map(k => k.id === id ? { ...k, status: 'revoked' } : k));
+  const handleRevoke = async (id: string) => {
+    if (window.confirm(t('keys.revoke_confirm'))) {
+      try {
+        await revokeApiKeyMutation.mutateAsync(id);
+      } catch (error) {
+        console.error('Failed to revoke API key:', error);
+        alert('Failed to revoke API key');
+      }
     }
   };
 
-  const handleDelete = (id: string) => {
-    if(window.confirm(t('common.confirm_delete'))) {
-      setKeys(prev => prev.filter(k => k.id !== id));
+  const handleDelete = async (id: string) => {
+    if (window.confirm(t('common.confirm_delete'))) {
+      try {
+        await deleteApiKeyMutation.mutateAsync(id);
+      } catch (error) {
+        console.error('Failed to delete API key:', error);
+        alert('Failed to delete API key');
+      }
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600">Error loading API keys: {(error as Error).message}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

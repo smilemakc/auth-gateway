@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/smilemakc/auth-gateway/internal/models"
-
 	"github.com/google/uuid"
+	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/uptrace/bun"
 )
 
 // SystemRepository handles system settings database operations
@@ -22,80 +22,101 @@ func NewSystemRepository(db *Database) *SystemRepository {
 
 // GetSetting retrieves a system setting by key
 func (r *SystemRepository) GetSetting(ctx context.Context, key string) (*models.SystemSetting, error) {
-	var setting models.SystemSetting
-	query := `SELECT * FROM system_settings WHERE key = $1`
-	err := r.db.GetContext(ctx, &setting, query, key)
+	setting := new(models.SystemSetting)
+
+	err := r.db.NewSelect().
+		Model(setting).
+		Where("key = ?", key).
+		Scan(ctx)
+
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("setting not found: %s", key)
 	}
-	return &setting, err
+
+	return setting, err
 }
 
 // GetAllSettings retrieves all system settings
 func (r *SystemRepository) GetAllSettings(ctx context.Context) ([]models.SystemSetting, error) {
-	var settings []models.SystemSetting
-	query := `SELECT * FROM system_settings ORDER BY key`
-	err := r.db.SelectContext(ctx, &settings, query)
+	settings := make([]models.SystemSetting, 0)
+
+	err := r.db.NewSelect().
+		Model(&settings).
+		Order("key").
+		Scan(ctx)
+
 	return settings, err
 }
 
 // GetPublicSettings retrieves public system settings
 func (r *SystemRepository) GetPublicSettings(ctx context.Context) ([]models.SystemSetting, error) {
-	var settings []models.SystemSetting
-	query := `SELECT * FROM system_settings WHERE is_public = true ORDER BY key`
-	err := r.db.SelectContext(ctx, &settings, query)
+	settings := make([]models.SystemSetting, 0)
+
+	err := r.db.NewSelect().
+		Model(&settings).
+		Where("is_public = ?", true).
+		Order("key").
+		Scan(ctx)
+
 	return settings, err
 }
 
 // UpdateSetting updates a system setting
 func (r *SystemRepository) UpdateSetting(ctx context.Context, key, value string, updatedBy *uuid.UUID) error {
-	query := `
-		UPDATE system_settings
-		SET value = $1, updated_at = CURRENT_TIMESTAMP, updated_by = $2
-		WHERE key = $3
-	`
-	result, err := r.db.ExecContext(ctx, query, value, updatedBy, key)
+	result, err := r.db.NewUpdate().
+		Model((*models.SystemSetting)(nil)).
+		Set("value = ?", value).
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_by = ?", updatedBy).
+		Where("key = ?", key).
+		Exec(ctx)
+
 	if err != nil {
 		return err
 	}
+
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
+
 	if rows == 0 {
 		return fmt.Errorf("setting not found: %s", key)
 	}
+
 	return nil
 }
 
 // CreateSetting creates a new system setting
 func (r *SystemRepository) CreateSetting(ctx context.Context, setting *models.SystemSetting) error {
-	query := `
-		INSERT INTO system_settings (key, value, description, setting_type, is_public, updated_by)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING updated_at
-	`
-	return r.db.QueryRowContext(
-		ctx, query,
-		setting.Key, setting.Value, setting.Description,
-		setting.SettingType, setting.IsPublic, setting.UpdatedBy,
-	).Scan(&setting.UpdatedAt)
+	_, err := r.db.NewInsert().
+		Model(setting).
+		Returning("updated_at").
+		Exec(ctx)
+
+	return err
 }
 
 // DeleteSetting deletes a system setting
 func (r *SystemRepository) DeleteSetting(ctx context.Context, key string) error {
-	query := `DELETE FROM system_settings WHERE key = $1`
-	result, err := r.db.ExecContext(ctx, query, key)
+	result, err := r.db.NewDelete().
+		Model((*models.SystemSetting)(nil)).
+		Where("key = ?", key).
+		Exec(ctx)
+
 	if err != nil {
 		return err
 	}
+
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
+
 	if rows == 0 {
 		return fmt.Errorf("setting not found: %s", key)
 	}
+
 	return nil
 }
 
@@ -105,36 +126,34 @@ func (r *SystemRepository) DeleteSetting(ctx context.Context, key string) error 
 
 // RecordHealthMetric records a health metric
 func (r *SystemRepository) RecordHealthMetric(ctx context.Context, metric *models.HealthMetric) error {
-	query := `
-		INSERT INTO health_metrics (metric_name, metric_value, metric_unit, metadata)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, recorded_at
-	`
-	return r.db.QueryRowContext(
-		ctx, query,
-		metric.MetricName, metric.MetricValue, metric.MetricUnit, metric.Metadata,
-	).Scan(&metric.ID, &metric.RecordedAt)
+	_, err := r.db.NewInsert().
+		Model(metric).
+		Returning("*").
+		Exec(ctx)
+
+	return err
 }
 
 // GetRecentMetrics retrieves recent metrics for a specific metric name
 func (r *SystemRepository) GetRecentMetrics(ctx context.Context, metricName string, limit int) ([]models.HealthMetric, error) {
-	var metrics []models.HealthMetric
-	query := `
-		SELECT * FROM health_metrics
-		WHERE metric_name = $1
-		ORDER BY recorded_at DESC
-		LIMIT $2
-	`
-	err := r.db.SelectContext(ctx, &metrics, query, metricName, limit)
+	metrics := make([]models.HealthMetric, 0)
+
+	err := r.db.NewSelect().
+		Model(&metrics).
+		Where("metric_name = ?", metricName).
+		Order("recorded_at DESC").
+		Limit(limit).
+		Scan(ctx)
+
 	return metrics, err
 }
 
 // DeleteOldMetrics deletes old health metrics
 func (r *SystemRepository) DeleteOldMetrics(ctx context.Context, olderThanDays int) error {
-	query := `
-		DELETE FROM health_metrics
-		WHERE recorded_at < NOW() - INTERVAL '1 day' * $1
-	`
-	_, err := r.db.ExecContext(ctx, query, olderThanDays)
+	_, err := r.db.NewDelete().
+		Model((*models.HealthMetric)(nil)).
+		Where("recorded_at < ?", bun.Safe("NOW() - INTERVAL '1 day' * ?"), olderThanDays).
+		Exec(ctx)
+
 	return err
 }

@@ -78,7 +78,7 @@ func (s *SMSService) SendOTP(ctx context.Context, req *models.SendSMSRequest, ip
 	}
 
 	// Check rate limiting - max 3 SMS per hour for same phone/type
-	count, err := s.otpRepo.CountRecentByPhone(phone, req.Type, 1*time.Hour)
+	count, err := s.otpRepo.CountRecentByPhone(ctx, phone, req.Type, 1*time.Hour)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check rate limit: %w", err)
 	}
@@ -105,7 +105,7 @@ func (s *SMSService) SendOTP(ctx context.Context, req *models.SendSMSRequest, ip
 	}
 
 	// Invalidate all previous OTPs for this phone/type
-	if err := s.otpRepo.InvalidateAllForPhone(phone, req.Type); err != nil {
+	if err := s.otpRepo.InvalidateAllForPhone(ctx, phone, req.Type); err != nil {
 		return nil, fmt.Errorf("failed to invalidate previous OTPs: %w", err)
 	}
 
@@ -121,7 +121,7 @@ func (s *SMSService) SendOTP(ctx context.Context, req *models.SendSMSRequest, ip
 		ExpiresAt: expiresAt,
 	}
 
-	if err := s.otpRepo.Create(otp); err != nil {
+	if err := s.otpRepo.Create(ctx, otp); err != nil {
 		return nil, fmt.Errorf("failed to create OTP: %w", err)
 	}
 
@@ -141,7 +141,7 @@ func (s *SMSService) SendOTP(ctx context.Context, req *models.SendSMSRequest, ip
 	}
 
 	// Try to get user ID if exists
-	if user, err := s.userRepo.GetByPhone(phone); err == nil {
+	if user, err := s.userRepo.GetByPhone(ctx, phone); err == nil {
 		smsLog.UserID = &user.ID
 	}
 
@@ -182,7 +182,7 @@ func (s *SMSService) VerifyOTP(ctx context.Context, req *models.VerifySMSOTPRequ
 	}
 
 	// Get latest valid OTP
-	otp, err := s.otpRepo.GetByPhoneAndType(phone, req.Type)
+	otp, err := s.otpRepo.GetByPhoneAndType(ctx, phone, req.Type)
 	if err != nil {
 		return &models.VerifySMSOTPResponse{
 			Valid:   false,
@@ -207,7 +207,7 @@ func (s *SMSService) VerifyOTP(ctx context.Context, req *models.VerifySMSOTPRequ
 	}
 
 	// Mark OTP as used
-	if err := s.otpRepo.MarkAsUsed(otp.ID); err != nil {
+	if err := s.otpRepo.MarkAsUsed(ctx, otp.ID); err != nil {
 		return nil, fmt.Errorf("failed to mark OTP as used: %w", err)
 	}
 
@@ -220,32 +220,32 @@ func (s *SMSService) VerifyOTP(ctx context.Context, req *models.VerifySMSOTPRequ
 	switch req.Type {
 	case models.OTPTypeVerification:
 		// Mark phone as verified
-		user, err := s.userRepo.GetByPhone(phone)
+		user, err := s.userRepo.GetByPhone(ctx, phone)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %w", err)
 		}
-		if err := s.userRepo.MarkPhoneVerified(user.ID); err != nil {
+		if err := s.userRepo.MarkPhoneVerified(ctx, user.ID); err != nil {
 			return nil, fmt.Errorf("failed to mark phone verified: %w", err)
 		}
 		response.User = user
 
 	case models.OTPType2FA:
 		// 2FA verification handled in auth flow
-		user, err := s.userRepo.GetByPhone(phone)
+		user, err := s.userRepo.GetByPhone(ctx, phone)
 		if err == nil {
 			response.User = user
 		}
 
 	case models.OTPTypePasswordReset:
 		// Password reset flow handled separately
-		user, err := s.userRepo.GetByPhone(phone)
+		user, err := s.userRepo.GetByPhone(ctx, phone)
 		if err == nil {
 			response.User = user
 		}
 
 	case models.OTPTypeLogin:
 		// Passwordless login
-		user, err := s.userRepo.GetByPhone(phone)
+		user, err := s.userRepo.GetByPhone(ctx, phone)
 		if err == nil {
 			response.User = user
 		}

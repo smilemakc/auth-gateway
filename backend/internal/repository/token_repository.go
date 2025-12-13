@@ -1,13 +1,14 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/uptrace/bun"
 )
 
 // TokenRepository handles token-related database operations
@@ -21,20 +22,11 @@ func NewTokenRepository(db *Database) *TokenRepository {
 }
 
 // CreateRefreshToken creates a new refresh token
-func (r *TokenRepository) CreateRefreshToken(token *models.RefreshToken) error {
-	query := `
-		INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at)
-		VALUES ($1, $2, $3, $4)
-		RETURNING created_at
-	`
-
-	err := r.db.QueryRow(
-		query,
-		token.ID,
-		token.UserID,
-		token.TokenHash,
-		token.ExpiresAt,
-	).Scan(&token.CreatedAt)
+func (r *TokenRepository) CreateRefreshToken(ctx context.Context, token *models.RefreshToken) error {
+	_, err := r.db.NewInsert().
+		Model(token).
+		Returning("*").
+		Exec(ctx)
 
 	if err != nil {
 		return fmt.Errorf("failed to create refresh token: %w", err)
@@ -44,26 +36,33 @@ func (r *TokenRepository) CreateRefreshToken(token *models.RefreshToken) error {
 }
 
 // GetRefreshToken retrieves a refresh token by token hash
-func (r *TokenRepository) GetRefreshToken(tokenHash string) (*models.RefreshToken, error) {
-	var token models.RefreshToken
-	query := `SELECT * FROM refresh_tokens WHERE token_hash = $1 AND revoked_at IS NULL`
+func (r *TokenRepository) GetRefreshToken(ctx context.Context, tokenHash string) (*models.RefreshToken, error) {
+	token := new(models.RefreshToken)
 
-	err := r.db.Get(&token, query, tokenHash)
+	err := r.db.NewSelect().
+		Model(token).
+		Where("token_hash = ?", tokenHash).
+		Where("revoked_at IS NULL").
+		Scan(ctx)
+
+	if err == sql.ErrNoRows {
+		return nil, models.ErrInvalidToken
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, models.ErrInvalidToken
-		}
 		return nil, fmt.Errorf("failed to get refresh token: %w", err)
 	}
 
-	return &token, nil
+	return token, nil
 }
 
 // RevokeRefreshToken revokes a refresh token
-func (r *TokenRepository) RevokeRefreshToken(tokenHash string) error {
-	query := `UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE token_hash = $1`
+func (r *TokenRepository) RevokeRefreshToken(ctx context.Context, tokenHash string) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.RefreshToken)(nil)).
+		Set("revoked_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("token_hash = ?", tokenHash).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, tokenHash)
 	if err != nil {
 		return fmt.Errorf("failed to revoke refresh token: %w", err)
 	}
@@ -81,10 +80,14 @@ func (r *TokenRepository) RevokeRefreshToken(tokenHash string) error {
 }
 
 // RevokeAllUserTokens revokes all refresh tokens for a user
-func (r *TokenRepository) RevokeAllUserTokens(userID uuid.UUID) error {
-	query := `UPDATE refresh_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND revoked_at IS NULL`
+func (r *TokenRepository) RevokeAllUserTokens(ctx context.Context, userID uuid.UUID) error {
+	_, err := r.db.NewUpdate().
+		Model((*models.RefreshToken)(nil)).
+		Set("revoked_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("user_id = ?", userID).
+		Where("revoked_at IS NULL").
+		Exec(ctx)
 
-	_, err := r.db.Exec(query, userID)
 	if err != nil {
 		return fmt.Errorf("failed to revoke all user tokens: %w", err)
 	}
@@ -93,10 +96,12 @@ func (r *TokenRepository) RevokeAllUserTokens(userID uuid.UUID) error {
 }
 
 // DeleteExpiredRefreshTokens deletes expired refresh tokens
-func (r *TokenRepository) DeleteExpiredRefreshTokens() error {
-	query := `DELETE FROM refresh_tokens WHERE expires_at < CURRENT_TIMESTAMP`
+func (r *TokenRepository) DeleteExpiredRefreshTokens(ctx context.Context) error {
+	_, err := r.db.NewDelete().
+		Model((*models.RefreshToken)(nil)).
+		Where("expires_at < ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Exec(ctx)
 
-	_, err := r.db.Exec(query)
 	if err != nil {
 		return fmt.Errorf("failed to delete expired refresh tokens: %w", err)
 	}
@@ -105,27 +110,18 @@ func (r *TokenRepository) DeleteExpiredRefreshTokens() error {
 }
 
 // AddToBlacklist adds a token to the blacklist
-func (r *TokenRepository) AddToBlacklist(token *models.TokenBlacklist) error {
-	query := `
-		INSERT INTO token_blacklist (id, token_hash, user_id, expires_at)
-		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (token_hash) DO NOTHING
-		RETURNING created_at
-	`
+func (r *TokenRepository) AddToBlacklist(ctx context.Context, token *models.TokenBlacklist) error {
+	_, err := r.db.NewInsert().
+		Model(token).
+		On("CONFLICT (token_hash) DO NOTHING").
+		Returning("*").
+		Exec(ctx)
 
-	err := r.db.QueryRow(
-		query,
-		token.ID,
-		token.TokenHash,
-		token.UserID,
-		token.ExpiresAt,
-	).Scan(&token.CreatedAt)
-
+	// ON CONFLICT DO NOTHING may return sql.ErrNoRows if conflict occurred
+	if err == sql.ErrNoRows {
+		return nil
+	}
 	if err != nil {
-		// If error is due to ON CONFLICT, it's okay
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
 		return fmt.Errorf("failed to add token to blacklist: %w", err)
 	}
 
@@ -133,11 +129,13 @@ func (r *TokenRepository) AddToBlacklist(token *models.TokenBlacklist) error {
 }
 
 // IsBlacklisted checks if a token is blacklisted
-func (r *TokenRepository) IsBlacklisted(tokenHash string) (bool, error) {
-	var exists bool
-	query := `SELECT EXISTS(SELECT 1 FROM token_blacklist WHERE token_hash = $1 AND expires_at > CURRENT_TIMESTAMP)`
+func (r *TokenRepository) IsBlacklisted(ctx context.Context, tokenHash string) (bool, error) {
+	exists, err := r.db.NewSelect().
+		Model((*models.TokenBlacklist)(nil)).
+		Where("token_hash = ?", tokenHash).
+		Where("expires_at > ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Exists(ctx)
 
-	err := r.db.QueryRow(query, tokenHash).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("failed to check token blacklist: %w", err)
 	}
@@ -146,10 +144,12 @@ func (r *TokenRepository) IsBlacklisted(tokenHash string) (bool, error) {
 }
 
 // DeleteExpiredBlacklistedTokens deletes expired tokens from the blacklist
-func (r *TokenRepository) DeleteExpiredBlacklistedTokens() error {
-	query := `DELETE FROM token_blacklist WHERE expires_at < CURRENT_TIMESTAMP`
+func (r *TokenRepository) DeleteExpiredBlacklistedTokens(ctx context.Context) error {
+	_, err := r.db.NewDelete().
+		Model((*models.TokenBlacklist)(nil)).
+		Where("expires_at < ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Exec(ctx)
 
-	_, err := r.db.Exec(query)
 	if err != nil {
 		return fmt.Errorf("failed to delete expired blacklisted tokens: %w", err)
 	}
@@ -158,26 +158,26 @@ func (r *TokenRepository) DeleteExpiredBlacklistedTokens() error {
 }
 
 // CleanupExpiredTokens removes all expired tokens (both refresh and blacklist)
-func (r *TokenRepository) CleanupExpiredTokens() error {
-	tx, err := r.db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
+func (r *TokenRepository) CleanupExpiredTokens(ctx context.Context) error {
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		// Delete expired refresh tokens
+		_, err := tx.NewDelete().
+			Model((*models.RefreshToken)(nil)).
+			Where("expires_at < ?", time.Now()).
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to delete expired refresh tokens: %w", err)
+		}
 
-	// Delete expired refresh tokens
-	if _, err := tx.Exec(`DELETE FROM refresh_tokens WHERE expires_at < $1`, time.Now()); err != nil {
-		return fmt.Errorf("failed to delete expired refresh tokens: %w", err)
-	}
+		// Delete expired blacklisted tokens
+		_, err = tx.NewDelete().
+			Model((*models.TokenBlacklist)(nil)).
+			Where("expires_at < ?", time.Now()).
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to delete expired blacklisted tokens: %w", err)
+		}
 
-	// Delete expired blacklisted tokens
-	if _, err := tx.Exec(`DELETE FROM token_blacklist WHERE expires_at < $1`, time.Now()); err != nil {
-		return fmt.Errorf("failed to delete expired blacklisted tokens: %w", err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	return nil
+		return nil
+	})
 }

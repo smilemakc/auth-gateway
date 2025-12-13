@@ -1,13 +1,13 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/uptrace/bun"
 )
 
 // APIKeyRepository handles API key-related database operations
@@ -21,80 +21,63 @@ func NewAPIKeyRepository(db *Database) *APIKeyRepository {
 }
 
 // Create creates a new API key
-func (r *APIKeyRepository) Create(apiKey *models.APIKey) error {
-	query := `
-		INSERT INTO api_keys (id, user_id, name, description, key_hash, key_prefix, scopes, is_active, expires_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING created_at, updated_at
-	`
+func (r *APIKeyRepository) Create(ctx context.Context, apiKey *models.APIKey) error {
+	_, err := r.db.NewInsert().
+		Model(apiKey).
+		Returning("*").
+		Exec(ctx)
 
-	err := r.db.QueryRow(
-		query,
-		apiKey.ID,
-		apiKey.UserID,
-		apiKey.Name,
-		apiKey.Description,
-		apiKey.KeyHash,
-		apiKey.KeyPrefix,
-		apiKey.Scopes,
-		apiKey.IsActive,
-		apiKey.ExpiresAt,
-	).Scan(&apiKey.CreatedAt, &apiKey.UpdatedAt)
-
-	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Code == "23505" { // unique_violation
-				return fmt.Errorf("API key already exists")
-			}
-		}
-		return fmt.Errorf("failed to create API key: %w", err)
-	}
-
-	return nil
+	return handlePgError(err)
 }
 
 // GetByID retrieves an API key by ID
-func (r *APIKeyRepository) GetByID(id uuid.UUID) (*models.APIKey, error) {
-	var apiKey models.APIKey
-	query := `SELECT * FROM api_keys WHERE id = $1`
+func (r *APIKeyRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.APIKey, error) {
+	apiKey := new(models.APIKey)
 
-	err := r.db.Get(&apiKey, query, id)
+	err := r.db.NewSelect().
+		Model(apiKey).
+		Where("id = ?", id).
+		Scan(ctx)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("API key not found")
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("API key not found")
-		}
 		return nil, fmt.Errorf("failed to get API key: %w", err)
 	}
 
-	return &apiKey, nil
+	return apiKey, nil
 }
 
 // GetByKeyHash retrieves an API key by its hash
-func (r *APIKeyRepository) GetByKeyHash(keyHash string) (*models.APIKey, error) {
-	var apiKey models.APIKey
-	query := `SELECT * FROM api_keys WHERE key_hash = $1`
+func (r *APIKeyRepository) GetByKeyHash(ctx context.Context, keyHash string) (*models.APIKey, error) {
+	apiKey := new(models.APIKey)
 
-	err := r.db.Get(&apiKey, query, keyHash)
+	err := r.db.NewSelect().
+		Model(apiKey).
+		Where("key_hash = ?", keyHash).
+		Scan(ctx)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("API key not found")
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("API key not found")
-		}
 		return nil, fmt.Errorf("failed to get API key: %w", err)
 	}
 
-	return &apiKey, nil
+	return apiKey, nil
 }
 
 // GetByUserID retrieves all API keys for a user
-func (r *APIKeyRepository) GetByUserID(userID uuid.UUID) ([]*models.APIKey, error) {
-	var apiKeys []*models.APIKey
-	query := `
-		SELECT * FROM api_keys
-		WHERE user_id = $1
-		ORDER BY created_at DESC
-	`
+func (r *APIKeyRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*models.APIKey, error) {
+	apiKeys := make([]*models.APIKey, 0)
 
-	err := r.db.Select(&apiKeys, query, userID)
+	err := r.db.NewSelect().
+		Model(&apiKeys).
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get API keys: %w", err)
 	}
@@ -103,16 +86,21 @@ func (r *APIKeyRepository) GetByUserID(userID uuid.UUID) ([]*models.APIKey, erro
 }
 
 // GetActiveByUserID retrieves active API keys for a user
-func (r *APIKeyRepository) GetActiveByUserID(userID uuid.UUID) ([]*models.APIKey, error) {
-	var apiKeys []*models.APIKey
-	query := `
-		SELECT * FROM api_keys
-		WHERE user_id = $1 AND is_active = true
-		AND (expires_at IS NULL OR expires_at > NOW())
-		ORDER BY created_at DESC
-	`
+func (r *APIKeyRepository) GetActiveByUserID(ctx context.Context, userID uuid.UUID) ([]*models.APIKey, error) {
+	apiKeys := make([]*models.APIKey, 0)
 
-	err := r.db.Select(&apiKeys, query, userID)
+	err := r.db.NewSelect().
+		Model(&apiKeys).
+		Where("user_id = ?", userID).
+		Where("is_active = ?", true).
+		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
+			return q.
+				Where("expires_at IS NULL").
+				WhereOr("expires_at > ?", bun.Ident("NOW()"))
+		}).
+		Order("created_at DESC").
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active API keys: %w", err)
 	}
@@ -121,38 +109,42 @@ func (r *APIKeyRepository) GetActiveByUserID(userID uuid.UUID) ([]*models.APIKey
 }
 
 // Update updates an API key
-func (r *APIKeyRepository) Update(apiKey *models.APIKey) error {
-	query := `
-		UPDATE api_keys
-		SET name = $1, description = $2, scopes = $3, is_active = $4, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $5
-		RETURNING updated_at
-	`
+func (r *APIKeyRepository) Update(ctx context.Context, apiKey *models.APIKey) error {
+	result, err := r.db.NewUpdate().
+		Model(apiKey).
+		Column("name", "description", "scopes", "is_active").
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		WherePK().
+		Returning("updated_at").
+		Exec(ctx)
 
-	err := r.db.QueryRow(
-		query,
-		apiKey.Name,
-		apiKey.Description,
-		apiKey.Scopes,
-		apiKey.IsActive,
-		apiKey.ID,
-	).Scan(&apiKey.UpdatedAt)
-
+	if err == sql.ErrNoRows {
+		return fmt.Errorf("API key not found")
+	}
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("API key not found")
-		}
 		return fmt.Errorf("failed to update API key: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("API key not found")
 	}
 
 	return nil
 }
 
 // UpdateLastUsed updates the last_used_at timestamp
-func (r *APIKeyRepository) UpdateLastUsed(id uuid.UUID) error {
-	query := `UPDATE api_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = $1`
+func (r *APIKeyRepository) UpdateLastUsed(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.APIKey)(nil)).
+		Set("last_used_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("id = ?", id).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, id)
 	if err != nil {
 		return fmt.Errorf("failed to update last used: %w", err)
 	}
@@ -170,10 +162,14 @@ func (r *APIKeyRepository) UpdateLastUsed(id uuid.UUID) error {
 }
 
 // Revoke revokes an API key (sets is_active to false)
-func (r *APIKeyRepository) Revoke(id uuid.UUID) error {
-	query := `UPDATE api_keys SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1`
+func (r *APIKeyRepository) Revoke(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.APIKey)(nil)).
+		Set("is_active = ?", false).
+		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("id = ?", id).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, id)
 	if err != nil {
 		return fmt.Errorf("failed to revoke API key: %w", err)
 	}
@@ -191,10 +187,12 @@ func (r *APIKeyRepository) Revoke(id uuid.UUID) error {
 }
 
 // Delete permanently deletes an API key
-func (r *APIKeyRepository) Delete(id uuid.UUID) error {
-	query := `DELETE FROM api_keys WHERE id = $1`
+func (r *APIKeyRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.NewDelete().
+		Model((*models.APIKey)(nil)).
+		Where("id = ?", id).
+		Exec(ctx)
 
-	result, err := r.db.Exec(query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete API key: %w", err)
 	}
@@ -212,10 +210,13 @@ func (r *APIKeyRepository) Delete(id uuid.UUID) error {
 }
 
 // DeleteExpired deletes expired API keys
-func (r *APIKeyRepository) DeleteExpired() error {
-	query := `DELETE FROM api_keys WHERE expires_at IS NOT NULL AND expires_at < CURRENT_TIMESTAMP`
+func (r *APIKeyRepository) DeleteExpired(ctx context.Context) error {
+	_, err := r.db.NewDelete().
+		Model((*models.APIKey)(nil)).
+		Where("expires_at IS NOT NULL").
+		Where("expires_at < ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Exec(ctx)
 
-	_, err := r.db.Exec(query)
 	if err != nil {
 		return fmt.Errorf("failed to delete expired API keys: %w", err)
 	}
@@ -224,11 +225,12 @@ func (r *APIKeyRepository) DeleteExpired() error {
 }
 
 // Count returns the total number of API keys for a user
-func (r *APIKeyRepository) Count(userID uuid.UUID) (int, error) {
-	var count int
-	query := `SELECT COUNT(*) FROM api_keys WHERE user_id = $1`
+func (r *APIKeyRepository) Count(ctx context.Context, userID uuid.UUID) (int, error) {
+	count, err := r.db.NewSelect().
+		Model((*models.APIKey)(nil)).
+		Where("user_id = ?", userID).
+		Count(ctx)
 
-	err := r.db.QueryRow(query, userID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count API keys: %w", err)
 	}
@@ -237,15 +239,18 @@ func (r *APIKeyRepository) Count(userID uuid.UUID) (int, error) {
 }
 
 // CountActive returns the number of active API keys for a user
-func (r *APIKeyRepository) CountActive(userID uuid.UUID) (int, error) {
-	var count int
-	query := `
-		SELECT COUNT(*) FROM api_keys
-		WHERE user_id = $1 AND is_active = true
-		AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
-	`
+func (r *APIKeyRepository) CountActive(ctx context.Context, userID uuid.UUID) (int, error) {
+	count, err := r.db.NewSelect().
+		Model((*models.APIKey)(nil)).
+		Where("user_id = ?", userID).
+		Where("is_active = ?", true).
+		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
+			return q.
+				Where("expires_at IS NULL").
+				WhereOr("expires_at > ?", bun.Ident("CURRENT_TIMESTAMP"))
+		}).
+		Count(ctx)
 
-	err := r.db.QueryRow(query, userID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count active API keys: %w", err)
 	}
@@ -254,14 +259,14 @@ func (r *APIKeyRepository) CountActive(userID uuid.UUID) (int, error) {
 }
 
 // ListAll returns all API keys (admin only)
-func (r *APIKeyRepository) ListAll() ([]*models.APIKey, error) {
-	var keys []*models.APIKey
-	query := `
-		SELECT * FROM api_keys
-		ORDER BY created_at DESC
-	`
+func (r *APIKeyRepository) ListAll(ctx context.Context) ([]*models.APIKey, error) {
+	keys := make([]*models.APIKey, 0)
 
-	err := r.db.Select(&keys, query)
+	err := r.db.NewSelect().
+		Model(&keys).
+		Order("created_at DESC").
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to list all API keys: %w", err)
 	}

@@ -8,38 +8,38 @@ import (
 
 // SMSSettings represents SMS provider settings in the database
 type SMSSettings struct {
-	ID                 uuid.UUID  `json:"id" db:"id"`
-	Provider           string     `json:"provider" db:"provider"`
-	Enabled            bool       `json:"enabled" db:"enabled"`
-	AccountSID         *string    `json:"account_sid,omitempty" db:"account_sid"`
-	AuthToken          *string    `json:"-" db:"auth_token"` // Never expose in JSON
-	FromNumber         *string    `json:"from_number,omitempty" db:"from_number"`
-	AWSRegion          *string    `json:"aws_region,omitempty" db:"aws_region"`
-	AWSAccessKeyID     *string    `json:"aws_access_key_id,omitempty" db:"aws_access_key_id"`
-	AWSSecretAccessKey *string    `json:"-" db:"aws_secret_access_key"` // Never expose in JSON
-	AWSSenderID        *string    `json:"aws_sender_id,omitempty" db:"aws_sender_id"`
-	MaxPerHour         int        `json:"max_per_hour" db:"max_per_hour"`
-	MaxPerDay          int        `json:"max_per_day" db:"max_per_day"`
-	MaxPerNumber       int        `json:"max_per_number" db:"max_per_number"`
-	CreatedAt          time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt          time.Time  `json:"updated_at" db:"updated_at"`
-	CreatedBy          *uuid.UUID `json:"created_by,omitempty" db:"created_by"`
+	ID                 uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	Provider           string     `json:"provider" bun:"provider"`
+	Enabled            bool       `json:"enabled" bun:"enabled"`
+	AccountSID         *string    `json:"account_sid,omitempty" bun:"account_sid"`
+	AuthToken          *string    `json:"-" bun:"auth_token"` // Never expose in JSON
+	FromNumber         *string    `json:"from_number,omitempty" bun:"from_number"`
+	AWSRegion          *string    `json:"aws_region,omitempty" bun:"aws_region"`
+	AWSAccessKeyID     *string    `json:"aws_access_key_id,omitempty" bun:"aws_access_key_id"`
+	AWSSecretAccessKey *string    `json:"-" bun:"aws_secret_access_key"` // Never expose in JSON
+	AWSSenderID        *string    `json:"aws_sender_id,omitempty" bun:"aws_sender_id"`
+	MaxPerHour         int        `json:"max_per_hour" bun:"max_per_hour"`
+	MaxPerDay          int        `json:"max_per_day" bun:"max_per_day"`
+	MaxPerNumber       int        `json:"max_per_number" bun:"max_per_number"`
+	CreatedAt          time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	UpdatedAt          time.Time  `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
+	CreatedBy          *uuid.UUID `json:"created_by,omitempty" bun:"created_by,type:uuid"`
 }
 
 // SMSLog represents a log of sent SMS messages
 type SMSLog struct {
-	ID           uuid.UUID  `json:"id" db:"id"`
-	Phone        string     `json:"phone" db:"phone"`
-	Message      string     `json:"message" db:"message"`
-	Type         OTPType    `json:"type" db:"type"`
-	Provider     string     `json:"provider" db:"provider"`
-	MessageID    *string    `json:"message_id,omitempty" db:"message_id"`
-	Status       SMSStatus  `json:"status" db:"status"`
-	ErrorMessage *string    `json:"error_message,omitempty" db:"error_message"`
-	SentAt       *time.Time `json:"sent_at,omitempty" db:"sent_at"`
-	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
-	UserID       *uuid.UUID `json:"user_id,omitempty" db:"user_id"`
-	IPAddress    *string    `json:"ip_address,omitempty" db:"ip_address"`
+	ID           uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	Phone        string     `json:"phone" bun:"phone"`
+	Message      string     `json:"message" bun:"message"`
+	Type         OTPType    `json:"type" bun:"type"`
+	Provider     string     `json:"provider" bun:"provider"`
+	MessageID    *string    `json:"message_id,omitempty" bun:"message_id"`
+	Status       SMSStatus  `json:"status" bun:"status"`
+	ErrorMessage *string    `json:"error_message,omitempty" bun:"error_message"`
+	SentAt       *time.Time `json:"sent_at,omitempty" bun:"sent_at"`
+	CreatedAt    time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	UserID       *uuid.UUID `json:"user_id,omitempty" bun:"user_id,type:uuid"`
+	IPAddress    *string    `json:"ip_address,omitempty" bun:"ip_address"`
 }
 
 // SMSStatus represents the status of an SMS message

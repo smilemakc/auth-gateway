@@ -39,7 +39,10 @@ var (
 	ErrAPIKeyRevoked  = &AppError{Code: http.StatusUnauthorized, Message: "API key revoked"}
 
 	// Generic errors
-	ErrNotFound = &AppError{Code: http.StatusNotFound, Message: "Resource not found"}
+	ErrNotFound            = &AppError{Code: http.StatusNotFound, Message: "Resource not found"}
+	ErrAlreadyExists       = &AppError{Code: http.StatusConflict, Message: "Resource already exists"}
+	ErrForeignKeyViolation = &AppError{Code: http.StatusBadRequest, Message: "Foreign key constraint violation"}
+	ErrRequiredField       = &AppError{Code: http.StatusBadRequest, Message: "Required field is missing or null"}
 )
 
 // NewAppError creates a new application error

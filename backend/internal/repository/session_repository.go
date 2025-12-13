@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/smilemakc/auth-gateway/internal/models"
-
 	"github.com/google/uuid"
+	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/uptrace/bun"
 )
 
 // SessionRepository handles session database operations
@@ -23,53 +23,70 @@ func NewSessionRepository(db *Database) *SessionRepository {
 
 // CreateSession creates a new session (refresh token) with device tracking
 func (r *SessionRepository) CreateSession(ctx context.Context, session *models.Session) error {
-	query := `
-		INSERT INTO refresh_tokens (
-			user_id, token_hash, device_type, os, browser, ip_address,
-			user_agent, session_name, last_active_at, expires_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-		RETURNING id, created_at
-	`
-	return r.db.QueryRowContext(
-		ctx, query,
-		session.UserID, session.TokenHash, session.DeviceType, session.OS,
-		session.Browser, session.IPAddress, session.UserAgent, session.SessionName,
-		session.LastActiveAt, session.ExpiresAt,
-	).Scan(&session.ID, &session.CreatedAt)
+	_, err := r.db.NewInsert().
+		Model(session).
+		Returning("*").
+		Exec(ctx)
+
+	return handlePgError(err)
 }
 
 // GetSessionByID retrieves a session by ID
 func (r *SessionRepository) GetSessionByID(ctx context.Context, id uuid.UUID) (*models.Session, error) {
-	var session models.Session
-	query := `SELECT * FROM refresh_tokens WHERE id = $1`
-	err := r.db.GetContext(ctx, &session, query, id)
+	session := new(models.Session)
+
+	err := r.db.NewSelect().
+		Model(session).
+		Where("id = ?", id).
+		Scan(ctx)
+
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("session not found")
 	}
-	return &session, err
+	if err != nil {
+		return nil, fmt.Errorf("failed to get session by id: %w", err)
+	}
+
+	return session, nil
 }
 
 // GetSessionByTokenHash retrieves a session by token hash
 func (r *SessionRepository) GetSessionByTokenHash(ctx context.Context, tokenHash string) (*models.Session, error) {
-	var session models.Session
-	query := `SELECT * FROM refresh_tokens WHERE token_hash = $1 AND revoked_at IS NULL`
-	err := r.db.GetContext(ctx, &session, query, tokenHash)
+	session := new(models.Session)
+
+	err := r.db.NewSelect().
+		Model(session).
+		Where("token_hash = ?", tokenHash).
+		Where("revoked_at IS NULL").
+		Scan(ctx)
+
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("session not found or revoked")
 	}
-	return &session, err
+	if err != nil {
+		return nil, fmt.Errorf("failed to get session by token hash: %w", err)
+	}
+
+	return session, nil
 }
 
 // GetUserSessions retrieves all active sessions for a user
 func (r *SessionRepository) GetUserSessions(ctx context.Context, userID uuid.UUID) ([]models.Session, error) {
-	var sessions []models.Session
-	query := `
-		SELECT * FROM refresh_tokens
-		WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > NOW()
-		ORDER BY last_active_at DESC
-	`
-	err := r.db.SelectContext(ctx, &sessions, query, userID)
-	return sessions, err
+	sessions := make([]models.Session, 0)
+
+	err := r.db.NewSelect().
+		Model(&sessions).
+		Where("user_id = ?", userID).
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", bun.Ident("NOW()")).
+		Order("last_active_at DESC").
+		Scan(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user sessions: %w", err)
+	}
+
+	return sessions, nil
 }
 
 // GetUserSessionsPaginated retrieves paginated active sessions for a user
@@ -77,26 +94,35 @@ func (r *SessionRepository) GetUserSessionsPaginated(ctx context.Context, userID
 	offset := (page - 1) * perPage
 
 	// Get total count
-	var total int
-	countQuery := `
-		SELECT COUNT(*) FROM refresh_tokens
-		WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > NOW()
-	`
-	err := r.db.GetContext(ctx, &total, countQuery, userID)
+	total, err := r.db.NewSelect().
+		Model((*models.Session)(nil)).
+		Where("user_id = ?", userID).
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", bun.Ident("NOW()")).
+		Count(ctx)
+
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("failed to count user sessions: %w", err)
 	}
 
 	// Get paginated sessions
-	var sessions []models.Session
-	query := `
-		SELECT * FROM refresh_tokens
-		WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > NOW()
-		ORDER BY last_active_at DESC
-		LIMIT $2 OFFSET $3
-	`
-	err = r.db.SelectContext(ctx, &sessions, query, userID, perPage, offset)
-	return sessions, total, err
+	sessions := make([]models.Session, 0)
+
+	err = r.db.NewSelect().
+		Model(&sessions).
+		Where("user_id = ?", userID).
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", bun.Ident("NOW()")).
+		Order("last_active_at DESC").
+		Limit(perPage).
+		Offset(offset).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get paginated user sessions: %w", err)
+	}
+
+	return sessions, total, nil
 }
 
 // GetAllActiveSessionsPaginated retrieves all active sessions with pagination (admin)
@@ -104,121 +130,156 @@ func (r *SessionRepository) GetAllActiveSessionsPaginated(ctx context.Context, p
 	offset := (page - 1) * perPage
 
 	// Get total count
-	var total int
-	countQuery := `
-		SELECT COUNT(*) FROM refresh_tokens
-		WHERE revoked_at IS NULL AND expires_at > NOW()
-	`
-	err := r.db.GetContext(ctx, &total, countQuery)
+	total, err := r.db.NewSelect().
+		Model((*models.Session)(nil)).
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", bun.Ident("NOW()")).
+		Count(ctx)
+
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("failed to count all sessions: %w", err)
 	}
 
 	// Get paginated sessions
-	var sessions []models.Session
-	query := `
-		SELECT * FROM refresh_tokens
-		WHERE revoked_at IS NULL AND expires_at > NOW()
-		ORDER BY last_active_at DESC
-		LIMIT $1 OFFSET $2
-	`
-	err = r.db.SelectContext(ctx, &sessions, query, perPage, offset)
-	return sessions, total, err
+	sessions := make([]models.Session, 0)
+
+	err = r.db.NewSelect().
+		Model(&sessions).
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", bun.Ident("NOW()")).
+		Order("last_active_at DESC").
+		Limit(perPage).
+		Offset(offset).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get paginated sessions: %w", err)
+	}
+
+	return sessions, total, nil
 }
 
 // UpdateSessionActivity updates the last active timestamp
 func (r *SessionRepository) UpdateSessionActivity(ctx context.Context, id uuid.UUID) error {
-	query := `UPDATE refresh_tokens SET last_active_at = NOW() WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, id)
-	return err
+	_, err := r.db.NewUpdate().
+		Model((*models.Session)(nil)).
+		Set("last_active_at = ?", bun.Ident("NOW()")).
+		Where("id = ?", id).
+		Exec(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to update session activity: %w", err)
+	}
+
+	return nil
 }
 
 // UpdateSessionName updates the session name
 func (r *SessionRepository) UpdateSessionName(ctx context.Context, id uuid.UUID, name string) error {
-	query := `UPDATE refresh_tokens SET session_name = $1 WHERE id = $2`
-	result, err := r.db.ExecContext(ctx, query, name, id)
+	result, err := r.db.NewUpdate().
+		Model((*models.Session)(nil)).
+		Set("session_name = ?", name).
+		Where("id = ?", id).
+		Exec(ctx)
+
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update session name: %w", err)
 	}
+
 	rows, err := result.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
+
 	if rows == 0 {
 		return fmt.Errorf("session not found")
 	}
+
 	return nil
 }
 
 // RevokeSession revokes a specific session
 func (r *SessionRepository) RevokeSession(ctx context.Context, id uuid.UUID) error {
-	query := `UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1 AND revoked_at IS NULL`
-	result, err := r.db.ExecContext(ctx, query, id)
+	result, err := r.db.NewUpdate().
+		Model((*models.Session)(nil)).
+		Set("revoked_at = ?", bun.Ident("NOW()")).
+		Where("id = ?", id).
+		Where("revoked_at IS NULL").
+		Exec(ctx)
+
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to revoke session: %w", err)
 	}
+
 	rows, err := result.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
+
 	if rows == 0 {
 		return fmt.Errorf("session not found or already revoked")
 	}
+
 	return nil
 }
 
 // RevokeUserSession revokes a session only if it belongs to the user
 func (r *SessionRepository) RevokeUserSession(ctx context.Context, userID, sessionID uuid.UUID) error {
-	query := `
-		UPDATE refresh_tokens
-		SET revoked_at = NOW()
-		WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL
-	`
-	result, err := r.db.ExecContext(ctx, query, sessionID, userID)
+	result, err := r.db.NewUpdate().
+		Model((*models.Session)(nil)).
+		Set("revoked_at = ?", bun.Ident("NOW()")).
+		Where("id = ?", sessionID).
+		Where("user_id = ?", userID).
+		Where("revoked_at IS NULL").
+		Exec(ctx)
+
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to revoke user session: %w", err)
 	}
+
 	rows, err := result.RowsAffected()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
+
 	if rows == 0 {
 		return fmt.Errorf("session not found, already revoked, or does not belong to user")
 	}
+
 	return nil
 }
 
 // RevokeAllUserSessions revokes all sessions for a user except the current one
 func (r *SessionRepository) RevokeAllUserSessions(ctx context.Context, userID uuid.UUID, exceptSessionID *uuid.UUID) error {
-	var query string
-	var err error
+	query := r.db.NewUpdate().
+		Model((*models.Session)(nil)).
+		Set("revoked_at = ?", bun.Ident("NOW()")).
+		Where("user_id = ?", userID).
+		Where("revoked_at IS NULL")
 
 	if exceptSessionID != nil {
-		query = `
-			UPDATE refresh_tokens
-			SET revoked_at = NOW()
-			WHERE user_id = $1 AND id != $2 AND revoked_at IS NULL
-		`
-		_, err = r.db.ExecContext(ctx, query, userID, *exceptSessionID)
-	} else {
-		query = `
-			UPDATE refresh_tokens
-			SET revoked_at = NOW()
-			WHERE user_id = $1 AND revoked_at IS NULL
-		`
-		_, err = r.db.ExecContext(ctx, query, userID)
+		query = query.Where("id != ?", *exceptSessionID)
 	}
 
-	return err
+	_, err := query.Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to revoke user sessions: %w", err)
+	}
+
+	return nil
 }
 
 // GetSessionStats retrieves session statistics
 func (r *SessionRepository) GetSessionStats(ctx context.Context) (*models.SessionStats, error) {
-	var total int
-	query := `SELECT COUNT(*) FROM refresh_tokens WHERE revoked_at IS NULL AND expires_at > NOW()`
-	err := r.db.GetContext(ctx, &total, query)
+	// Get total count
+	total, err := r.db.NewSelect().
+		Model((*models.Session)(nil)).
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", bun.Ident("NOW()")).
+		Count(ctx)
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to count total sessions: %w", err)
 	}
 
 	stats := &models.SessionStats{
@@ -230,64 +291,76 @@ func (r *SessionRepository) GetSessionStats(ctx context.Context) (*models.Sessio
 
 	// Get sessions by device type
 	type DeviceCount struct {
-		DeviceType string `db:"device_type"`
-		Count      int    `db:"count"`
+		DeviceType string `bun:"device_type"`
+		Count      int    `bun:"count"`
 	}
 	var deviceCounts []DeviceCount
-	deviceQuery := `
-		SELECT COALESCE(device_type, 'unknown') as device_type, COUNT(*) as count
-		FROM refresh_tokens
-		WHERE revoked_at IS NULL AND expires_at > NOW()
-		GROUP BY device_type
-	`
-	err = r.db.SelectContext(ctx, &deviceCounts, deviceQuery)
+
+	err = r.db.NewSelect().
+		Model((*models.Session)(nil)).
+		ColumnExpr("COALESCE(device_type, 'unknown') as device_type").
+		ColumnExpr("COUNT(*) as count").
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", bun.Ident("NOW()")).
+		Group("device_type").
+		Scan(ctx, &deviceCounts)
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get device stats: %w", err)
 	}
+
 	for _, dc := range deviceCounts {
 		stats.SessionsByDevice[dc.DeviceType] = dc.Count
 	}
 
 	// Get sessions by OS
 	type OSCount struct {
-		OS    string `db:"os"`
-		Count int    `db:"count"`
+		OS    string `bun:"os"`
+		Count int    `bun:"count"`
 	}
 	var osCounts []OSCount
-	osQuery := `
-		SELECT COALESCE(os, 'unknown') as os, COUNT(*) as count
-		FROM refresh_tokens
-		WHERE revoked_at IS NULL AND expires_at > NOW()
-		GROUP BY os
-		ORDER BY count DESC
-		LIMIT 10
-	`
-	err = r.db.SelectContext(ctx, &osCounts, osQuery)
+
+	err = r.db.NewSelect().
+		Model((*models.Session)(nil)).
+		ColumnExpr("COALESCE(os, 'unknown') as os").
+		ColumnExpr("COUNT(*) as count").
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", bun.Ident("NOW()")).
+		Group("os").
+		Order("count DESC").
+		Limit(10).
+		Scan(ctx, &osCounts)
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get OS stats: %w", err)
 	}
+
 	for _, oc := range osCounts {
 		stats.SessionsByOS[oc.OS] = oc.Count
 	}
 
 	// Get sessions by browser
 	type BrowserCount struct {
-		Browser string `db:"browser"`
-		Count   int    `db:"count"`
+		Browser string `bun:"browser"`
+		Count   int    `bun:"count"`
 	}
 	var browserCounts []BrowserCount
-	browserQuery := `
-		SELECT COALESCE(browser, 'unknown') as browser, COUNT(*) as count
-		FROM refresh_tokens
-		WHERE revoked_at IS NULL AND expires_at > NOW()
-		GROUP BY browser
-		ORDER BY count DESC
-		LIMIT 10
-	`
-	err = r.db.SelectContext(ctx, &browserCounts, browserQuery)
+
+	err = r.db.NewSelect().
+		Model((*models.Session)(nil)).
+		ColumnExpr("COALESCE(browser, 'unknown') as browser").
+		ColumnExpr("COUNT(*) as count").
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", bun.Ident("NOW()")).
+		Group("browser").
+		Order("count DESC").
+		Limit(10).
+		Scan(ctx, &browserCounts)
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get browser stats: %w", err)
 	}
+
 	for _, bc := range browserCounts {
 		stats.SessionsByBrowser[bc.Browser] = bc.Count
 	}
@@ -297,22 +370,31 @@ func (r *SessionRepository) GetSessionStats(ctx context.Context) (*models.Sessio
 
 // CountUserActiveSessions counts active sessions for a user
 func (r *SessionRepository) CountUserActiveSessions(ctx context.Context, userID uuid.UUID) (int, error) {
-	var count int
-	query := `
-		SELECT COUNT(*) FROM refresh_tokens
-		WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > NOW()
-	`
-	err := r.db.GetContext(ctx, &count, query, userID)
-	return count, err
+	count, err := r.db.NewSelect().
+		Model((*models.Session)(nil)).
+		Where("user_id = ?", userID).
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", bun.Ident("NOW()")).
+		Count(ctx)
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to count user active sessions: %w", err)
+	}
+
+	return count, nil
 }
 
 // DeleteExpiredSessions deletes expired and old revoked sessions
 func (r *SessionRepository) DeleteExpiredSessions(ctx context.Context, olderThan time.Duration) error {
-	query := `
-		DELETE FROM refresh_tokens
-		WHERE expires_at < NOW()
-		   OR (revoked_at IS NOT NULL AND revoked_at < NOW() - $1::interval)
-	`
-	_, err := r.db.ExecContext(ctx, query, olderThan)
-	return err
+	_, err := r.db.NewDelete().
+		Model((*models.Session)(nil)).
+		WhereOr("expires_at < ?", bun.Ident("NOW()")).
+		WhereOr("(revoked_at IS NOT NULL AND revoked_at < ? - ?::interval)", bun.Ident("NOW()"), olderThan).
+		Exec(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to delete expired sessions: %w", err)
+	}
+
+	return nil
 }

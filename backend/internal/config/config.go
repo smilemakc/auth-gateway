@@ -2,9 +2,12 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 // Config holds all configuration for the application
@@ -138,6 +141,10 @@ type MetricsConfig struct {
 
 // Load reads configuration from environment variables
 func Load() (*Config, error) {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("No .env file found will use environment variables instead.")
+	}
 	cfg := &Config{
 		Server: ServerConfig{
 			Port:     getEnv("PORT", "3000"),

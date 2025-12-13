@@ -1,37 +1,56 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { mockUsers } from '../services/mockData';
 import { Search, Shield, ShieldOff, Check, X, Filter, Eye, Edit } from 'lucide-react';
 import { UserRole } from '../types';
 import { useLanguage } from '../services/i18n';
+import { useUsers, useUpdateUser } from '../hooks/useUsers';
 
 const Users: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [data, setData] = useState(mockUsers);
   const navigate = useNavigate();
   const { t } = useLanguage();
 
-  const filteredUsers = useMemo(() => {
-    return data.filter(user => {
-      const matchesSearch = 
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        user.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-      return matchesSearch && matchesRole;
-    });
-  }, [data, searchTerm, roleFilter]);
+  // Fetch users with React Query
+  const { data, isLoading, error } = useUsers(1, 50, searchTerm, roleFilter);
+  const updateUserMutation = useUpdateUser();
 
-  const toggleStatus = (id: string) => {
-    setData(prev => prev.map(u => u.id === id ? { ...u, isActive: !u.isActive } : u));
+  const toggleStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      await updateUserMutation.mutateAsync({
+        id,
+        data: { isActive: !currentStatus },
+      });
+    } catch (error) {
+      console.error('Failed to toggle user status:', error);
+      alert('Failed to update user status');
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600">Error loading users: {(error as Error).message}</p>
+      </div>
+    );
+  }
+
+  const users = data?.users || [];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900">{t('users.title')}</h1>
-        <button 
+        <button
           onClick={() => navigate('/users/new')}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
@@ -81,12 +100,12 @@ const Users: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
+              {users.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        <img className="h-10 w-10 rounded-full" src={user.avatarUrl} alt="" />
+                        <img className="h-10 w-10 rounded-full" src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}`} alt="" />
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{user.username}</div>
@@ -134,9 +153,10 @@ const Users: React.FC = () => {
                       >
                         <Edit size={18} />
                       </Link>
-                      <button 
-                        onClick={() => toggleStatus(user.id)}
+                      <button
+                        onClick={() => toggleStatus(user.id, user.isActive)}
                         className={`p-1 rounded-md hover:bg-gray-100 ${user.isActive ? 'text-gray-400 hover:text-red-600' : 'text-gray-400 hover:text-green-600'}`}
+                        disabled={updateUserMutation.isPending}
                       >
                         {user.isActive ? <ShieldOff size={18} /> : <Shield size={18} />}
                       </button>
@@ -147,7 +167,7 @@ const Users: React.FC = () => {
             </tbody>
           </table>
           
-          {filteredUsers.length === 0 && (
+          {users.length === 0 && (
              <div className="p-12 text-center text-gray-500">
                 No users found.
              </div>

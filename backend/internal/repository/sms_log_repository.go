@@ -7,45 +7,24 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
 	"github.com/smilemakc/auth-gateway/internal/models"
 )
 
 // SMSLogRepository handles SMS log database operations
 type SMSLogRepository struct {
-	db *sqlx.DB
+	db *Database
 }
 
 // NewSMSLogRepository creates a new SMS log repository
-func NewSMSLogRepository(db *sqlx.DB) *SMSLogRepository {
+func NewSMSLogRepository(db *Database) *SMSLogRepository {
 	return &SMSLogRepository{db: db}
 }
 
 // Create creates a new SMS log entry
 func (r *SMSLogRepository) Create(ctx context.Context, log *models.SMSLog) error {
-	query := `
-		INSERT INTO sms_logs (
-			id, phone, message, type, provider, message_id, status,
-			error_message, sent_at, user_id, ip_address, created_at
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
-		)
-	`
-
-	_, err := r.db.ExecContext(ctx, query,
-		log.ID,
-		log.Phone,
-		log.Message,
-		log.Type,
-		log.Provider,
-		log.MessageID,
-		log.Status,
-		log.ErrorMessage,
-		log.SentAt,
-		log.UserID,
-		log.IPAddress,
-		log.CreatedAt,
-	)
+	_, err := r.db.NewInsert().
+		Model(log).
+		Exec(ctx)
 
 	if err != nil {
 		return fmt.Errorf("failed to create SMS log: %w", err)
@@ -56,10 +35,13 @@ func (r *SMSLogRepository) Create(ctx context.Context, log *models.SMSLog) error
 
 // GetByID retrieves an SMS log by ID
 func (r *SMSLogRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.SMSLog, error) {
-	var log models.SMSLog
-	query := `SELECT * FROM sms_logs WHERE id = $1`
+	log := new(models.SMSLog)
 
-	err := r.db.GetContext(ctx, &log, query, id)
+	err := r.db.NewSelect().
+		Model(log).
+		Where("id = ?", id).
+		Scan(ctx)
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, models.ErrNotFound
@@ -67,21 +49,24 @@ func (r *SMSLogRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.S
 		return nil, fmt.Errorf("failed to get SMS log: %w", err)
 	}
 
-	return &log, nil
+	return log, nil
 }
 
 // UpdateStatus updates the status of an SMS log
 func (r *SMSLogRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status models.SMSStatus, errorMsg *string) error {
-	query := `
-		UPDATE sms_logs SET
-			status = $2,
-			error_message = $3,
-			sent_at = CASE WHEN $2 = 'sent' THEN $4 ELSE sent_at END
-		WHERE id = $1
-	`
-
 	sentAt := time.Now()
-	result, err := r.db.ExecContext(ctx, query, id, status, errorMsg, sentAt)
+
+	query := r.db.NewUpdate().
+		Model((*models.SMSLog)(nil)).
+		Set("status = ?", status).
+		Set("error_message = ?", errorMsg).
+		Where("id = ?", id)
+
+	if status == "sent" {
+		query = query.Set("sent_at = ?", sentAt)
+	}
+
+	result, err := query.Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update SMS log status: %w", err)
 	}
@@ -100,15 +85,15 @@ func (r *SMSLogRepository) UpdateStatus(ctx context.Context, id uuid.UUID, statu
 
 // GetByPhone retrieves SMS logs for a phone number
 func (r *SMSLogRepository) GetByPhone(ctx context.Context, phone string, limit int) ([]*models.SMSLog, error) {
-	var logs []*models.SMSLog
-	query := `
-		SELECT * FROM sms_logs
-		WHERE phone = $1
-		ORDER BY created_at DESC
-		LIMIT $2
-	`
+	logs := make([]*models.SMSLog, 0)
 
-	err := r.db.SelectContext(ctx, &logs, query, phone, limit)
+	err := r.db.NewSelect().
+		Model(&logs).
+		Where("phone = ?", phone).
+		Order("created_at DESC").
+		Limit(limit).
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get SMS logs by phone: %w", err)
 	}
@@ -118,47 +103,47 @@ func (r *SMSLogRepository) GetByPhone(ctx context.Context, phone string, limit i
 
 // CountByPhoneAndTimeRange counts SMS logs for a phone number within a time range
 func (r *SMSLogRepository) CountByPhoneAndTimeRange(ctx context.Context, phone string, start, end time.Time) (int64, error) {
-	var count int64
-	query := `
-		SELECT COUNT(*) FROM sms_logs
-		WHERE phone = $1 AND created_at BETWEEN $2 AND $3
-	`
+	count, err := r.db.NewSelect().
+		Model((*models.SMSLog)(nil)).
+		Where("phone = ?", phone).
+		Where("created_at BETWEEN ? AND ?", start, end).
+		Count(ctx)
 
-	err := r.db.GetContext(ctx, &count, query, phone, start, end)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count SMS logs: %w", err)
 	}
 
-	return count, nil
+	return int64(count), nil
 }
 
 // CountByPhoneAndType counts SMS logs for a phone number and type within a time range
 func (r *SMSLogRepository) CountByPhoneAndType(ctx context.Context, phone string, otpType models.OTPType, duration time.Duration) (int64, error) {
-	var count int64
-	query := `
-		SELECT COUNT(*) FROM sms_logs
-		WHERE phone = $1 AND type = $2 AND created_at > $3
-	`
-
 	since := time.Now().Add(-duration)
-	err := r.db.GetContext(ctx, &count, query, phone, otpType, since)
+
+	count, err := r.db.NewSelect().
+		Model((*models.SMSLog)(nil)).
+		Where("phone = ?", phone).
+		Where("type = ?", otpType).
+		Where("created_at > ?", since).
+		Count(ctx)
+
 	if err != nil {
 		return 0, fmt.Errorf("failed to count SMS logs by type: %w", err)
 	}
 
-	return count, nil
+	return int64(count), nil
 }
 
 // GetRecent retrieves recent SMS logs
 func (r *SMSLogRepository) GetRecent(ctx context.Context, limit int) ([]*models.SMSLog, error) {
-	var logs []*models.SMSLog
-	query := `
-		SELECT * FROM sms_logs
-		ORDER BY created_at DESC
-		LIMIT $1
-	`
+	logs := make([]*models.SMSLog, 0)
 
-	err := r.db.SelectContext(ctx, &logs, query, limit)
+	err := r.db.NewSelect().
+		Model(&logs).
+		Order("created_at DESC").
+		Limit(limit).
+		Scan(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recent SMS logs: %w", err)
 	}
@@ -174,73 +159,89 @@ func (r *SMSLogRepository) GetStats(ctx context.Context) (*models.SMSStatsRespon
 	}
 
 	// Total sent
-	err := r.db.GetContext(ctx, &stats.TotalSent, `SELECT COUNT(*) FROM sms_logs WHERE status = 'sent'`)
+	totalSent, err := r.db.NewSelect().
+		Model((*models.SMSLog)(nil)).
+		Where("status = ?", "sent").
+		Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total sent: %w", err)
 	}
+	stats.TotalSent = int64(totalSent)
 
 	// Total failed
-	err = r.db.GetContext(ctx, &stats.TotalFailed, `SELECT COUNT(*) FROM sms_logs WHERE status = 'failed'`)
+	totalFailed, err := r.db.NewSelect().
+		Model((*models.SMSLog)(nil)).
+		Where("status = ?", "failed").
+		Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total failed: %w", err)
 	}
+	stats.TotalFailed = int64(totalFailed)
 
 	// Sent today
 	today := time.Now().Truncate(24 * time.Hour)
-	err = r.db.GetContext(ctx, &stats.SentToday, `
-		SELECT COUNT(*) FROM sms_logs
-		WHERE status = 'sent' AND created_at >= $1
-	`, today)
+	sentToday, err := r.db.NewSelect().
+		Model((*models.SMSLog)(nil)).
+		Where("status = ?", "sent").
+		Where("created_at >= ?", today).
+		Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sent today: %w", err)
 	}
+	stats.SentToday = int64(sentToday)
 
 	// Sent this hour
 	thisHour := time.Now().Truncate(time.Hour)
-	err = r.db.GetContext(ctx, &stats.SentThisHour, `
-		SELECT COUNT(*) FROM sms_logs
-		WHERE status = 'sent' AND created_at >= $1
-	`, thisHour)
+	sentThisHour, err := r.db.NewSelect().
+		Model((*models.SMSLog)(nil)).
+		Where("status = ?", "sent").
+		Where("created_at >= ?", thisHour).
+		Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sent this hour: %w", err)
 	}
+	stats.SentThisHour = int64(sentThisHour)
 
 	// By type
-	typeRows, err := r.db.QueryContext(ctx, `
-		SELECT type, COUNT(*) as count FROM sms_logs
-		GROUP BY type
-	`)
+	type TypeCount struct {
+		Type  string `bun:"type"`
+		Count int64  `bun:"count"`
+	}
+	var typeCounts []TypeCount
+
+	err = r.db.NewSelect().
+		Model((*models.SMSLog)(nil)).
+		Column("type").
+		ColumnExpr("COUNT(*) as count").
+		Group("type").
+		Scan(ctx, &typeCounts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get stats by type: %w", err)
 	}
-	defer typeRows.Close()
 
-	for typeRows.Next() {
-		var otpType string
-		var count int64
-		if err := typeRows.Scan(&otpType, &count); err != nil {
-			return nil, fmt.Errorf("failed to scan type row: %w", err)
-		}
-		stats.ByType[otpType] = count
+	for _, tc := range typeCounts {
+		stats.ByType[tc.Type] = tc.Count
 	}
 
 	// By status
-	statusRows, err := r.db.QueryContext(ctx, `
-		SELECT status, COUNT(*) as count FROM sms_logs
-		GROUP BY status
-	`)
+	type StatusCount struct {
+		Status string `bun:"status"`
+		Count  int64  `bun:"count"`
+	}
+	var statusCounts []StatusCount
+
+	err = r.db.NewSelect().
+		Model((*models.SMSLog)(nil)).
+		Column("status").
+		ColumnExpr("COUNT(*) as count").
+		Group("status").
+		Scan(ctx, &statusCounts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get stats by status: %w", err)
 	}
-	defer statusRows.Close()
 
-	for statusRows.Next() {
-		var status string
-		var count int64
-		if err := statusRows.Scan(&status, &count); err != nil {
-			return nil, fmt.Errorf("failed to scan status row: %w", err)
-		}
-		stats.ByStatus[status] = count
+	for _, sc := range statusCounts {
+		stats.ByStatus[sc.Status] = sc.Count
 	}
 
 	// Recent messages
@@ -260,9 +261,12 @@ func (r *SMSLogRepository) GetStats(ctx context.Context) (*models.SMSStatsRespon
 // DeleteOlderThan deletes SMS logs older than the specified duration
 func (r *SMSLogRepository) DeleteOlderThan(ctx context.Context, duration time.Duration) (int64, error) {
 	cutoff := time.Now().Add(-duration)
-	query := `DELETE FROM sms_logs WHERE created_at < $1`
 
-	result, err := r.db.ExecContext(ctx, query, cutoff)
+	result, err := r.db.NewDelete().
+		Model((*models.SMSLog)(nil)).
+		Where("created_at < ?", cutoff).
+		Exec(ctx)
+
 	if err != nil {
 		return 0, fmt.Errorf("failed to delete old SMS logs: %w", err)
 	}

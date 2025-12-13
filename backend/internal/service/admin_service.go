@@ -41,14 +41,14 @@ func (s *AdminService) GetStats(ctx context.Context) (*models.AdminStatsResponse
 	}
 
 	// Total users
-	totalUsers, err := s.userRepo.Count()
+	totalUsers, err := s.userRepo.Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count users: %w", err)
 	}
 	stats.TotalUsers = totalUsers
 
 	// Get all users for detailed stats
-	users, err := s.userRepo.List(10000, 0) // Get all users
+	users, err := s.userRepo.List(ctx, 10000, 0) // Get all users
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
@@ -80,7 +80,7 @@ func (s *AdminService) GetStats(ctx context.Context) (*models.AdminStatsResponse
 	}
 
 	// API keys stats
-	allAPIKeys, err := s.apiKeyRepo.ListAll()
+	allAPIKeys, err := s.apiKeyRepo.ListAll(ctx)
 	if err == nil {
 		stats.TotalAPIKeys = len(allAPIKeys)
 		for _, key := range allAPIKeys {
@@ -91,13 +91,13 @@ func (s *AdminService) GetStats(ctx context.Context) (*models.AdminStatsResponse
 	}
 
 	// OAuth accounts stats
-	oauthAccounts, err := s.oauthRepo.ListAll()
+	oauthAccounts, err := s.oauthRepo.ListAll(ctx)
 	if err == nil {
 		stats.TotalOAuthAccounts = len(oauthAccounts)
 	}
 
 	// Recent logins from audit logs
-	recentLogins, err := s.auditRepo.CountByActionSince(models.ActionSignIn, yesterday)
+	recentLogins, err := s.auditRepo.CountByActionSince(ctx, models.ActionSignIn, yesterday)
 	if err == nil {
 		stats.RecentLogins = recentLogins
 	}
@@ -116,12 +116,12 @@ func (s *AdminService) ListUsers(ctx context.Context, page, pageSize int) (*mode
 
 	offset := (page - 1) * pageSize
 
-	users, err := s.userRepo.List(pageSize, offset)
+	users, err := s.userRepo.List(ctx, pageSize, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
 
-	total, err := s.userRepo.Count()
+	total, err := s.userRepo.Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count users: %w", err)
 	}
@@ -131,13 +131,13 @@ func (s *AdminService) ListUsers(ctx context.Context, page, pageSize int) (*mode
 		adminUser := s.userToAdminResponse(user)
 
 		// Count API keys
-		apiKeys, err := s.apiKeyRepo.GetByUserID(user.ID)
+		apiKeys, err := s.apiKeyRepo.GetByUserID(ctx, user.ID)
 		if err == nil {
 			adminUser.APIKeysCount = len(apiKeys)
 		}
 
 		// Count OAuth accounts
-		oauthAccounts, err := s.oauthRepo.GetByUserID(user.ID)
+		oauthAccounts, err := s.oauthRepo.GetByUserID(ctx, user.ID)
 		if err == nil {
 			adminUser.OAuthAccountsCount = len(oauthAccounts)
 		}
@@ -158,7 +158,7 @@ func (s *AdminService) ListUsers(ctx context.Context, page, pageSize int) (*mode
 
 // GetUser returns detailed user information
 func (s *AdminService) GetUser(ctx context.Context, userID uuid.UUID) (*models.AdminUserResponse, error) {
-	user, err := s.userRepo.GetByID(userID)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -166,13 +166,13 @@ func (s *AdminService) GetUser(ctx context.Context, userID uuid.UUID) (*models.A
 	adminUser := s.userToAdminResponse(user)
 
 	// Count API keys
-	apiKeys, err := s.apiKeyRepo.GetByUserID(userID)
+	apiKeys, err := s.apiKeyRepo.GetByUserID(ctx, userID)
 	if err == nil {
 		adminUser.APIKeysCount = len(apiKeys)
 	}
 
 	// Count OAuth accounts
-	oauthAccounts, err := s.oauthRepo.GetByUserID(userID)
+	oauthAccounts, err := s.oauthRepo.GetByUserID(ctx, userID)
 	if err == nil {
 		adminUser.OAuthAccountsCount = len(oauthAccounts)
 	}
@@ -182,7 +182,7 @@ func (s *AdminService) GetUser(ctx context.Context, userID uuid.UUID) (*models.A
 
 // UpdateUser updates user information (admin only)
 func (s *AdminService) UpdateUser(ctx context.Context, userID uuid.UUID, req *models.AdminUpdateUserRequest) (*models.AdminUserResponse, error) {
-	user, err := s.userRepo.GetByID(userID)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (s *AdminService) UpdateUser(ctx context.Context, userID uuid.UUID, req *mo
 		user.IsActive = *req.IsActive
 	}
 
-	if err := s.userRepo.Update(user); err != nil {
+	if err := s.userRepo.Update(ctx, user); err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
 
@@ -209,7 +209,7 @@ func (s *AdminService) UpdateUser(ctx context.Context, userID uuid.UUID, req *mo
 
 // DeleteUser deletes a user (soft delete by setting is_active = false)
 func (s *AdminService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
-	user, err := s.userRepo.GetByID(userID)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func (s *AdminService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 	// Prevent deleting the last admin
 	if user.Role == string(models.RoleAdmin) {
 		adminCount := 0
-		users, err := s.userRepo.List(10000, 0)
+		users, err := s.userRepo.List(ctx, 10000, 0)
 		if err == nil {
 			for _, u := range users {
 				if u.Role == string(models.RoleAdmin) && u.IsActive {
@@ -231,7 +231,7 @@ func (s *AdminService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 	}
 
 	user.IsActive = false
-	return s.userRepo.Update(user)
+	return s.userRepo.Update(ctx, user)
 }
 
 // ListAPIKeys returns all API keys with user information
@@ -243,7 +243,7 @@ func (s *AdminService) ListAPIKeys(ctx context.Context, page, pageSize int) ([]*
 		pageSize = 50
 	}
 
-	apiKeys, err := s.apiKeyRepo.ListAll()
+	apiKeys, err := s.apiKeyRepo.ListAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list API keys: %w", err)
 	}
@@ -261,7 +261,7 @@ func (s *AdminService) ListAPIKeys(ctx context.Context, page, pageSize int) ([]*
 	adminAPIKeys := make([]*models.AdminAPIKeyResponse, 0, end-start)
 	for i := start; i < end; i++ {
 		key := apiKeys[i]
-		user, err := s.userRepo.GetByID(key.UserID)
+		user, err := s.userRepo.GetByID(ctx, key.UserID)
 		if err != nil {
 			continue
 		}
@@ -291,7 +291,7 @@ func (s *AdminService) ListAPIKeys(ctx context.Context, page, pageSize int) ([]*
 
 // RevokeAPIKey revokes an API key
 func (s *AdminService) RevokeAPIKey(ctx context.Context, keyID uuid.UUID) error {
-	return s.apiKeyRepo.Revoke(keyID)
+	return s.apiKeyRepo.Revoke(ctx, keyID)
 }
 
 // ListAuditLogs returns paginated audit logs
@@ -309,9 +309,9 @@ func (s *AdminService) ListAuditLogs(ctx context.Context, page, pageSize int, us
 	var err error
 
 	if userID != nil {
-		logs, err = s.auditRepo.GetByUserID(*userID, pageSize, offset)
+		logs, err = s.auditRepo.GetByUserID(ctx, *userID, pageSize, offset)
 	} else {
-		logs, err = s.auditRepo.List(pageSize, offset)
+		logs, err = s.auditRepo.List(ctx, pageSize, offset)
 	}
 
 	if err != nil {

@@ -8,16 +8,16 @@ import (
 
 // OAuthAccount represents an OAuth account linked to a user
 type OAuthAccount struct {
-	ID             uuid.UUID  `json:"id" db:"id"`
-	UserID         uuid.UUID  `json:"user_id" db:"user_id"`
-	Provider       string     `json:"provider" db:"provider"`
-	ProviderUserID string     `json:"provider_user_id" db:"provider_user_id"`
-	AccessToken    string     `json:"-" db:"access_token"`
-	RefreshToken   string     `json:"-" db:"refresh_token"`
-	TokenExpiresAt *time.Time `json:"token_expires_at,omitempty" db:"token_expires_at"`
-	ProfileData    []byte     `json:"profile_data,omitempty" db:"profile_data"` // JSONB in PostgreSQL
-	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at" db:"updated_at"`
+	ID             uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	UserID         uuid.UUID  `json:"user_id" bun:"user_id,type:uuid"`
+	Provider       string     `json:"provider" bun:"provider"`
+	ProviderUserID string     `json:"provider_user_id" bun:"provider_user_id"`
+	AccessToken    string     `json:"-" bun:"access_token"`
+	RefreshToken   string     `json:"-" bun:"refresh_token"`
+	TokenExpiresAt *time.Time `json:"token_expires_at,omitempty" bun:"token_expires_at"`
+	ProfileData    []byte     `json:"profile_data,omitempty" bun:"profile_data,type:jsonb"` // JSONB in PostgreSQL
+	CreatedAt      time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	UpdatedAt      time.Time  `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
 }
 
 // OAuthProvider represents the available OAuth providers
@@ -61,14 +61,14 @@ type OAuthUserInfo struct {
 
 // OTP represents a one-time password for email or phone verification
 type OTP struct {
-	ID        uuid.UUID `json:"id" db:"id"`
-	Email     *string   `json:"email,omitempty" db:"email"` // Either email or phone is required
-	Phone     *string   `json:"phone,omitempty" db:"phone"` // Either email or phone is required
-	Code      string    `json:"-" db:"code"`                // Hashed OTP code
-	Type      OTPType   `json:"type" db:"type"`             // verification, password_reset, 2fa
-	Used      bool      `json:"used" db:"used"`
-	ExpiresAt time.Time `json:"expires_at" db:"expires_at"`
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	ID        uuid.UUID `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	Email     *string   `json:"email,omitempty" bun:"email"` // Either email or phone is required
+	Phone     *string   `json:"phone,omitempty" bun:"phone"` // Either email or phone is required
+	Code      string    `json:"-" bun:"code"`                // Hashed OTP code
+	Type      OTPType   `json:"type" bun:"type"`             // verification, password_reset, 2fa
+	Used      bool      `json:"used" bun:"used"`
+	ExpiresAt time.Time `json:"expires_at" bun:"expires_at"`
+	CreatedAt time.Time `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
 }
 
 // OTPType represents the type of OTP
