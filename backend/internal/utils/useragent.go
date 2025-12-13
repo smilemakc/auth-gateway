@@ -1,9 +1,10 @@
 package utils
 
 import (
-	"github.com/smilemakc/auth-gateway/internal/models"
 	"regexp"
 	"strings"
+
+	"github.com/smilemakc/auth-gateway/internal/models"
 )
 
 // ParseUserAgent parses a user agent string and extracts device information
@@ -87,30 +88,6 @@ func detectDeviceType(ua string) string {
 func detectOS(ua string) string {
 	ua = strings.ToLower(ua)
 
-	// Windows
-	if strings.Contains(ua, "windows nt 10.0") {
-		return "Windows 10/11"
-	} else if strings.Contains(ua, "windows nt 6.3") {
-		return "Windows 8.1"
-	} else if strings.Contains(ua, "windows nt 6.2") {
-		return "Windows 8"
-	} else if strings.Contains(ua, "windows nt 6.1") {
-		return "Windows 7"
-	} else if strings.Contains(ua, "windows") {
-		return "Windows"
-	}
-
-	// macOS
-	if strings.Contains(ua, "mac os x") {
-		re := regexp.MustCompile(`mac os x ([\d_]+)`)
-		matches := re.FindStringSubmatch(ua)
-		if len(matches) > 1 {
-			version := strings.Replace(matches[1], "_", ".", -1)
-			return "macOS " + version
-		}
-		return "macOS"
-	}
-
 	// iOS
 	if strings.Contains(ua, "iphone os") || strings.Contains(ua, "ipad") {
 		re := regexp.MustCompile(`(?:iphone|cpu) os ([\d_]+)`)
@@ -130,6 +107,30 @@ func detectOS(ua string) string {
 			return "Android " + matches[1]
 		}
 		return "Android"
+	}
+
+	// macOS
+	if strings.Contains(ua, "mac os x") {
+		re := regexp.MustCompile(`mac os x ([\d_]+)`)
+		matches := re.FindStringSubmatch(ua)
+		if len(matches) > 1 {
+			version := strings.Replace(matches[1], "_", ".", -1)
+			return "macOS " + version
+		}
+		return "macOS"
+	}
+
+	// Windows
+	if strings.Contains(ua, "windows nt 10.0") {
+		return "Windows 10/11"
+	} else if strings.Contains(ua, "windows nt 6.3") {
+		return "Windows 8.1"
+	} else if strings.Contains(ua, "windows nt 6.2") {
+		return "Windows 8"
+	} else if strings.Contains(ua, "windows nt 6.1") {
+		return "Windows 7"
+	} else if strings.Contains(ua, "windows") {
+		return "Windows"
 	}
 
 	// Linux

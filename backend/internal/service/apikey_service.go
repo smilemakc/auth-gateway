@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 )
 
@@ -19,15 +18,15 @@ const (
 )
 
 type APIKeyService struct {
-	apiKeyRepo   *repository.APIKeyRepository
-	userRepo     *repository.UserRepository
-	auditService *AuditService
+	apiKeyRepo   APIKeyStore
+	userRepo     UserStore
+	auditService AuditLogger
 }
 
 func NewAPIKeyService(
-	apiKeyRepo *repository.APIKeyRepository,
-	userRepo *repository.UserRepository,
-	auditService *AuditService,
+	apiKeyRepo APIKeyStore,
+	userRepo UserStore,
+	auditService AuditLogger,
 ) *APIKeyService {
 	return &APIKeyService{
 		apiKeyRepo:   apiKeyRepo,

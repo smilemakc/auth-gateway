@@ -6,15 +6,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 )
 
 type RBACService struct {
-	rbacRepo     *repository.RBACRepository
-	auditService *AuditService
+	rbacRepo     RBACStore
+	auditService AuditLogger
 }
 
-func NewRBACService(rbacRepo *repository.RBACRepository, auditService *AuditService) *RBACService {
+func NewRBACService(rbacRepo RBACStore, auditService AuditLogger) *RBACService {
 	return &RBACService{
 		rbacRepo:     rbacRepo,
 		auditService: auditService,

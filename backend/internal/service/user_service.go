@@ -5,15 +5,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 )
 
 type UserService struct {
-	userRepo     *repository.UserRepository
-	auditService *AuditService
+	userRepo     UserStore
+	auditService AuditLogger
 }
 
-func NewUserService(userRepo *repository.UserRepository, auditService *AuditService) *UserService {
+func NewUserService(userRepo UserStore, auditService AuditLogger) *UserService {
 	return &UserService{
 		userRepo:     userRepo,
 		auditService: auditService,

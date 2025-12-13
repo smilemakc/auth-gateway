@@ -8,30 +8,28 @@ import (
 	"github.com/google/uuid"
 	"github.com/pquerna/otp/totp"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/utils"
-	"github.com/smilemakc/auth-gateway/pkg/jwt"
 )
 
 // AuthService provides authentication operations
 type AuthService struct {
-	userRepo     *repository.UserRepository
-	tokenRepo    *repository.TokenRepository
-	rbacRepo     *repository.RBACRepository
-	auditService *AuditService
-	jwtService   *jwt.Service
-	redis        *RedisService
+	userRepo     UserStore
+	tokenRepo    TokenStore
+	rbacRepo     RBACStore
+	auditService AuditLogger
+	jwtService   TokenService
+	redis        CacheService
 	bcryptCost   int
 }
 
 // NewAuthService creates a new auth service
 func NewAuthService(
-	userRepo *repository.UserRepository,
-	tokenRepo *repository.TokenRepository,
-	rbacRepo *repository.RBACRepository,
-	auditService *AuditService,
-	jwtService *jwt.Service,
-	redis *RedisService,
+	userRepo UserStore,
+	tokenRepo TokenStore,
+	rbacRepo RBACStore,
+	auditService AuditLogger,
+	jwtService TokenService,
+	redis CacheService,
 	bcryptCost int,
 ) *AuthService {
 	return &AuthService{

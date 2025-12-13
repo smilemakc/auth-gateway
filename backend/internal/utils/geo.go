@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/smilemakc/auth-gateway/internal/models"
 	"net"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/smilemakc/auth-gateway/internal/models"
 )
 
 // GeoIPService provides IP geolocation functionality
@@ -164,6 +165,9 @@ func IPMatchesCIDR(ipStr, cidr string) (bool, error) {
 
 	// If cidr doesn't contain /, treat it as a single IP
 	if !strings.Contains(cidr, "/") {
+		if net.ParseIP(cidr) == nil {
+			return false, fmt.Errorf("invalid IP/CIDR: %s", cidr)
+		}
 		return ipStr == cidr, nil
 	}
 

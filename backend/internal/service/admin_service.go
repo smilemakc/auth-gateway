@@ -8,25 +8,24 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 )
 
 // AdminService provides admin operations
 type AdminService struct {
-	userRepo   *repository.UserRepository
-	apiKeyRepo *repository.APIKeyRepository
-	auditRepo  *repository.AuditRepository
-	oauthRepo  *repository.OAuthRepository
-	rbacRepo   *repository.RBACRepository
+	userRepo   UserStore
+	apiKeyRepo APIKeyStore
+	auditRepo  AuditStore
+	oauthRepo  OAuthStore
+	rbacRepo   RBACStore
 }
 
 // NewAdminService creates a new admin service
 func NewAdminService(
-	userRepo *repository.UserRepository,
-	apiKeyRepo *repository.APIKeyRepository,
-	auditRepo *repository.AuditRepository,
-	oauthRepo *repository.OAuthRepository,
-	rbacRepo *repository.RBACRepository,
+	userRepo UserStore,
+	apiKeyRepo APIKeyStore,
+	auditRepo AuditStore,
+	oauthRepo OAuthStore,
+	rbacRepo RBACStore,
 ) *AdminService {
 	return &AdminService{
 		userRepo:   userRepo,

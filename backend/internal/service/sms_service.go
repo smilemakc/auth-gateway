@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/config"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/sms"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 )
@@ -23,33 +22,30 @@ const (
 
 // SMSService handles SMS-related operations
 type SMSService struct {
-	provider        sms.SMSProvider
-	otpRepo         *repository.OTPRepository
-	smsLogRepo      *repository.SMSLogRepository
-	smsSettingsRepo *repository.SMSSettingsRepository
-	userRepo        *repository.UserRepository
-	config          *config.Config
-	redis           *RedisService
+	provider   sms.SMSProvider
+	otpRepo    OTPStore
+	smsLogRepo SMSLogStore
+	userRepo   UserStore
+	config     *config.Config
+	redis      CacheService
 }
 
 // NewSMSService creates a new SMS service
 func NewSMSService(
 	provider sms.SMSProvider,
-	otpRepo *repository.OTPRepository,
-	smsLogRepo *repository.SMSLogRepository,
-	smsSettingsRepo *repository.SMSSettingsRepository,
-	userRepo *repository.UserRepository,
+	otpRepo OTPStore,
+	smsLogRepo SMSLogStore,
+	userRepo UserStore,
 	cfg *config.Config,
-	redis *RedisService,
+	redis CacheService,
 ) *SMSService {
 	return &SMSService{
-		provider:        provider,
-		otpRepo:         otpRepo,
-		smsLogRepo:      smsLogRepo,
-		smsSettingsRepo: smsSettingsRepo,
-		userRepo:        userRepo,
-		config:          cfg,
-		redis:           redis,
+		provider:   provider,
+		otpRepo:    otpRepo,
+		smsLogRepo: smsLogRepo,
+		userRepo:   userRepo,
+		config:     cfg,
+		redis:      redis,
 	}
 }
 

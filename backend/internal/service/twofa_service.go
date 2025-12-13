@@ -11,7 +11,6 @@ import (
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 )
 
@@ -22,23 +21,20 @@ const (
 
 // TwoFactorService provides 2FA operations
 type TwoFactorService struct {
-	userRepo       *repository.UserRepository
-	backupCodeRepo *repository.BackupCodeRepository
-	auditRepo      *repository.AuditRepository
+	userRepo       UserStore
+	backupCodeRepo BackupCodeStore
 	issuer         string
 }
 
 // NewTwoFactorService creates a new 2FA service
 func NewTwoFactorService(
-	userRepo *repository.UserRepository,
-	backupCodeRepo *repository.BackupCodeRepository,
-	auditRepo *repository.AuditRepository,
+	userRepo UserStore,
+	backupCodeRepo BackupCodeStore,
 	issuer string,
 ) *TwoFactorService {
 	return &TwoFactorService{
 		userRepo:       userRepo,
 		backupCodeRepo: backupCodeRepo,
-		auditRepo:      auditRepo,
 		issuer:         issuer,
 	}
 }

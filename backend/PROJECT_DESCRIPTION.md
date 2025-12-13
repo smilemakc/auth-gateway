@@ -378,7 +378,6 @@ auth-gateway/
 │   │   ├── token.go
 │   │   ├── api_key.go
 │   │   ├── session.go
-│   │   ├── role.go
 │   │   ├── permission.go
 │   │   ├── otp.go
 │   │   ├── oauth.go

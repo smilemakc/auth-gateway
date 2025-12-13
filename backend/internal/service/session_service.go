@@ -4,20 +4,18 @@ import (
 	"context"
 	"time"
 
-	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
-	"github.com/smilemakc/auth-gateway/internal/utils"
-
 	"github.com/google/uuid"
+	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 )
 
 // SessionService handles session management business logic
 type SessionService struct {
-	sessionRepo *repository.SessionRepository
+	sessionRepo SessionStore
 }
 
 // NewSessionService creates a new session service
-func NewSessionService(sessionRepo *repository.SessionRepository) *SessionService {
+func NewSessionService(sessionRepo SessionStore) *SessionService {
 	return &SessionService{
 		sessionRepo: sessionRepo,
 	}

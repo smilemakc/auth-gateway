@@ -7,7 +7,7 @@ set -e
 # Check if protoc is installed
 if ! command -v protoc &> /dev/null; then
     echo "Error: protoc is not installed"
-    echo "Install it from: https://grpc.io/docs/protoc-installation/"
+    echo "Install it from: https://protobuf.dev/installation/"
     exit 1
 fi
 

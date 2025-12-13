@@ -18,6 +18,7 @@ type EmailService struct {
 	smtpPassword string
 	fromEmail    string
 	fromName     string
+	sendMailFunc func(addr string, a smtp.Auth, from string, to []string, msg []byte) error
 }
 
 // NewEmailService creates a new email service
@@ -29,6 +30,7 @@ func NewEmailService(cfg *config.SMTPConfig) *EmailService {
 		smtpPassword: cfg.Password,
 		fromEmail:    cfg.FromEmail,
 		fromName:     cfg.FromName,
+		sendMailFunc: smtp.SendMail,
 	}
 }
 
@@ -137,7 +139,7 @@ func (s *EmailService) Send(to, subject, htmlBody string) error {
 
 	// Send email
 	addr := s.smtpHost + ":" + s.smtpPort
-	err := smtp.SendMail(addr, auth, s.fromEmail, []string{to}, msg)
+	err := s.sendMailFunc(addr, auth, s.fromEmail, []string{to}, msg)
 	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}

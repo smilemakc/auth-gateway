@@ -14,19 +14,18 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/utils"
-	"github.com/smilemakc/auth-gateway/pkg/jwt"
 )
 
 // OAuthService provides OAuth operations
 type OAuthService struct {
-	userRepo   *repository.UserRepository
-	oauthRepo  *repository.OAuthRepository
-	tokenRepo  *repository.TokenRepository
-	auditRepo  *repository.AuditRepository
-	rbacRepo   *repository.RBACRepository
-	jwtService *jwt.Service
+	userRepo   UserStore
+	oauthRepo  OAuthStore
+	tokenRepo  TokenStore
+	auditRepo  AuditStore
+	rbacRepo   RBACStore
+	jwtService JWTService
+	httpClient HTTPClient
 	providers  map[models.OAuthProvider]*OAuthProviderConfig
 }
 
@@ -43,13 +42,19 @@ type OAuthProviderConfig struct {
 
 // NewOAuthService creates a new OAuth service
 func NewOAuthService(
-	userRepo *repository.UserRepository,
-	oauthRepo *repository.OAuthRepository,
-	tokenRepo *repository.TokenRepository,
-	auditRepo *repository.AuditRepository,
-	rbacRepo *repository.RBACRepository,
-	jwtService *jwt.Service,
+	userRepo UserStore,
+	oauthRepo OAuthStore,
+	tokenRepo TokenStore,
+	auditRepo AuditStore,
+	rbacRepo RBACStore,
+	jwtService JWTService,
+	httpClient HTTPClient,
 ) *OAuthService {
+	// Use default HTTP client if not provided
+	if httpClient == nil {
+		httpClient = &http.Client{Timeout: 10 * time.Second}
+	}
+
 	service := &OAuthService{
 		userRepo:   userRepo,
 		oauthRepo:  oauthRepo,
@@ -57,6 +62,7 @@ func NewOAuthService(
 		auditRepo:  auditRepo,
 		rbacRepo:   rbacRepo,
 		jwtService: jwtService,
+		httpClient: httpClient,
 		providers:  make(map[models.OAuthProvider]*OAuthProviderConfig),
 	}
 
@@ -185,8 +191,7 @@ func (s *OAuthService) ExchangeCode(ctx context.Context, provider models.OAuthPr
 		req.URL.RawQuery = data.Encode()
 	}
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange code: %w", err)
 	}
@@ -219,8 +224,7 @@ func (s *OAuthService) GetUserInfo(ctx context.Context, provider models.OAuthPro
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/json")
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}

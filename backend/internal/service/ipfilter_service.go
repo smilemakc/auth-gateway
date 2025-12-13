@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 
 	"github.com/google/uuid"
@@ -13,11 +12,11 @@ import (
 
 // IPFilterService handles IP filtering business logic
 type IPFilterService struct {
-	ipFilterRepo *repository.IPFilterRepository
+	ipFilterRepo IPFilterStore
 }
 
 // NewIPFilterService creates a new IP filter service
-func NewIPFilterService(ipFilterRepo *repository.IPFilterRepository) *IPFilterService {
+func NewIPFilterService(ipFilterRepo IPFilterStore) *IPFilterService {
 	return &IPFilterService{
 		ipFilterRepo: ipFilterRepo,
 	}

@@ -99,7 +99,7 @@ func main() {
 	apiKeyService := service.NewAPIKeyService(apiKeyRepo, userRepo, auditService)
 	emailService := service.NewEmailService(&cfg.SMTP)
 	otpService := service.NewOTPService(otpRepo, userRepo, emailService, auditService)
-	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, rbacRepo, jwtService)
+	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, rbacRepo, jwtService, &http.Client{Timeout: 10 * time.Second})
 	twoFAService := service.NewTwoFactorService(userRepo, backupCodeRepo, auditRepo, "Auth Gateway")
 	adminService := service.NewAdminService(userRepo, apiKeyRepo, auditRepo, oauthRepo, rbacRepo)
 

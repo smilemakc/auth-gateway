@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 )
 
@@ -20,17 +19,17 @@ const (
 )
 
 type OTPService struct {
-	otpRepo      *repository.OTPRepository
-	userRepo     *repository.UserRepository
-	emailService *EmailService
-	auditService *AuditService
+	otpRepo      OTPStore
+	userRepo     UserStore
+	emailService EmailSender
+	auditService AuditLogger
 }
 
 func NewOTPService(
-	otpRepo *repository.OTPRepository,
-	userRepo *repository.UserRepository,
-	emailService *EmailService,
-	auditService *AuditService,
+	otpRepo OTPStore,
+	userRepo UserStore,
+	emailService EmailSender,
+	auditService AuditLogger,
 ) *OTPService {
 	return &OTPService{
 		otpRepo:      otpRepo,
