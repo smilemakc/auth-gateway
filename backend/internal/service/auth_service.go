@@ -155,7 +155,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 	}
 
 	// Reload user with roles for token generation
-	user, err = s.userRepo.GetByIDWithRoles(ctx, user.ID)
+	user, err = s.userRepo.GetByIDWithRoles(ctx, user.ID, utils.Ptr(true))
 	if err != nil {
 		return nil, fmt.Errorf("failed to reload user with roles: %w", err)
 	}
@@ -185,7 +185,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	// Get user by email or phone
 	if req.Email != "" {
 		email := utils.NormalizeEmail(req.Email)
-		user, err = s.userRepo.GetByEmailWithRoles(ctx, email)
+		user, err = s.userRepo.GetByEmailWithRoles(ctx, email, nil)
 		if err != nil {
 			s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": err,
@@ -195,7 +195,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 		}
 	} else if req.Phone != nil && *req.Phone != "" {
 		phone := utils.NormalizePhone(*req.Phone)
-		user, err = s.userRepo.GetByPhone(ctx, phone)
+		user, err = s.userRepo.GetByPhone(ctx, phone, nil)
 		if err != nil {
 			s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": err,
@@ -254,7 +254,7 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 	}
 
 	// Get user with roles
-	user, err := s.userRepo.GetByIDWithRoles(ctx, claims.UserID)
+	user, err := s.userRepo.GetByIDWithRoles(ctx, claims.UserID, utils.Ptr(true))
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +341,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	}
 
 	// Get user with roles
-	user, err := s.userRepo.GetByIDWithRoles(ctx, claims.UserID)
+	user, err := s.userRepo.GetByIDWithRoles(ctx, claims.UserID, utils.Ptr(true))
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +405,7 @@ func (s *AuthService) Logout(ctx context.Context, accessToken, ip, userAgent str
 // ChangePassword changes a user's password
 func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword, ip, userAgent string) error {
 	// Get user
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, userID, utils.Ptr(true))
 	if err != nil {
 		return err
 	}

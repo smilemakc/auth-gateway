@@ -46,7 +46,7 @@ func NewTwoFactorService(
 // SetupTOTP generates a new TOTP secret and backup codes for a user
 func (s *TwoFactorService) SetupTOTP(ctx context.Context, userID uuid.UUID, password string) (*models.TwoFactorSetupResponse, error) {
 	// Get user
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, userID, utils.Ptr(true))
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (s *TwoFactorService) SetupTOTP(ctx context.Context, userID uuid.UUID, pass
 // VerifyTOTPSetup verifies the initial TOTP code and enables 2FA
 func (s *TwoFactorService) VerifyTOTPSetup(ctx context.Context, userID uuid.UUID, code string) error {
 	// Get user
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, userID, utils.Ptr(true))
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (s *TwoFactorService) VerifyTOTPSetup(ctx context.Context, userID uuid.UUID
 // VerifyTOTP verifies a TOTP code for login
 func (s *TwoFactorService) VerifyTOTP(ctx context.Context, userID uuid.UUID, code string) (bool, error) {
 	// Get user
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, userID, utils.Ptr(true))
 	if err != nil {
 		return false, err
 	}
@@ -183,7 +183,7 @@ func (s *TwoFactorService) verifyBackupCode(userID uuid.UUID, code string) (bool
 // DisableTOTP disables 2FA for a user
 func (s *TwoFactorService) DisableTOTP(ctx context.Context, userID uuid.UUID, password, code string) error {
 	// Get user
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, userID, utils.Ptr(true))
 	if err != nil {
 		return err
 	}
@@ -219,7 +219,7 @@ func (s *TwoFactorService) DisableTOTP(ctx context.Context, userID uuid.UUID, pa
 // GetStatus returns the user's 2FA status
 func (s *TwoFactorService) GetStatus(ctx context.Context, userID uuid.UUID) (*models.TwoFactorStatusResponse, error) {
 	// Get user
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, userID, utils.Ptr(true))
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +240,7 @@ func (s *TwoFactorService) GetStatus(ctx context.Context, userID uuid.UUID) (*mo
 // RegenerateBackupCodes generates new backup codes for a user
 func (s *TwoFactorService) RegenerateBackupCodes(ctx context.Context, userID uuid.UUID, password string) ([]string, error) {
 	// Get user
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, userID, utils.Ptr(true))
 	if err != nil {
 		return nil, err
 	}

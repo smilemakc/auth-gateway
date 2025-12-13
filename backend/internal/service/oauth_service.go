@@ -351,7 +351,7 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuth
 	}
 
 	// Get user
-	user, err := s.userRepo.GetByID(ctx, oauthAccount.UserID)
+	user, err := s.userRepo.GetByID(ctx, oauthAccount.UserID, utils.Ptr(true))
 	if err != nil {
 		return nil, err
 	}

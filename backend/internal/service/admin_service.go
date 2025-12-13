@@ -44,14 +44,14 @@ func (s *AdminService) GetStats(ctx context.Context) (*models.AdminStatsResponse
 	}
 
 	// Total users
-	totalUsers, err := s.userRepo.Count(ctx)
+	totalUsers, err := s.userRepo.Count(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count users: %w", err)
 	}
 	stats.TotalUsers = totalUsers
 
 	// Get all users for detailed stats
-	users, err := s.userRepo.List(ctx, 10000, 0) // Get all users
+	users, err := s.userRepo.List(ctx, 10000, 0, nil) // Get all users
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
@@ -127,12 +127,12 @@ func (s *AdminService) ListUsers(ctx context.Context, page, pageSize int) (*mode
 
 	offset := (page - 1) * pageSize
 
-	users, err := s.userRepo.ListWithRoles(ctx, pageSize, offset)
+	users, err := s.userRepo.ListWithRoles(ctx, pageSize, offset, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
 
-	total, err := s.userRepo.Count(ctx)
+	total, err := s.userRepo.Count(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count users: %w", err)
 	}
@@ -169,7 +169,7 @@ func (s *AdminService) ListUsers(ctx context.Context, page, pageSize int) (*mode
 
 // GetUser returns detailed user information
 func (s *AdminService) GetUser(ctx context.Context, userID uuid.UUID) (*models.AdminUserResponse, error) {
-	user, err := s.userRepo.GetByIDWithRoles(ctx, userID)
+	user, err := s.userRepo.GetByIDWithRoles(ctx, userID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (s *AdminService) GetUser(ctx context.Context, userID uuid.UUID) (*models.A
 
 // UpdateUser updates user information (admin only)
 func (s *AdminService) UpdateUser(ctx context.Context, userID uuid.UUID, req *models.AdminUpdateUserRequest, adminID uuid.UUID) (*models.AdminUserResponse, error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, userID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func (s *AdminService) UpdateUser(ctx context.Context, userID uuid.UUID, req *mo
 
 // DeleteUser deletes a user (soft delete by setting is_active = false)
 func (s *AdminService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, userID, nil)
 	if err != nil {
 		return err
 	}
@@ -279,7 +279,7 @@ func (s *AdminService) ListAPIKeys(ctx context.Context, page, pageSize int) ([]*
 	adminAPIKeys := make([]*models.AdminAPIKeyResponse, 0, end-start)
 	for i := start; i < end; i++ {
 		key := apiKeys[i]
-		user, err := s.userRepo.GetByID(ctx, key.UserID)
+		user, err := s.userRepo.GetByID(ctx, key.UserID, nil)
 		if err != nil {
 			continue
 		}
@@ -360,7 +360,7 @@ func (s *AdminService) ListAuditLogs(ctx context.Context, page, pageSize int, us
 
 // AssignRole assigns a role to a user
 func (s *AdminService) AssignRole(ctx context.Context, userID, roleID, adminID uuid.UUID) (*models.AdminUserResponse, error) {
-	user, err := s.userRepo.GetByIDWithRoles(ctx, userID)
+	user, err := s.userRepo.GetByIDWithRoles(ctx, userID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -383,7 +383,7 @@ func (s *AdminService) AssignRole(ctx context.Context, userID, roleID, adminID u
 
 // RemoveRole removes a role from a user
 func (s *AdminService) RemoveRole(ctx context.Context, userID, roleID uuid.UUID) (*models.AdminUserResponse, error) {
-	user, err := s.userRepo.GetByIDWithRoles(ctx, userID)
+	user, err := s.userRepo.GetByIDWithRoles(ctx, userID, nil)
 	if err != nil {
 		return nil, err
 	}

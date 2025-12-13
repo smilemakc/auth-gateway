@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -72,7 +73,7 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenReq
 		}
 
 		// Load user with roles
-		userWithRoles, err := h.userRepo.GetByIDWithRoles(ctx, user.ID)
+		userWithRoles, err := h.userRepo.GetByIDWithRoles(ctx, user.ID, nil)
 		if err != nil {
 			h.logger.Error("Failed to load user roles", map[string]interface{}{
 				"user_id": user.ID.String(),
@@ -86,12 +87,13 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenReq
 
 		// Return successful validation
 		return &ValidateTokenResponse{
-			Valid:     true,
+			Valid:     user.IsActive,
 			UserId:    userWithRoles.ID.String(),
 			Email:     userWithRoles.Email,
 			Username:  userWithRoles.Username,
 			Roles:     extractRoleNames(userWithRoles.Roles),
 			ExpiresAt: 0, // API keys don't have JWT expiration
+			IsActive:  user.IsActive,
 		}, nil
 	}
 
@@ -128,7 +130,7 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenReq
 
 	// Return successful validation
 	return &ValidateTokenResponse{
-		Valid:     true,
+		Valid:     claims.IsActive,
 		UserId:    claims.UserID.String(),
 		Email:     claims.Email,
 		Username:  claims.Username,
@@ -150,9 +152,9 @@ func (h *AuthHandlerV2) GetUser(ctx context.Context, req *GetUserRequest) (*GetU
 	}
 
 	// Get user from repository with roles
-	user, err := h.userRepo.GetByIDWithRoles(ctx, userID)
+	user, err := h.userRepo.GetByIDWithRoles(ctx, userID, nil)
 	if err != nil {
-		if err == models.ErrUserNotFound {
+		if errors.Is(err, models.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, "user not found")
 		}
 		h.logger.Error("Failed to get user", map[string]interface{}{

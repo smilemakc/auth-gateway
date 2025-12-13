@@ -25,6 +25,7 @@ type ValidateTokenResponse struct {
 	Roles        []string `json:"roles"`
 	ErrorMessage string   `json:"error_message,omitempty"`
 	ExpiresAt    int64    `json:"expires_at"`
+	IsActive     bool     `json:"is_active"`
 }
 
 // GetUserRequest contains the user ID to retrieve

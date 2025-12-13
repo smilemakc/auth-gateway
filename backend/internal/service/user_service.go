@@ -22,7 +22,7 @@ func NewUserService(userRepo *repository.UserRepository, auditService *AuditServ
 
 // GetProfile retrieves a user's profile
 func (s *UserService) GetProfile(ctx context.Context, userID uuid.UUID) (*models.User, error) {
-	user, err := s.userRepo.GetByIDWithRoles(ctx, userID)
+	user, err := s.userRepo.GetByIDWithRoles(ctx, userID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (s *UserService) GetProfile(ctx context.Context, userID uuid.UUID) (*models
 // UpdateProfile updates a user's profile
 func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *models.UpdateUserRequest, ip, userAgent string) (*models.User, error) {
 	// Get existing user
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, userID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 	}
 
 	// Reload user with roles before returning
-	user, err = s.userRepo.GetByIDWithRoles(ctx, userID)
+	user, err = s.userRepo.GetByIDWithRoles(ctx, userID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 
 // GetByID retrieves a user by ID
 func (s *UserService) GetByID(ctx context.Context, userID uuid.UUID) (*models.User, error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, userID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (s *UserService) GetByID(ctx context.Context, userID uuid.UUID) (*models.Us
 
 // GetByEmail retrieves a user by email
 func (s *UserService) GetByEmail(ctx context.Context, email string) (*models.User, error) {
-	user, err := s.userRepo.GetByEmail(ctx, email)
+	user, err := s.userRepo.GetByEmail(ctx, email, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (s *UserService) GetByEmail(ctx context.Context, email string) (*models.Use
 
 // List retrieves a list of users with pagination
 func (s *UserService) List(ctx context.Context, limit, offset int) ([]*models.User, error) {
-	users, err := s.userRepo.List(ctx, limit, offset)
+	users, err := s.userRepo.List(ctx, limit, offset, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (s *UserService) List(ctx context.Context, limit, offset int) ([]*models.Us
 
 // Count returns the total number of users
 func (s *UserService) Count(ctx context.Context) (int, error) {
-	return s.userRepo.Count(ctx)
+	return s.userRepo.Count(ctx, nil)
 }
 
 func (s *UserService) logAudit(userID *uuid.UUID, action models.AuditAction, status models.AuditStatus, ip, userAgent string, details map[string]interface{}) {

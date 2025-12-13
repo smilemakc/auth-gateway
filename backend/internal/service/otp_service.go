@@ -181,7 +181,7 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 	switch req.Type {
 	case models.OTPTypeVerification:
 		// Mark email as verified
-		user, err := s.userRepo.GetByEmail(ctx, email)
+		user, err := s.userRepo.GetByEmail(ctx, email, utils.Ptr(true))
 		if err == nil && user != nil {
 			if err := s.userRepo.MarkEmailVerified(ctx, user.ID); err != nil {
 				return nil, err
@@ -191,7 +191,7 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 
 	case models.OTPTypeLogin:
 		// For passwordless login, create session
-		user, err := s.userRepo.GetByEmail(ctx, email)
+		user, err := s.userRepo.GetByEmail(ctx, email, utils.Ptr(true))
 		if err != nil {
 			return nil, err
 		}

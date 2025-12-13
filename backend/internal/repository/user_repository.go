@@ -32,13 +32,18 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 }
 
 // GetByID retrieves a user by ID
-func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
 	user := new(models.User)
 
-	err := r.db.NewSelect().
+	query := r.db.NewSelect().
 		Model(user).
-		Where("id = ? AND is_active = ?", id, true).
-		Scan(ctx)
+		Where("id = ?", id)
+
+	if isActive != nil {
+		query = query.Where("is_active = ?", *isActive)
+	}
+
+	err := query.Scan(ctx)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrUserNotFound
@@ -51,13 +56,18 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Use
 }
 
 // GetByEmail retrieves a user by email
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+func (r *UserRepository) GetByEmail(ctx context.Context, email string, isActive *bool) (*models.User, error) {
 	user := new(models.User)
 
-	err := r.db.NewSelect().
+	query := r.db.NewSelect().
 		Model(user).
-		Where("email = ? AND is_active = ?", email, true).
-		Scan(ctx)
+		Where("email = ?", email)
+
+	if isActive != nil {
+		query = query.Where("is_active = ?", *isActive)
+	}
+
+	err := query.Scan(ctx)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrUserNotFound
@@ -70,13 +80,18 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 }
 
 // GetByUsername retrieves a user by username
-func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
+func (r *UserRepository) GetByUsername(ctx context.Context, username string, isActive *bool) (*models.User, error) {
 	user := new(models.User)
 
-	err := r.db.NewSelect().
+	query := r.db.NewSelect().
 		Model(user).
-		Where("username = ? AND is_active = ?", username, true).
-		Scan(ctx)
+		Where("username = ?", username)
+
+	if isActive != nil {
+		query = query.Where("is_active = ?", *isActive)
+	}
+
+	err := query.Scan(ctx)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrUserNotFound
@@ -218,12 +233,17 @@ func (r *UserRepository) MarkEmailVerified(ctx context.Context, userID uuid.UUID
 }
 
 // List retrieves a list of users with pagination
-func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*models.User, error) {
+func (r *UserRepository) List(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error) {
 	users := make([]*models.User, 0)
 
-	err := r.db.NewSelect().
-		Model(&users).
-		Where("is_active = ?", true).
+	query := r.db.NewSelect().
+		Model(&users)
+
+	if isActive != nil {
+		query = query.Where("is_active = ?", *isActive)
+	}
+
+	err := query.
 		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).
@@ -237,11 +257,18 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*models
 }
 
 // GetByIDWithRoles retrieves a user by ID with their roles loaded
-func (r *UserRepository) GetByIDWithRoles(ctx context.Context, id uuid.UUID) (*models.User, error) {
+func (r *UserRepository) GetByIDWithRoles(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
 	user := new(models.User)
-	err := r.db.NewSelect().
+
+	query := r.db.NewSelect().
 		Model(user).
-		Where("id = ? AND is_active = ?", id, true).
+		Where("id = ?", id)
+
+	if isActive != nil {
+		query = query.Where("is_active = ?", *isActive)
+	}
+
+	err := query.
 		Relation("Roles").
 		Scan(ctx)
 
@@ -256,11 +283,18 @@ func (r *UserRepository) GetByIDWithRoles(ctx context.Context, id uuid.UUID) (*m
 }
 
 // GetByEmailWithRoles retrieves a user by email with their roles loaded
-func (r *UserRepository) GetByEmailWithRoles(ctx context.Context, email string) (*models.User, error) {
+func (r *UserRepository) GetByEmailWithRoles(ctx context.Context, email string, isActive *bool) (*models.User, error) {
 	user := new(models.User)
-	err := r.db.NewSelect().
+
+	query := r.db.NewSelect().
 		Model(user).
-		Where("email = ? AND is_active = ?", email, true).
+		Where("email = ?", email)
+
+	if isActive != nil {
+		query = query.Where("is_active = ?", *isActive)
+	}
+
+	err := query.
 		Relation("Roles").
 		Scan(ctx)
 
@@ -275,11 +309,18 @@ func (r *UserRepository) GetByEmailWithRoles(ctx context.Context, email string) 
 }
 
 // GetByUsernameWithRoles retrieves a user by username with their roles loaded
-func (r *UserRepository) GetByUsernameWithRoles(ctx context.Context, username string) (*models.User, error) {
+func (r *UserRepository) GetByUsernameWithRoles(ctx context.Context, username string, isActive *bool) (*models.User, error) {
 	user := new(models.User)
-	err := r.db.NewSelect().
+
+	query := r.db.NewSelect().
 		Model(user).
-		Where("username = ? AND is_active = ?", username, true).
+		Where("username = ?", username)
+
+	if isActive != nil {
+		query = query.Where("is_active = ?", *isActive)
+	}
+
+	err := query.
 		Relation("Roles").
 		Scan(ctx)
 
@@ -294,11 +335,17 @@ func (r *UserRepository) GetByUsernameWithRoles(ctx context.Context, username st
 }
 
 // ListWithRoles retrieves users with their roles loaded
-func (r *UserRepository) ListWithRoles(ctx context.Context, limit, offset int) ([]*models.User, error) {
+func (r *UserRepository) ListWithRoles(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error) {
 	users := make([]*models.User, 0)
-	err := r.db.NewSelect().
-		Model(&users).
-		Where("is_active = ?", true).
+
+	query := r.db.NewSelect().
+		Model(&users)
+
+	if isActive != nil {
+		query = query.Where("is_active = ?", *isActive)
+	}
+
+	err := query.
 		Relation("Roles").
 		Order("created_at DESC").
 		Limit(limit).
@@ -312,12 +359,16 @@ func (r *UserRepository) ListWithRoles(ctx context.Context, limit, offset int) (
 	return users, nil
 }
 
-// Count returns the total number of active users
-func (r *UserRepository) Count(ctx context.Context) (int, error) {
-	count, err := r.db.NewSelect().
-		Model((*models.User)(nil)).
-		Where("is_active = ?", true).
-		Count(ctx)
+// Count returns the total number of users
+func (r *UserRepository) Count(ctx context.Context, isActive *bool) (int, error) {
+	query := r.db.NewSelect().
+		Model((*models.User)(nil))
+
+	if isActive != nil {
+		query = query.Where("is_active = ?", *isActive)
+	}
+
+	count, err := query.Count(ctx)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to count users: %w", err)
@@ -405,13 +456,18 @@ func (r *UserRepository) DisableTOTP(ctx context.Context, userID uuid.UUID) erro
 }
 
 // GetByPhone retrieves a user by phone number
-func (r *UserRepository) GetByPhone(ctx context.Context, phone string) (*models.User, error) {
+func (r *UserRepository) GetByPhone(ctx context.Context, phone string, isActive *bool) (*models.User, error) {
 	user := new(models.User)
 
-	err := r.db.NewSelect().
+	query := r.db.NewSelect().
 		Model(user).
-		Where("phone = ? AND is_active = ?", phone, true).
-		Scan(ctx)
+		Where("phone = ?", phone)
+
+	if isActive != nil {
+		query = query.Where("is_active = ?", *isActive)
+	}
+
+	err := query.Scan(ctx)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrUserNotFound

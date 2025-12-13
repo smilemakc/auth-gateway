@@ -63,7 +63,7 @@ func (s *APIKeyService) Create(ctx context.Context, userID uuid.UUID, req *model
 	}
 
 	// Verify user exists
-	_, err := s.userRepo.GetByID(ctx, userID)
+	_, err := s.userRepo.GetByID(ctx, userID, utils.Ptr(true))
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (s *APIKeyService) ValidateAPIKey(ctx context.Context, plainKey string) (*m
 	}
 
 	// Get user
-	user, err := s.userRepo.GetByID(ctx, apiKey.UserID)
+	user, err := s.userRepo.GetByID(ctx, apiKey.UserID, utils.Ptr(true))
 	if err != nil {
 		return nil, nil, err
 	}

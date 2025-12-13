@@ -29,6 +29,7 @@ type Claims struct {
 	Email    string    `json:"email"`
 	Username string    `json:"username"`
 	Roles    []string  `json:"roles"`
+	IsActive bool      `json:"is_active"`
 	jwt.RegisteredClaims
 }
 
@@ -59,6 +60,7 @@ func (s *Service) GenerateAccessToken(user *models.User) (string, error) {
 		Email:    user.Email,
 		Username: user.Username,
 		Roles:    roleNames,
+		IsActive: user.IsActive,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.accessExpires)),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -88,6 +90,7 @@ func (s *Service) GenerateRefreshToken(user *models.User) (string, error) {
 		Email:    user.Email,
 		Username: user.Username,
 		Roles:    roleNames,
+		IsActive: user.IsActive,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.refreshExpires)),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -117,6 +120,7 @@ func (s *Service) GenerateTwoFactorToken(user *models.User) (string, error) {
 		Email:    user.Email,
 		Username: user.Username,
 		Roles:    roleNames,
+		IsActive: user.IsActive,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(5 * time.Minute)), // 5 minutes expiration
 			IssuedAt:  jwt.NewNumericDate(now),

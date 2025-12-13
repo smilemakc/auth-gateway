@@ -33,6 +33,7 @@ message ValidateTokenResponse {
   repeated string roles = 5;
   string error_message = 6;
   int64 expires_at = 7; // Unix timestamp
+  bool is_active = 8;
 }
 
 // GetUserRequest contains the user ID to retrieve

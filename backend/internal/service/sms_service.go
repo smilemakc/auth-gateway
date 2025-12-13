@@ -141,7 +141,7 @@ func (s *SMSService) SendOTP(ctx context.Context, req *models.SendSMSRequest, ip
 	}
 
 	// Try to get user ID if exists
-	if user, err := s.userRepo.GetByPhone(ctx, phone); err == nil {
+	if user, err := s.userRepo.GetByPhone(ctx, phone, utils.Ptr(true)); err == nil {
 		smsLog.UserID = &user.ID
 	}
 
@@ -220,7 +220,7 @@ func (s *SMSService) VerifyOTP(ctx context.Context, req *models.VerifySMSOTPRequ
 	switch req.Type {
 	case models.OTPTypeVerification:
 		// Mark phone as verified
-		user, err := s.userRepo.GetByPhone(ctx, phone)
+		user, err := s.userRepo.GetByPhone(ctx, phone, utils.Ptr(true))
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %w", err)
 		}
@@ -231,21 +231,21 @@ func (s *SMSService) VerifyOTP(ctx context.Context, req *models.VerifySMSOTPRequ
 
 	case models.OTPType2FA:
 		// 2FA verification handled in auth flow
-		user, err := s.userRepo.GetByPhone(ctx, phone)
+		user, err := s.userRepo.GetByPhone(ctx, phone, utils.Ptr(true))
 		if err == nil {
 			response.User = user
 		}
 
 	case models.OTPTypePasswordReset:
 		// Password reset flow handled separately
-		user, err := s.userRepo.GetByPhone(ctx, phone)
+		user, err := s.userRepo.GetByPhone(ctx, phone, utils.Ptr(true))
 		if err == nil {
 			response.User = user
 		}
 
 	case models.OTPTypeLogin:
 		// Passwordless login
-		user, err := s.userRepo.GetByPhone(ctx, phone)
+		user, err := s.userRepo.GetByPhone(ctx, phone, utils.Ptr(true))
 		if err == nil {
 			response.User = user
 		}
