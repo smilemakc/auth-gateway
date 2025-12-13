@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "github.com/auth-gateway/proto";
+
+service AuthService {
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+  rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse);
+}
+
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+  string email = 3;
+  string username = 4;
+  string role = 5;
+  string error_message = 6;
+  int64 expires_at = 7;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  string username = 3;
+  string full_name = 4;
+  string profile_picture_url = 5;
+  string role = 6;
+  bool email_verified = 7;
+  bool is_active = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+}
+
+message GetUserResponse {
+  User user = 1;
+  string error_message = 2;
+}
+
+message CheckPermissionRequest {
+  string user_id = 1;
+  string resource = 2;
+  string action = 3;
+}
+
+message CheckPermissionResponse {
+  bool allowed = 1;
+  string role = 2;
+  string error_message = 3;
+}
+
+message IntrospectTokenRequest {
+  string access_token = 1;
+}
+
+message IntrospectTokenResponse {
+  bool active = 1;
+  string user_id = 2;
+  string email = 3;
+  string username = 4;
+  string role = 5;
+  int64 issued_at = 6;
+  int64 expires_at = 7;
+  int64 not_before = 8;
+  string subject = 9;
+  bool blacklisted = 10;
+  string error_message = 11;
+}
