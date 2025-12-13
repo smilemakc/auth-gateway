@@ -9,7 +9,7 @@ import (
 
 // OAuthAccount represents an OAuth account linked to a user
 type OAuthAccount struct {
-	bun.BaseModel  `table:"oauth_accounts"`
+	bun.BaseModel  `bun:"table:oauth_accounts"`
 	ID             uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
 	UserID         uuid.UUID  `json:"user_id" bun:"user_id,type:uuid"`
 	Provider       string     `json:"provider" bun:"provider"`

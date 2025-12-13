@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/uptrace/bun"
 )
 
 // RefreshToken represents a refresh token in the database
@@ -28,11 +29,12 @@ type RefreshToken struct {
 
 // TokenBlacklist represents a blacklisted token
 type TokenBlacklist struct {
-	ID        uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
-	TokenHash string     `json:"-" bun:"token_hash,notnull"`
-	UserID    *uuid.UUID `json:"user_id,omitempty" bun:"user_id,type:uuid"`
-	ExpiresAt time.Time  `json:"expires_at" bun:"expires_at,nullzero,notnull"`
-	CreatedAt time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	bun.BaseModel `bun:"table:token_blacklist"`
+	ID            uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	TokenHash     string     `json:"-" bun:"token_hash,notnull"`
+	UserID        *uuid.UUID `json:"user_id,omitempty" bun:"user_id,type:uuid"`
+	ExpiresAt     time.Time  `json:"expires_at" bun:"expires_at,nullzero,notnull"`
+	CreatedAt     time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
 
 	// Relation
 	User *User `json:"user,omitempty" bun:"rel:belongs-to,join:user_id=id"`

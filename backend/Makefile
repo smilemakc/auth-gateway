@@ -3,7 +3,7 @@
 # Variables
 APP_NAME=auth-gateway
 DOCKER_IMAGE=auth-gateway:latest
-DOCKER_COMPOSE=docker-compose
+DOCKER_COMPOSE=docker compose
 GO=go
 GOTEST=$(GO) test
 GOBUILD=$(GO) build

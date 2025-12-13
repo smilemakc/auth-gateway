@@ -31,6 +31,7 @@ func init() {
 			(*models.Permission)(nil),
 			(*models.RolePermission)(nil),
 			(*models.Role)(nil),
+			(*models.UserRole)(nil),
 
 			// Auth-related tables
 			(*models.RefreshToken)(nil),
@@ -500,17 +501,6 @@ func init() {
 		`)
 		if err != nil {
 			return fmt.Errorf("failed to assign permissions to user role: %w", err)
-		}
-
-		// Migrate existing users to new role system (if any exist)
-		_, err = db.ExecContext(ctx, `
-			UPDATE users u
-			SET role_id = r.id
-			FROM roles r
-			WHERE u.role = r.name AND u.role_id IS NULL
-		`)
-		if err != nil {
-			return fmt.Errorf("failed to migrate existing users to role system: %w", err)
 		}
 
 		fmt.Println(" OK")
