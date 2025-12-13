@@ -1,0 +1,5 @@
+{
+  "name": "Auth Gateway Admin",
+  "description": "A comprehensive administration dashboard for the Auth Gateway system, featuring user management, API key control, audit logging, and system statistics.",
+  "requestFramePermissions": []
+}

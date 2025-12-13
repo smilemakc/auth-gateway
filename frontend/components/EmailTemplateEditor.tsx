@@ -1,0 +1,174 @@
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getEmailTemplate, updateEmailTemplate } from '../services/mockData';
+import { EmailTemplate } from '../types';
+import { ArrowLeft, Save, Eye, Code, RefreshCw, Check } from 'lucide-react';
+import { useLanguage } from '../services/i18n';
+
+const EmailTemplateEditor: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+  const [template, setTemplate] = useState<EmailTemplate | undefined>();
+  const [subject, setSubject] = useState('');
+  const [bodyHtml, setBodyHtml] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
+
+  useEffect(() => {
+    if (id) {
+      const data = getEmailTemplate(id);
+      if (data) {
+        setTemplate(data);
+        setSubject(data.subject);
+        setBodyHtml(data.bodyHtml);
+      } else {
+        navigate('/settings/email-templates');
+      }
+    }
+  }, [id, navigate]);
+
+  const handleSave = () => {
+    if (id) {
+      setSaving(true);
+      setTimeout(() => {
+        updateEmailTemplate(id, { subject, bodyHtml });
+        setSaving(false);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }, 800);
+    }
+  };
+
+  if (!template) return <div>{t('common.loading')}</div>;
+
+  // Simple interpolation for preview
+  const getPreviewHtml = () => {
+    let html = bodyHtml;
+    // Mock variable replacement for preview
+    const mockValues: Record<string, string> = {
+      '{{name}}': 'John Doe',
+      '{{email}}': 'john@example.com',
+      '{{action_url}}': '#',
+      '{{username}}': 'john_doe_99',
+      '{{ip_address}}': '192.168.1.1',
+      '{{os}}': 'Windows 11'
+    };
+
+    template.variables.forEach(v => {
+      const val = mockValues[v] || `[${v}]`;
+      html = html.replace(new RegExp(v, 'g'), val);
+    });
+
+    return html;
+  };
+
+  return (
+    <div className="h-[calc(100vh-8rem)] flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate('/settings/email-templates')}
+            className="p-2 hover:bg-white rounded-lg transition-colors text-gray-500"
+          >
+            <ArrowLeft size={24} />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">{template.name}</h1>
+            <p className="text-xs text-gray-500">Edit template content</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveTab(activeTab === 'editor' ? 'preview' : 'editor')}
+            className="lg:hidden p-2 text-gray-600 bg-white border border-gray-200 rounded-lg"
+          >
+             {activeTab === 'editor' ? <Eye size={20} /> : <Code size={20} />}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors
+              ${saved 
+                ? 'bg-green-600 text-white' 
+                : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+          >
+            {saving ? <RefreshCw size={18} className="animate-spin" /> : 
+             saved ? <Check size={18} /> : <Save size={18} />}
+            {saved ? t('common.saved') : t('common.save')}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex gap-6 min-h-0">
+        
+        {/* Editor Pane */}
+        <div className={`flex-1 flex flex-col gap-4 ${activeTab === 'preview' ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex-shrink-0">
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('email.subject')}</label>
+            <input
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="text-xs text-gray-500 py-1">{t('email.vars')}:</span>
+              {template.variables.map(v => (
+                <button 
+                  key={v}
+                  onClick={() => setBodyHtml(prev => prev + v)}
+                  className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded font-mono border border-gray-200 transition-colors"
+                  title="Click to insert"
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+            <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500 uppercase">{t('email.body')}</span>
+            </div>
+            <textarea
+              value={bodyHtml}
+              onChange={(e) => setBodyHtml(e.target.value)}
+              className="flex-1 w-full p-4 font-mono text-sm outline-none resize-none"
+              spellCheck="false"
+            />
+          </div>
+        </div>
+
+        {/* Preview Pane */}
+        <div className={`flex-1 flex flex-col ${activeTab === 'editor' ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+            <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500 uppercase">{t('email.preview')}</span>
+              <span className="text-xs text-gray-400">Values are mocked</span>
+            </div>
+            <div className="bg-gray-50 p-4 border-b border-gray-100">
+               <div className="text-sm font-medium text-gray-500 mb-1">{t('email.subject')}:</div>
+               <div className="text-gray-900 font-medium">{subject}</div>
+            </div>
+            <div className="flex-1 bg-white relative">
+              <iframe
+                title="preview"
+                srcDoc={getPreviewHtml()}
+                className="absolute inset-0 w-full h-full border-0"
+                sandbox="allow-same-origin"
+              />
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+export default EmailTemplateEditor;

@@ -1,0 +1,629 @@
+package handler
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/repository"
+	"github.com/smilemakc/auth-gateway/internal/service"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+// AdvancedAdminHandler handles advanced admin endpoints
+type AdvancedAdminHandler struct {
+	rbacService     *service.RBACService
+	sessionService  *service.SessionService
+	ipFilterService *service.IPFilterService
+	brandingRepo    *repository.BrandingRepository
+	systemRepo      *repository.SystemRepository
+	geoRepo         *repository.GeoRepository
+}
+
+// NewAdvancedAdminHandler creates a new advanced admin handler
+func NewAdvancedAdminHandler(
+	rbacService *service.RBACService,
+	sessionService *service.SessionService,
+	ipFilterService *service.IPFilterService,
+	brandingRepo *repository.BrandingRepository,
+	systemRepo *repository.SystemRepository,
+	geoRepo *repository.GeoRepository,
+) *AdvancedAdminHandler {
+	return &AdvancedAdminHandler{
+		rbacService:     rbacService,
+		sessionService:  sessionService,
+		ipFilterService: ipFilterService,
+		brandingRepo:    brandingRepo,
+		systemRepo:      systemRepo,
+		geoRepo:         geoRepo,
+	}
+}
+
+// ============================================================
+// RBAC Endpoints
+// ============================================================
+
+// ListPermissions godoc
+// @Summary List all permissions
+// @Tags Admin - RBAC
+// @Produce json
+// @Success 200 {array} models.Permission
+// @Router /admin/rbac/permissions [get]
+func (h *AdvancedAdminHandler) ListPermissions(c *gin.Context) {
+	permissions, err := h.rbacService.ListPermissions(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, permissions)
+}
+
+// CreatePermission godoc
+// @Summary Create a new permission
+// @Tags Admin - RBAC
+// @Accept json
+// @Produce json
+// @Param permission body models.CreatePermissionRequest true "Permission data"
+// @Success 201 {object} models.Permission
+// @Router /admin/rbac/permissions [post]
+func (h *AdvancedAdminHandler) CreatePermission(c *gin.Context) {
+	var req models.CreatePermissionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	permission, err := h.rbacService.CreatePermission(c.Request.Context(), &req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, permission)
+}
+
+// ListRoles godoc
+// @Summary List all roles
+// @Tags Admin - RBAC
+// @Produce json
+// @Success 200 {array} models.Role
+// @Router /admin/rbac/roles [get]
+func (h *AdvancedAdminHandler) ListRoles(c *gin.Context) {
+	roles, err := h.rbacService.ListRoles(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, roles)
+}
+
+// CreateRole godoc
+// @Summary Create a new role
+// @Tags Admin - RBAC
+// @Accept json
+// @Produce json
+// @Param role body models.CreateRoleRequest true "Role data"
+// @Success 201 {object} models.Role
+// @Router /admin/rbac/roles [post]
+func (h *AdvancedAdminHandler) CreateRole(c *gin.Context) {
+	var req models.CreateRoleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	role, err := h.rbacService.CreateRole(c.Request.Context(), &req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, role)
+}
+
+// GetRole godoc
+// @Summary Get a role by ID
+// @Tags Admin - RBAC
+// @Produce json
+// @Param id path string true "Role ID"
+// @Success 200 {object} models.Role
+// @Router /admin/rbac/roles/{id} [get]
+func (h *AdvancedAdminHandler) GetRole(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid role ID"})
+		return
+	}
+
+	role, err := h.rbacService.GetRole(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, role)
+}
+
+// UpdateRole godoc
+// @Summary Update a role
+// @Tags Admin - RBAC
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Param role body models.UpdateRoleRequest true "Role data"
+// @Success 200 {object} models.Role
+// @Router /admin/rbac/roles/{id} [put]
+func (h *AdvancedAdminHandler) UpdateRole(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid role ID"})
+		return
+	}
+
+	var req models.UpdateRoleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	role, err := h.rbacService.UpdateRole(c.Request.Context(), id, &req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, role)
+}
+
+// DeleteRole godoc
+// @Summary Delete a role
+// @Tags Admin - RBAC
+// @Param id path string true "Role ID"
+// @Success 204
+// @Router /admin/rbac/roles/{id} [delete]
+func (h *AdvancedAdminHandler) DeleteRole(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid role ID"})
+		return
+	}
+
+	err = h.rbacService.DeleteRole(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// GetPermissionMatrix godoc
+// @Summary Get permission matrix for all roles
+// @Tags Admin - RBAC
+// @Produce json
+// @Success 200 {object} models.PermissionMatrix
+// @Router /admin/rbac/permission-matrix [get]
+func (h *AdvancedAdminHandler) GetPermissionMatrix(c *gin.Context) {
+	matrix, err := h.rbacService.GetPermissionMatrix(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, matrix)
+}
+
+// ============================================================
+// Session Management Endpoints
+// ============================================================
+
+// ListUserSessions godoc
+// @Summary List all sessions for the current user
+// @Tags Sessions
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(20)
+// @Success 200 {object} models.SessionListResponse
+// @Router /sessions [get]
+func (h *AdvancedAdminHandler) ListUserSessions(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 || perPage > 100 {
+		perPage = 20
+	}
+
+	sessions, err := h.sessionService.GetUserSessions(c.Request.Context(), userID.(uuid.UUID), page, perPage)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, sessions)
+}
+
+// RevokeSession godoc
+// @Summary Revoke a specific session
+// @Tags Sessions
+// @Accept json
+// @Param id path string true "Session ID"
+// @Success 204
+// @Router /sessions/{id} [delete]
+func (h *AdvancedAdminHandler) RevokeSession(c *gin.Context) {
+	userID, _ := c.Get("userID")
+	sessionID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid session ID"})
+		return
+	}
+
+	err = h.sessionService.RevokeSession(c.Request.Context(), userID.(uuid.UUID), sessionID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// RevokeAllSessions godoc
+// @Summary Revoke all sessions except current
+// @Tags Sessions
+// @Success 204
+// @Router /sessions/revoke-all [post]
+func (h *AdvancedAdminHandler) RevokeAllSessions(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	err := h.sessionService.RevokeAllUserSessions(c.Request.Context(), userID.(uuid.UUID), nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// GetSessionStats godoc
+// @Summary Get session statistics (admin only)
+// @Tags Admin - Sessions
+// @Produce json
+// @Success 200 {object} models.SessionStats
+// @Router /admin/sessions/stats [get]
+func (h *AdvancedAdminHandler) GetSessionStats(c *gin.Context) {
+	stats, err := h.sessionService.GetSessionStats(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// ============================================================
+// IP Filter Endpoints
+// ============================================================
+
+// ListIPFilters godoc
+// @Summary List IP filters
+// @Tags Admin - IP Filters
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(20)
+// @Param type query string false "Filter type (whitelist/blacklist)"
+// @Success 200 {object} models.IPFilterListResponse
+// @Router /admin/ip-filters [get]
+func (h *AdvancedAdminHandler) ListIPFilters(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	filterType := c.Query("type")
+
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 || perPage > 100 {
+		perPage = 20
+	}
+
+	filters, err := h.ipFilterService.ListIPFilters(c.Request.Context(), page, perPage, filterType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, filters)
+}
+
+// CreateIPFilter godoc
+// @Summary Create an IP filter
+// @Tags Admin - IP Filters
+// @Accept json
+// @Produce json
+// @Param filter body models.CreateIPFilterRequest true "IP filter data"
+// @Success 201 {object} models.IPFilter
+// @Router /admin/ip-filters [post]
+func (h *AdvancedAdminHandler) CreateIPFilter(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	var req models.CreateIPFilterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	filter, err := h.ipFilterService.CreateIPFilter(c.Request.Context(), &req, userID.(uuid.UUID))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, filter)
+}
+
+// DeleteIPFilter godoc
+// @Summary Delete an IP filter
+// @Tags Admin - IP Filters
+// @Param id path string true "Filter ID"
+// @Success 204
+// @Router /admin/ip-filters/{id} [delete]
+func (h *AdvancedAdminHandler) DeleteIPFilter(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid filter ID"})
+		return
+	}
+
+	err = h.ipFilterService.DeleteIPFilter(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// ============================================================
+// Branding Endpoints
+// ============================================================
+
+// GetBranding godoc
+// @Summary Get branding settings
+// @Tags Branding
+// @Produce json
+// @Success 200 {object} models.PublicBrandingResponse
+// @Router /branding [get]
+func (h *AdvancedAdminHandler) GetBranding(c *gin.Context) {
+	settings, err := h.brandingRepo.GetBrandingSettings(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	// Return public branding info
+	response := models.PublicBrandingResponse{
+		LogoURL:    settings.LogoURL,
+		FaviconURL: settings.FaviconURL,
+		Theme: models.BrandingTheme{
+			PrimaryColor:    settings.PrimaryColor,
+			SecondaryColor:  settings.SecondaryColor,
+			BackgroundColor: settings.BackgroundColor,
+		},
+		CompanyName:  settings.CompanyName,
+		SupportEmail: settings.SupportEmail,
+		TermsURL:     settings.TermsURL,
+		PrivacyURL:   settings.PrivacyURL,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// UpdateBranding godoc
+// @Summary Update branding settings (admin only)
+// @Tags Admin - Branding
+// @Accept json
+// @Produce json
+// @Param branding body models.UpdateBrandingRequest true "Branding data"
+// @Success 200 {object} models.BrandingSettings
+// @Router /admin/branding [put]
+func (h *AdvancedAdminHandler) UpdateBranding(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	var req models.UpdateBrandingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	// Get current settings
+	settings, err := h.brandingRepo.GetBrandingSettings(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	// Update fields
+	if req.LogoURL != "" {
+		settings.LogoURL = req.LogoURL
+	}
+	if req.FaviconURL != "" {
+		settings.FaviconURL = req.FaviconURL
+	}
+	if req.PrimaryColor != "" {
+		settings.PrimaryColor = req.PrimaryColor
+	}
+	if req.SecondaryColor != "" {
+		settings.SecondaryColor = req.SecondaryColor
+	}
+	if req.BackgroundColor != "" {
+		settings.BackgroundColor = req.BackgroundColor
+	}
+	if req.CustomCSS != "" {
+		settings.CustomCSS = req.CustomCSS
+	}
+	if req.CompanyName != "" {
+		settings.CompanyName = req.CompanyName
+	}
+	if req.SupportEmail != "" {
+		settings.SupportEmail = req.SupportEmail
+	}
+	if req.TermsURL != "" {
+		settings.TermsURL = req.TermsURL
+	}
+	if req.PrivacyURL != "" {
+		settings.PrivacyURL = req.PrivacyURL
+	}
+
+	err = h.brandingRepo.UpdateBrandingSettings(c.Request.Context(), settings, userID.(uuid.UUID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, settings)
+}
+
+// ============================================================
+// System Settings & Health Endpoints
+// ============================================================
+
+// GetMaintenanceMode godoc
+// @Summary Get maintenance mode status
+// @Tags System
+// @Produce json
+// @Success 200 {object} models.MaintenanceModeResponse
+// @Router /system/maintenance [get]
+func (h *AdvancedAdminHandler) GetMaintenanceMode(c *gin.Context) {
+	setting, err := h.systemRepo.GetSetting(c.Request.Context(), models.SettingMaintenanceMode)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	messageSetting, _ := h.systemRepo.GetSetting(c.Request.Context(), models.SettingMaintenanceMessage)
+
+	response := models.MaintenanceModeResponse{
+		Enabled: setting.Value == "true",
+		Message: messageSetting.Value,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// SetMaintenanceMode godoc
+// @Summary Set maintenance mode (admin only)
+// @Tags Admin - System
+// @Accept json
+// @Produce json
+// @Param mode body models.MaintenanceModeRequest true "Maintenance mode data"
+// @Success 200 {object} models.MaintenanceModeResponse
+// @Router /admin/system/maintenance [put]
+func (h *AdvancedAdminHandler) SetMaintenanceMode(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	var req models.MaintenanceModeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	uid := userID.(uuid.UUID)
+
+	// Update maintenance mode
+	value := "false"
+	if req.Enabled {
+		value = "true"
+	}
+	err := h.systemRepo.UpdateSetting(c.Request.Context(), models.SettingMaintenanceMode, value, &uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	// Update message if provided
+	if req.Message != "" {
+		err = h.systemRepo.UpdateSetting(c.Request.Context(), models.SettingMaintenanceMessage, req.Message, &uid)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+			return
+		}
+	}
+
+	response := models.MaintenanceModeResponse{
+		Enabled: req.Enabled,
+		Message: req.Message,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// GetSystemHealth godoc
+// @Summary Get system health metrics
+// @Tags Admin - System
+// @Produce json
+// @Success 200 {object} models.SystemHealthResponse
+// @Router /admin/system/health [get]
+func (h *AdvancedAdminHandler) GetSystemHealth(c *gin.Context) {
+	// This is a placeholder - implement actual health checks
+	response := models.SystemHealthResponse{
+		Status:         "healthy",
+		DatabaseStatus: "healthy",
+		RedisStatus:    "healthy",
+		Uptime:         0,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ============================================================
+// Geo-Distribution Endpoints
+// ============================================================
+
+// GetGeoDistribution godoc
+// @Summary Get login geo-distribution for map
+// @Tags Admin - Analytics
+// @Produce json
+// @Param days query int false "Number of days" default(30)
+// @Success 200 {object} models.GeoDistributionResponse
+// @Router /admin/analytics/geo-distribution [get]
+func (h *AdvancedAdminHandler) GetGeoDistribution(c *gin.Context) {
+	days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
+	if days < 1 || days > 365 {
+		days = 30
+	}
+
+	locations, err := h.geoRepo.GetLoginGeoDistribution(c.Request.Context(), days)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	// Calculate totals
+	totalLogins := 0
+	countryMap := make(map[string]bool)
+	cityMap := make(map[string]bool)
+
+	for _, loc := range locations {
+		totalLogins += loc.LoginCount
+		countryMap[loc.CountryCode] = true
+		if loc.City != "" {
+			cityMap[loc.City] = true
+		}
+	}
+
+	response := models.GeoDistributionResponse{
+		Locations: locations,
+		Total:     totalLogins,
+		Countries: len(countryMap),
+		Cities:    len(cityMap),
+	}
+
+	c.JSON(http.StatusOK, response)
+}
