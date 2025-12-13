@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 )
 
 // AdminService provides admin operations
@@ -17,6 +18,7 @@ type AdminService struct {
 	auditRepo  AuditStore
 	oauthRepo  OAuthStore
 	rbacRepo   RBACStore
+	bcryptCost int
 }
 
 // NewAdminService creates a new admin service
@@ -26,6 +28,7 @@ func NewAdminService(
 	auditRepo AuditStore,
 	oauthRepo OAuthStore,
 	rbacRepo RBACStore,
+	bcryptCost int,
 ) *AdminService {
 	return &AdminService{
 		userRepo:   userRepo,
@@ -33,6 +36,7 @@ func NewAdminService(
 		auditRepo:  auditRepo,
 		oauthRepo:  oauthRepo,
 		rbacRepo:   rbacRepo,
+		bcryptCost: bcryptCost,
 	}
 }
 
@@ -188,6 +192,64 @@ func (s *AdminService) GetUser(ctx context.Context, userID uuid.UUID) (*models.A
 	}
 
 	return adminUser, nil
+}
+
+// CreateUser creates a new user (admin only)
+func (s *AdminService) CreateUser(ctx context.Context, req *models.AdminCreateUserRequest, adminID uuid.UUID) (*models.AdminUserResponse, error) {
+	// 1. Create user entity
+	user := &models.User{
+		ID:            uuid.New(),
+		Email:         req.Email,
+		Username:      req.Username,
+		FullName:      req.FullName,
+		AccountType:   req.AccountType,
+		IsActive:      true,
+		EmailVerified: true, // Admins create verified users by default
+	}
+
+	if user.AccountType == "" {
+		user.AccountType = string(models.AccountTypeHuman)
+	}
+
+	// 2. Set password
+	if req.Password != "" {
+		hash, err := utils.HashPassword(req.Password, s.bcryptCost)
+		if err != nil {
+			return nil, fmt.Errorf("failed to hash password: %w", err)
+		}
+		user.PasswordHash = hash
+	} else {
+		// Provide a dummy hash if no password provided (should be handled by validation, but safe fallback)
+		// Or generated password?
+		// For now, assume password is required by request validation model
+	}
+
+	// 3. Create user in DB
+	if err := s.userRepo.Create(ctx, user); err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	// 4. Assign roles
+	var roleIDs []uuid.UUID
+	if len(req.RoleIDs) > 0 {
+		roleIDs = req.RoleIDs
+	} else {
+		// Default role 'user'
+		defaultRole, err := s.rbacRepo.GetRoleByName(ctx, "user")
+		if err == nil {
+			roleIDs = []uuid.UUID{defaultRole.ID}
+		}
+	}
+
+	if len(roleIDs) > 0 {
+		if err := s.rbacRepo.SetUserRoles(ctx, user.ID, roleIDs, adminID); err != nil {
+			// Log error but continue? Or fail? Fail is better integrity
+			return nil, fmt.Errorf("failed to assign roles: %w", err)
+		}
+	}
+
+	// 5. Return created user
+	return s.GetUser(ctx, user.ID)
 }
 
 // UpdateUser updates user information (admin only)

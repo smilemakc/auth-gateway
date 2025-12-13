@@ -7,6 +7,7 @@ import type { MessageResponse } from '../../types/common';
 import type {
   AdminStatsResponse,
   AdminUpdateUserRequest,
+  AdminCreateUserRequest,
   AdminUserListResponse,
   AdminUserResponse,
 } from '../../types/user';
@@ -35,6 +36,7 @@ export class AdminUsersService extends BaseService {
    */
   async list(page = 1, pageSize = 20): Promise<AdminUserListResponse> {
     const response = await this.http.get<AdminUserListResponse>('/admin/users', {
+      headers: {},
       query: { page, page_size: pageSize },
     });
     return response.data;
@@ -47,6 +49,16 @@ export class AdminUsersService extends BaseService {
    */
   async get(id: string): Promise<AdminUserResponse> {
     const response = await this.http.get<AdminUserResponse>(`/admin/users/${id}`);
+    return response.data;
+  }
+
+  /**
+   * Create a new user
+   * @param data User creation data
+   * @returns Created user
+   */
+  async create(data: AdminCreateUserRequest): Promise<AdminUserResponse> {
+    const response = await this.http.post<AdminUserResponse>('/admin/users', data);
     return response.data;
   }
 

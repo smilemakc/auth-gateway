@@ -54,6 +54,7 @@ func init() {
 			(*models.SMSSettings)(nil),
 			(*models.SMSLog)(nil),
 			(*models.LoginLocation)(nil),
+			(*models.Session)(nil),
 		}
 
 		for _, model := range tablesInOrder {

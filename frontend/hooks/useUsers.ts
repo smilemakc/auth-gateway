@@ -74,42 +74,7 @@ export function useCreateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: any) => {
-      // Try different possible SDK methods for creating users
-      if (apiClient.admin.users.create) {
-        return await apiClient.admin.users.create(data);
-      }
-      if ((apiClient.admin.users as any).add) {
-        return await (apiClient.admin.users as any).add(data);
-      }
-      if ((apiClient.admin.users as any).register) {
-        return await (apiClient.admin.users as any).register(data);
-      }
-      if ((apiClient.admin.users as any).createUser) {
-        return await (apiClient.admin.users as any).createUser(data);
-      }
-
-      // Fallback: Direct API call if SDK doesn't support it
-      console.warn('[Users] Using direct API call for user creation');
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const token = localStorage.getItem('auth_gateway_access_token');
-
-      const response = await fetch(`${baseUrl}/admin/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create user');
-      }
-
-      return await response.json();
-    },
+    mutationFn: (data: any) => apiClient.admin.users.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
     },

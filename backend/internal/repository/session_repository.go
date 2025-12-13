@@ -160,6 +160,11 @@ func (r *SessionRepository) GetAllActiveSessionsPaginated(ctx context.Context, p
 	return sessions, total, nil
 }
 
+// GetAllSessionsPaginated is an alias for GetAllActiveSessionsPaginated (implements interface)
+func (r *SessionRepository) GetAllSessionsPaginated(ctx context.Context, page, perPage int) ([]models.Session, int, error) {
+	return r.GetAllActiveSessionsPaginated(ctx, page, perPage)
+}
+
 // UpdateSessionActivity updates the last active timestamp
 func (r *SessionRepository) UpdateSessionActivity(ctx context.Context, id uuid.UUID) error {
 	_, err := r.db.NewUpdate().

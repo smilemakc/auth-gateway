@@ -2,14 +2,14 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../services/i18n';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Key, 
-  ShieldAlert, 
-  Settings, 
-  LogOut, 
-  Menu, 
+import {
+  LayoutDashboard,
+  Users,
+  Key,
+  ShieldAlert,
+  Settings,
+  LogOut,
+  Menu,
   X,
   Bell,
   Globe,
@@ -31,8 +31,12 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const navItems = [
     { path: '/', label: t('nav.dashboard'), icon: LayoutDashboard },
     { path: '/users', label: t('nav.users'), icon: Users },
+    { path: '/sessions', label: 'Sessions', icon: Key },
     { path: '/api-keys', label: t('nav.api_keys'), icon: Key },
     { path: '/oauth', label: t('nav.oauth'), icon: Globe },
+    { path: '/roles', label: 'Roles', icon: ShieldAlert },
+    { path: '/permissions', label: 'Permissions', icon: ShieldAlert },
+    { path: '/ip-security', label: 'IP Security', icon: ShieldAlert },
     { path: '/audit-logs', label: t('nav.audit_logs'), icon: ShieldAlert },
     { path: '/settings', label: t('nav.settings'), icon: Settings },
   ];
@@ -49,14 +53,14 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside 
+      <aside
         className={`
           fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 text-white transform transition-transform duration-200 ease-in-out
           lg:translate-x-0 lg:static lg:inset-0
@@ -86,8 +90,8 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                   onClick={() => setIsSidebarOpen(false)}
                   className={`
                     flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors
-                    ${isActive 
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' 
+                    ${isActive
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
                       : 'text-slate-300 hover:bg-slate-800 hover:text-white'}
                   `}
                 >
@@ -112,8 +116,8 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                   onClick={() => setIsSidebarOpen(false)}
                   className={`
                     flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors
-                    ${isActive 
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' 
+                    ${isActive
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
                       : 'text-slate-300 hover:bg-slate-800 hover:text-white'}
                   `}
                 >
@@ -126,7 +130,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
         </div>
 
         <div className="absolute bottom-0 w-full p-4 border-t border-slate-800 bg-slate-900">
-          <button 
+          <button
             onClick={onLogout}
             className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-400 hover:bg-slate-800 hover:text-red-300 rounded-lg transition-colors"
           >
@@ -143,26 +147,26 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           <button onClick={toggleSidebar} className="lg:hidden text-gray-500 hover:text-gray-700">
             <Menu size={24} />
           </button>
-          
+
           <div className="flex-1 px-4">
-             {/* Breadcrumb or Search could go here */}
+            {/* Breadcrumb or Search could go here */}
           </div>
 
           <div className="flex items-center gap-4">
             {/* Language Switcher */}
             <div className="flex items-center border rounded-md overflow-hidden border-gray-200">
-               <button 
-                 onClick={() => setLanguage('en')}
-                 className={`px-3 py-1.5 text-xs font-medium transition-colors ${language === 'en' ? 'bg-blue-100 text-blue-700' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-               >
-                 EN
-               </button>
-               <button 
-                 onClick={() => setLanguage('ru')}
-                 className={`px-3 py-1.5 text-xs font-medium transition-colors ${language === 'ru' ? 'bg-blue-100 text-blue-700' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-               >
-                 RU
-               </button>
+              <button
+                onClick={() => setLanguage('en')}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${language === 'en' ? 'bg-blue-100 text-blue-700' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLanguage('ru')}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${language === 'ru' ? 'bg-blue-100 text-blue-700' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+              >
+                RU
+              </button>
             </div>
 
             <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
@@ -170,9 +174,9 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
             <div className="flex items-center gap-3">
-              <img 
-                src="https://picsum.photos/id/64/100/100" 
-                alt="Profile" 
+              <img
+                src="https://picsum.photos/id/64/100/100"
+                alt="Profile"
                 className="h-8 w-8 rounded-full border border-gray-200"
               />
               <div className="hidden md:block">

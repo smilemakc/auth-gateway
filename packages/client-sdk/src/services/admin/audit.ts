@@ -30,9 +30,10 @@ export class AdminAuditService extends BaseService {
    * @returns Paginated audit logs
    */
   async list(options: AuditLogQueryOptions = {}): Promise<AuditLogListResponse> {
-    const response = await this.http.get<AuditLogListResponse>(
+    const response = await this.http.get<AuditLogEntry[] | AuditLogListResponse>(
       '/admin/audit-logs',
       {
+        headers: {},
         query: {
           user_id: options.userId,
           action: options.action,
@@ -45,6 +46,17 @@ export class AdminAuditService extends BaseService {
         },
       }
     );
+
+    // Backend returns an array directly, wrap it for consistency
+    if (Array.isArray(response.data)) {
+      return {
+        logs: response.data,
+        total: response.data.length,
+        page: options.page ?? 1,
+        pageSize: options.pageSize ?? 50,
+      };
+    }
+
     return response.data;
   }
 

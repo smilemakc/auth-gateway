@@ -52,24 +52,24 @@ const AuditLogs: React.FC = () => {
                       <div className={`p-2 rounded-lg bg-gray-100`}>
                         <Shield size={16} className="text-gray-600" />
                       </div>
-                      <span className="font-medium text-gray-900 capitalize">{log.action.replace(/_/g, ' ')}</span>
+                      <span className="font-medium text-gray-900 capitalize">{log.action?.replace(/_/g, ' ')}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-gray-600">
                       <User size={16} />
-                      {log.userEmail}
+                      {log.user_id || log.userId || 'System'}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                     <div className="flex items-center gap-2 text-gray-500 font-mono text-xs">
+                    <div className="flex items-center gap-2 text-gray-500 font-mono text-xs">
                       <Globe size={14} />
-                      {log.ip}
+                      {log.ip || log.ipAddress || '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                      ${log.status === 'success' ? 'bg-green-100 text-green-800' : 
+                      ${log.status === 'success' ? 'bg-green-100 text-green-800' :
                         log.status === 'blocked' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'}`}>
                       {log.status}
                     </span>
@@ -77,7 +77,7 @@ const AuditLogs: React.FC = () => {
                   <td className="px-6 py-4 text-gray-500">
                     <div className="flex items-center gap-2">
                       <Clock size={14} />
-                      {new Date(log.timestamp).toLocaleString()}
+                      {new Date(log.created_at || log.createdAt).toLocaleString()}
                     </div>
                   </td>
                 </tr>
@@ -85,8 +85,8 @@ const AuditLogs: React.FC = () => {
             </tbody>
           </table>
         </div>
-        <div className="p-4 border-t border-gray-200 flex justify-center">
-          <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">{t('common.loading')}</button>
+        <div className="p-4 border-t border-gray-200 flex justify-between items-center text-sm text-gray-500">
+          <span>Showing {logs.length} entries</span>
         </div>
       </div>
     </div>

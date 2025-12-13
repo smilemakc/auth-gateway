@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -11,6 +10,7 @@ import Dashboard from './components/Dashboard';
 import Users from './components/Users';
 import UserDetails from './components/UserDetails';
 import UserEdit from './components/UserEdit';
+import Sessions from './components/Sessions';
 import ApiKeys from './components/ApiKeys';
 import OAuthProviders from './components/OAuthProviders';
 import OAuthProviderEdit from './components/OAuthProviderEdit';
@@ -56,10 +56,18 @@ const AppRoutes: React.FC = () => {
           <Route path="/users/new" element={<UserEdit />} />
           <Route path="/users/:id" element={<UserDetails />} />
           <Route path="/users/:id/edit" element={<UserEdit />} />
+          <Route path="/sessions" element={<Sessions />} />
           <Route path="/api-keys" element={<ApiKeys />} />
           <Route path="/oauth" element={<OAuthProviders />} />
           <Route path="/oauth/new" element={<OAuthProviderEdit />} />
           <Route path="/oauth/:id" element={<OAuthProviderEdit />} />
+          <Route path="/roles" element={<Roles />} />
+          <Route path="/roles/new" element={<RoleEditor />} />
+          <Route path="/roles/:id" element={<RoleEditor />} />
+          <Route path="/permissions" element={<Permissions />} />
+          <Route path="/permissions/new" element={<PermissionEdit />} />
+          <Route path="/permissions/:id" element={<PermissionEdit />} />
+          <Route path="/ip-security" element={<IpSecurity />} />
           <Route path="/audit-logs" element={<AuditLogs />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/branding" element={<Branding />} />

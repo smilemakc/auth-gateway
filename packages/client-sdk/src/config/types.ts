@@ -88,7 +88,7 @@ export interface ClientConfig {
 export interface RequestConfig {
   method: HttpMethod;
   url: string;
-  headers: Record<string, string>;
+  headers?: Record<string, string>;
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined>;
   timeout?: number;
