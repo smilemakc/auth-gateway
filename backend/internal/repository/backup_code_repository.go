@@ -124,7 +124,7 @@ func (r *BackupCodeRepository) GetByCodeHash(ctx context.Context, userID uuid.UU
 		Where("code_hash = ?", codeHash).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {

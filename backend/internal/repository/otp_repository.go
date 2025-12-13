@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -49,7 +50,7 @@ func (r *OTPRepository) GetByEmailAndType(ctx context.Context, email string, otp
 		Limit(1).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.NewAppError(404, "OTP not found or expired")
 	}
 	if err != nil {
@@ -73,7 +74,7 @@ func (r *OTPRepository) GetByPhoneAndType(ctx context.Context, phone string, otp
 		Limit(1).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.NewAppError(404, "OTP not found or expired")
 	}
 	if err != nil {

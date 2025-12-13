@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -29,7 +30,7 @@ func (r *SystemRepository) GetSetting(ctx context.Context, key string) (*models.
 		Where("key = ?", key).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("setting not found: %s", key)
 	}
 

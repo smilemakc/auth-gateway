@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -39,7 +40,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Use
 		Where("id = ? AND is_active = ?", id, true).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrUserNotFound
 	}
 	if err != nil {
@@ -58,7 +59,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 		Where("email = ? AND is_active = ?", email, true).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrUserNotFound
 	}
 	if err != nil {
@@ -77,7 +78,7 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 		Where("username = ? AND is_active = ?", username, true).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrUserNotFound
 	}
 	if err != nil {
@@ -244,7 +245,7 @@ func (r *UserRepository) GetByIDWithRoles(ctx context.Context, id uuid.UUID) (*m
 		Relation("Roles").
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrUserNotFound
 	}
 	if err != nil {
@@ -263,7 +264,7 @@ func (r *UserRepository) GetByEmailWithRoles(ctx context.Context, email string) 
 		Relation("Roles").
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrUserNotFound
 	}
 	if err != nil {
@@ -282,7 +283,7 @@ func (r *UserRepository) GetByUsernameWithRoles(ctx context.Context, username st
 		Relation("Roles").
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrUserNotFound
 	}
 	if err != nil {
@@ -412,7 +413,7 @@ func (r *UserRepository) GetByPhone(ctx context.Context, phone string) (*models.
 		Where("phone = ? AND is_active = ?", phone, true).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrUserNotFound
 	}
 	if err != nil {

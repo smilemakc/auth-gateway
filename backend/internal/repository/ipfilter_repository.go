@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -39,7 +40,7 @@ func (r *IPFilterRepository) GetIPFilterByID(ctx context.Context, id uuid.UUID) 
 		Where("id = ?", id).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("IP filter not found")
 	}
 

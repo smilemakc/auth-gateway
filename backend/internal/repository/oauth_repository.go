@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -50,7 +51,7 @@ func (r *OAuthRepository) GetOAuthAccount(ctx context.Context, provider, provide
 		Where("provider_user_id = ?", providerUserID).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil // Not found, but not an error
 	}
 	if err != nil {
@@ -87,7 +88,7 @@ func (r *OAuthRepository) UpdateOAuthAccount(ctx context.Context, account *model
 		Returning("updated_at").
 		Exec(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("oauth account not found")
 	}
 	if err != nil {

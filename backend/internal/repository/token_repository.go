@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -45,7 +46,7 @@ func (r *TokenRepository) GetRefreshToken(ctx context.Context, tokenHash string)
 		Where("revoked_at IS NULL").
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, models.ErrInvalidToken
 	}
 	if err != nil {
@@ -118,7 +119,7 @@ func (r *TokenRepository) AddToBlacklist(ctx context.Context, token *models.Toke
 		Exec(ctx)
 
 	// ON CONFLICT DO NOTHING may return sql.ErrNoRows if conflict occurred
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
 	if err != nil {

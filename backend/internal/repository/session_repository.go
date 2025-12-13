@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -40,7 +41,7 @@ func (r *SessionRepository) GetSessionByID(ctx context.Context, id uuid.UUID) (*
 		Where("id = ?", id).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("session not found")
 	}
 	if err != nil {
@@ -60,7 +61,7 @@ func (r *SessionRepository) GetSessionByTokenHash(ctx context.Context, tokenHash
 		Where("revoked_at IS NULL").
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("session not found or revoked")
 	}
 	if err != nil {

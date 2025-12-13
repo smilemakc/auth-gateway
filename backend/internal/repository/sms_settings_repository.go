@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -43,7 +44,7 @@ func (r *SMSSettingsRepository) GetByID(ctx context.Context, id uuid.UUID) (*mod
 		Scan(ctx)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get SMS settings: %w", err)
@@ -64,7 +65,7 @@ func (r *SMSSettingsRepository) GetActive(ctx context.Context) (*models.SMSSetti
 		Scan(ctx)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get active SMS settings: %w", err)

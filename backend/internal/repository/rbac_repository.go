@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -43,7 +44,7 @@ func (r *RBACRepository) GetPermissionByID(ctx context.Context, id uuid.UUID) (*
 		Where("id = ?", id).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("permission not found")
 	}
 	if err != nil {
@@ -62,7 +63,7 @@ func (r *RBACRepository) GetPermissionByName(ctx context.Context, name string) (
 		Where("name = ?", name).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("permission not found")
 	}
 	if err != nil {
@@ -176,7 +177,7 @@ func (r *RBACRepository) GetRoleByID(ctx context.Context, id uuid.UUID) (*models
 		Relation("Permissions").
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("role not found")
 	}
 	if err != nil {
@@ -196,7 +197,7 @@ func (r *RBACRepository) GetRoleByName(ctx context.Context, name string) (*model
 		Relation("Permissions").
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("role not found")
 	}
 	if err != nil {

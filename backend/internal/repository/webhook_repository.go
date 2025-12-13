@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/smilemakc/auth-gateway/internal/models"
@@ -41,7 +42,7 @@ func (r *WebhookRepository) GetWebhookByID(ctx context.Context, id uuid.UUID) (*
 		Where("id = ?", id).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("webhook not found")
 	}
 
@@ -180,7 +181,7 @@ func (r *WebhookRepository) GetWebhookDeliveryByID(ctx context.Context, id uuid.
 		Where("id = ?", id).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("webhook delivery not found")
 	}
 

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -39,7 +40,7 @@ func (r *TemplateRepository) GetEmailTemplateByID(ctx context.Context, id uuid.U
 		Where("id = ?", id).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("template not found")
 	}
 
@@ -56,7 +57,7 @@ func (r *TemplateRepository) GetEmailTemplateByType(ctx context.Context, templat
 		Where("is_active = ?", true).
 		Scan(ctx)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("template not found for type: %s", templateType)
 	}
 
