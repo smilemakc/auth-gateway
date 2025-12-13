@@ -17,6 +17,7 @@ export interface SessionListResponse {
   sessions: Session[];
   total: number;
   page: number;
+  perPage?: number;
 }
 
 /** Session statistics (admin) */

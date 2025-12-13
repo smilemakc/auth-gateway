@@ -160,6 +160,48 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// CreateUser creates a new user
+// @Summary Create user
+// @Description Create a new user (admin only)
+// @Tags admin
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body models.AdminCreateUserRequest true "User creation data"
+// @Success 200 {object} models.AdminUserResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Router /admin/users [post]
+func (h *AdminHandler) CreateUser(c *gin.Context) {
+	var req models.AdminCreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid request", err.Error()),
+		))
+		return
+	}
+
+	// Get admin ID from context
+	adminID, exists := utils.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+		return
+	}
+
+	user, err := h.adminService.CreateUser(c.Request.Context(), &req, *adminID)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
 // DeleteUser deletes a user
 // @Summary Delete user
 // @Description Soft delete a user (admin only)

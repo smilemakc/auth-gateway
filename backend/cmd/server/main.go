@@ -100,8 +100,8 @@ func main() {
 	emailService := service.NewEmailService(&cfg.SMTP)
 	otpService := service.NewOTPService(otpRepo, userRepo, emailService, auditService)
 	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, rbacRepo, jwtService, &http.Client{Timeout: 10 * time.Second})
-	twoFAService := service.NewTwoFactorService(userRepo, backupCodeRepo, auditRepo, "Auth Gateway")
-	adminService := service.NewAdminService(userRepo, apiKeyRepo, auditRepo, oauthRepo, rbacRepo)
+	twoFAService := service.NewTwoFactorService(userRepo, backupCodeRepo, "Auth Gateway")
+	adminService := service.NewAdminService(userRepo, apiKeyRepo, auditRepo, oauthRepo, rbacRepo, cfg.Security.BcryptCost)
 
 	// Advanced feature services
 	rbacService := service.NewRBACService(rbacRepo, auditService)
@@ -147,177 +147,180 @@ func main() {
 	router.GET("/auth/ready", healthHandler.Readiness)
 	router.GET("/auth/live", healthHandler.Liveness)
 
-	// Public auth endpoints
-	authGroup := router.Group("/auth")
-	{
-		authGroup.POST("/signup", rateLimitMiddleware.LimitSignup(), authHandler.SignUp)
-		authGroup.POST("/signin", rateLimitMiddleware.LimitSignin(), authHandler.SignIn)
-		authGroup.POST("/refresh", authHandler.RefreshToken)
-
-		// Email verification
-		authGroup.POST("/verify/resend", otpHandler.SendOTP)
-		authGroup.POST("/verify/email", authHandler.VerifyEmail)
-
-		// Password reset
-		authGroup.POST("/password/reset/request", authHandler.RequestPasswordReset)
-		authGroup.POST("/password/reset/complete", authHandler.ResetPassword)
-
-		// 2FA login verification (public - no auth required)
-		authGroup.POST("/2fa/login/verify", authHandler.Verify2FA)
-	}
-
-	// OTP endpoints
-	otpGroup := router.Group("/otp")
-	{
-		otpGroup.POST("/send", otpHandler.SendOTP)
-		otpGroup.POST("/verify", otpHandler.VerifyOTP)
-	}
-
-	// Passwordless login endpoints
-	passwordlessGroup := router.Group("/auth/passwordless")
-	{
-		passwordlessGroup.POST("/request", otpHandler.RequestPasswordlessLogin)
-		passwordlessGroup.POST("/verify", otpHandler.VerifyPasswordlessLogin)
-	}
-
-	// OAuth endpoints
-	oauthGroup := router.Group("/auth")
-	{
-		oauthGroup.GET("/providers", oauthHandler.GetProviders)
-		oauthGroup.GET("/:provider", oauthHandler.Login)
-		oauthGroup.GET("/:provider/callback", oauthHandler.Callback)
-		oauthGroup.POST("/telegram/callback", oauthHandler.TelegramCallback)
-	}
-
-	// Protected auth endpoints (require authentication)
-	protectedAuth := router.Group("/auth")
-	protectedAuth.Use(authMiddleware.Authenticate())
-	{
-		protectedAuth.POST("/logout", authHandler.Logout)
-		protectedAuth.GET("/profile", authHandler.GetProfile)
-		protectedAuth.PUT("/profile", authHandler.UpdateProfile)
-		protectedAuth.POST("/change-password", authHandler.ChangePassword)
-
-		// 2FA management (protected)
-		protectedAuth.POST("/2fa/setup", twoFAHandler.Setup)
-		protectedAuth.POST("/2fa/verify", twoFAHandler.Verify)
-		protectedAuth.POST("/2fa/disable", twoFAHandler.Disable)
-		protectedAuth.GET("/2fa/status", twoFAHandler.GetStatus)
-		protectedAuth.POST("/2fa/backup-codes/regenerate", twoFAHandler.RegenerateBackupCodes)
-	}
-
-	// API Keys endpoints (require JWT authentication)
-	apiKeysGroup := router.Group("/api-keys")
-	apiKeysGroup.Use(authMiddleware.Authenticate())
-	{
-		apiKeysGroup.POST("", apiKeyHandler.Create)
-		apiKeysGroup.GET("", apiKeyHandler.List)
-		apiKeysGroup.GET("/:id", apiKeyHandler.Get)
-		apiKeysGroup.PUT("/:id", apiKeyHandler.Update)
-		apiKeysGroup.POST("/:id/revoke", apiKeyHandler.Revoke)
-		apiKeysGroup.DELETE("/:id", apiKeyHandler.Delete)
-	}
-
-	// Admin endpoints (require admin role)
-	adminGroup := router.Group("/admin")
-	adminGroup.Use(authMiddleware.Authenticate())
-	adminGroup.Use(middleware.RequireAdmin())
-	{
-		// Statistics
-		adminGroup.GET("/stats", adminHandler.GetStats)
-
-		// User management
-		adminGroup.GET("/users", adminHandler.ListUsers)
-		adminGroup.GET("/users/:id", adminHandler.GetUser)
-		adminGroup.PUT("/users/:id", adminHandler.UpdateUser)
-		adminGroup.DELETE("/users/:id", adminHandler.DeleteUser)
-
-		// User role management
-		adminGroup.POST("/users/:id/roles", adminHandler.AssignRole)
-		adminGroup.DELETE("/users/:id/roles/:roleId", adminHandler.RemoveRole)
-
-		// API key management
-		adminGroup.GET("/api-keys", adminHandler.ListAPIKeys)
-		adminGroup.POST("/api-keys/:id/revoke", adminHandler.RevokeAPIKey)
-
-		// Audit logs
-		adminGroup.GET("/audit-logs", adminHandler.ListAuditLogs)
-
-		// RBAC Management
-		rbacGroup := adminGroup.Group("/rbac")
-		{
-			rbacGroup.GET("/permissions", advancedAdminHandler.ListPermissions)
-			rbacGroup.POST("/permissions", advancedAdminHandler.CreatePermission)
-
-			rbacGroup.GET("/roles", advancedAdminHandler.ListRoles)
-			rbacGroup.POST("/roles", advancedAdminHandler.CreateRole)
-			rbacGroup.GET("/roles/:id", advancedAdminHandler.GetRole)
-			rbacGroup.PUT("/roles/:id", advancedAdminHandler.UpdateRole)
-			rbacGroup.DELETE("/roles/:id", advancedAdminHandler.DeleteRole)
-
-			rbacGroup.GET("/permission-matrix", advancedAdminHandler.GetPermissionMatrix)
-		}
-
-		// Session Management (Admin view)
-		adminGroup.GET("/sessions/stats", advancedAdminHandler.GetSessionStats)
-
-		// IP Filter Management
-		ipFilterGroup := adminGroup.Group("/ip-filters")
-		{
-			ipFilterGroup.GET("", advancedAdminHandler.ListIPFilters)
-			ipFilterGroup.POST("", advancedAdminHandler.CreateIPFilter)
-			ipFilterGroup.DELETE("/:id", advancedAdminHandler.DeleteIPFilter)
-		}
-
-		// Branding Management
-		adminGroup.PUT("/branding", advancedAdminHandler.UpdateBranding)
-
-		// System Settings
-		systemGroup := adminGroup.Group("/system")
-		{
-			systemGroup.PUT("/maintenance", advancedAdminHandler.SetMaintenanceMode)
-			systemGroup.GET("/health", advancedAdminHandler.GetSystemHealth)
-		}
-
-		// Analytics
-		analyticsGroup := adminGroup.Group("/analytics")
-		{
-			analyticsGroup.GET("/geo-distribution", advancedAdminHandler.GetGeoDistribution)
-		}
-	}
-
-	// Session Management (User endpoints)
-	sessionsGroup := router.Group("/sessions")
-	sessionsGroup.Use(authMiddleware.Authenticate())
-	{
-		sessionsGroup.GET("", advancedAdminHandler.ListUserSessions)
-		sessionsGroup.DELETE("/:id", advancedAdminHandler.RevokeSession)
-		sessionsGroup.POST("/revoke-all", advancedAdminHandler.RevokeAllSessions)
-	}
-
-	// Public branding endpoint
-	router.GET("/branding", advancedAdminHandler.GetBranding)
-
 	// Public system status endpoint
 	router.GET("/system/maintenance", advancedAdminHandler.GetMaintenanceMode)
 
-	// Example: Protected endpoint that accepts both JWT and API key
-	protectedAPI := router.Group("/api/v1")
-	// This middleware will try JWT first, then API key
-	protectedAPI.Use(func(c *gin.Context) {
-		// Try JWT authentication first
-		authHeader := c.GetHeader("Authorization")
-		if authHeader != "" && !strings.HasPrefix(authHeader, "Bearer agw_") {
-			authMiddleware.Authenticate()(c)
-			return
+	// API Group
+	apiGroup := router.Group("/api")
+	{
+		// Public auth endpoints
+		authGroup := apiGroup.Group("/auth")
+		{
+			authGroup.POST("/signup", rateLimitMiddleware.LimitSignup(), authHandler.SignUp)
+			authGroup.POST("/signin", rateLimitMiddleware.LimitSignin(), authHandler.SignIn)
+			authGroup.POST("/refresh", authHandler.RefreshToken)
+
+			// Email verification
+			authGroup.POST("/verify/resend", otpHandler.SendOTP)
+			authGroup.POST("/verify/email", authHandler.VerifyEmail)
+
+			// Password reset
+			authGroup.POST("/password/reset/request", authHandler.RequestPasswordReset)
+			authGroup.POST("/password/reset/complete", authHandler.ResetPassword)
+
+			// 2FA login verification (public - no auth required)
+			authGroup.POST("/2fa/login/verify", authHandler.Verify2FA)
 		}
 
-		// Try API key authentication
-		apiKeyMiddleware.Authenticate()(c)
-	})
-	{
-		// Example endpoint that can be accessed with either JWT or API key
-		protectedAPI.GET("/profile", authHandler.GetProfile)
+		// OTP endpoints
+		otpGroup := apiGroup.Group("/otp")
+		{
+			otpGroup.POST("/send", otpHandler.SendOTP)
+			otpGroup.POST("/verify", otpHandler.VerifyOTP)
+		}
+
+		// Passwordless login endpoints
+		passwordlessGroup := apiGroup.Group("/auth/passwordless")
+		{
+			passwordlessGroup.POST("/request", otpHandler.RequestPasswordlessLogin)
+			passwordlessGroup.POST("/verify", otpHandler.VerifyPasswordlessLogin)
+		}
+
+		// OAuth endpoints
+		oauthGroup := apiGroup.Group("/auth")
+		{
+			oauthGroup.GET("/providers", oauthHandler.GetProviders)
+			oauthGroup.GET("/:provider", oauthHandler.Login)
+			oauthGroup.GET("/:provider/callback", oauthHandler.Callback)
+			oauthGroup.POST("/telegram/callback", oauthHandler.TelegramCallback)
+		}
+
+		// Protected auth endpoints (require authentication)
+		protectedAuth := apiGroup.Group("/auth")
+		protectedAuth.Use(authMiddleware.Authenticate())
+		{
+			protectedAuth.POST("/logout", authHandler.Logout)
+			protectedAuth.GET("/profile", authHandler.GetProfile)
+			protectedAuth.PUT("/profile", authHandler.UpdateProfile)
+			protectedAuth.POST("/change-password", authHandler.ChangePassword)
+
+			// 2FA management (protected)
+			protectedAuth.POST("/2fa/setup", twoFAHandler.Setup)
+			protectedAuth.POST("/2fa/verify", twoFAHandler.Verify)
+			protectedAuth.POST("/2fa/disable", twoFAHandler.Disable)
+			protectedAuth.GET("/2fa/status", twoFAHandler.GetStatus)
+			protectedAuth.POST("/2fa/backup-codes/regenerate", twoFAHandler.RegenerateBackupCodes)
+		}
+
+		// API Keys endpoints (require JWT authentication)
+		apiKeysGroup := apiGroup.Group("/api-keys")
+		apiKeysGroup.Use(authMiddleware.Authenticate())
+		{
+			apiKeysGroup.POST("", apiKeyHandler.Create)
+			apiKeysGroup.GET("", apiKeyHandler.List)
+			apiKeysGroup.GET("/:id", apiKeyHandler.Get)
+			apiKeysGroup.PUT("/:id", apiKeyHandler.Update)
+			apiKeysGroup.POST("/:id/revoke", apiKeyHandler.Revoke)
+			apiKeysGroup.DELETE("/:id", apiKeyHandler.Delete)
+		}
+
+		// Admin endpoints (require admin role)
+		adminGroup := apiGroup.Group("/admin")
+		adminGroup.Use(authMiddleware.Authenticate())
+		adminGroup.Use(middleware.RequireAdmin())
+		{
+			// Statistics
+			adminGroup.GET("/stats", adminHandler.GetStats)
+
+			// User management
+			adminGroup.GET("/users", adminHandler.ListUsers)
+			adminGroup.POST("/users", adminHandler.CreateUser) // Added CreateUser if it exists in handler, checking imports later
+			adminGroup.GET("/users/:id", adminHandler.GetUser)
+			adminGroup.PUT("/users/:id", adminHandler.UpdateUser)
+			adminGroup.DELETE("/users/:id", adminHandler.DeleteUser)
+
+			// User role management
+			adminGroup.POST("/users/:id/roles", adminHandler.AssignRole)
+			adminGroup.DELETE("/users/:id/roles/:roleId", adminHandler.RemoveRole)
+
+			// API key management
+			adminGroup.GET("/api-keys", adminHandler.ListAPIKeys)
+			adminGroup.POST("/api-keys/:id/revoke", adminHandler.RevokeAPIKey)
+
+			// Audit logs
+			adminGroup.GET("/audit-logs", adminHandler.ListAuditLogs)
+
+			// RBAC Management
+			rbacGroup := adminGroup.Group("/rbac")
+			{
+				rbacGroup.GET("/permissions", advancedAdminHandler.ListPermissions)
+				rbacGroup.POST("/permissions", advancedAdminHandler.CreatePermission)
+
+				rbacGroup.GET("/roles", advancedAdminHandler.ListRoles)
+				rbacGroup.POST("/roles", advancedAdminHandler.CreateRole)
+				rbacGroup.GET("/roles/:id", advancedAdminHandler.GetRole)
+				rbacGroup.PUT("/roles/:id", advancedAdminHandler.UpdateRole)
+				rbacGroup.DELETE("/roles/:id", advancedAdminHandler.DeleteRole)
+
+				rbacGroup.GET("/permission-matrix", advancedAdminHandler.GetPermissionMatrix)
+			}
+
+			// Session Management (Admin view)
+			adminGroup.GET("/sessions", advancedAdminHandler.ListAllSessions)
+			adminGroup.GET("/sessions/stats", advancedAdminHandler.GetSessionStats)
+
+			// IP Filter Management
+			ipFilterGroup := adminGroup.Group("/ip-filters")
+			{
+				ipFilterGroup.GET("", advancedAdminHandler.ListIPFilters)
+				ipFilterGroup.POST("", advancedAdminHandler.CreateIPFilter)
+				ipFilterGroup.DELETE("/:id", advancedAdminHandler.DeleteIPFilter)
+			}
+
+			// Branding Management
+			adminGroup.PUT("/branding", advancedAdminHandler.UpdateBranding)
+
+			// System Settings
+			systemGroup := adminGroup.Group("/system")
+			{
+				systemGroup.PUT("/maintenance", advancedAdminHandler.SetMaintenanceMode)
+				systemGroup.GET("/health", advancedAdminHandler.GetSystemHealth)
+			}
+
+			// Analytics
+			analyticsGroup := adminGroup.Group("/analytics")
+			{
+				analyticsGroup.GET("/geo-distribution", advancedAdminHandler.GetGeoDistribution)
+			}
+		}
+
+		// Session Management (User endpoints)
+		sessionsGroup := apiGroup.Group("/sessions")
+		sessionsGroup.Use(authMiddleware.Authenticate())
+		{
+			sessionsGroup.GET("", advancedAdminHandler.ListUserSessions)
+			sessionsGroup.DELETE("/:id", advancedAdminHandler.RevokeSession)
+			sessionsGroup.POST("/revoke-all", advancedAdminHandler.RevokeAllSessions)
+		}
+
+		// Example: Protected endpoint that accepts both JWT and API key
+		protectedAPI := apiGroup.Group("/v1")
+		// This middleware will try JWT first, then API key
+		protectedAPI.Use(func(c *gin.Context) {
+			// Try JWT authentication first
+			authHeader := c.GetHeader("Authorization")
+			if authHeader != "" && !strings.HasPrefix(authHeader, "Bearer agw_") {
+				authMiddleware.Authenticate()(c)
+				return
+			}
+
+			// Try API key authentication
+			apiKeyMiddleware.Authenticate()(c)
+		})
+		{
+			// Example endpoint that can be accessed with either JWT or API key
+			protectedAPI.GET("/profile", authHandler.GetProfile)
+		}
 	}
 
 	// Start token cleanup routine

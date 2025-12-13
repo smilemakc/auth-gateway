@@ -22,13 +22,13 @@ export function useAuditLogs(
       try {
         // Try: admin.auditLogs.list()
         if (apiClient.admin.auditLogs?.list) {
-          const response = await apiClient.admin.auditLogs.list(page, pageSize);
+          const response = await apiClient.admin.auditLogs.list({ page, pageSize });
           return processAuditLogsResponse(response, filters);
         }
 
         // Try: admin.audit.list()
         if ((apiClient.admin as any).audit?.list) {
-          const response = await (apiClient.admin as any).audit.list(page, pageSize);
+          const response = await (apiClient.admin as any).audit.list({ page, pageSize });
           return processAuditLogsResponse(response, filters);
         }
 

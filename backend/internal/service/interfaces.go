@@ -212,6 +212,7 @@ type APIKeyStore interface {
 type SessionStore interface {
 	CreateSession(ctx context.Context, session *models.Session) error
 	GetUserSessionsPaginated(ctx context.Context, userID uuid.UUID, page, perPage int) ([]models.Session, int, error)
+	GetAllSessionsPaginated(ctx context.Context, page, perPage int) ([]models.Session, int, error)
 	RevokeUserSession(ctx context.Context, userID, sessionID uuid.UUID) error
 	RevokeAllUserSessions(ctx context.Context, userID uuid.UUID, exceptSessionID *uuid.UUID) error
 	UpdateSessionName(ctx context.Context, sessionID uuid.UUID, name string) error

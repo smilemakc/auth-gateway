@@ -41,6 +41,16 @@ type AdminUpdateUserRequest struct {
 	IsActive *bool        `json:"is_active,omitempty"`
 }
 
+// AdminCreateUserRequest represents admin user creation request
+type AdminCreateUserRequest struct {
+	Email       string      `json:"email" binding:"required,email"`
+	Username    string      `json:"username" binding:"required,min=3,max=100"`
+	Password    string      `json:"password" binding:"required,min=8"`
+	FullName    string      `json:"full_name" binding:"required"`
+	RoleIDs     []uuid.UUID `json:"role_ids"`
+	AccountType string      `json:"account_type"` // Optional, defaults to human
+}
+
 // AssignRoleRequest represents a request to assign a role to a user
 type AssignRoleRequest struct {
 	RoleID uuid.UUID `json:"role_id" binding:"required"`

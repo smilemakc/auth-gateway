@@ -308,6 +308,34 @@ func (h *AdvancedAdminHandler) GetSessionStats(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
+// ListAllSessions godoc
+// @Summary List all sessions (admin only)
+// @Tags Admin - Sessions
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(50)
+// @Success 200 {array} models.ActiveSessionResponse
+// @Router /admin/sessions [get]
+func (h *AdvancedAdminHandler) ListAllSessions(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "50"))
+
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 || perPage > 100 {
+		perPage = 50
+	}
+
+	sessions, err := h.sessionService.GetAllSessions(c.Request.Context(), page, perPage)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, sessions)
+}
+
 // ============================================================
 // IP Filter Endpoints
 // ============================================================

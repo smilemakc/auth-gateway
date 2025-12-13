@@ -101,6 +101,41 @@ func (s *SessionService) GetSessionStats(ctx context.Context) (*models.SessionSt
 	return s.sessionRepo.GetSessionStats(ctx)
 }
 
+// GetAllSessions retrieves all active sessions (admin only)
+func (s *SessionService) GetAllSessions(ctx context.Context, page, perPage int) (*models.SessionListResponse, error) {
+	sessions, total, err := s.sessionRepo.GetAllSessionsPaginated(ctx, page, perPage)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to response format
+	var responseSessions []models.ActiveSessionResponse
+	for _, session := range sessions {
+		responseSessions = append(responseSessions, models.ActiveSessionResponse{
+			ID:           session.ID,
+			DeviceType:   session.DeviceType,
+			OS:           session.OS,
+			Browser:      session.Browser,
+			IPAddress:    session.IPAddress,
+			SessionName:  session.SessionName,
+			LastActiveAt: session.LastActiveAt,
+			CreatedAt:    session.CreatedAt,
+			ExpiresAt:    session.ExpiresAt,
+			IsCurrent:    false,
+		})
+	}
+
+	totalPages := (total + perPage - 1) / perPage
+
+	return &models.SessionListResponse{
+		Sessions:   responseSessions,
+		Total:      total,
+		Page:       page,
+		PerPage:    perPage,
+		TotalPages: totalPages,
+	}, nil
+}
+
 // CleanupExpiredSessions removes expired sessions
 func (s *SessionService) CleanupExpiredSessions(ctx context.Context) error {
 	return s.sessionRepo.DeleteExpiredSessions(ctx, 7*24*time.Hour) // Delete sessions older than 7 days

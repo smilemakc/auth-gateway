@@ -5,7 +5,7 @@ import {
 } from '@auth-gateway/client-sdk';
 
 // Get base URL from environment
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const baseUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api`;
 
 // Custom token storage with debugging
 const customTokenStorage: TokenStorage = {

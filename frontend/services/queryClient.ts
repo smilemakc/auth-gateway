@@ -70,16 +70,24 @@ export const queryKeys = {
 
   // RBAC
   rbac: {
-    roles: ['rbac', 'roles'] as const,
-    role: (id: string) => ['rbac', 'role', id] as const,
-    permissions: ['rbac', 'permissions'] as const,
-    permission: (id: string) => ['rbac', 'permission', id] as const,
+    roles: {
+      all: ['rbac', 'roles'] as const,
+      list: (page?: number, pageSize?: number) => ['rbac', 'roles', 'list', { page, pageSize }] as const,
+      detail: (id: string) => ['rbac', 'roles', 'detail', id] as const,
+    },
+    permissions: {
+      all: ['rbac', 'permissions'] as const,
+      list: (page?: number, pageSize?: number) => ['rbac', 'permissions', 'list', { page, pageSize }] as const,
+      detail: (id: string) => ['rbac', 'permissions', 'detail', id] as const,
+    },
   },
 
   // Sessions
   sessions: {
     all: ['sessions'] as const,
-    user: (userId: string) => ['sessions', 'user', userId] as const,
+    list: (page?: number, pageSize?: number) => ['sessions', 'list', { page, pageSize }] as const,
+    detail: (id: string) => ['sessions', 'detail', id] as const,
+    byUser: (userId: string, page?: number, pageSize?: number) => ['sessions', 'user', userId, { page, pageSize }] as const,
     current: ['sessions', 'current'] as const,
   },
 
@@ -94,6 +102,8 @@ export const queryKeys = {
   // IP Filters
   ipFilters: {
     all: ['ipFilters'] as const,
+    list: (page?: number, pageSize?: number) => ['ipFilters', 'list', { page, pageSize }] as const,
+    detail: (id: string) => ['ipFilters', 'detail', id] as const,
     byType: (type: 'whitelist' | 'blacklist') => ['ipFilters', type] as const,
   },
 

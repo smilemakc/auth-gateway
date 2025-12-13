@@ -14,6 +14,31 @@ export class AdminSessionsService extends BaseService {
   }
 
   /**
+   * List all sessions (admin)
+   * @param page Page number
+   * @param perPage Items per page
+   * @returns List of all sessions
+   */
+  async list(page = 1, perPage = 50): Promise<SessionListResponse> {
+    const response = await this.http.get<Session[] | SessionListResponse>(
+      '/admin/sessions',
+      { query: { page, per_page: perPage } }
+    );
+
+    // Backend may return array directly
+    if (Array.isArray(response.data)) {
+      return {
+        sessions: response.data,
+        total: response.data.length,
+        page,
+        perPage,
+      };
+    }
+
+    return response.data;
+  }
+
+  /**
    * Get session statistics
    * @returns Session statistics
    */
@@ -62,6 +87,28 @@ export class AdminSessionsService extends BaseService {
     const response = await this.http.post<MessageResponse>(
       `/admin/users/${userId}/sessions/revoke-all`
     );
+    return response.data;
+  }
+
+  /**
+   * Alias for revokeSession
+   */
+  async revoke(sessionId: string): Promise<MessageResponse> {
+    return this.revokeSession(sessionId);
+  }
+
+  /**
+   * Alias for revokeUserSessions
+   */
+  async revokeAllForUser(userId: string): Promise<MessageResponse> {
+    return this.revokeUserSessions(userId);
+  }
+
+  /**
+   * Get a session by ID
+   */
+  async get(sessionId: string): Promise<Session> {
+    const response = await this.http.get<Session>(`/admin/sessions/${sessionId}`);
     return response.data;
   }
 

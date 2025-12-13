@@ -58,6 +58,16 @@ export interface AdminUpdateUserRequest {
   isActive?: boolean;
 }
 
+/** Admin user create request */
+export interface AdminCreateUserRequest {
+  email: string;
+  username: string;
+  password?: string;
+  fullName: string;
+  roleIds?: string[];
+}
+
+
 /** Assign role request */
 export interface AssignRoleRequest {
   roleId: string;
