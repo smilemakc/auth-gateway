@@ -38,18 +38,6 @@ export class AuthGatewayError extends Error implements ApiError {
       Error.captureStackTrace(this, AuthGatewayError);
     }
   }
-
-  toJSON(): Record<string, unknown> {
-    return {
-      name: this.name,
-      message: this.message,
-      status: this.status,
-      code: this.code,
-      details: this.details,
-      requestId: this.requestId,
-      retryable: this.retryable,
-    };
-  }
 }
 
 /** Network error (connection issues, timeouts) */

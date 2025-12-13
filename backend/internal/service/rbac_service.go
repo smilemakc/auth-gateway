@@ -2,26 +2,22 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/repository"
-
-	"github.com/google/uuid"
 )
 
-// RBACService handles RBAC business logic
 type RBACService struct {
-	rbacRepo  *repository.RBACRepository
-	auditRepo *repository.AuditRepository
+	rbacRepo     *repository.RBACRepository
+	auditService *AuditService
 }
 
-// NewRBACService creates a new RBAC service
-func NewRBACService(rbacRepo *repository.RBACRepository, auditRepo *repository.AuditRepository) *RBACService {
+func NewRBACService(rbacRepo *repository.RBACRepository, auditService *AuditService) *RBACService {
 	return &RBACService{
-		rbacRepo:  rbacRepo,
-		auditRepo: auditRepo,
+		rbacRepo:     rbacRepo,
+		auditService: auditService,
 	}
 }
 
@@ -175,11 +171,6 @@ func (s *RBACService) GetUserPermissions(ctx context.Context, userID uuid.UUID) 
 	return s.rbacRepo.GetUserPermissions(ctx, userID)
 }
 
-// GetUserRole retrieves the role for a user
-func (s *RBACService) GetUserRole(ctx context.Context, userID uuid.UUID) (*models.Role, error) {
-	return s.rbacRepo.GetUserRole(ctx, userID)
-}
-
 // GetPermissionMatrix retrieves the permission matrix for all roles
 func (s *RBACService) GetPermissionMatrix(ctx context.Context) (*models.PermissionMatrix, error) {
 	return s.rbacRepo.GetPermissionMatrix(ctx)
@@ -201,22 +192,19 @@ func (s *RBACService) AssignRoleToUser(ctx context.Context, userID, roleID, assi
 	}
 
 	details := map[string]interface{}{
-		"user_id":     userID.String(),
-		"role_id":     roleID.String(),
-		"role_name":   role.Name,
-		"assigned_by": assignedBy.String(),
+		"user_id":       userID.String(),
+		"role_id":       roleID.String(),
+		"role_name":     role.Name,
+		"assigned_by":   assignedBy.String(),
+		"resource_type": "user_role",
+		"resource_id":   userID.String(),
 	}
-	detailsJSON, _ := json.Marshal(details)
-
-	auditLog := &models.AuditLog{
-		UserID:       &userID,
-		Action:       string(models.ActionRoleAssigned),
-		Status:       string(models.StatusSuccess),
-		ResourceType: "user_role",
-		ResourceID:   userID.String(),
-		Details:      detailsJSON,
-	}
-	s.auditRepo.Create(ctx, auditLog)
+	s.auditService.Log(AuditLogParams{
+		UserID:  &userID,
+		Action:  models.ActionRoleAssigned,
+		Status:  models.StatusSuccess,
+		Details: details,
+	})
 
 	return nil
 }
@@ -240,21 +228,18 @@ func (s *RBACService) RemoveRoleFromUser(ctx context.Context, userID, roleID uui
 	}
 
 	details := map[string]interface{}{
-		"user_id":   userID.String(),
-		"role_id":   roleID.String(),
-		"role_name": role.Name,
+		"user_id":       userID.String(),
+		"role_id":       roleID.String(),
+		"role_name":     role.Name,
+		"resource_type": "user_role",
+		"resource_id":   userID.String(),
 	}
-	detailsJSON, _ := json.Marshal(details)
-
-	auditLog := &models.AuditLog{
-		UserID:       &userID,
-		Action:       string(models.ActionRoleRevoked),
-		Status:       string(models.StatusSuccess),
-		ResourceType: "user_role",
-		ResourceID:   userID.String(),
-		Details:      detailsJSON,
-	}
-	s.auditRepo.Create(ctx, auditLog)
+	s.auditService.Log(AuditLogParams{
+		UserID:  &userID,
+		Action:  models.ActionRoleRevoked,
+		Status:  models.StatusSuccess,
+		Details: details,
+	})
 
 	return nil
 }
@@ -309,18 +294,15 @@ func (s *RBACService) SetUserRoles(ctx context.Context, userID uuid.UUID, roleID
 		"previous_roles": previousRoleNames,
 		"new_roles":      newRoleNames,
 		"assigned_by":    assignedBy.String(),
+		"resource_type":  "user_role",
+		"resource_id":    userID.String(),
 	}
-	detailsJSON, _ := json.Marshal(details)
-
-	auditLog := &models.AuditLog{
-		UserID:       &userID,
-		Action:       string(models.ActionRolesUpdated),
-		Status:       string(models.StatusSuccess),
-		ResourceType: "user_role",
-		ResourceID:   userID.String(),
-		Details:      detailsJSON,
-	}
-	s.auditRepo.Create(ctx, auditLog)
+	s.auditService.Log(AuditLogParams{
+		UserID:  &userID,
+		Action:  models.ActionRolesUpdated,
+		Status:  models.StatusSuccess,
+		Details: details,
+	})
 
 	return nil
 }

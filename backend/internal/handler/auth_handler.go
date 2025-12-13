@@ -50,8 +50,9 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
+	deviceInfo := utils.GetDeviceInfoFromContext(c)
 
-	authResp, err := h.authService.SignUp(c.Request.Context(), &req, ip, userAgent)
+	authResp, err := h.authService.SignUp(c.Request.Context(), &req, ip, userAgent, deviceInfo)
 	if err != nil {
 		if appErr, ok := err.(*models.AppError); ok {
 			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
@@ -100,8 +101,9 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
+	deviceInfo := utils.GetDeviceInfoFromContext(c)
 
-	authResp, err := h.authService.SignIn(c.Request.Context(), &req, ip, userAgent)
+	authResp, err := h.authService.SignIn(c.Request.Context(), &req, ip, userAgent, deviceInfo)
 	if err != nil {
 		if appErr, ok := err.(*models.AppError); ok {
 			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
@@ -136,8 +138,9 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
+	deviceInfo := utils.GetDeviceInfoFromContext(c)
 
-	authResp, err := h.authService.RefreshToken(c.Request.Context(), req.RefreshToken, ip, userAgent)
+	authResp, err := h.authService.RefreshToken(c.Request.Context(), req.RefreshToken, ip, userAgent, deviceInfo)
 	if err != nil {
 		if appErr, ok := err.(*models.AppError); ok {
 			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
@@ -565,8 +568,9 @@ func (h *AuthHandler) Verify2FA(c *gin.Context) {
 
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
+	deviceInfo := utils.GetDeviceInfoFromContext(c)
 
-	authResp, err := h.authService.Verify2FALogin(c.Request.Context(), req.TwoFactorToken, req.Code, ip, userAgent)
+	authResp, err := h.authService.Verify2FALogin(c.Request.Context(), req.TwoFactorToken, req.Code, ip, userAgent, deviceInfo)
 	if err != nil {
 		if appErr, ok := err.(*models.AppError); ok {
 			c.JSON(appErr.Code, models.NewErrorResponse(appErr))

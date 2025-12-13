@@ -27,6 +27,25 @@ func ParseUserAgent(userAgent string) models.DeviceInfo {
 	return info
 }
 
+// GenerateSessionName creates a human-readable session name from device info
+func GenerateSessionName(deviceInfo models.DeviceInfo) string {
+	browser := deviceInfo.Browser
+	if browser == "unknown" {
+		browser = "Unknown Browser"
+	}
+
+	os := deviceInfo.OS
+	if os == "unknown" {
+		os = "Unknown OS"
+	}
+
+	if deviceInfo.IsBot {
+		return browser + " (Bot)"
+	}
+
+	return browser + " on " + os
+}
+
 // detectDeviceType detects the device type from user agent
 func detectDeviceType(ua string) string {
 	ua = strings.ToLower(ua)

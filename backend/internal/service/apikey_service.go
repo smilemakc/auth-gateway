@@ -14,29 +14,25 @@ import (
 )
 
 const (
-	// APIKeyPrefix is the prefix for all API keys
 	APIKeyPrefix = "agw"
-	// APIKeyLength is the length of the random part of the key
 	APIKeyLength = 32
 )
 
-// APIKeyService provides API key operations
 type APIKeyService struct {
-	apiKeyRepo *repository.APIKeyRepository
-	userRepo   *repository.UserRepository
-	auditRepo  *repository.AuditRepository
+	apiKeyRepo   *repository.APIKeyRepository
+	userRepo     *repository.UserRepository
+	auditService *AuditService
 }
 
-// NewAPIKeyService creates a new API key service
 func NewAPIKeyService(
 	apiKeyRepo *repository.APIKeyRepository,
 	userRepo *repository.UserRepository,
-	auditRepo *repository.AuditRepository,
+	auditService *AuditService,
 ) *APIKeyService {
 	return &APIKeyService{
-		apiKeyRepo: apiKeyRepo,
-		userRepo:   userRepo,
-		auditRepo:  auditRepo,
+		apiKeyRepo:   apiKeyRepo,
+		userRepo:     userRepo,
+		auditService: auditService,
 	}
 }
 
@@ -328,25 +324,6 @@ func (s *APIKeyService) HasScope(apiKey *models.APIKey, scope models.APIKeyScope
 	return false
 }
 
-// logAudit logs an audit entry
 func (s *APIKeyService) logAudit(userID *uuid.UUID, action, status, ip, userAgent string, details map[string]interface{}) {
-	var detailsJSON []byte
-	if details != nil {
-		detailsJSON, _ = json.Marshal(details)
-	}
-
-	auditLog := &models.AuditLog{
-		ID:        uuid.New(),
-		UserID:    userID,
-		Action:    action,
-		IPAddress: ip,
-		UserAgent: userAgent,
-		Status:    status,
-		Details:   detailsJSON,
-	}
-
-	// Log asynchronously
-	go func() {
-		_ = s.auditRepo.Create(context.Background(), auditLog)
-	}()
+	s.auditService.LogWithAction(userID, action, status, ip, userAgent, details)
 }

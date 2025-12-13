@@ -16,29 +16,27 @@ import (
 const (
 	OTPLength     = 6
 	OTPExpiration = 10 * time.Minute
-	OTPRateLimit  = 3 // Max OTPs per hour
+	OTPRateLimit  = 3
 )
 
-// OTPService provides OTP operations
 type OTPService struct {
 	otpRepo      *repository.OTPRepository
 	userRepo     *repository.UserRepository
 	emailService *EmailService
-	auditRepo    *repository.AuditRepository
+	auditService *AuditService
 }
 
-// NewOTPService creates a new OTP service
 func NewOTPService(
 	otpRepo *repository.OTPRepository,
 	userRepo *repository.UserRepository,
 	emailService *EmailService,
-	auditRepo *repository.AuditRepository,
+	auditService *AuditService,
 ) *OTPService {
 	return &OTPService{
 		otpRepo:      otpRepo,
 		userRepo:     userRepo,
 		emailService: emailService,
-		auditRepo:    auditRepo,
+		auditService: auditService,
 	}
 }
 
@@ -224,8 +222,6 @@ func (s *OTPService) CleanupExpiredOTPs() error {
 	return s.otpRepo.DeleteExpired(context.Background(), 7*24*time.Hour)
 }
 
-// logAudit logs an audit entry
 func (s *OTPService) logAudit(userID *uuid.UUID, action, status, ip, userAgent string, details map[string]interface{}) {
-	// Implementation same as in apikey_service.go
-	// For brevity, skipping the full implementation
+	s.auditService.LogWithAction(userID, action, status, ip, userAgent, details)
 }

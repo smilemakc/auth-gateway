@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/smilemakc/auth-gateway/internal/models"
 )
 
 // Context keys
@@ -109,4 +110,10 @@ func HasAnyRole(userRoles, requiredRoles []string) bool {
 		}
 	}
 	return false
+}
+
+// GetDeviceInfoFromContext retrieves User-Agent header from Gin context and parses it
+func GetDeviceInfoFromContext(c *gin.Context) models.DeviceInfo {
+	userAgent := GetUserAgent(c)
+	return ParseUserAgent(userAgent)
 }

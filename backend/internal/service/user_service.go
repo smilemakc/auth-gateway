@@ -2,24 +2,21 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/repository"
 )
 
-// UserService provides user operations
 type UserService struct {
-	userRepo  *repository.UserRepository
-	auditRepo *repository.AuditRepository
+	userRepo     *repository.UserRepository
+	auditService *AuditService
 }
 
-// NewUserService creates a new user service
-func NewUserService(userRepo *repository.UserRepository, auditRepo *repository.AuditRepository) *UserService {
+func NewUserService(userRepo *repository.UserRepository, auditService *AuditService) *UserService {
 	return &UserService{
-		userRepo:  userRepo,
-		auditRepo: auditRepo,
+		userRepo:     userRepo,
+		auditService: auditService,
 	}
 }
 
@@ -110,17 +107,13 @@ func (s *UserService) Count(ctx context.Context) (int, error) {
 	return s.userRepo.Count(ctx)
 }
 
-// logAudit logs an audit entry
 func (s *UserService) logAudit(userID *uuid.UUID, action models.AuditAction, status models.AuditStatus, ip, userAgent string, details map[string]interface{}) {
-	var detailsJSON []byte
-	if details != nil {
-		detailsJSON, _ = json.Marshal(details)
-	}
-
-	auditLog := models.CreateAuditLog(userID, action, status, ip, userAgent, detailsJSON)
-
-	// Log asynchronously
-	go func() {
-		_ = s.auditRepo.Create(context.Background(), auditLog)
-	}()
+	s.auditService.Log(AuditLogParams{
+		UserID:    userID,
+		Action:    action,
+		Status:    status,
+		IP:        ip,
+		UserAgent: userAgent,
+		Details:   details,
+	})
 }

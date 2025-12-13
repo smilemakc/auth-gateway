@@ -447,31 +447,6 @@ func (r *RBACRepository) HasAllPermissions(ctx context.Context, userID uuid.UUID
 	return count == len(permissionNames), nil
 }
 
-// GetUserRole retrieves the first role for a user (ordered by name)
-// DEPRECATED: Returns first role only. Use GetUserRoles() for all roles.
-func (r *RBACRepository) GetUserRole(ctx context.Context, userID uuid.UUID) (*models.Role, error) {
-	role := new(models.Role)
-
-	err := r.db.NewSelect().
-		Model(role).
-		Join("INNER JOIN user_roles AS ur ON ur.role_id = role.id").
-		Join("INNER JOIN users AS u ON u.id = ur.user_id").
-		Where("u.id = ?", userID).
-		Order("role.name").
-		Limit(1).
-		Relation("Permissions").
-		Scan(ctx)
-
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("user role not found")
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user role: %w", err)
-	}
-
-	return role, nil
-}
-
 // ============================================================
 // User-Role Management Methods
 // ============================================================

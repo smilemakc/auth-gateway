@@ -272,11 +272,15 @@ export class AuthGrpcClient {
       await this.connect();
     }
 
+    if (!this.serviceMethods.validateToken) {
+      throw new Error('ValidateToken method not available');
+    }
+
     const request: ValidateTokenRequest = { accessToken };
     this.log('ValidateToken:', { accessToken: accessToken.substring(0, 20) + '...' });
 
     const response = await this.serviceMethods.validateToken(request, options);
-    return this.transformResponse(response as Record<string, unknown>) as ValidateTokenResponse;
+    return this.transformResponse(response as Record<string, unknown>) as unknown as ValidateTokenResponse;
   }
 
   /**
@@ -293,11 +297,15 @@ export class AuthGrpcClient {
       await this.connect();
     }
 
+    if (!this.serviceMethods.getUser) {
+      throw new Error('GetUser method not available');
+    }
+
     const request: GetUserRequest = { userId };
     this.log('GetUser:', request);
 
     const response = await this.serviceMethods.getUser(request, options);
-    return this.transformResponse(response as Record<string, unknown>) as GetUserResponse;
+    return this.transformResponse(response as Record<string, unknown>) as unknown as GetUserResponse;
   }
 
   /**
@@ -318,11 +326,15 @@ export class AuthGrpcClient {
       await this.connect();
     }
 
+    if (!this.serviceMethods.checkPermission) {
+      throw new Error('CheckPermission method not available');
+    }
+
     const request: CheckPermissionRequest = { userId, resource, action };
     this.log('CheckPermission:', request);
 
     const response = await this.serviceMethods.checkPermission(request, options);
-    return this.transformResponse(response as Record<string, unknown>) as CheckPermissionResponse;
+    return this.transformResponse(response as Record<string, unknown>) as unknown as CheckPermissionResponse;
   }
 
   /**
@@ -339,11 +351,15 @@ export class AuthGrpcClient {
       await this.connect();
     }
 
+    if (!this.serviceMethods.introspectToken) {
+      throw new Error('IntrospectToken method not available');
+    }
+
     const request: IntrospectTokenRequest = { accessToken };
     this.log('IntrospectToken:', { accessToken: accessToken.substring(0, 20) + '...' });
 
     const response = await this.serviceMethods.introspectToken(request, options);
-    return this.transformResponse(response as Record<string, unknown>) as IntrospectTokenResponse;
+    return this.transformResponse(response as Record<string, unknown>) as unknown as IntrospectTokenResponse;
   }
 
   /** Transform snake_case response to camelCase */

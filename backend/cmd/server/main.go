@@ -85,18 +85,26 @@ func main() {
 	systemRepo := repository.NewSystemRepository(db)
 	geoRepo := repository.NewGeoRepository(db)
 
+	// Initialize geo and audit services
+	var geoService *service.GeoService
+	if cfg.GeoIP.Enabled {
+		geoService = service.NewGeoService(cfg.GeoIP.APIKey)
+		log.Info("GeoIP service enabled")
+	}
+	auditService := service.NewAuditService(auditRepo, geoService)
+
 	// Initialize services
-	authService := service.NewAuthService(userRepo, tokenRepo, auditRepo, rbacRepo, jwtService, redis, cfg.Security.BcryptCost)
-	userService := service.NewUserService(userRepo, auditRepo)
-	apiKeyService := service.NewAPIKeyService(apiKeyRepo, userRepo, auditRepo)
+	authService := service.NewAuthService(userRepo, tokenRepo, rbacRepo, auditService, jwtService, redis, cfg.Security.BcryptCost)
+	userService := service.NewUserService(userRepo, auditService)
+	apiKeyService := service.NewAPIKeyService(apiKeyRepo, userRepo, auditService)
 	emailService := service.NewEmailService(&cfg.SMTP)
-	otpService := service.NewOTPService(otpRepo, userRepo, emailService, auditRepo)
+	otpService := service.NewOTPService(otpRepo, userRepo, emailService, auditService)
 	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, rbacRepo, jwtService)
 	twoFAService := service.NewTwoFactorService(userRepo, backupCodeRepo, auditRepo, "Auth Gateway")
 	adminService := service.NewAdminService(userRepo, apiKeyRepo, auditRepo, oauthRepo, rbacRepo)
 
 	// Advanced feature services
-	rbacService := service.NewRBACService(rbacRepo, auditRepo)
+	rbacService := service.NewRBACService(rbacRepo, auditService)
 	sessionService := service.NewSessionService(sessionRepo)
 	ipFilterService := service.NewIPFilterService(ipFilterRepo)
 

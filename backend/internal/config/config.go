@@ -10,7 +10,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config holds all configuration for the application
 type Config struct {
 	Server    ServerConfig
 	Database  DatabaseConfig
@@ -23,6 +22,7 @@ type Config struct {
 	RateLimit RateLimitConfig
 	Security  SecurityConfig
 	Metrics   MetricsConfig
+	GeoIP     GeoIPConfig
 }
 
 // ServerConfig contains server-related configuration
@@ -133,10 +133,14 @@ type SecurityConfig struct {
 	TokenBlacklistCleanupInterval time.Duration
 }
 
-// MetricsConfig contains metrics-related configuration
 type MetricsConfig struct {
 	Enabled bool
 	Port    string
+}
+
+type GeoIPConfig struct {
+	APIKey  string
+	Enabled bool
 }
 
 // Load reads configuration from environment variables
@@ -240,6 +244,10 @@ func Load() (*Config, error) {
 		Metrics: MetricsConfig{
 			Enabled: getEnvAsBool("METRICS_ENABLED", true),
 			Port:    getEnv("METRICS_PORT", "9090"),
+		},
+		GeoIP: GeoIPConfig{
+			APIKey:  getEnv("GEOIP_API_KEY", ""),
+			Enabled: getEnvAsBool("GEOIP_ENABLED", true),
 		},
 	}
 
