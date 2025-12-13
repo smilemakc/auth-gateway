@@ -2,144 +2,270 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"github.com/smilemakc/auth-gateway/pkg/grpcclient"
 )
 
-// Client messages (should match server proto)
-type ValidateTokenRequest struct {
-	AccessToken string `json:"access_token"`
-}
-
-type ValidateTokenResponse struct {
-	Valid        bool   `json:"valid"`
-	UserId       string `json:"user_id"`
-	Email        string `json:"email"`
-	Username     string `json:"username"`
-	Role         string `json:"role"`
-	ErrorMessage string `json:"error_message,omitempty"`
-	ExpiresAt    int64  `json:"expires_at"`
-}
-
 func main() {
-	// Connect to gRPC server
-	conn, err := grpc.NewClient(
-		"localhost:50051",
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+	// Parse command line flags
+	serverAddr := flag.String("server", "localhost:50051", "gRPC server address")
+	token := flag.String("token", "", "JWT token or API key (agw_*) for validation")
+	userID := flag.String("user-id", "", "User ID for GetUser/CheckPermission")
+	resource := flag.String("resource", "", "Resource name for CheckPermission")
+	action := flag.String("action", "", "Action name for CheckPermission")
+	testAll := flag.Bool("test-all", false, "Run all test examples")
+	flag.Parse()
+
+	fmt.Println("======================================")
+	fmt.Println("  Auth Gateway gRPC Client Example")
+	fmt.Println("======================================")
+	fmt.Printf("Server: %s\n\n", *serverAddr)
+
+	// Create client
+	client, err := grpcclient.NewClient(*serverAddr, grpcclient.WithTimeout(10*time.Second))
 	if err != nil {
-		log.Fatalf("Failed to connect: %v", err)
+		log.Fatalf("Failed to create client: %v", err)
 	}
-	defer conn.Close()
+	defer client.Close()
 
-	fmt.Println("✅ Connected to Auth Gateway gRPC server")
+	fmt.Println("Connected to gRPC server successfully!")
+	fmt.Println()
 
-	// Example 1: Validate Token
-	fmt.Println("\n📝 Example 1: Validate Token")
-	validateTokenExample(conn)
+	// If test-all flag is set, run all examples
+	if *testAll {
+		runAllTests(client)
+		return
+	}
 
-	// Example 2: Get User
-	fmt.Println("\n📝 Example 2: Get User")
-	getUserExample(conn)
+	// Run specific commands based on flags
+	ctx := context.Background()
 
-	// Example 3: Check Permission
-	fmt.Println("\n📝 Example 3: Check Permission")
-	checkPermissionExample(conn)
+	if *token != "" {
+		fmt.Println("--- ValidateToken ---")
+		resp, err := client.ValidateToken(ctx, *token)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		} else {
+			printJSON("Response", resp)
+		}
+		fmt.Println()
 
-	// Example 4: Introspect Token
-	fmt.Println("\n📝 Example 4: Introspect Token")
-	introspectTokenExample(conn)
+		fmt.Println("--- IntrospectToken ---")
+		introspect, err := client.IntrospectToken(ctx, *token)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		} else {
+			printJSON("Response", introspect)
+		}
+		fmt.Println()
+	}
+
+	if *userID != "" {
+		fmt.Println("--- GetUser ---")
+		resp, err := client.GetUser(ctx, *userID)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		} else {
+			printJSON("Response", resp)
+		}
+		fmt.Println()
+
+		if *resource != "" && *action != "" {
+			fmt.Println("--- CheckPermission ---")
+			fmt.Printf("Checking if user %s can %s on %s\n", *userID, *action, *resource)
+			resp, err := client.CheckPermission(ctx, *userID, *resource, *action)
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+			} else {
+				printJSON("Response", resp)
+			}
+			fmt.Println()
+		}
+	}
+
+	// If no flags provided, show usage
+	if *token == "" && *userID == "" && !*testAll {
+		fmt.Println("Usage Examples:")
+		fmt.Println("---------------")
+		fmt.Println()
+		fmt.Println("1. Validate a JWT token:")
+		fmt.Printf("   %s -token=<jwt_token>\n", os.Args[0])
+		fmt.Println()
+		fmt.Println("2. Validate an API key:")
+		fmt.Printf("   %s -token=agw_<api_key>\n", os.Args[0])
+		fmt.Println()
+		fmt.Println("3. Get user by ID:")
+		fmt.Printf("   %s -user-id=<uuid>\n", os.Args[0])
+		fmt.Println()
+		fmt.Println("4. Check permission:")
+		fmt.Printf("   %s -user-id=<uuid> -resource=users -action=read\n", os.Args[0])
+		fmt.Println()
+		fmt.Println("5. Run all test examples (with mock data):")
+		fmt.Printf("   %s -test-all\n", os.Args[0])
+		fmt.Println()
+		fmt.Println("Flags:")
+		fmt.Println("  -server     gRPC server address (default: localhost:50051)")
+		fmt.Println("  -token      JWT token or API key for validation")
+		fmt.Println("  -user-id    User UUID for GetUser or CheckPermission")
+		fmt.Println("  -resource   Resource name for CheckPermission (e.g., users, orders)")
+		fmt.Println("  -action     Action name for CheckPermission (e.g., read, write, delete)")
+		fmt.Println("  -test-all   Run all test examples with sample data")
+	}
 }
 
-func validateTokenExample(conn *grpc.ClientConn) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+func runAllTests(client *grpcclient.Client) {
+	ctx := context.Background()
 
-	// This is a placeholder token - replace with real token from signin
-	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example.token"
+	fmt.Println("==========================================")
+	fmt.Println("  Running All gRPC Endpoint Tests")
+	fmt.Println("==========================================")
+	fmt.Println()
 
-	// Call ValidateToken method
-	// In real implementation, use generated client from proto
-	fmt.Printf("Validating token: %s...\n", token[:50]+"...")
-	fmt.Println("⚠️  This is an example - use real token from /auth/signin")
+	// Test 1: ValidateToken with invalid token
+	fmt.Println("Test 1: ValidateToken (invalid token)")
+	fmt.Println("--------------------------------------")
+	resp1, err := client.ValidateToken(ctx, "invalid-token")
+	if err != nil {
+		fmt.Printf("gRPC Error: %v\n", err)
+	} else {
+		printJSON("Response", resp1)
+	}
+	fmt.Println()
 
-	// Example response structure
-	fmt.Println("\nExpected Response:")
-	fmt.Println("  valid: true/false")
-	fmt.Println("  user_id: uuid")
-	fmt.Println("  email: user@example.com")
-	fmt.Println("  username: johndoe")
-	fmt.Println("  role: user")
-	fmt.Println("  expires_at: unix timestamp")
+	// Test 2: ValidateToken with empty token
+	fmt.Println("Test 2: ValidateToken (empty token)")
+	fmt.Println("------------------------------------")
+	resp2, err := client.ValidateToken(ctx, "")
+	if err != nil {
+		fmt.Printf("gRPC Error: %v\n", err)
+	} else {
+		printJSON("Response", resp2)
+	}
+	fmt.Println()
 
-	_ = ctx // avoid unused warning
+	// Test 3: ValidateToken with mock JWT format
+	fmt.Println("Test 3: ValidateToken (malformed JWT)")
+	fmt.Println("--------------------------------------")
+	mockJWT := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
+	resp3, err := client.ValidateToken(ctx, mockJWT)
+	if err != nil {
+		fmt.Printf("gRPC Error: %v\n", err)
+	} else {
+		printJSON("Response", resp3)
+	}
+	fmt.Println()
+
+	// Test 4: ValidateToken with API key format
+	fmt.Println("Test 4: ValidateToken (API key format)")
+	fmt.Println("---------------------------------------")
+	resp4, err := client.ValidateToken(ctx, "agw_test_api_key_12345")
+	if err != nil {
+		fmt.Printf("gRPC Error: %v\n", err)
+	} else {
+		printJSON("Response", resp4)
+	}
+	fmt.Println()
+
+	// Test 5: GetUser with invalid UUID
+	fmt.Println("Test 5: GetUser (invalid UUID format)")
+	fmt.Println("--------------------------------------")
+	resp5, err := client.GetUser(ctx, "not-a-uuid")
+	if err != nil {
+		fmt.Printf("gRPC Error: %v\n", err)
+	} else {
+		printJSON("Response", resp5)
+	}
+	fmt.Println()
+
+	// Test 6: GetUser with valid UUID format (non-existent user)
+	fmt.Println("Test 6: GetUser (non-existent user)")
+	fmt.Println("------------------------------------")
+	resp6, err := client.GetUser(ctx, "00000000-0000-0000-0000-000000000000")
+	if err != nil {
+		fmt.Printf("gRPC Error: %v\n", err)
+	} else {
+		printJSON("Response", resp6)
+	}
+	fmt.Println()
+
+	// Test 7: GetUser with empty user ID
+	fmt.Println("Test 7: GetUser (empty user ID)")
+	fmt.Println("--------------------------------")
+	resp7, err := client.GetUser(ctx, "")
+	if err != nil {
+		fmt.Printf("gRPC Error: %v\n", err)
+	} else {
+		printJSON("Response", resp7)
+	}
+	fmt.Println()
+
+	// Test 8: CheckPermission with valid UUID format
+	fmt.Println("Test 8: CheckPermission (non-existent user)")
+	fmt.Println("--------------------------------------------")
+	resp8, err := client.CheckPermission(ctx, "00000000-0000-0000-0000-000000000000", "users", "read")
+	if err != nil {
+		fmt.Printf("gRPC Error: %v\n", err)
+	} else {
+		printJSON("Response", resp8)
+	}
+	fmt.Println()
+
+	// Test 9: CheckPermission with empty user ID
+	fmt.Println("Test 9: CheckPermission (empty user ID)")
+	fmt.Println("----------------------------------------")
+	resp9, err := client.CheckPermission(ctx, "", "users", "read")
+	if err != nil {
+		fmt.Printf("gRPC Error: %v\n", err)
+	} else {
+		printJSON("Response", resp9)
+	}
+	fmt.Println()
+
+	// Test 10: IntrospectToken with invalid token
+	fmt.Println("Test 10: IntrospectToken (invalid token)")
+	fmt.Println("-----------------------------------------")
+	resp10, err := client.IntrospectToken(ctx, "invalid-token")
+	if err != nil {
+		fmt.Printf("gRPC Error: %v\n", err)
+	} else {
+		printJSON("Response", resp10)
+	}
+	fmt.Println()
+
+	// Test 11: IntrospectToken with empty token
+	fmt.Println("Test 11: IntrospectToken (empty token)")
+	fmt.Println("---------------------------------------")
+	resp11, err := client.IntrospectToken(ctx, "")
+	if err != nil {
+		fmt.Printf("gRPC Error: %v\n", err)
+	} else {
+		printJSON("Response", resp11)
+	}
+	fmt.Println()
+
+	fmt.Println("==========================================")
+	fmt.Println("  All Tests Completed!")
+	fmt.Println("==========================================")
+	fmt.Println()
+	fmt.Println("Note: Most tests show error responses because")
+	fmt.Println("they use invalid/non-existent test data.")
+	fmt.Println("To test with real data:")
+	fmt.Println("  1. Sign up/sign in via REST API to get a JWT token")
+	fmt.Println("  2. Create an API key via /api-keys endpoint")
+	fmt.Println("  3. Use the -token flag with your real token")
 }
 
-func getUserExample(conn *grpc.ClientConn) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Example user ID
-	userID := "123e4567-e89b-12d3-a456-426614174000"
-
-	fmt.Printf("Getting user: %s\n", userID)
-	fmt.Println("⚠️  This is an example - replace with real user ID")
-
-	// Example response structure
-	fmt.Println("\nExpected Response:")
-	fmt.Println("  user:")
-	fmt.Println("    id: uuid")
-	fmt.Println("    email: user@example.com")
-	fmt.Println("    username: johndoe")
-	fmt.Println("    full_name: John Doe")
-	fmt.Println("    role: user")
-	fmt.Println("    email_verified: true/false")
-	fmt.Println("    is_active: true/false")
-
-	_ = ctx
-}
-
-func checkPermissionExample(conn *grpc.ClientConn) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	fmt.Println("Checking permission:")
-	fmt.Println("  user_id: 123e4567-e89b-12d3-a456-426614174000")
-	fmt.Println("  resource: orders")
-	fmt.Println("  action: read")
-
-	// Example response structure
-	fmt.Println("\nExpected Response:")
-	fmt.Println("  allowed: true/false")
-	fmt.Println("  role: user/moderator/admin")
-
-	_ = ctx
-}
-
-func introspectTokenExample(conn *grpc.ClientConn) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example.token"
-
-	fmt.Printf("Introspecting token: %s...\n", token[:50]+"...")
-	fmt.Println("⚠️  This is an example - use real token from /auth/signin")
-
-	// Example response structure
-	fmt.Println("\nExpected Response:")
-	fmt.Println("  active: true/false")
-	fmt.Println("  user_id: uuid")
-	fmt.Println("  email: user@example.com")
-	fmt.Println("  username: johndoe")
-	fmt.Println("  role: user")
-	fmt.Println("  issued_at: unix timestamp")
-	fmt.Println("  expires_at: unix timestamp")
-	fmt.Println("  not_before: unix timestamp")
-	fmt.Println("  blacklisted: true/false")
-
-	_ = ctx
+func printJSON(label string, v interface{}) {
+	data, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		fmt.Printf("%s: %+v\n", label, v)
+		return
+	}
+	fmt.Printf("%s:\n%s\n", label, string(data))
 }
