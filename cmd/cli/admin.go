@@ -16,8 +16,7 @@ import (
 	"golang.org/x/term"
 )
 
-// Admin role ID is a well-known UUID from the database migrations
-var adminRoleID = uuid.MustParse("00000000-0000-0000-0000-000000000001")
+const adminRoleName = "admin"
 
 var adminCmd = &cobra.Command{
 	Use:   "admin",
@@ -211,6 +210,7 @@ func runAdminCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create admin user
+	roleID := adminRole.ID
 	user := &models.User{
 		ID:            uuid.New(),
 		Email:         email,
@@ -218,7 +218,7 @@ func runAdminCreate(cmd *cobra.Command, args []string) error {
 		PasswordHash:  passwordHash,
 		FullName:      adminFullName,
 		Role:          string(models.RoleAdmin),
-		RoleID:        &adminRoleID,
+		RoleID:        &roleID,
 		AccountType:   string(models.AccountTypeHuman),
 		EmailVerified: true,
 		IsActive:      true,
@@ -242,8 +242,8 @@ func runAdminCreate(cmd *cobra.Command, args []string) error {
 
 // ensureAdminRoleExists checks if the admin role exists, creates it if not
 func ensureAdminRoleExists(ctx context.Context, rbacRepo *repository.RBACRepository) (*models.Role, error) {
-	// Try to get existing admin role
-	adminRole, err := rbacRepo.GetRoleByID(ctx, adminRoleID)
+	// Try to get existing admin role by name
+	adminRole, err := rbacRepo.GetRoleByName(ctx, adminRoleName)
 	if err == nil {
 		// Admin role exists, return it
 		return adminRole, nil
@@ -263,10 +263,9 @@ func ensureAdminRoleExists(ctx context.Context, rbacRepo *repository.RBACReposit
 	}
 	fmt.Printf("  Created/verified %d permissions\n", len(permissionIDs))
 
-	// Create the admin role
+	// Create the admin role with a new UUID
 	adminRole = &models.Role{
-		ID:           adminRoleID,
-		Name:         "admin",
+		Name:         adminRoleName,
 		DisplayName:  "Administrator",
 		Description:  "Full system access with all permissions",
 		IsSystemRole: true,
@@ -278,13 +277,13 @@ func ensureAdminRoleExists(ctx context.Context, rbacRepo *repository.RBACReposit
 	fmt.Println("  Created admin role")
 
 	// Assign all permissions to admin role
-	if err := rbacRepo.SetRolePermissions(ctx, adminRoleID, permissionIDs); err != nil {
+	if err := rbacRepo.SetRolePermissions(ctx, adminRole.ID, permissionIDs); err != nil {
 		return nil, fmt.Errorf("failed to assign permissions to admin role: %w", err)
 	}
 	fmt.Printf("  Assigned %d permissions to admin role\n", len(permissionIDs))
 
 	// Reload the role with permissions
-	adminRole, err = rbacRepo.GetRoleByID(ctx, adminRoleID)
+	adminRole, err = rbacRepo.GetRoleByName(ctx, adminRoleName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to reload admin role: %w", err)
 	}
