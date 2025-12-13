@@ -46,6 +46,15 @@ const Users: React.FC = () => {
 
   const users = data?.users || [];
 
+  const filterUsersByRole = (userList: any[]) => {
+    if (roleFilter === 'all') return userList;
+    return userList.filter((u: any) =>
+      u.roles?.some((r: any) => r.name === roleFilter)
+    );
+  };
+
+  const filteredUsers = filterUsersByRole(users);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -100,7 +109,7 @@ const Users: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -114,11 +123,17 @@ const Users: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                      ${user.role === UserRole.ADMIN ? 'bg-purple-100 text-purple-800' : 
-                        user.role === UserRole.MODERATOR ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {user.role}
-                    </span>
+                    <div className="flex gap-1 flex-wrap">
+                      {user.roles?.map(role => (
+                        <span
+                          key={role.id}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                            ${role.name === 'admin' ? 'bg-purple-100 text-purple-800' :
+                              role.name === 'moderator' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {role.displayName || role.name}
+                        </span>
+                      ))}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -166,8 +181,8 @@ const Users: React.FC = () => {
               ))}
             </tbody>
           </table>
-          
-          {users.length === 0 && (
+
+          {filteredUsers.length === 0 && (
              <div className="p-12 text-center text-gray-500">
                 No users found.
              </div>

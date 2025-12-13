@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
@@ -54,6 +55,8 @@ func NewDatabase(cfg *config.DatabaseConfig) (*Database, error) {
 		bundebug.WithVerbose(true),
 	))
 
+	db.RegisterModel((*models.UserRole)(nil))
+	db.RegisterModel((*models.RolePermission)(nil))
 	return &Database{db}, nil
 }
 

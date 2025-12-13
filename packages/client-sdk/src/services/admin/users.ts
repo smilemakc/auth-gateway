@@ -53,7 +53,7 @@ export class AdminUsersService extends BaseService {
   /**
    * Update a user
    * @param id User ID
-   * @param data Update data (role, isActive)
+   * @param data Update data (roleIds, isActive)
    * @returns Updated user
    */
   async update(id: string, data: AdminUpdateUserRequest): Promise<AdminUserResponse> {
@@ -94,15 +94,50 @@ export class AdminUsersService extends BaseService {
 
   /**
    * Change user role
+   * @deprecated Use setRoles() instead for multi-role support
    * @param id User ID
-   * @param role New role
+   * @param roleId Role ID
    * @returns Updated user
    */
-  async setRole(
-    id: string,
-    role: 'user' | 'moderator' | 'admin'
-  ): Promise<AdminUserResponse> {
-    return this.update(id, { role });
+  async setRole(id: string, roleId: string): Promise<AdminUserResponse> {
+    return this.setRoles(id, [roleId]);
+  }
+
+  /**
+   * Set user roles (replaces all existing roles)
+   * @param id User ID
+   * @param roleIds Array of role IDs
+   * @returns Updated user
+   */
+  async setRoles(id: string, roleIds: string[]): Promise<AdminUserResponse> {
+    return this.update(id, { roleIds });
+  }
+
+  /**
+   * Assign a role to a user
+   * @param id User ID
+   * @param roleId Role ID to assign
+   * @returns Success message
+   */
+  async assignRole(id: string, roleId: string): Promise<MessageResponse> {
+    const response = await this.http.post<MessageResponse>(
+      `/admin/users/${id}/roles`,
+      { roleId }
+    );
+    return response.data;
+  }
+
+  /**
+   * Remove a role from a user
+   * @param id User ID
+   * @param roleId Role ID to remove
+   * @returns Success message
+   */
+  async removeRole(id: string, roleId: string): Promise<MessageResponse> {
+    const response = await this.http.delete<MessageResponse>(
+      `/admin/users/${id}/roles/${roleId}`
+    );
+    return response.data;
   }
 
   /**

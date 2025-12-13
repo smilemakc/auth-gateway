@@ -18,13 +18,13 @@ type ValidateTokenRequest struct {
 
 // ValidateTokenResponse contains validation result and user info
 type ValidateTokenResponse struct {
-	Valid        bool   `json:"valid"`
-	UserId       string `json:"user_id"`
-	Email        string `json:"email"`
-	Username     string `json:"username"`
-	Role         string `json:"role"`
-	ErrorMessage string `json:"error_message,omitempty"`
-	ExpiresAt    int64  `json:"expires_at"`
+	Valid        bool     `json:"valid"`
+	UserId       string   `json:"user_id"`
+	Email        string   `json:"email"`
+	Username     string   `json:"username"`
+	Roles        []string `json:"roles"`
+	ErrorMessage string   `json:"error_message,omitempty"`
+	ExpiresAt    int64    `json:"expires_at"`
 }
 
 // GetUserRequest contains the user ID to retrieve
@@ -32,18 +32,25 @@ type GetUserRequest struct {
 	UserId string `json:"user_id"`
 }
 
+// RoleInfo represents basic role information
+type RoleInfo struct {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	DisplayName string `json:"display_name"`
+}
+
 // User represents user information
 type User struct {
-	Id                string `json:"id"`
-	Email             string `json:"email"`
-	Username          string `json:"username"`
-	FullName          string `json:"full_name"`
-	ProfilePictureUrl string `json:"profile_picture_url"`
-	Role              string `json:"role"`
-	EmailVerified     bool   `json:"email_verified"`
-	IsActive          bool   `json:"is_active"`
-	CreatedAt         int64  `json:"created_at"`
-	UpdatedAt         int64  `json:"updated_at"`
+	Id                string     `json:"id"`
+	Email             string     `json:"email"`
+	Username          string     `json:"username"`
+	FullName          string     `json:"full_name"`
+	ProfilePictureUrl string     `json:"profile_picture_url"`
+	Roles             []RoleInfo `json:"roles"`
+	EmailVerified     bool       `json:"email_verified"`
+	IsActive          bool       `json:"is_active"`
+	CreatedAt         int64      `json:"created_at"`
+	UpdatedAt         int64      `json:"updated_at"`
 }
 
 // GetUserResponse contains user information
@@ -61,9 +68,9 @@ type CheckPermissionRequest struct {
 
 // CheckPermissionResponse contains permission check result
 type CheckPermissionResponse struct {
-	Allowed      bool   `json:"allowed"`
-	Role         string `json:"role"`
-	ErrorMessage string `json:"error_message,omitempty"`
+	Allowed      bool     `json:"allowed"`
+	Roles        []string `json:"roles"`
+	ErrorMessage string   `json:"error_message,omitempty"`
 }
 
 // IntrospectTokenRequest contains the token to introspect
@@ -73,17 +80,17 @@ type IntrospectTokenRequest struct {
 
 // IntrospectTokenResponse contains detailed token information
 type IntrospectTokenResponse struct {
-	Active       bool   `json:"active"`
-	UserId       string `json:"user_id"`
-	Email        string `json:"email"`
-	Username     string `json:"username"`
-	Role         string `json:"role"`
-	IssuedAt     int64  `json:"issued_at"`
-	ExpiresAt    int64  `json:"expires_at"`
-	NotBefore    int64  `json:"not_before"`
-	Subject      string `json:"subject"`
-	Blacklisted  bool   `json:"blacklisted"`
-	ErrorMessage string `json:"error_message,omitempty"`
+	Active       bool     `json:"active"`
+	UserId       string   `json:"user_id"`
+	Email        string   `json:"email"`
+	Username     string   `json:"username"`
+	Roles        []string `json:"roles"`
+	IssuedAt     int64    `json:"issued_at"`
+	ExpiresAt    int64    `json:"expires_at"`
+	NotBefore    int64    `json:"not_before"`
+	Subject      string   `json:"subject"`
+	Blacklisted  bool     `json:"blacklisted"`
+	ErrorMessage string   `json:"error_message,omitempty"`
 }
 
 // AuthServiceServer is the server API for AuthService

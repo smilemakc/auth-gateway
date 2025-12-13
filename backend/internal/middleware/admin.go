@@ -11,16 +11,14 @@ import (
 // RequireAdmin checks if the user has admin role
 func RequireAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get user role from context (set by auth middleware)
-		userRole, exists := utils.GetUserRoleFromContext(c)
+		roles, exists := utils.GetUserRolesFromContext(c)
 		if !exists {
 			c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
 			c.Abort()
 			return
 		}
 
-		// Check if user is admin
-		if userRole != string(models.RoleAdmin) {
+		if !utils.HasRole(roles, "admin") {
 			c.JSON(http.StatusForbidden, models.NewErrorResponse(
 				models.NewAppError(http.StatusForbidden, "Admin access required"),
 			))
@@ -35,14 +33,14 @@ func RequireAdmin() gin.HandlerFunc {
 // RequireAdminOrModerator checks if the user has admin or moderator role
 func RequireAdminOrModerator() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userRole, exists := utils.GetUserRoleFromContext(c)
+		roles, exists := utils.GetUserRolesFromContext(c)
 		if !exists {
 			c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
 			c.Abort()
 			return
 		}
 
-		if userRole != string(models.RoleAdmin) && userRole != string(models.RoleModerator) {
+		if !utils.HasAnyRole(roles, []string{"admin", "moderator"}) {
 			c.JSON(http.StatusForbidden, models.NewErrorResponse(
 				models.NewAppError(http.StatusForbidden, "Admin or moderator access required"),
 			))

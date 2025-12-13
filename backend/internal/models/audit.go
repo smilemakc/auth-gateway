@@ -40,6 +40,9 @@ const (
 	ActionOAuthBegin     AuditAction = "oauth_begin"
 	ActionOAuthCallback  AuditAction = "oauth_callback"
 	ActionUpdateProfile  AuditAction = "update_profile"
+	ActionRoleAssigned   AuditAction = "role_assigned"
+	ActionRoleRevoked    AuditAction = "role_revoked"
+	ActionRolesUpdated   AuditAction = "roles_updated"
 )
 
 // AuditStatus represents the status of an audited action

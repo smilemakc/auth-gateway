@@ -6,6 +6,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// RoleInfo represents basic role information for API responses
+type RoleInfo struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	DisplayName string    `json:"display_name"`
+}
+
 // AdminUserResponse represents a user in admin panel
 type AdminUserResponse struct {
 	ID                 uuid.UUID  `json:"id"`
@@ -13,7 +20,9 @@ type AdminUserResponse struct {
 	Phone              *string    `json:"phone,omitempty"`
 	Username           string     `json:"username"`
 	FullName           string     `json:"full_name,omitempty"`
-	Role               string     `json:"role"`
+	ProfilePictureURL  string     `json:"profile_picture_url,omitempty"`
+	Roles              []RoleInfo `json:"roles"`
+	AccountType        string     `json:"account_type"`
 	EmailVerified      bool       `json:"email_verified"`
 	PhoneVerified      bool       `json:"phone_verified"`
 	IsActive           bool       `json:"is_active"`
@@ -28,8 +37,13 @@ type AdminUserResponse struct {
 
 // AdminUpdateUserRequest represents admin user update request
 type AdminUpdateUserRequest struct {
-	Role     *string `json:"role,omitempty"`
-	IsActive *bool   `json:"is_active,omitempty"`
+	RoleIDs  *[]uuid.UUID `json:"role_ids,omitempty"`
+	IsActive *bool        `json:"is_active,omitempty"`
+}
+
+// AssignRoleRequest represents a request to assign a role to a user
+type AssignRoleRequest struct {
+	RoleID uuid.UUID `json:"role_id" binding:"required"`
 }
 
 // AdminStatsResponse represents system statistics
@@ -42,7 +56,7 @@ type AdminStatsResponse struct {
 	TotalAPIKeys       int            `json:"total_api_keys"`
 	ActiveAPIKeys      int            `json:"active_api_keys"`
 	TotalOAuthAccounts int            `json:"total_oauth_accounts"`
-	UsersByRole        map[string]int `json:"users_by_role"`
+	UsersByRole        map[string]int `json:"users_by_role"` // Note: Users with multiple roles are counted in each role
 	RecentSignups      int            `json:"recent_signups_24h"`
 	RecentLogins       int            `json:"recent_logins_24h"`
 }

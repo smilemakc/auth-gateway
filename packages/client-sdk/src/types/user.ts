@@ -4,6 +4,13 @@
 
 import type { AccountType, TimestampedEntity, UserRole } from './common';
 
+/** Role information */
+export interface RoleInfo {
+  id: string;
+  name: string;
+  displayName: string;
+}
+
 /** User entity */
 export interface User extends TimestampedEntity {
   email: string;
@@ -11,8 +18,7 @@ export interface User extends TimestampedEntity {
   username: string;
   fullName: string;
   profilePictureUrl?: string;
-  role: UserRole;
-  roleId?: string;
+  roles: RoleInfo[];
   accountType: AccountType;
   emailVerified: boolean;
   phoneVerified: boolean;
@@ -48,8 +54,13 @@ export interface AdminUserResponse extends User {
 
 /** Admin user update request */
 export interface AdminUpdateUserRequest {
-  role?: UserRole;
+  roleIds?: string[];
   isActive?: boolean;
+}
+
+/** Assign role request */
+export interface AssignRoleRequest {
+  roleId: string;
 }
 
 /** Admin user list response */

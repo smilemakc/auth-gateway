@@ -1,8 +1,16 @@
-
+/**
+ * @deprecated Use RoleDefinition and check by ID instead
+ */
 export enum UserRole {
   ADMIN = 'admin',
   MODERATOR = 'moderator',
   USER = 'user'
+}
+
+export interface RoleInfo {
+  id: string;
+  name: string;
+  displayName: string;
 }
 
 export interface User {
@@ -11,7 +19,7 @@ export interface User {
   username: string;
   phone?: string;
   fullName: string;
-  role: UserRole | string; // Allow custom role IDs
+  roles: RoleInfo[];
   isActive: boolean;
   isEmailVerified: boolean;
   is2FAEnabled: boolean;

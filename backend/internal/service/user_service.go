@@ -25,7 +25,7 @@ func NewUserService(userRepo *repository.UserRepository, auditRepo *repository.A
 
 // GetProfile retrieves a user's profile
 func (s *UserService) GetProfile(ctx context.Context, userID uuid.UUID) (*models.User, error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByIDWithRoles(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +54,12 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 		s.logAudit(&userID, models.ActionUpdateProfile, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "update_failed",
 		})
+		return nil, err
+	}
+
+	// Reload user with roles before returning
+	user, err = s.userRepo.GetByIDWithRoles(ctx, userID)
+	if err != nil {
 		return nil, err
 	}
 

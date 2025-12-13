@@ -5,6 +5,16 @@
 import type { AccountType, OTPType, ValidationResponse } from './common';
 import type { User } from './user';
 
+/** JWT token claims */
+export interface JWTClaims {
+  user_id: string;
+  email: string;
+  username: string;
+  roles: string[];
+  exp: number;
+  iat: number;
+}
+
 /** Sign up request */
 export interface SignUpRequest {
   email: string;

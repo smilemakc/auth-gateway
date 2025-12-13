@@ -25,6 +25,7 @@ type OAuthService struct {
 	oauthRepo  *repository.OAuthRepository
 	tokenRepo  *repository.TokenRepository
 	auditRepo  *repository.AuditRepository
+	rbacRepo   *repository.RBACRepository
 	jwtService *jwt.Service
 	providers  map[models.OAuthProvider]*OAuthProviderConfig
 }
@@ -46,6 +47,7 @@ func NewOAuthService(
 	oauthRepo *repository.OAuthRepository,
 	tokenRepo *repository.TokenRepository,
 	auditRepo *repository.AuditRepository,
+	rbacRepo *repository.RBACRepository,
 	jwtService *jwt.Service,
 ) *OAuthService {
 	service := &OAuthService{
@@ -53,6 +55,7 @@ func NewOAuthService(
 		oauthRepo:  oauthRepo,
 		tokenRepo:  tokenRepo,
 		auditRepo:  auditRepo,
+		rbacRepo:   rbacRepo,
 		jwtService: jwtService,
 		providers:  make(map[models.OAuthProvider]*OAuthProviderConfig),
 	}
@@ -417,19 +420,29 @@ func (s *OAuthService) createUserFromOAuth(ctx context.Context, userInfo *models
 		counter++
 	}
 
+	// Get default "user" role
+	defaultRole, err := s.rbacRepo.GetRoleByName(ctx, "user")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default role: %w", err)
+	}
+
 	user := &models.User{
 		ID:            uuid.New(),
 		Email:         email,
 		Username:      username,
 		FullName:      userInfo.Name,
 		PasswordHash:  "", // OAuth users don't have passwords
-		Role:          string(models.RoleUser),
 		IsActive:      true,
 		EmailVerified: userInfo.Email != "", // Mark as verified if email provided by OAuth
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, err
+	}
+
+	// Assign default "user" role to the new user
+	if err := s.rbacRepo.AssignRoleToUser(ctx, user.ID, defaultRole.ID, user.ID); err != nil {
+		return nil, fmt.Errorf("failed to assign default role: %w", err)
 	}
 
 	return user, nil

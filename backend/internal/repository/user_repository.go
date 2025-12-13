@@ -235,6 +235,82 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*models
 	return users, nil
 }
 
+// GetByIDWithRoles retrieves a user by ID with their roles loaded
+func (r *UserRepository) GetByIDWithRoles(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	user := new(models.User)
+	err := r.db.NewSelect().
+		Model(user).
+		Where("id = ? AND is_active = ?", id, true).
+		Relation("Roles").
+		Scan(ctx)
+
+	if err == sql.ErrNoRows {
+		return nil, models.ErrUserNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by id with roles: %w", err)
+	}
+
+	return user, nil
+}
+
+// GetByEmailWithRoles retrieves a user by email with their roles loaded
+func (r *UserRepository) GetByEmailWithRoles(ctx context.Context, email string) (*models.User, error) {
+	user := new(models.User)
+	err := r.db.NewSelect().
+		Model(user).
+		Where("email = ? AND is_active = ?", email, true).
+		Relation("Roles").
+		Scan(ctx)
+
+	if err == sql.ErrNoRows {
+		return nil, models.ErrUserNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by email with roles: %w", err)
+	}
+
+	return user, nil
+}
+
+// GetByUsernameWithRoles retrieves a user by username with their roles loaded
+func (r *UserRepository) GetByUsernameWithRoles(ctx context.Context, username string) (*models.User, error) {
+	user := new(models.User)
+	err := r.db.NewSelect().
+		Model(user).
+		Where("username = ? AND is_active = ?", username, true).
+		Relation("Roles").
+		Scan(ctx)
+
+	if err == sql.ErrNoRows {
+		return nil, models.ErrUserNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by username with roles: %w", err)
+	}
+
+	return user, nil
+}
+
+// ListWithRoles retrieves users with their roles loaded
+func (r *UserRepository) ListWithRoles(ctx context.Context, limit, offset int) ([]*models.User, error) {
+	users := make([]*models.User, 0)
+	err := r.db.NewSelect().
+		Model(&users).
+		Where("is_active = ?", true).
+		Relation("Roles").
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to list users with roles: %w", err)
+	}
+
+	return users, nil
+}
+
 // Count returns the total number of active users
 func (r *UserRepository) Count(ctx context.Context) (int, error) {
 	count, err := r.db.NewSelect().

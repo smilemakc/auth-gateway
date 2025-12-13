@@ -19,6 +19,7 @@ type AuthService struct {
 	userRepo   *repository.UserRepository
 	tokenRepo  *repository.TokenRepository
 	auditRepo  *repository.AuditRepository
+	rbacRepo   *repository.RBACRepository
 	jwtService *jwt.Service
 	redis      *RedisService
 	bcryptCost int
@@ -29,6 +30,7 @@ func NewAuthService(
 	userRepo *repository.UserRepository,
 	tokenRepo *repository.TokenRepository,
 	auditRepo *repository.AuditRepository,
+	rbacRepo *repository.RBACRepository,
 	jwtService *jwt.Service,
 	redis *RedisService,
 	bcryptCost int,
@@ -37,6 +39,7 @@ func NewAuthService(
 		userRepo:   userRepo,
 		tokenRepo:  tokenRepo,
 		auditRepo:  auditRepo,
+		rbacRepo:   rbacRepo,
 		jwtService: jwtService,
 		redis:      redis,
 		bcryptCost: bcryptCost,
@@ -118,6 +121,12 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
+	// Get default "user" role
+	defaultRole, err := s.rbacRepo.GetRoleByName(ctx, "user")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default role: %w", err)
+	}
+
 	// Create user
 	user := &models.User{
 		ID:           uuid.New(),
@@ -126,7 +135,6 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		Username:     username,
 		PasswordHash: passwordHash,
 		FullName:     req.FullName,
-		Role:         string(models.RoleUser),
 		IsActive:     true,
 	}
 
@@ -136,6 +144,21 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 			"error":  err.Error(),
 		})
 		return nil, err
+	}
+
+	// Assign default "user" role to the new user
+	if err := s.rbacRepo.AssignRoleToUser(ctx, user.ID, defaultRole.ID, user.ID); err != nil {
+		s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			"reason": "role_assignment_failed",
+			"error":  err.Error(),
+		})
+		return nil, fmt.Errorf("failed to assign default role: %w", err)
+	}
+
+	// Reload user with roles for token generation
+	user, err = s.userRepo.GetByIDWithRoles(ctx, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reload user with roles: %w", err)
 	}
 
 	// Generate tokens
@@ -163,7 +186,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	// Get user by email or phone
 	if req.Email != "" {
 		email := utils.NormalizeEmail(req.Email)
-		user, err = s.userRepo.GetByEmail(ctx, email)
+		user, err = s.userRepo.GetByEmailWithRoles(ctx, email)
 		if err != nil {
 			s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": err,
@@ -180,6 +203,11 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 				"phone":  phone,
 			})
 			return nil, models.ErrInvalidCredentials
+		}
+		// Load roles for phone-based login
+		roles, roleErr := s.rbacRepo.GetUserRoles(ctx, user.ID)
+		if roleErr == nil {
+			user.Roles = roles
 		}
 	}
 
@@ -226,8 +254,8 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 		return nil, models.NewAppError(401, "Invalid or expired 2FA token")
 	}
 
-	// Get user
-	user, err := s.userRepo.GetByID(ctx, claims.UserID)
+	// Get user with roles
+	user, err := s.userRepo.GetByIDWithRoles(ctx, claims.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -313,8 +341,8 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 		return nil, models.ErrTokenExpired
 	}
 
-	// Get user
-	user, err := s.userRepo.GetByID(ctx, claims.UserID)
+	// Get user with roles
+	user, err := s.userRepo.GetByIDWithRoles(ctx, claims.UserID)
 	if err != nil {
 		return nil, err
 	}

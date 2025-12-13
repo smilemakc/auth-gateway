@@ -49,6 +49,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(adminCmd)
+	rootCmd.AddCommand(migrateCmd)
 }
 
 func exitWithError(format string, args ...interface{}) {

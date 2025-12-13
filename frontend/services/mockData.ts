@@ -7,21 +7,32 @@ const randomDate = (start: Date, end: Date) => new Date(start.getTime() + Math.r
 
 // Mock Users
 export const generateUsers = (count: number): User[] => {
-  const roles = [UserRole.ADMIN, UserRole.MODERATOR, UserRole.USER];
-  return Array.from({ length: count }).map((_, i) => ({
-    id: randomId(),
-    email: `user${i}@example.com`,
-    username: `user_${i}`,
-    fullName: `User Name ${i}`,
-    role: roles[Math.floor(Math.random() * roles.length)],
-    isActive: Math.random() > 0.1,
-    isEmailVerified: Math.random() > 0.2,
-    is2FAEnabled: Math.random() > 0.7,
-    phone: Math.random() > 0.5 ? `+1 (555) 000-${1000 + i}` : undefined,
-    createdAt: randomDate(new Date(2023, 0, 1), new Date()),
-    lastLogin: randomDate(new Date(2023, 0, 1), new Date()),
-    avatarUrl: `https://picsum.photos/seed/${i}/200/200`
-  }));
+  const roleDefinitions = mockRoles;
+
+  return Array.from({ length: count }).map((_, i) => {
+    const numRoles = Math.random() > 0.7 ? 2 : 1;
+    const shuffled = [...roleDefinitions].sort(() => 0.5 - Math.random());
+    const userRoles = shuffled.slice(0, numRoles).map(r => ({
+      id: r.id,
+      name: r.id,
+      displayName: r.name
+    }));
+
+    return {
+      id: randomId(),
+      email: `user${i}@example.com`,
+      username: `user_${i}`,
+      fullName: `User Name ${i}`,
+      roles: userRoles,
+      isActive: Math.random() > 0.1,
+      isEmailVerified: Math.random() > 0.2,
+      is2FAEnabled: Math.random() > 0.7,
+      phone: Math.random() > 0.5 ? `+1 (555) 000-${1000 + i}` : undefined,
+      createdAt: randomDate(new Date(2023, 0, 1), new Date()),
+      lastLogin: randomDate(new Date(2023, 0, 1), new Date()),
+      avatarUrl: `https://picsum.photos/seed/${i}/200/200`
+    };
+  });
 };
 
 // Mock API Keys
@@ -408,12 +419,17 @@ export const updateUser = (id: string, data: Partial<User>): User | undefined =>
 };
 
 export const createUser = (data: Partial<User>): User => {
+  const defaultRole = mockRoles.find(r => r.id === 'user');
   const newUser: User = {
     id: randomId(),
     email: data.email || '',
     username: data.username || '',
     fullName: data.fullName || '',
-    role: data.role || UserRole.USER,
+    roles: data.roles || (defaultRole ? [{
+      id: defaultRole.id,
+      name: defaultRole.id,
+      displayName: defaultRole.name
+    }] : []),
     isActive: data.isActive ?? true,
     isEmailVerified: data.isEmailVerified ?? false,
     is2FAEnabled: data.is2FAEnabled ?? false,

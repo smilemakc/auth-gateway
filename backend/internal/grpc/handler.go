@@ -21,6 +21,7 @@ type AuthHandlerV2 struct {
 	jwtService    *jwt.Service
 	userRepo      *repository.UserRepository
 	tokenRepo     *repository.TokenRepository
+	rbacRepo      *repository.RBACRepository
 	apiKeyService *service.APIKeyService
 	redis         *service.RedisService
 	logger        *logger.Logger
@@ -31,6 +32,7 @@ func NewAuthHandlerV2(
 	jwtService *jwt.Service,
 	userRepo *repository.UserRepository,
 	tokenRepo *repository.TokenRepository,
+	rbacRepo *repository.RBACRepository,
 	apiKeyService *service.APIKeyService,
 	redis *service.RedisService,
 	log *logger.Logger,
@@ -39,6 +41,7 @@ func NewAuthHandlerV2(
 		jwtService:    jwtService,
 		userRepo:      userRepo,
 		tokenRepo:     tokenRepo,
+		rbacRepo:      rbacRepo,
 		apiKeyService: apiKeyService,
 		redis:         redis,
 		logger:        log,
@@ -68,13 +71,26 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenReq
 			}, nil
 		}
 
+		// Load user with roles
+		userWithRoles, err := h.userRepo.GetByIDWithRoles(ctx, user.ID)
+		if err != nil {
+			h.logger.Error("Failed to load user roles", map[string]interface{}{
+				"user_id": user.ID.String(),
+				"error":   err.Error(),
+			})
+			return &ValidateTokenResponse{
+				Valid:        false,
+				ErrorMessage: "failed to load user roles",
+			}, nil
+		}
+
 		// Return successful validation
 		return &ValidateTokenResponse{
 			Valid:     true,
-			UserId:    user.ID.String(),
-			Email:     user.Email,
-			Username:  user.Username,
-			Role:      user.Role,
+			UserId:    userWithRoles.ID.String(),
+			Email:     userWithRoles.Email,
+			Username:  userWithRoles.Username,
+			Roles:     extractRoleNames(userWithRoles.Roles),
 			ExpiresAt: 0, // API keys don't have JWT expiration
 		}, nil
 	}
@@ -116,7 +132,7 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenReq
 		UserId:    claims.UserID.String(),
 		Email:     claims.Email,
 		Username:  claims.Username,
-		Role:      claims.Role,
+		Roles:     claims.Roles,
 		ExpiresAt: claims.ExpiresAt.Unix(),
 	}, nil
 }
@@ -133,8 +149,8 @@ func (h *AuthHandlerV2) GetUser(ctx context.Context, req *GetUserRequest) (*GetU
 		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
 	}
 
-	// Get user from repository
-	user, err := h.userRepo.GetByID(ctx, userID)
+	// Get user from repository with roles
+	user, err := h.userRepo.GetByIDWithRoles(ctx, userID)
 	if err != nil {
 		if err == models.ErrUserNotFound {
 			return nil, status.Error(codes.NotFound, "user not found")
@@ -154,7 +170,7 @@ func (h *AuthHandlerV2) GetUser(ctx context.Context, req *GetUserRequest) (*GetU
 			Username:          user.Username,
 			FullName:          user.FullName,
 			ProfilePictureUrl: user.ProfilePictureURL,
-			Role:              user.Role,
+			Roles:             mapRolesToProto(user.Roles),
 			EmailVerified:     user.EmailVerified,
 			IsActive:          user.IsActive,
 			CreatedAt:         user.CreatedAt.Unix(),
@@ -175,46 +191,40 @@ func (h *AuthHandlerV2) CheckPermission(ctx context.Context, req *CheckPermissio
 		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
 	}
 
-	// Get user to check role
-	user, err := h.userRepo.GetByID(ctx, userID)
+	// Get user roles with permissions
+	roles, err := h.rbacRepo.GetUserRoles(ctx, userID)
 	if err != nil {
-		if err == models.ErrUserNotFound {
-			return &CheckPermissionResponse{
-				Allowed:      false,
-				ErrorMessage: "user not found",
-			}, nil
-		}
+		h.logger.Error("Failed to get user roles", map[string]interface{}{
+			"user_id": req.UserId,
+			"error":   err.Error(),
+		})
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
-	// Simple RBAC: admin has all permissions
-	if user.Role == string(models.RoleAdmin) {
+	if len(roles) == 0 {
 		return &CheckPermissionResponse{
-			Allowed: true,
-			Role:    user.Role,
+			Allowed:      false,
+			Roles:        []string{},
+			ErrorMessage: "user has no roles",
 		}, nil
 	}
 
-	// Moderator has read permissions on all resources
-	if user.Role == string(models.RoleModerator) && req.Action == "read" {
-		return &CheckPermissionResponse{
-			Allowed: true,
-			Role:    user.Role,
-		}, nil
-	}
-
-	// Regular users can only read their own resources
-	if user.Role == string(models.RoleUser) && req.Action == "read" {
-		return &CheckPermissionResponse{
-			Allowed: true,
-			Role:    user.Role,
-		}, nil
+	// Check if any role has the required permission
+	for _, role := range roles {
+		for _, permission := range role.Permissions {
+			if permission.Resource == req.Resource && permission.Action == req.Action {
+				return &CheckPermissionResponse{
+					Allowed: true,
+					Roles:   extractRoleNames(roles),
+				}, nil
+			}
+		}
 	}
 
 	// Permission denied
 	return &CheckPermissionResponse{
 		Allowed: false,
-		Role:    user.Role,
+		Roles:   extractRoleNames(roles),
 	}, nil
 }
 
@@ -246,11 +256,33 @@ func (h *AuthHandlerV2) IntrospectToken(ctx context.Context, req *IntrospectToke
 		UserId:      claims.UserID.String(),
 		Email:       claims.Email,
 		Username:    claims.Username,
-		Role:        claims.Role,
+		Roles:       claims.Roles,
 		IssuedAt:    claims.IssuedAt.Unix(),
 		ExpiresAt:   claims.ExpiresAt.Unix(),
 		NotBefore:   claims.NotBefore.Unix(),
 		Subject:     claims.Subject,
 		Blacklisted: blacklisted,
 	}, nil
+}
+
+// mapRolesToProto converts model Roles to proto RoleInfo array
+func mapRolesToProto(roles []models.Role) []RoleInfo {
+	protoRoles := make([]RoleInfo, len(roles))
+	for i, role := range roles {
+		protoRoles[i] = RoleInfo{
+			Id:          role.ID.String(),
+			Name:        role.Name,
+			DisplayName: role.DisplayName,
+		}
+	}
+	return protoRoles
+}
+
+// extractRoleNames extracts role names from Role array
+func extractRoleNames(roles []models.Role) []string {
+	names := make([]string, len(roles))
+	for i, role := range roles {
+		names[i] = role.Name
+	}
+	return names
 }

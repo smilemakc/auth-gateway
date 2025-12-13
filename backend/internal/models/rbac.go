@@ -41,6 +41,27 @@ type RolePermission struct {
 	Permission *Permission `bun:"rel:belongs-to,join:permission_id=id"`
 }
 
+// UserRole represents the many-to-many relationship between users and roles
+type UserRole struct {
+	UserID     uuid.UUID  `json:"user_id" bun:"user_id,pk,type:uuid"`
+	RoleID     uuid.UUID  `json:"role_id" bun:"role_id,pk,type:uuid"`
+	AssignedAt time.Time  `json:"assigned_at" bun:"assigned_at,nullzero,notnull,default:current_timestamp"`
+	AssignedBy *uuid.UUID `json:"assigned_by,omitempty" bun:"assigned_by,type:uuid"`
+
+	// Belongs-to relations
+	User *User `bun:"rel:belongs-to,join:user_id=id"`
+	Role *Role `bun:"rel:belongs-to,join:role_id=id"`
+}
+
+// RoleType represents the type of role
+type RoleType string
+
+const (
+	RoleAdmin     RoleType = "admin"
+	RoleModerator RoleType = "moderator"
+	RoleUser      RoleType = "user"
+)
+
 // ============================================================
 // Request/Response Models
 // ============================================================

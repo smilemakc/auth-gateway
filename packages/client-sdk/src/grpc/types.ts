@@ -2,6 +2,13 @@
  * gRPC type definitions
  */
 
+/** Role information */
+export interface RoleInfo {
+  id: string;
+  name: string;
+  displayName: string;
+}
+
 /** Validate token request */
 export interface ValidateTokenRequest {
   accessToken: string;
@@ -13,7 +20,7 @@ export interface ValidateTokenResponse {
   userId: string;
   email: string;
   username: string;
-  role: string;
+  roles: string[];
   errorMessage: string;
   expiresAt: number;
 }
@@ -30,7 +37,7 @@ export interface GrpcUser {
   username: string;
   fullName: string;
   profilePictureUrl: string;
-  role: string;
+  roles: RoleInfo[];
   emailVerified: boolean;
   isActive: boolean;
   createdAt: number;
@@ -53,7 +60,7 @@ export interface CheckPermissionRequest {
 /** Check permission response */
 export interface CheckPermissionResponse {
   allowed: boolean;
-  role: string;
+  roles: string[];
   errorMessage: string;
 }
 
@@ -68,7 +75,7 @@ export interface IntrospectTokenResponse {
   userId: string;
   email: string;
   username: string;
-  role: string;
+  roles: string[];
   issuedAt: number;
   expiresAt: number;
   notBefore: number;

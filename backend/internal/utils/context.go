@@ -10,6 +10,7 @@ const (
 	UserIDKey    = "user_id"
 	UserEmailKey = "user_email"
 	UserRoleKey  = "user_role"
+	UserRolesKey = "user_roles"
 )
 
 // GetUserIDFromContext retrieves the user ID from the Gin context
@@ -76,4 +77,36 @@ func GetClientIP(c *gin.Context) string {
 // GetUserAgent gets the user agent string
 func GetUserAgent(c *gin.Context) string {
 	return c.GetHeader("User-Agent")
+}
+
+// GetUserRolesFromContext retrieves user roles from Gin context
+func GetUserRolesFromContext(c *gin.Context) ([]string, bool) {
+	roles, exists := c.Get(UserRolesKey)
+	if !exists {
+		return nil, false
+	}
+	roleSlice, ok := roles.([]string)
+	return roleSlice, ok
+}
+
+// HasRole checks if user has a specific role
+func HasRole(roles []string, role string) bool {
+	for _, r := range roles {
+		if r == role {
+			return true
+		}
+	}
+	return false
+}
+
+// HasAnyRole checks if user has any of the required roles
+func HasAnyRole(userRoles, requiredRoles []string) bool {
+	for _, required := range requiredRoles {
+		for _, userRole := range userRoles {
+			if userRole == required {
+				return true
+			}
+		}
+	}
+	return false
 }

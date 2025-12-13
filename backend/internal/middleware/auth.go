@@ -78,7 +78,7 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 		// Set user context
 		c.Set(utils.UserIDKey, claims.UserID)
 		c.Set(utils.UserEmailKey, claims.Email)
-		c.Set(utils.UserRoleKey, claims.Role)
+		c.Set(utils.UserRolesKey, claims.Roles)
 
 		c.Next()
 	}
@@ -87,7 +87,7 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 // RequireRole checks if user has the required role
 func (m *AuthMiddleware) RequireRole(requiredRole string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		role, exists := utils.GetUserRoleFromContext(c)
+		roles, exists := utils.GetUserRolesFromContext(c)
 		if !exists {
 			c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
 			c.Abort()
@@ -95,13 +95,13 @@ func (m *AuthMiddleware) RequireRole(requiredRole string) gin.HandlerFunc {
 		}
 
 		// Admin has access to everything
-		if role == string(models.RoleAdmin) {
+		if contains(roles, string(models.RoleAdmin)) {
 			c.Next()
 			return
 		}
 
 		// Check if user has required role
-		if role != requiredRole {
+		if !contains(roles, requiredRole) {
 			c.JSON(http.StatusForbidden, models.NewErrorResponse(models.ErrForbidden))
 			c.Abort()
 			return
@@ -114,7 +114,7 @@ func (m *AuthMiddleware) RequireRole(requiredRole string) gin.HandlerFunc {
 // RequireAnyRole checks if user has any of the required roles
 func (m *AuthMiddleware) RequireAnyRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userRole, exists := utils.GetUserRoleFromContext(c)
+		userRoles, exists := utils.GetUserRolesFromContext(c)
 		if !exists {
 			c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
 			c.Abort()
@@ -122,14 +122,14 @@ func (m *AuthMiddleware) RequireAnyRole(roles ...string) gin.HandlerFunc {
 		}
 
 		// Admin has access to everything
-		if userRole == string(models.RoleAdmin) {
+		if contains(userRoles, string(models.RoleAdmin)) {
 			c.Next()
 			return
 		}
 
 		// Check if user has any of the required roles
-		for _, role := range roles {
-			if userRole == role {
+		for _, requiredRole := range roles {
+			if contains(userRoles, requiredRole) {
 				c.Next()
 				return
 			}
@@ -138,4 +138,14 @@ func (m *AuthMiddleware) RequireAnyRole(roles ...string) gin.HandlerFunc {
 		c.JSON(http.StatusForbidden, models.NewErrorResponse(models.ErrForbidden))
 		c.Abort()
 	}
+}
+
+// contains checks if a string slice contains a specific string
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }

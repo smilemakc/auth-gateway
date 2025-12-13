@@ -16,9 +16,7 @@ type User struct {
 	PasswordHash      string     `json:"-" bun:"password_hash,notnull"` // Never expose password hash
 	FullName          string     `json:"full_name,omitempty" bun:"full_name"`
 	ProfilePictureURL string     `json:"profile_picture_url,omitempty" bun:"profile_picture_url"`
-	Role              string     `json:"role" bun:"role"`                           // Deprecated: use RoleID instead
-	RoleID            *uuid.UUID `json:"role_id,omitempty" bun:"role_id,type:uuid"` // New RBAC role reference
-	AccountType       string     `json:"account_type" bun:"account_type"`           // "human" or "service"
+	AccountType       string     `json:"account_type" bun:"account_type"` // "human" or "service"
 	EmailVerified     bool       `json:"email_verified" bun:"email_verified"`
 	EmailVerifiedAt   *time.Time `json:"email_verified_at,omitempty" bun:"email_verified_at"`
 	PhoneVerified     bool       `json:"phone_verified" bun:"phone_verified"`
@@ -30,7 +28,7 @@ type User struct {
 	UpdatedAt         time.Time  `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
 
 	// Relations
-	RoleRel *Role `json:"role_rel,omitempty" bun:"rel:belongs-to,join:role_id=id"`
+	Roles []Role `json:"roles,omitempty" bun:"m2m:user_roles,join:User=Role"`
 }
 
 // BeforeInsert hook for automatic timestamp management
@@ -51,15 +49,6 @@ func (u *User) BeforeUpdate(ctx context.Context) error {
 	return nil
 }
 
-// UserRole defines available user roles
-type UserRole string
-
-const (
-	RoleUser      UserRole = "user"
-	RoleModerator UserRole = "moderator"
-	RoleAdmin     UserRole = "admin"
-)
-
 // AccountType defines user account types
 type AccountType string
 
@@ -67,16 +56,6 @@ const (
 	AccountTypeHuman   AccountType = "human"
 	AccountTypeService AccountType = "service"
 )
-
-// IsValidRole checks if a role is valid
-func IsValidRole(role string) bool {
-	switch UserRole(role) {
-	case RoleUser, RoleModerator, RoleAdmin:
-		return true
-	default:
-		return false
-	}
-}
 
 // IsValidAccountType checks if an account type is valid
 func IsValidAccountType(accountType string) bool {
@@ -143,8 +122,6 @@ func (u *User) PublicUser() *User {
 		Username:          u.Username,
 		FullName:          u.FullName,
 		ProfilePictureURL: u.ProfilePictureURL,
-		Role:              u.Role,
-		RoleID:            u.RoleID,
 		AccountType:       u.AccountType,
 		EmailVerified:     u.EmailVerified,
 		PhoneVerified:     u.PhoneVerified,
@@ -153,5 +130,6 @@ func (u *User) PublicUser() *User {
 		TOTPEnabledAt:     u.TOTPEnabledAt,
 		CreatedAt:         u.CreatedAt,
 		UpdatedAt:         u.UpdatedAt,
+		Roles:             u.Roles,
 	}
 }

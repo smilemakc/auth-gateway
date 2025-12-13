@@ -28,7 +28,7 @@ type Claims struct {
 	UserID   uuid.UUID `json:"user_id"`
 	Email    string    `json:"email"`
 	Username string    `json:"username"`
-	Role     string    `json:"role"`
+	Roles    []string  `json:"roles"`
 	jwt.RegisteredClaims
 }
 
@@ -45,11 +45,20 @@ func NewService(accessSecret, refreshSecret string, accessExpires, refreshExpire
 // GenerateAccessToken generates a new access token for the user
 func (s *Service) GenerateAccessToken(user *models.User) (string, error) {
 	now := time.Now()
+
+	roleNames := make([]string, len(user.Roles))
+	for i, role := range user.Roles {
+		roleNames[i] = role.Name
+	}
+	if len(roleNames) == 0 {
+		roleNames = []string{"user"}
+	}
+
 	claims := &Claims{
 		UserID:   user.ID,
 		Email:    user.Email,
 		Username: user.Username,
-		Role:     user.Role,
+		Roles:    roleNames,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.accessExpires)),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -65,11 +74,20 @@ func (s *Service) GenerateAccessToken(user *models.User) (string, error) {
 // GenerateRefreshToken generates a new refresh token for the user
 func (s *Service) GenerateRefreshToken(user *models.User) (string, error) {
 	now := time.Now()
+
+	roleNames := make([]string, len(user.Roles))
+	for i, role := range user.Roles {
+		roleNames[i] = role.Name
+	}
+	if len(roleNames) == 0 {
+		roleNames = []string{"user"}
+	}
+
 	claims := &Claims{
 		UserID:   user.ID,
 		Email:    user.Email,
 		Username: user.Username,
-		Role:     user.Role,
+		Roles:    roleNames,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.refreshExpires)),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -85,11 +103,20 @@ func (s *Service) GenerateRefreshToken(user *models.User) (string, error) {
 // GenerateTwoFactorToken generates a short-lived token for 2FA verification
 func (s *Service) GenerateTwoFactorToken(user *models.User) (string, error) {
 	now := time.Now()
+
+	roleNames := make([]string, len(user.Roles))
+	for i, role := range user.Roles {
+		roleNames[i] = role.Name
+	}
+	if len(roleNames) == 0 {
+		roleNames = []string{"user"}
+	}
+
 	claims := &Claims{
 		UserID:   user.ID,
 		Email:    user.Email,
 		Username: user.Username,
-		Role:     user.Role,
+		Roles:    roleNames,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(5 * time.Minute)), // 5 minutes expiration
 			IssuedAt:  jwt.NewNumericDate(now),

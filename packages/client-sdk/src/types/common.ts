@@ -54,7 +54,7 @@ export interface ErrorResponse {
 /** Account types */
 export type AccountType = 'human' | 'service';
 
-/** User roles */
+/** @deprecated Use Role model from rbac.ts instead */
 export type UserRole = 'user' | 'moderator' | 'admin';
 
 /** OTP types */

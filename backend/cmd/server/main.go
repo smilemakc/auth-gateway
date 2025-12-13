@@ -86,17 +86,17 @@ func main() {
 	geoRepo := repository.NewGeoRepository(db)
 
 	// Initialize services
-	authService := service.NewAuthService(userRepo, tokenRepo, auditRepo, jwtService, redis, cfg.Security.BcryptCost)
+	authService := service.NewAuthService(userRepo, tokenRepo, auditRepo, rbacRepo, jwtService, redis, cfg.Security.BcryptCost)
 	userService := service.NewUserService(userRepo, auditRepo)
 	apiKeyService := service.NewAPIKeyService(apiKeyRepo, userRepo, auditRepo)
 	emailService := service.NewEmailService(&cfg.SMTP)
 	otpService := service.NewOTPService(otpRepo, userRepo, emailService, auditRepo)
-	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, jwtService)
+	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, rbacRepo, jwtService)
 	twoFAService := service.NewTwoFactorService(userRepo, backupCodeRepo, auditRepo, "Auth Gateway")
-	adminService := service.NewAdminService(userRepo, apiKeyRepo, auditRepo, oauthRepo)
+	adminService := service.NewAdminService(userRepo, apiKeyRepo, auditRepo, oauthRepo, rbacRepo)
 
 	// Advanced feature services
-	rbacService := service.NewRBACService(rbacRepo)
+	rbacService := service.NewRBACService(rbacRepo, auditRepo)
 	sessionService := service.NewSessionService(sessionRepo)
 	ipFilterService := service.NewIPFilterService(ipFilterRepo)
 
@@ -112,7 +112,7 @@ func main() {
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, redis, tokenRepo)
-	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(apiKeyService)
+	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(apiKeyService, rbacRepo)
 	rateLimitMiddleware := middleware.NewRateLimitMiddleware(redis, &cfg.RateLimit)
 
 	// Advanced feature middleware
@@ -224,6 +224,10 @@ func main() {
 		adminGroup.PUT("/users/:id", adminHandler.UpdateUser)
 		adminGroup.DELETE("/users/:id", adminHandler.DeleteUser)
 
+		// User role management
+		adminGroup.POST("/users/:id/roles", adminHandler.AssignRole)
+		adminGroup.DELETE("/users/:id/roles/:roleId", adminHandler.RemoveRole)
+
 		// API key management
 		adminGroup.GET("/api-keys", adminHandler.ListAPIKeys)
 		adminGroup.POST("/api-keys/:id/revoke", adminHandler.RevokeAPIKey)
@@ -323,6 +327,7 @@ func main() {
 		jwtService,
 		userRepo,
 		tokenRepo,
+		rbacRepo,
 		apiKeyService,
 		redis,
 		log,

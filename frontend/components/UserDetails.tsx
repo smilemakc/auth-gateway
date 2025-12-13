@@ -160,12 +160,16 @@ const UserDetails: React.FC = () => {
                 className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-gray-50"
               />
               <h2 className="text-xl font-bold text-gray-900">{user.username}</h2>
-              <div className="flex justify-center gap-2 mt-2">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                  ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
-                    user.role === 'moderator' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'}`}>
-                  {user.role}
-                </span>
+              <div className="flex justify-center gap-2 flex-wrap mt-2">
+                {user.roles?.map(role => (
+                  <span
+                    key={role.id}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                      ${role.name === 'admin' ? 'bg-purple-100 text-purple-800' :
+                        role.name === 'moderator' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {role.displayName || role.name}
+                  </span>
+                ))}
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
                   ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                   {user.isActive ? t('users.active') : t('users.blocked')}

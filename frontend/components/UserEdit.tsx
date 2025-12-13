@@ -9,6 +9,7 @@ import {
 import { UserRole } from '../types';
 import { useLanguage } from '../services/i18n';
 import { useUserDetail, useUpdateUser, useCreateUser } from '../hooks/useUsers';
+import { useRoles } from '../hooks/useRBAC';
 
 const UserEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,15 +21,18 @@ const UserEdit: React.FC = () => {
 
   // Fetch user data if in edit mode
   const { data: user, isLoading: userLoading } = useUserDetail(id!, { enabled: isEditMode });
+  const { data: rolesData } = useRoles();
   const updateUserMutation = useUpdateUser();
   const createUserMutation = useCreateUser();
+
+  const availableRoles = rolesData?.roles || [];
 
   const [formData, setFormData] = useState<any>({
     fullName: '',
     username: '',
     email: '',
     phone: '',
-    role: UserRole.USER,
+    roleIds: [],
     isActive: true,
     isEmailVerified: false,
     is2FAEnabled: false
@@ -37,7 +41,10 @@ const UserEdit: React.FC = () => {
   // Sync user data to form when loaded
   useEffect(() => {
     if (isEditMode && user) {
-      setFormData(user);
+      setFormData({
+        ...user,
+        roleIds: user.roles?.map((role: any) => role.id) || []
+      });
     }
   }, [isEditMode, user]);
 
@@ -124,19 +131,33 @@ const UserEdit: React.FC = () => {
             </div>
 
             <div className="sm:col-span-3">
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">{t('user.form.role')}</label>
-              <div className="mt-1">
-                <select
-                  id="role"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2.5 border"
-                >
-                  <option value={UserRole.USER}>User</option>
-                  <option value={UserRole.MODERATOR}>Moderator</option>
-                  <option value={UserRole.ADMIN}>Admin</option>
-                </select>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('user.form.role')}
+              </label>
+              <div className="space-y-2 mt-1">
+                {availableRoles.map(role => (
+                  <label key={role.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.roleIds.includes(role.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({
+                            ...formData,
+                            roleIds: [...formData.roleIds, role.id]
+                          });
+                        } else {
+                          setFormData({
+                            ...formData,
+                            roleIds: formData.roleIds.filter((id: string) => id !== role.id)
+                          });
+                        }
+                      }}
+                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{role.displayName || role.name}</span>
+                  </label>
+                ))}
               </div>
             </div>
 

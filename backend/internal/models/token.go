@@ -59,7 +59,7 @@ type JWTClaims struct {
 	UserID   uuid.UUID `json:"user_id"`
 	Email    string    `json:"email"`
 	Username string    `json:"username"`
-	Role     string    `json:"role"`
+	Roles    []string  `json:"roles"`
 }
 
 // IsExpired checks if the refresh token is expired

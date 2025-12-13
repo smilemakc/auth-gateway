@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
@@ -139,7 +140,14 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.adminService.UpdateUser(c.Request.Context(), userID, &req)
+	// Get admin ID from context
+	adminID, exists := utils.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+		return
+	}
+
+	user, err := h.adminService.UpdateUser(c.Request.Context(), userID, &req, *adminID)
 	if err != nil {
 		if appErr, ok := err.(*models.AppError); ok {
 			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
@@ -281,4 +289,94 @@ func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, logs)
+}
+
+// AssignRole assigns a role to a user
+// @Summary Assign role to user
+// @Description Assign a role to a user (admin only)
+// @Tags admin
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param request body models.AssignRoleRequest true "Role assignment data"
+// @Success 200 {object} models.AdminUserResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /admin/users/{id}/roles [post]
+func (h *AdminHandler) AssignRole(c *gin.Context) {
+	userID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
+		))
+		return
+	}
+
+	var req models.AssignRoleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid request", err.Error()),
+		))
+		return
+	}
+
+	adminID, exists := utils.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+		return
+	}
+
+	user, err := h.adminService.AssignRole(c.Request.Context(), userID, req.RoleID, *adminID)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+// RemoveRole removes a role from a user
+// @Summary Remove role from user
+// @Description Remove a role from a user (admin only)
+// @Tags admin
+// @Security BearerAuth
+// @Param id path string true "User ID"
+// @Param roleId path string true "Role ID"
+// @Success 200 {object} models.AdminUserResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /admin/users/{id}/roles/{roleId} [delete]
+func (h *AdminHandler) RemoveRole(c *gin.Context) {
+	userID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
+		))
+		return
+	}
+
+	roleID, err := uuid.Parse(c.Param("roleId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid role ID"),
+		))
+		return
+	}
+
+	user, err := h.adminService.RemoveRole(c.Request.Context(), userID, roleID)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 }

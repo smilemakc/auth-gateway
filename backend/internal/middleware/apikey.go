@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 )
@@ -13,12 +14,14 @@ import (
 // APIKeyMiddleware validates API keys
 type APIKeyMiddleware struct {
 	apiKeyService *service.APIKeyService
+	rbacRepo      *repository.RBACRepository
 }
 
 // NewAPIKeyMiddleware creates a new API key middleware
-func NewAPIKeyMiddleware(apiKeyService *service.APIKeyService) *APIKeyMiddleware {
+func NewAPIKeyMiddleware(apiKeyService *service.APIKeyService, rbacRepo *repository.RBACRepository) *APIKeyMiddleware {
 	return &APIKeyMiddleware{
 		apiKeyService: apiKeyService,
+		rbacRepo:      rbacRepo,
 	}
 }
 
@@ -60,9 +63,21 @@ func (m *APIKeyMiddleware) Authenticate() gin.HandlerFunc {
 		// Set user context
 		c.Set(utils.UserIDKey, user.ID)
 		c.Set(utils.UserEmailKey, user.Email)
-		c.Set(utils.UserRoleKey, user.Role)
 		c.Set("api_key_id", key.ID)
 		c.Set("api_key", key)
+
+		// Load user roles
+		ctx := c.Request.Context()
+		roles, err := m.rbacRepo.GetUserRoles(ctx, user.ID)
+		if err == nil {
+			roleNames := make([]string, len(roles))
+			for i, role := range roles {
+				roleNames[i] = role.Name
+			}
+			c.Set(utils.UserRolesKey, roleNames)
+		} else {
+			c.Set(utils.UserRolesKey, []string{})
+		}
 
 		c.Next()
 	}

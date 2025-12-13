@@ -367,7 +367,7 @@ func (r *RBACRepository) SetRolePermissions(ctx context.Context, roleID uuid.UUI
 // User Permission Checking
 // ============================================================
 
-// GetUserPermissions retrieves all permissions for a user based on their role
+// GetUserPermissions retrieves all permissions for a user based on their roles
 func (r *RBACRepository) GetUserPermissions(ctx context.Context, userID uuid.UUID) ([]models.Permission, error) {
 	permissions := make([]models.Permission, 0)
 
@@ -376,7 +376,8 @@ func (r *RBACRepository) GetUserPermissions(ctx context.Context, userID uuid.UUI
 		Distinct().
 		Join("INNER JOIN role_permissions AS rp ON rp.permission_id = permission.id").
 		Join("INNER JOIN roles AS r ON r.id = rp.role_id").
-		Join("INNER JOIN users AS u ON u.role_id = r.id").
+		Join("INNER JOIN user_roles AS ur ON ur.role_id = r.id").
+		Join("INNER JOIN users AS u ON u.id = ur.user_id").
 		Where("u.id = ?", userID).
 		Order("permission.resource", "permission.action").
 		Scan(ctx)
@@ -394,7 +395,8 @@ func (r *RBACRepository) HasPermission(ctx context.Context, userID uuid.UUID, pe
 		Model((*models.Permission)(nil)).
 		Join("INNER JOIN role_permissions AS rp ON rp.permission_id = permission.id").
 		Join("INNER JOIN roles AS r ON r.id = rp.role_id").
-		Join("INNER JOIN users AS u ON u.role_id = r.id").
+		Join("INNER JOIN user_roles AS ur ON ur.role_id = r.id").
+		Join("INNER JOIN users AS u ON u.id = ur.user_id").
 		Where("u.id = ?", userID).
 		Where("permission.name = ?", permissionName).
 		Count(ctx)
@@ -412,7 +414,8 @@ func (r *RBACRepository) HasAnyPermission(ctx context.Context, userID uuid.UUID,
 		Model((*models.Permission)(nil)).
 		Join("INNER JOIN role_permissions AS rp ON rp.permission_id = permission.id").
 		Join("INNER JOIN roles AS r ON r.id = rp.role_id").
-		Join("INNER JOIN users AS u ON u.role_id = r.id").
+		Join("INNER JOIN user_roles AS ur ON ur.role_id = r.id").
+		Join("INNER JOIN users AS u ON u.id = ur.user_id").
 		Where("u.id = ?", userID).
 		Where("permission.name IN (?)", bun.In(permissionNames)).
 		Count(ctx)
@@ -431,7 +434,8 @@ func (r *RBACRepository) HasAllPermissions(ctx context.Context, userID uuid.UUID
 		ColumnExpr("COUNT(DISTINCT permission.name)").
 		Join("INNER JOIN role_permissions AS rp ON rp.permission_id = permission.id").
 		Join("INNER JOIN roles AS r ON r.id = rp.role_id").
-		Join("INNER JOIN users AS u ON u.role_id = r.id").
+		Join("INNER JOIN user_roles AS ur ON ur.role_id = r.id").
+		Join("INNER JOIN users AS u ON u.id = ur.user_id").
 		Where("u.id = ?", userID).
 		Where("permission.name IN (?)", bun.In(permissionNames)).
 		Count(ctx)
@@ -443,14 +447,18 @@ func (r *RBACRepository) HasAllPermissions(ctx context.Context, userID uuid.UUID
 	return count == len(permissionNames), nil
 }
 
-// GetUserRole retrieves the role for a user
+// GetUserRole retrieves the first role for a user (ordered by name)
+// DEPRECATED: Returns first role only. Use GetUserRoles() for all roles.
 func (r *RBACRepository) GetUserRole(ctx context.Context, userID uuid.UUID) (*models.Role, error) {
 	role := new(models.Role)
 
 	err := r.db.NewSelect().
 		Model(role).
-		Join("INNER JOIN users AS u ON u.role_id = role.id").
+		Join("INNER JOIN user_roles AS ur ON ur.role_id = role.id").
+		Join("INNER JOIN users AS u ON u.id = ur.user_id").
 		Where("u.id = ?", userID).
+		Order("role.name").
+		Limit(1).
 		Relation("Permissions").
 		Scan(ctx)
 
@@ -462,6 +470,103 @@ func (r *RBACRepository) GetUserRole(ctx context.Context, userID uuid.UUID) (*mo
 	}
 
 	return role, nil
+}
+
+// ============================================================
+// User-Role Management Methods
+// ============================================================
+
+// GetUserRoles returns all roles assigned to a user with their permissions
+func (r *RBACRepository) GetUserRoles(ctx context.Context, userID uuid.UUID) ([]models.Role, error) {
+	var roles []models.Role
+	err := r.db.NewSelect().
+		Model(&roles).
+		Join("INNER JOIN user_roles AS ur ON ur.role_id = role.id").
+		Where("ur.user_id = ?", userID).
+		Relation("Permissions").
+		Order("role.name").
+		Scan(ctx)
+
+	if err != nil {
+		return nil, handlePgError(err)
+	}
+	return roles, nil
+}
+
+// AssignRoleToUser assigns a role to a user (idempotent - won't fail if already assigned)
+func (r *RBACRepository) AssignRoleToUser(ctx context.Context, userID, roleID, assignedBy uuid.UUID) error {
+	userRole := &models.UserRole{
+		UserID:     userID,
+		RoleID:     roleID,
+		AssignedBy: &assignedBy,
+	}
+
+	_, err := r.db.NewInsert().
+		Model(userRole).
+		On("CONFLICT (user_id, role_id) DO NOTHING").
+		Exec(ctx)
+
+	return handlePgError(err)
+}
+
+// RemoveRoleFromUser removes a role from a user
+func (r *RBACRepository) RemoveRoleFromUser(ctx context.Context, userID, roleID uuid.UUID) error {
+	_, err := r.db.NewDelete().
+		Model((*models.UserRole)(nil)).
+		Where("user_id = ? AND role_id = ?", userID, roleID).
+		Exec(ctx)
+
+	return handlePgError(err)
+}
+
+// SetUserRoles atomically replaces all user roles (transaction)
+func (r *RBACRepository) SetUserRoles(ctx context.Context, userID uuid.UUID, roleIDs []uuid.UUID, assignedBy uuid.UUID) error {
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		// Delete all existing roles for this user
+		_, err := tx.NewDelete().
+			Model((*models.UserRole)(nil)).
+			Where("user_id = ?", userID).
+			Exec(ctx)
+		if err != nil {
+			return handlePgError(err)
+		}
+
+		// Insert new roles if any
+		if len(roleIDs) > 0 {
+			userRoles := make([]models.UserRole, len(roleIDs))
+			for i, roleID := range roleIDs {
+				userRoles[i] = models.UserRole{
+					UserID:     userID,
+					RoleID:     roleID,
+					AssignedBy: &assignedBy,
+				}
+			}
+
+			_, err = tx.NewInsert().
+				Model(&userRoles).
+				Exec(ctx)
+			if err != nil {
+				return handlePgError(err)
+			}
+		}
+
+		return nil
+	})
+}
+
+// GetUsersWithRole returns all users with a specific role
+func (r *RBACRepository) GetUsersWithRole(ctx context.Context, roleID uuid.UUID) ([]models.User, error) {
+	var users []models.User
+	err := r.db.NewSelect().
+		Model(&users).
+		Join("INNER JOIN user_roles AS ur ON ur.user_id = users.id").
+		Where("ur.role_id = ? AND users.is_active = ?", roleID, true).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, handlePgError(err)
+	}
+	return users, nil
 }
 
 // GetPermissionMatrix retrieves the complete permission matrix for all roles

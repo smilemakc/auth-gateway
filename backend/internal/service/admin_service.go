@@ -17,6 +17,7 @@ type AdminService struct {
 	apiKeyRepo *repository.APIKeyRepository
 	auditRepo  *repository.AuditRepository
 	oauthRepo  *repository.OAuthRepository
+	rbacRepo   *repository.RBACRepository
 }
 
 // NewAdminService creates a new admin service
@@ -25,12 +26,14 @@ func NewAdminService(
 	apiKeyRepo *repository.APIKeyRepository,
 	auditRepo *repository.AuditRepository,
 	oauthRepo *repository.OAuthRepository,
+	rbacRepo *repository.RBACRepository,
 ) *AdminService {
 	return &AdminService{
 		userRepo:   userRepo,
 		apiKeyRepo: apiKeyRepo,
 		auditRepo:  auditRepo,
 		oauthRepo:  oauthRepo,
+		rbacRepo:   rbacRepo,
 	}
 }
 
@@ -70,12 +73,20 @@ func (s *AdminService) GetStats(ctx context.Context) (*models.AdminStatsResponse
 			stats.Users2FAEnabled++
 		}
 
-		// Count by role
-		stats.UsersByRole[user.Role]++
-
 		// Recent signups
 		if user.CreatedAt.After(yesterday) {
 			stats.RecentSignups++
+		}
+	}
+
+	// Aggregate users by role (note: users with multiple roles counted in each)
+	stats.UsersByRole = make(map[string]int)
+	for _, user := range users {
+		roles, err := s.rbacRepo.GetUserRoles(ctx, user.ID)
+		if err == nil {
+			for _, role := range roles {
+				stats.UsersByRole[role.Name]++
+			}
 		}
 	}
 
@@ -116,7 +127,7 @@ func (s *AdminService) ListUsers(ctx context.Context, page, pageSize int) (*mode
 
 	offset := (page - 1) * pageSize
 
-	users, err := s.userRepo.List(ctx, pageSize, offset)
+	users, err := s.userRepo.ListWithRoles(ctx, pageSize, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
@@ -158,7 +169,7 @@ func (s *AdminService) ListUsers(ctx context.Context, page, pageSize int) (*mode
 
 // GetUser returns detailed user information
 func (s *AdminService) GetUser(ctx context.Context, userID uuid.UUID) (*models.AdminUserResponse, error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByIDWithRoles(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -181,18 +192,20 @@ func (s *AdminService) GetUser(ctx context.Context, userID uuid.UUID) (*models.A
 }
 
 // UpdateUser updates user information (admin only)
-func (s *AdminService) UpdateUser(ctx context.Context, userID uuid.UUID, req *models.AdminUpdateUserRequest) (*models.AdminUserResponse, error) {
+func (s *AdminService) UpdateUser(ctx context.Context, userID uuid.UUID, req *models.AdminUpdateUserRequest, adminID uuid.UUID) (*models.AdminUserResponse, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Update role if provided
-	if req.Role != nil {
-		if !models.IsValidRole(*req.Role) {
-			return nil, models.NewAppError(400, "Invalid role")
+	// Update roles if provided
+	if req.RoleIDs != nil {
+		if len(*req.RoleIDs) == 0 {
+			return nil, models.NewAppError(400, "At least one role must be assigned")
 		}
-		user.Role = *req.Role
+		if err := s.rbacRepo.SetUserRoles(ctx, userID, *req.RoleIDs, adminID); err != nil {
+			return nil, fmt.Errorf("failed to update user roles: %w", err)
+		}
 	}
 
 	// Update active status if provided
@@ -214,17 +227,22 @@ func (s *AdminService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 		return err
 	}
 
-	// Prevent deleting the last admin
-	if user.Role == string(models.RoleAdmin) {
-		adminCount := 0
-		users, err := s.userRepo.List(ctx, 10000, 0)
-		if err == nil {
-			for _, u := range users {
-				if u.Role == string(models.RoleAdmin) && u.IsActive {
-					adminCount++
-				}
+	// Check if user is admin and prevent deleting last admin
+	userRoles, err := s.rbacRepo.GetUserRoles(ctx, userID)
+	if err == nil {
+		isAdmin := false
+		var adminRoleID uuid.UUID
+		for _, role := range userRoles {
+			if role.Name == "admin" {
+				isAdmin = true
+				adminRoleID = role.ID
+				break
 			}
-			if adminCount <= 1 {
+		}
+
+		if isAdmin {
+			admins, err := s.rbacRepo.GetUsersWithRole(ctx, adminRoleID)
+			if err == nil && len(admins) <= 1 {
 				return models.NewAppError(400, "Cannot delete the last admin user")
 			}
 		}
@@ -340,21 +358,87 @@ func (s *AdminService) ListAuditLogs(ctx context.Context, page, pageSize int, us
 	return adminLogs, nil
 }
 
-// userToAdminResponse converts User to AdminUserResponse
+// AssignRole assigns a role to a user
+func (s *AdminService) AssignRole(ctx context.Context, userID, roleID, adminID uuid.UUID) (*models.AdminUserResponse, error) {
+	user, err := s.userRepo.GetByIDWithRoles(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	existingRoleIDs := make([]uuid.UUID, len(user.Roles))
+	for i, role := range user.Roles {
+		existingRoleIDs[i] = role.ID
+		if role.ID == roleID {
+			return nil, models.NewAppError(400, "User already has this role")
+		}
+	}
+
+	newRoleIDs := append(existingRoleIDs, roleID)
+	if err := s.rbacRepo.SetUserRoles(ctx, userID, newRoleIDs, adminID); err != nil {
+		return nil, fmt.Errorf("failed to assign role: %w", err)
+	}
+
+	return s.GetUser(ctx, userID)
+}
+
+// RemoveRole removes a role from a user
+func (s *AdminService) RemoveRole(ctx context.Context, userID, roleID uuid.UUID) (*models.AdminUserResponse, error) {
+	user, err := s.userRepo.GetByIDWithRoles(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(user.Roles) <= 1 {
+		return nil, models.NewAppError(400, "User must have at least one role")
+	}
+
+	roleFound := false
+	newRoleIDs := make([]uuid.UUID, 0, len(user.Roles)-1)
+	for _, role := range user.Roles {
+		if role.ID == roleID {
+			roleFound = true
+			continue
+		}
+		newRoleIDs = append(newRoleIDs, role.ID)
+	}
+
+	if !roleFound {
+		return nil, models.NewAppError(404, "User does not have this role")
+	}
+
+	if err := s.rbacRepo.SetUserRoles(ctx, userID, newRoleIDs, userID); err != nil {
+		return nil, fmt.Errorf("failed to remove role: %w", err)
+	}
+
+	return s.GetUser(ctx, userID)
+}
+
+// userToAdminResponse converts User to AdminUserResponse with roles
 func (s *AdminService) userToAdminResponse(user *models.User) *models.AdminUserResponse {
+	roles := make([]models.RoleInfo, 0, len(user.Roles))
+	for _, role := range user.Roles {
+		roles = append(roles, models.RoleInfo{
+			ID:          role.ID,
+			Name:        role.Name,
+			DisplayName: role.DisplayName,
+		})
+	}
+
 	return &models.AdminUserResponse{
-		ID:            user.ID,
-		Email:         user.Email,
-		Phone:         user.Phone,
-		Username:      user.Username,
-		FullName:      user.FullName,
-		Role:          user.Role,
-		EmailVerified: user.EmailVerified,
-		PhoneVerified: user.PhoneVerified,
-		IsActive:      user.IsActive,
-		TOTPEnabled:   user.TOTPEnabled,
-		TOTPEnabledAt: user.TOTPEnabledAt,
-		CreatedAt:     user.CreatedAt,
-		UpdatedAt:     user.UpdatedAt,
+		ID:                user.ID,
+		Email:             user.Email,
+		Phone:             user.Phone,
+		Username:          user.Username,
+		FullName:          user.FullName,
+		ProfilePictureURL: user.ProfilePictureURL,
+		Roles:             roles,
+		AccountType:       user.AccountType,
+		EmailVerified:     user.EmailVerified,
+		PhoneVerified:     user.PhoneVerified,
+		IsActive:          user.IsActive,
+		TOTPEnabled:       user.TOTPEnabled,
+		TOTPEnabledAt:     user.TOTPEnabledAt,
+		CreatedAt:         user.CreatedAt,
+		UpdatedAt:         user.UpdatedAt,
 	}
 }
