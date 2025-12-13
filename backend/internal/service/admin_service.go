@@ -233,7 +233,7 @@ func (s *AdminService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 		isAdmin := false
 		var adminRoleID uuid.UUID
 		for _, role := range userRoles {
-			if role.Name == "admin" {
+			if role.Name == string(models.RoleAdmin) {
 				isAdmin = true
 				adminRoleID = role.ID
 				break

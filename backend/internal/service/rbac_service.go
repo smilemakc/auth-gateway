@@ -216,7 +216,7 @@ func (s *RBACService) RemoveRoleFromUser(ctx context.Context, userID, roleID uui
 		return fmt.Errorf("role not found: %w", err)
 	}
 
-	if role.Name == "admin" {
+	if role.Name == string(models.RoleAdmin) {
 		users, err := s.rbacRepo.GetUsersWithRole(ctx, roleID)
 		if err == nil && len(users) == 1 && users[0].ID == userID {
 			return models.NewAppError(400, "Cannot remove admin role: this is the last administrator")
@@ -260,7 +260,7 @@ func (s *RBACService) SetUserRoles(ctx context.Context, userID uuid.UUID, roleID
 			return fmt.Errorf("role %s not found", roleID)
 		}
 		newRoleNames[i] = role.Name
-		if role.Name == "admin" {
+		if role.Name == string(models.RoleAdmin) {
 			hasAdmin = true
 		}
 	}
@@ -268,14 +268,14 @@ func (s *RBACService) SetUserRoles(ctx context.Context, userID uuid.UUID, roleID
 	if !hasAdmin {
 		userWasAdmin := false
 		for _, r := range previousRoles {
-			if r.Name == "admin" {
+			if r.Name == string(models.RoleAdmin) {
 				userWasAdmin = true
 				break
 			}
 		}
 
 		if userWasAdmin {
-			adminRole, err := s.rbacRepo.GetRoleByName(ctx, "admin")
+			adminRole, err := s.rbacRepo.GetRoleByName(ctx, string(models.RoleAdmin))
 			if err == nil {
 				users, err := s.rbacRepo.GetUsersWithRole(ctx, adminRole.ID)
 				if err == nil && len(users) == 1 && users[0].ID == userID {
