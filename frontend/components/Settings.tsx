@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Save, Lock, Mail, Globe, Shield, ExternalLink, ChevronRight, ShieldAlert, Palette, Key, MessageSquare, Activity, Server, Sliders } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
-import { useSystemStatus, usePasswordPolicy, useUpdatePasswordPolicy, useMaintenanceMode } from '../hooks/useSettings';
+import { useSystemStatus, usePasswordPolicy, useUpdatePasswordPolicy, useMaintenanceMode, useMaintenanceModeStatus } from '../hooks/useSettings';
 import { PasswordPolicy } from '../types';
 
 const Settings: React.FC = () => {
@@ -11,6 +11,7 @@ const Settings: React.FC = () => {
 
   // Fetch data with React Query
   const { data: systemStatus, isLoading: statusLoading, error: statusError } = useSystemStatus();
+  const { data: maintenanceStatus, isLoading: maintenanceLoading } = useMaintenanceModeStatus();
   const { data: apiPasswordPolicy, isLoading: policyLoading, error: policyError } = usePasswordPolicy();
   const updatePolicyMutation = useUpdatePasswordPolicy();
   const maintenanceMutation = useMaintenanceMode();
@@ -26,8 +27,8 @@ const Settings: React.FC = () => {
   }, [apiPasswordPolicy]);
 
   const toggleMaintenance = async () => {
-    if (systemStatus) {
-      const newStatus = !systemStatus.maintenanceMode;
+    if (maintenanceStatus) {
+      const newStatus = !maintenanceStatus.enabled;
       if (window.confirm(newStatus ? t('sys.confirm_enable') : t('sys.confirm_disable'))) {
         try {
           await maintenanceMutation.mutateAsync({
@@ -63,7 +64,7 @@ const Settings: React.FC = () => {
     }
   };
 
-  if (statusLoading || policyLoading) {
+  if (statusLoading || policyLoading || maintenanceLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -108,26 +109,26 @@ const Settings: React.FC = () => {
                    <span className={`inline-block w-2 h-2 rounded-full ${systemStatus?.status === 'healthy' ? 'bg-green-500' : 'bg-red-500'}`}></span>
                    Status: <span className="uppercase font-medium">{systemStatus?.status}</span>
                    <span className="mx-1">•</span>
-                   <span>DB: {systemStatus?.database}</span>
+                   <span>DB: {systemStatus?.services?.database || 'unknown'}</span>
                    <span className="mx-1">•</span>
-                   <span>Redis: {systemStatus?.redis}</span>
+                   <span>Redis: {systemStatus?.services?.redis || 'unknown'}</span>
                 </div>
              </div>
           </div>
           <div className="flex items-center gap-3">
              <div className="flex items-center">
-                <span className={`mr-2 text-sm font-medium ${systemStatus?.maintenanceMode ? 'text-orange-600' : 'text-gray-500'}`}>
-                  {systemStatus?.maintenanceMode ? t('sys.maintenance_on') : t('sys.maintenance_off')}
+                <span className={`mr-2 text-sm font-medium ${maintenanceStatus?.enabled ? 'text-orange-600' : 'text-gray-500'}`}>
+                  {maintenanceStatus?.enabled ? t('sys.maintenance_on') : t('sys.maintenance_off')}
                 </span>
-                <button 
+                <button
                   onClick={toggleMaintenance}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    systemStatus?.maintenanceMode ? 'bg-orange-600' : 'bg-gray-200'
+                    maintenanceStatus?.enabled ? 'bg-orange-600' : 'bg-gray-200'
                   }`}
                 >
                   <span
                     className={`${
-                      systemStatus?.maintenanceMode ? 'translate-x-6' : 'translate-x-1'
+                      maintenanceStatus?.enabled ? 'translate-x-6' : 'translate-x-1'
                     } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                   />
                 </button>

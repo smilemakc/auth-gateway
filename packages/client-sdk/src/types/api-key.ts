@@ -6,14 +6,14 @@ import type { APIKeyScope, TimestampedEntity } from './common';
 
 /** API Key entity */
 export interface APIKey extends TimestampedEntity {
-  userId: string;
+  user_id: string;
   name: string;
   description?: string;
-  keyPrefix: string;
+  key_prefix: string;
   scopes: APIKeyScope[];
-  isActive: boolean;
-  lastUsedAt?: string;
-  expiresAt?: string;
+  is_active: boolean;
+  last_used_at?: string;
+  expires_at?: string;
 }
 
 /** Create API key request */
@@ -21,14 +21,14 @@ export interface CreateAPIKeyRequest {
   name: string;
   description?: string;
   scopes: APIKeyScope[];
-  expiresAt?: string;
+  expires_at?: string;
 }
 
 /** Create API key response */
 export interface CreateAPIKeyResponse {
-  apiKey: APIKey;
+  api_key: APIKey;
   /** The plain API key - only returned once at creation */
-  plainKey: string;
+  plain_key: string;
 }
 
 /** Update API key request */
@@ -36,17 +36,17 @@ export interface UpdateAPIKeyRequest {
   name?: string;
   description?: string;
   scopes?: APIKeyScope[];
-  isActive?: boolean;
+  is_active?: boolean;
 }
 
 /** List API keys response */
 export interface ListAPIKeysResponse {
-  apiKeys: APIKey[];
+  api_keys: APIKey[];
   total: number;
 }
 
 /** Admin API key response with user info */
 export interface AdminAPIKeyResponse extends APIKey {
-  userEmail?: string;
-  userName?: string;
+  user_email?: string;
+  user_name?: string;
 }

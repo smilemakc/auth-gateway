@@ -76,6 +76,14 @@ export function useUpdateBranding() {
   });
 }
 
+export function useMaintenanceModeStatus() {
+  return useQuery({
+    queryKey: queryKeys.settings.maintenance,
+    queryFn: () => apiClient.admin.system.getMaintenanceMode(),
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
+}
+
 export function useMaintenanceMode() {
   const queryClient = useQueryClient();
 
@@ -86,6 +94,7 @@ export function useMaintenanceMode() {
         : apiClient.admin.system.disableMaintenanceMode(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.settings.system });
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.maintenance });
     },
   });
 }

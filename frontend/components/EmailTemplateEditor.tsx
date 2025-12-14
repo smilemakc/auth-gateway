@@ -23,7 +23,7 @@ const EmailTemplateEditor: React.FC = () => {
       if (data) {
         setTemplate(data);
         setSubject(data.subject);
-        setBodyHtml(data.bodyHtml);
+        setBodyHtml(data.html_body);
       } else {
         navigate('/settings/email-templates');
       }
@@ -34,7 +34,7 @@ const EmailTemplateEditor: React.FC = () => {
     if (id) {
       setSaving(true);
       setTimeout(() => {
-        updateEmailTemplate(id, { subject, bodyHtml });
+        updateEmailTemplate(id, { subject, html_body: bodyHtml });
         setSaving(false);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);

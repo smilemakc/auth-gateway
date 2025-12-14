@@ -55,7 +55,7 @@ export class AdminBrandingService extends BaseService {
    * @returns Updated branding settings
    */
   async updateLogo(logoUrl: string): Promise<BrandingSettings> {
-    return this.update({ logoUrl });
+    return this.update({ logo_url: logoUrl });
   }
 
   /**
@@ -64,7 +64,7 @@ export class AdminBrandingService extends BaseService {
    * @returns Updated branding settings
    */
   async updateFavicon(faviconUrl: string): Promise<BrandingSettings> {
-    return this.update({ faviconUrl });
+    return this.update({ favicon_url: faviconUrl });
   }
 
   /**
@@ -73,9 +73,9 @@ export class AdminBrandingService extends BaseService {
    * @returns Updated branding settings
    */
   async updateTheme(theme: {
-    primaryColor?: string;
-    secondaryColor?: string;
-    backgroundColor?: string;
+    primary_color?: string;
+    secondary_color?: string;
+    background_color?: string;
   }): Promise<BrandingSettings> {
     return this.update(theme);
   }
@@ -86,10 +86,10 @@ export class AdminBrandingService extends BaseService {
    * @returns Updated branding settings
    */
   async updateCompanyInfo(info: {
-    companyName?: string;
-    supportEmail?: string;
-    termsUrl?: string;
-    privacyUrl?: string;
+    company_name?: string;
+    support_email?: string;
+    terms_url?: string;
+    privacy_url?: string;
   }): Promise<BrandingSettings> {
     return this.update(info);
   }

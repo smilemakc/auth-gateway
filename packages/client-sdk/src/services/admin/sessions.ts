@@ -31,7 +31,7 @@ export class AdminSessionsService extends BaseService {
         sessions: response.data,
         total: response.data.length,
         page,
-        perPage,
+        per_page: perPage,
       };
     }
 

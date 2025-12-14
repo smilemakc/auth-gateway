@@ -196,7 +196,7 @@ export class AdminRBACService extends BaseService {
    */
   async getCustomRoles(): Promise<Role[]> {
     const roles = await this.listRoles();
-    return roles.filter((r) => !r.isSystemRole);
+    return roles.filter((r) => !r.is_system_role);
   }
 
   /**
@@ -205,6 +205,6 @@ export class AdminRBACService extends BaseService {
    */
   async getSystemRoles(): Promise<Role[]> {
     const roles = await this.listRoles();
-    return roles.filter((r) => r.isSystemRole);
+    return roles.filter((r) => r.is_system_role);
   }
 }

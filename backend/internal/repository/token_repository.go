@@ -60,7 +60,7 @@ func (r *TokenRepository) GetRefreshToken(ctx context.Context, tokenHash string)
 func (r *TokenRepository) RevokeRefreshToken(ctx context.Context, tokenHash string) error {
 	result, err := r.db.NewUpdate().
 		Model((*models.RefreshToken)(nil)).
-		Set("revoked_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("revoked_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("token_hash = ?", tokenHash).
 		Exec(ctx)
 
@@ -84,7 +84,7 @@ func (r *TokenRepository) RevokeRefreshToken(ctx context.Context, tokenHash stri
 func (r *TokenRepository) RevokeAllUserTokens(ctx context.Context, userID uuid.UUID) error {
 	_, err := r.db.NewUpdate().
 		Model((*models.RefreshToken)(nil)).
-		Set("revoked_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("revoked_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("user_id = ?", userID).
 		Where("revoked_at IS NULL").
 		Exec(ctx)
@@ -100,7 +100,7 @@ func (r *TokenRepository) RevokeAllUserTokens(ctx context.Context, userID uuid.U
 func (r *TokenRepository) DeleteExpiredRefreshTokens(ctx context.Context) error {
 	_, err := r.db.NewDelete().
 		Model((*models.RefreshToken)(nil)).
-		Where("expires_at < ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("expires_at < ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Exec(ctx)
 
 	if err != nil {
@@ -134,7 +134,7 @@ func (r *TokenRepository) IsBlacklisted(ctx context.Context, tokenHash string) (
 	exists, err := r.db.NewSelect().
 		Model((*models.TokenBlacklist)(nil)).
 		Where("token_hash = ?", tokenHash).
-		Where("expires_at > ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("expires_at > ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Exists(ctx)
 
 	if err != nil {
@@ -148,7 +148,7 @@ func (r *TokenRepository) IsBlacklisted(ctx context.Context, tokenHash string) (
 func (r *TokenRepository) DeleteExpiredBlacklistedTokens(ctx context.Context) error {
 	_, err := r.db.NewDelete().
 		Model((*models.TokenBlacklist)(nil)).
-		Where("expires_at < ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("expires_at < ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Exec(ctx)
 
 	if err != nil {

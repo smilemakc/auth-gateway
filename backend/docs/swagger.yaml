@@ -462,6 +462,23 @@ definitions:
     - new_password
     - old_password
     type: object
+  CompletePasswordlessRegistrationRequest:
+    properties:
+      code:
+        description: 6-digit OTP code received via email or SMS
+        example: "123456"
+        type: string
+      email:
+        description: User's email address (must match init request)
+        example: user@example.com
+        type: string
+      phone:
+        description: User's phone number (must match init request)
+        example: "+1234567890"
+        type: string
+    required:
+    - code
+    type: object
   CreateAPIKeyRequest:
     properties:
       description:
@@ -501,6 +518,53 @@ definitions:
         description: Plain text API key (shown only once at creation)
         example: agw_1234567890abcdef1234567890abcdef
         type: string
+    type: object
+  CreateEmailTemplateRequest:
+    properties:
+      html_body:
+        description: HTML email body
+        example: <p>Hello {{username}}, your verification code is {{code}}</p>
+        type: string
+      name:
+        description: Template name (max 100 characters)
+        example: Email Verification Template
+        maxLength: 100
+        type: string
+      subject:
+        description: Email subject line (max 200 characters)
+        example: Verify your email address
+        maxLength: 200
+        type: string
+      text_body:
+        description: Plain text email body
+        example: Hello {{username}}, your verification code is {{code}}
+        type: string
+      type:
+        description: 'Template type: verification, password_reset, welcome, 2fa, or
+          custom'
+        enum:
+        - verification
+        - password_reset
+        - welcome
+        - 2fa
+        - custom
+        example: verification
+        type: string
+      variables:
+        description: Available variable names for template
+        example:
+        - username
+        - email
+        - code
+        - expiry_minutes
+        items:
+          type: string
+        type: array
+    required:
+    - html_body
+    - name
+    - subject
+    - type
     type: object
   CreateIPFilterRequest:
     properties:
@@ -653,6 +717,45 @@ definitions:
     - password
     - username
     type: object
+  CreateWebhookRequest:
+    properties:
+      events:
+        description: List of events to subscribe to
+        example:
+        - user.created
+        - user.updated
+        - user.login
+        items:
+          type: string
+        minItems: 1
+        type: array
+      headers:
+        additionalProperties:
+          type: string
+        description: Custom HTTP headers to send with webhook requests
+        example:
+          Authorization: Bearer token123
+          X-Custom-Header: value
+        type: object
+      name:
+        description: Webhook name (max 100 characters)
+        example: User Events Webhook
+        maxLength: 100
+        type: string
+      retry_config:
+        allOf:
+        - $ref: '#/definitions/RetryConfig'
+        description: Retry configuration for failed deliveries
+      url:
+        description: Webhook URL endpoint (max 500 characters)
+        example: https://api.example.com/webhooks/auth
+        maxLength: 500
+        type: string
+    required:
+    - events
+    - name
+    - url
+    type: object
   DatabaseConnectionInfo:
     properties:
       idle:
@@ -667,6 +770,44 @@ definitions:
         type: integer
       wait_duration_ms:
         type: integer
+    type: object
+  EmailTemplate:
+    properties:
+      created_at:
+        type: string
+      html_body:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        maxLength: 100
+        type: string
+      subject:
+        maxLength: 200
+        type: string
+      text_body:
+        type: string
+      type:
+        enum:
+        - verification
+        - password_reset
+        - welcome
+        - 2fa
+        type: string
+      updated_at:
+        type: string
+      variables:
+        description: Available variables as JSON array
+        items:
+          type: integer
+        type: array
+    required:
+    - html_body
+    - name
+    - subject
+    - type
     type: object
   ErrorResponse:
     properties:
@@ -808,6 +949,27 @@ definitions:
     - filter_type
     - ip_cidr
     type: object
+  InitPasswordlessRegistrationRequest:
+    properties:
+      email:
+        description: User's email address (optional if phone is provided)
+        example: user@example.com
+        type: string
+      full_name:
+        description: User's full name (optional)
+        example: John Doe
+        type: string
+      phone:
+        description: User's phone number (optional if email is provided)
+        example: "+1234567890"
+        type: string
+      username:
+        description: Optional username (will be auto-generated if not provided)
+        example: johndoe
+        maxLength: 100
+        minLength: 3
+        type: string
+    type: object
   ListAPIKeysResponse:
     properties:
       api_keys:
@@ -859,6 +1021,13 @@ definitions:
         example: ""
         type: string
     type: object
+  MessageResponse:
+    properties:
+      message:
+        description: Response message
+        example: Operation completed successfully
+        type: string
+    type: object
   OAuthLoginResponse:
     properties:
       access_token:
@@ -895,12 +1064,14 @@ definitions:
     - password_reset
     - 2fa
     - login
+    - registration
     type: string
     x-enum-varnames:
     - OTPTypeVerification
     - OTPTypePasswordReset
     - OTPType2FA
     - OTPTypeLogin
+    - OTPTypeRegistration
   Permission:
     properties:
       action:
@@ -955,6 +1126,19 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  PreviewEmailTemplateRequest:
+    type: object
+  PreviewEmailTemplateResponse:
+    properties:
+      rendered_html:
+        description: Rendered HTML content
+        example: <p>Hello John Doe</p>
+        type: string
+      rendered_text:
+        description: Rendered text content
+        example: Hello John Doe
+        type: string
     type: object
   PublicBrandingResponse:
     properties:
@@ -1037,6 +1221,22 @@ definitions:
         type: array
       resource:
         type: string
+    type: object
+  RetryConfig:
+    properties:
+      backoff_seconds:
+        description: Delay in seconds for each retry attempt
+        example:
+        - 60
+        - 300
+        - 900
+        items:
+          type: integer
+        type: array
+      max_attempts:
+        description: Maximum number of retry attempts
+        example: 3
+        type: integer
     type: object
   Role:
     properties:
@@ -1328,6 +1528,8 @@ definitions:
       uptime_seconds:
         type: integer
     type: object
+  TestWebhookRequest:
+    type: object
   TwoFactorDisableRequest:
     properties:
       code:
@@ -1482,6 +1684,39 @@ definitions:
         maxLength: 500
         type: string
     type: object
+  UpdateEmailTemplateRequest:
+    properties:
+      html_body:
+        description: HTML email body
+        example: <p>Updated HTML content</p>
+        type: string
+      is_active:
+        description: Whether the template is active
+        example: true
+        type: boolean
+      name:
+        description: Template name (max 100 characters)
+        example: Updated Template Name
+        maxLength: 100
+        type: string
+      subject:
+        description: Email subject line (max 200 characters)
+        example: Updated subject
+        maxLength: 200
+        type: string
+      text_body:
+        description: Plain text email body
+        example: Updated text content
+        type: string
+      variables:
+        description: Available variable names for template
+        example:
+        - username
+        - email
+        items:
+          type: string
+        type: array
+    type: object
   UpdateRoleRequest:
     properties:
       description:
@@ -1543,6 +1778,43 @@ definitions:
       profile_picture_url:
         description: URL to user's profile picture
         example: https://example.com/avatars/user.jpg
+        type: string
+    type: object
+  UpdateWebhookRequest:
+    properties:
+      events:
+        description: List of events to subscribe to
+        example:
+        - user.created
+        - user.deleted
+        items:
+          type: string
+        type: array
+      headers:
+        additionalProperties:
+          type: string
+        description: Custom HTTP headers to send with webhook requests
+        example:
+          Authorization: Bearer newtoken
+          X-Custom: value
+        type: object
+      is_active:
+        description: Whether the webhook is active
+        example: true
+        type: boolean
+      name:
+        description: Webhook name (max 100 characters)
+        example: Updated Webhook Name
+        maxLength: 100
+        type: string
+      retry_config:
+        allOf:
+        - $ref: '#/definitions/RetryConfig'
+        description: Retry configuration for failed deliveries
+      url:
+        description: Webhook URL endpoint (max 500 characters)
+        example: https://api.example.com/webhooks/updated
+        maxLength: 500
         type: string
     type: object
   User:
@@ -1694,6 +1966,168 @@ definitions:
         description: Whether the OTP is valid
         example: true
         type: boolean
+    type: object
+  Webhook:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      events:
+        description: JSON array of event types
+        items:
+          type: integer
+        type: array
+      headers:
+        description: Custom headers as JSON object
+        items:
+          type: integer
+        type: array
+      id:
+        type: string
+      is_active:
+        type: boolean
+      last_triggered_at:
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      retry_config:
+        items:
+          type: integer
+        type: array
+      secret_key:
+        description: Only sent on creation
+        type: string
+      updated_at:
+        type: string
+      url:
+        maxLength: 500
+        type: string
+    required:
+    - name
+    - url
+    type: object
+  WebhookDelivery:
+    properties:
+      attempts:
+        type: integer
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      event_type:
+        type: string
+      http_status_code:
+        type: integer
+      id:
+        type: string
+      next_retry_at:
+        type: string
+      payload:
+        items:
+          type: integer
+        type: array
+      response_body:
+        type: string
+      status:
+        description: '"pending", "success", "failed"'
+        type: string
+      webhook_id:
+        type: string
+    type: object
+  WebhookDeliveryListResponse:
+    properties:
+      deliveries:
+        description: List of webhook deliveries
+        items:
+          $ref: '#/definitions/WebhookDelivery'
+        type: array
+      page:
+        description: Current page number
+        example: 1
+        type: integer
+      per_page:
+        description: Number of items per page
+        example: 20
+        type: integer
+      total:
+        description: Total number of deliveries
+        example: 150
+        type: integer
+      total_pages:
+        description: Total number of pages
+        example: 8
+        type: integer
+    type: object
+  WebhookListResponse:
+    properties:
+      page:
+        description: Current page number
+        example: 1
+        type: integer
+      per_page:
+        description: Number of items per page
+        example: 20
+        type: integer
+      total:
+        description: Total number of webhooks
+        example: 15
+        type: integer
+      total_pages:
+        description: Total number of pages
+        example: 1
+        type: integer
+      webhooks:
+        description: List of webhooks
+        items:
+          $ref: '#/definitions/WebhookWithCreator'
+        type: array
+    type: object
+  WebhookWithCreator:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      creator_email:
+        type: string
+      creator_username:
+        type: string
+      events:
+        description: JSON array of event types
+        items:
+          type: integer
+        type: array
+      headers:
+        description: Custom headers as JSON object
+        items:
+          type: integer
+        type: array
+      id:
+        type: string
+      is_active:
+        type: boolean
+      last_triggered_at:
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      retry_config:
+        items:
+          type: integer
+        type: array
+      secret_key:
+        description: Only sent on creation
+        type: string
+      updated_at:
+        type: string
+      url:
+        maxLength: 500
+        type: string
+    required:
+    - name
+    - url
     type: object
 info:
   contact: {}
@@ -2627,6 +3061,287 @@ paths:
       summary: Set maintenance mode (admin only)
       tags:
       - Admin - System
+  /api/admin/templates:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all email templates
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              templates:
+                items:
+                  $ref: '#/definitions/EmailTemplate'
+                type: array
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all email templates
+      tags:
+      - Email Templates
+    post:
+      consumes:
+      - application/json
+      description: Create a new email template for customized emails
+      parameters:
+      - description: Template data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateEmailTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/EmailTemplate'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new email template
+      tags:
+      - Email Templates
+  /api/admin/templates/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an email template by ID
+      parameters:
+      - description: Template ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete an email template
+      tags:
+      - Email Templates
+    get:
+      consumes:
+      - application/json
+      description: Get a specific email template by its ID
+      parameters:
+      - description: Template ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/EmailTemplate'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get email template by ID
+      tags:
+      - Email Templates
+    put:
+      consumes:
+      - application/json
+      description: Update an existing email template
+      parameters:
+      - description: Template ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Template update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateEmailTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update an email template
+      tags:
+      - Email Templates
+  /api/admin/templates/preview:
+    post:
+      consumes:
+      - application/json
+      description: Render a template with sample data for preview
+      parameters:
+      - description: Preview data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/PreviewEmailTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PreviewEmailTemplateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Preview an email template
+      tags:
+      - Email Templates
+  /api/admin/templates/types:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all available email template types
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              types:
+                items:
+                  type: string
+                type: array
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get available template types
+      tags:
+      - Email Templates
+  /api/admin/templates/variables/{type}:
+    get:
+      consumes:
+      - application/json
+      description: Get the list of default variables available for a specific template
+        type
+      parameters:
+      - description: Template type
+        in: path
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              variables:
+                items:
+                  type: string
+                type: array
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get default variables for a template type
+      tags:
+      - Email Templates
   /api/admin/users:
     get:
       description: Get paginated list of all users (admin only)
@@ -2930,6 +3645,319 @@ paths:
       summary: Remove role from user
       tags:
       - Admin - Management
+  /api/admin/webhooks:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of all webhooks
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/WebhookListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all webhooks
+      tags:
+      - Webhooks
+    post:
+      consumes:
+      - application/json
+      description: Create a new webhook for receiving event notifications
+      parameters:
+      - description: Webhook data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateWebhookRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              secret_key:
+                type: string
+              webhook:
+                $ref: '#/definitions/Webhook'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new webhook
+      tags:
+      - Webhooks
+  /api/admin/webhooks/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a webhook by ID
+      parameters:
+      - description: Webhook ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a webhook
+      tags:
+      - Webhooks
+    get:
+      consumes:
+      - application/json
+      description: Get a specific webhook by its ID
+      parameters:
+      - description: Webhook ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Webhook'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get webhook by ID
+      tags:
+      - Webhooks
+    put:
+      consumes:
+      - application/json
+      description: Update an existing webhook configuration
+      parameters:
+      - description: Webhook ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Webhook update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateWebhookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a webhook
+      tags:
+      - Webhooks
+  /api/admin/webhooks/{id}/deliveries:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of webhook delivery attempts
+      parameters:
+      - description: Webhook ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/WebhookDeliveryListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List webhook deliveries
+      tags:
+      - Webhooks
+  /api/admin/webhooks/{id}/test:
+    post:
+      consumes:
+      - application/json
+      description: Send a test event to a webhook
+      parameters:
+      - description: Webhook ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Test data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/TestWebhookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Test a webhook
+      tags:
+      - Webhooks
+  /api/admin/webhooks/events:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all available webhook event types
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              events:
+                items:
+                  type: string
+                type: array
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get available webhook events
+      tags:
+      - Webhooks
   /api/api-keys:
     get:
       description: Get all API keys belonging to the authenticated user
@@ -3465,6 +4493,74 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Register a new user
+      tags:
+      - Authentication
+  /api/auth/signup/phone:
+    post:
+      consumes:
+      - application/json
+      description: Start two-step registration without password. Sends OTP to email
+        or phone.
+      parameters:
+      - description: Registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/InitPasswordlessRegistrationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Initiate passwordless registration
+      tags:
+      - Authentication
+  /api/auth/signup/phone/verify:
+    post:
+      consumes:
+      - application/json
+      description: Complete registration by verifying OTP code. Creates user account
+        and returns tokens.
+      parameters:
+      - description: OTP verification
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CompletePasswordlessRegistrationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Complete passwordless registration
       tags:
       - Authentication
   /api/auth/verify/email:

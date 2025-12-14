@@ -5,11 +5,11 @@
 /** Session entity */
 export interface Session {
   id: string;
-  ipAddress: string;
-  userAgent: string;
-  createdAt: string;
-  lastActivity: string;
-  isCurrent?: boolean;
+  ip_address: string;
+  user_agent: string;
+  created_at: string;
+  last_activity: string;
+  is_current?: boolean;
 }
 
 /** Session list response */
@@ -17,15 +17,15 @@ export interface SessionListResponse {
   sessions: Session[];
   total: number;
   page: number;
-  perPage?: number;
+  per_page?: number;
 }
 
 /** Session statistics (admin) */
 export interface SessionStats {
-  totalActive: number;
-  totalToday: number;
-  averageSessionDuration: number;
-  topLocations: SessionLocationStats[];
+  total_active: number;
+  total_today: number;
+  average_session_duration: number;
+  top_locations: SessionLocationStats[];
 }
 
 /** Session location statistics */

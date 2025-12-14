@@ -28,7 +28,7 @@ const IpSecurity: React.FC = () => {
 
     createIpRule({
       type: activeTab,
-      ipAddress: newIp,
+      ip_address: newIp,
       description: newDescription
     });
 
@@ -45,8 +45,8 @@ const IpSecurity: React.FC = () => {
     }
   };
 
-  const filteredRules = rules.filter(r => 
-    r.ipAddress.includes(searchTerm) || 
+  const filteredRules = rules.filter(r =>
+    r.ip_address.includes(searchTerm) ||
     r.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -133,19 +133,19 @@ const IpSecurity: React.FC = () => {
                 filteredRules.map((rule) => (
                   <tr key={rule.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
-                      {rule.ipAddress}
+                      {rule.ip_address}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {rule.description || <span className="text-gray-400 italic">No description</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {rule.createdBy}
+                      {rule.created_by}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(rule.createdAt).toLocaleDateString()}
+                      {new Date(rule.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button 
+                      <button
                         onClick={() => handleDelete(rule.id)}
                         className="text-gray-400 hover:text-red-600 transition-colors"
                       >

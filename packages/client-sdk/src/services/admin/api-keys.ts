@@ -9,10 +9,10 @@ import { BaseService } from '../base';
 
 /** Admin API key list response */
 interface AdminAPIKeyListResponse {
-  apiKeys: AdminAPIKeyResponse[];
+  api_keys: AdminAPIKeyResponse[];
   total: number;
   page: number;
-  pageSize: number;
+  page_size: number;
 }
 
 /** Admin API Keys service for system-wide API key management */
@@ -59,7 +59,7 @@ export class AdminAPIKeysService extends BaseService {
 
     while (hasMore) {
       const response = await this.list(page, 100);
-      const userKeys = response.apiKeys.filter((k) => k.userId === userId);
+      const userKeys = response.api_keys.filter((k) => k.user_id === userId);
       allKeys.push(...userKeys);
       hasMore = page * 100 < response.total;
       page++;
@@ -79,7 +79,7 @@ export class AdminAPIKeysService extends BaseService {
 
     while (hasMore) {
       const response = await this.list(page, 100);
-      const activeKeys = response.apiKeys.filter((k) => k.isActive);
+      const activeKeys = response.api_keys.filter((k) => k.is_active);
       allKeys.push(...activeKeys);
       hasMore = page * 100 < response.total;
       page++;
@@ -95,7 +95,7 @@ export class AdminAPIKeysService extends BaseService {
    */
   async revokeAllForUser(userId: string): Promise<number> {
     const userKeys = await this.getByUser(userId);
-    const activeKeys = userKeys.filter((k) => k.isActive);
+    const activeKeys = userKeys.filter((k) => k.is_active);
 
     for (const key of activeKeys) {
       await this.revoke(key.id);

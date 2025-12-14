@@ -16,10 +16,10 @@ const OAuthProviderEdit: React.FC = () => {
   const [showSecret, setShowSecret] = useState(false);
   const [formData, setFormData] = useState<Partial<OAuthProviderConfig>>({
     provider: 'google',
-    clientId: '',
-    clientSecret: '',
-    redirectUris: [''],
-    isEnabled: true
+    client_id: '',
+    client_secret: '',
+    redirect_uris: [''],
+    is_enabled: true
   });
 
   useEffect(() => {
@@ -44,20 +44,20 @@ const OAuthProviderEdit: React.FC = () => {
   };
 
   const handleArrayChange = (index: number, value: string) => {
-    const newUris = [...(formData.redirectUris || [])];
+    const newUris = [...(formData.redirect_uris || [])];
     newUris[index] = value;
-    setFormData(prev => ({ ...prev, redirectUris: newUris }));
+    setFormData(prev => ({ ...prev, redirect_uris: newUris }));
   };
 
   const addUri = () => {
-    setFormData(prev => ({ ...prev, redirectUris: [...(prev.redirectUris || []), ''] }));
+    setFormData(prev => ({ ...prev, redirect_uris: [...(prev.redirect_uris || []), ''] }));
   };
 
   const removeUri = (index: number) => {
-    const newUris = [...(formData.redirectUris || [])];
+    const newUris = [...(formData.redirect_uris || [])];
     if (newUris.length > 1) {
       newUris.splice(index, 1);
-      setFormData(prev => ({ ...prev, redirectUris: newUris }));
+      setFormData(prev => ({ ...prev, redirect_uris: newUris }));
     }
   };
 
@@ -70,7 +70,7 @@ const OAuthProviderEdit: React.FC = () => {
       if (isEditMode && id) {
         updateOAuthProvider(id, formData);
       } else {
-        createOAuthProvider(formData as Omit<OAuthProviderConfig, 'id' | 'createdAt'>);
+        createOAuthProvider(formData as Omit<OAuthProviderConfig, 'id' | 'created_at' | 'updated_at'>);
       }
       setLoading(false);
       navigate('/oauth');
@@ -133,12 +133,12 @@ const OAuthProviderEdit: React.FC = () => {
           {/* Credentials */}
           <div className="grid grid-cols-1 gap-6">
             <div>
-              <label htmlFor="clientId" className="block text-sm font-medium text-gray-700 mb-1">{t('oauth.client_id')}</label>
-              <input 
-                type="text" 
-                id="clientId"
-                name="clientId"
-                value={formData.clientId}
+              <label htmlFor="client_id" className="block text-sm font-medium text-gray-700 mb-1">{t('oauth.client_id')}</label>
+              <input
+                type="text"
+                id="client_id"
+                name="client_id"
+                value={formData.client_id}
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono text-sm"
@@ -146,19 +146,19 @@ const OAuthProviderEdit: React.FC = () => {
               />
             </div>
             <div>
-              <label htmlFor="clientSecret" className="block text-sm font-medium text-gray-700 mb-1">{t('oauth.client_secret')}</label>
+              <label htmlFor="client_secret" className="block text-sm font-medium text-gray-700 mb-1">{t('oauth.client_secret')}</label>
               <div className="relative">
-                <input 
+                <input
                   type={showSecret ? "text" : "password"}
-                  id="clientSecret"
-                  name="clientSecret"
-                  value={formData.clientSecret}
+                  id="client_secret"
+                  name="client_secret"
+                  value={formData.client_secret}
                   onChange={handleChange}
                   required
                   className="w-full pl-4 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono text-sm"
                   placeholder="e.g. GOCSPX-..."
                 />
-                <button 
+                <button
                   type="button"
                   onClick={() => setShowSecret(!showSecret)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
@@ -173,18 +173,18 @@ const OAuthProviderEdit: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">{t('oauth.redirect_uris')}</label>
             <div className="space-y-3">
-              {formData.redirectUris?.map((uri, index) => (
+              {formData.redirect_uris?.map((uri, index) => (
                 <div key={index} className="flex gap-2">
-                  <input 
-                    type="url" 
+                  <input
+                    type="url"
                     value={uri}
                     onChange={(e) => handleArrayChange(index, e.target.value)}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-mono text-sm"
                     placeholder="https://your-app.com/auth/callback"
                   />
-                  {formData.redirectUris!.length > 1 && (
-                    <button 
-                      type="button" 
+                  {formData.redirect_uris!.length > 1 && (
+                    <button
+                      type="button"
                       onClick={() => removeUri(index)}
                       className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
                     >
@@ -206,16 +206,16 @@ const OAuthProviderEdit: React.FC = () => {
           {/* Status */}
           <div className="pt-6 border-t border-gray-100">
              <div className="flex items-center gap-3">
-               <input 
-                  type="checkbox" 
-                  id="isEnabled" 
-                  name="isEnabled"
-                  checked={formData.isEnabled}
+               <input
+                  type="checkbox"
+                  id="is_enabled"
+                  name="is_enabled"
+                  checked={formData.is_enabled}
                   onChange={handleChange}
                   className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
                />
                <div>
-                 <label htmlFor="isEnabled" className="font-medium text-gray-900 block">{t('oauth.enable')}</label>
+                 <label htmlFor="is_enabled" className="font-medium text-gray-900 block">{t('oauth.enable')}</label>
                </div>
              </div>
           </div>

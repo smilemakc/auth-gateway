@@ -45,7 +45,7 @@ func (r *OTPRepository) GetByEmailAndType(ctx context.Context, email string, otp
 		Where("email = ?", email).
 		Where("type = ?", otpType).
 		Where("used = ?", false).
-		Where("expires_at > ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("expires_at > ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Order("created_at DESC").
 		Limit(1).
 		Scan(ctx)
@@ -69,7 +69,7 @@ func (r *OTPRepository) GetByPhoneAndType(ctx context.Context, phone string, otp
 		Where("phone = ?", phone).
 		Where("type = ?", otpType).
 		Where("used = ?", false).
-		Where("expires_at > ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("expires_at > ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Order("created_at DESC").
 		Limit(1).
 		Scan(ctx)

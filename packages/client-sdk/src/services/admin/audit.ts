@@ -53,7 +53,7 @@ export class AdminAuditService extends BaseService {
         logs: response.data,
         total: response.data.length,
         page: options.page ?? 1,
-        pageSize: options.pageSize ?? 50,
+        page_size: options.pageSize ?? 50,
       };
     }
 
@@ -139,7 +139,7 @@ export class AdminAuditService extends BaseService {
     });
 
     return response.logs
-      .filter((log) => log.ipAddress === ipAddress)
+      .filter((log) => log.ip_address === ipAddress)
       .slice(0, pageSize);
   }
 }

@@ -85,9 +85,9 @@ const Webhooks: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <code className="text-xs font-mono bg-gray-100 px-2 py-1 rounded border border-gray-200 text-gray-600 w-24 truncate">
-                        {revealedSecrets.includes(webhook.id) ? webhook.secret : 'whsec_••••••••'}
+                        {revealedSecrets.includes(webhook.id) ? webhook.secret_key : 'whsec_••••••••'}
                       </code>
-                      <button 
+                      <button
                         onClick={() => toggleSecret(webhook.id)}
                         className="text-gray-400 hover:text-gray-600"
                       >
@@ -97,19 +97,19 @@ const Webhooks: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                       {webhook.isActive 
+                       {webhook.is_active
                         ? <span className="flex items-center text-green-700 text-xs font-medium bg-green-50 px-2 py-1 rounded-full"><CheckCircle size={12} className="mr-1"/> {t('users.active')}</span>
                         : <span className="flex items-center text-gray-600 text-xs font-medium bg-gray-100 px-2 py-1 rounded-full"><XCircle size={12} className="mr-1"/> Disabled</span>
                        }
-                       {webhook.failureCount > 0 && (
-                         <span className="flex items-center text-red-700 text-xs font-medium bg-red-50 px-2 py-1 rounded-full" title={`${webhook.failureCount} recent failures`}>
-                            <Activity size={12} className="mr-1"/> {webhook.failureCount} failed
+                       {webhook.failure_count > 0 && (
+                         <span className="flex items-center text-red-700 text-xs font-medium bg-red-50 px-2 py-1 rounded-full" title={`${webhook.failure_count} recent failures`}>
+                            <Activity size={12} className="mr-1"/> {webhook.failure_count} failed
                          </span>
                        )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {webhook.lastTriggeredAt ? new Date(webhook.lastTriggeredAt).toLocaleString() : '-'}
+                    {webhook.last_triggered_at ? new Date(webhook.last_triggered_at).toLocaleString() : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">

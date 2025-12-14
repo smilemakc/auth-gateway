@@ -104,7 +104,7 @@ func (r *WebhookRepository) UpdateWebhook(ctx context.Context, id uuid.UUID, nam
 		Set("events = ?", events).
 		Set("headers = ?", headers).
 		Set("is_active = ?", isActive).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", id).
 		Exec(ctx)
 
@@ -128,7 +128,7 @@ func (r *WebhookRepository) UpdateWebhook(ctx context.Context, id uuid.UUID, nam
 func (r *WebhookRepository) UpdateWebhookLastTriggered(ctx context.Context, id uuid.UUID) error {
 	_, err := r.db.NewUpdate().
 		Model((*models.Webhook)(nil)).
-		Set("last_triggered_at = ?", bun.Ident("NOW()")).
+		Set("last_triggered_at = ?", bun.Safe("NOW()")).
 		Where("id = ?", id).
 		Exec(ctx)
 
@@ -225,7 +225,7 @@ func (r *WebhookRepository) GetPendingDeliveries(ctx context.Context, limit int)
 		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
 				Where("next_retry_at IS NULL").
-				WhereOr("next_retry_at <= ?", bun.Ident("NOW()"))
+				WhereOr("next_retry_at <= ?", bun.Safe("NOW()"))
 		}).
 		Order("created_at").
 		Limit(limit).
@@ -247,7 +247,7 @@ func (r *WebhookRepository) UpdateDeliveryStatus(ctx context.Context, id uuid.UU
 	if nextRetry != nil {
 		query = query.Set("next_retry_at = ?", nextRetry)
 	} else {
-		query = query.Set("completed_at = ?", bun.Ident("NOW()"))
+		query = query.Set("completed_at = ?", bun.Safe("NOW()"))
 	}
 
 	_, err := query.Exec(ctx)

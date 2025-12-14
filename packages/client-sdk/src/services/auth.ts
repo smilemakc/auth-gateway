@@ -58,8 +58,8 @@ export class AuthService extends BaseService {
     });
 
     // Check if 2FA is required
-    if (response.data.requires2FA && response.data.twoFactorToken) {
-      throw new TwoFactorRequiredError(response.data.twoFactorToken);
+    if (response.data.requires_2fa && response.data.two_factor_token) {
+      throw new TwoFactorRequiredError(response.data.two_factor_token);
     }
 
     // Store tokens
@@ -83,7 +83,7 @@ export class AuthService extends BaseService {
 
     const response = await this.http.post<AuthResponse>(
       '/auth/refresh',
-      { refreshToken: token } satisfies RefreshTokenRequest,
+      { refresh_token: token } satisfies RefreshTokenRequest,
       { skipAuth: true }
     );
 
@@ -100,8 +100,8 @@ export class AuthService extends BaseService {
   }> {
     const result = await this.refreshToken();
     return {
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
+      accessToken: result.access_token,
+      refreshToken: result.refresh_token,
     };
   }
 
@@ -251,7 +251,7 @@ export class AuthService extends BaseService {
   /** Store tokens from auth response */
   private async storeTokens(response: AuthResponse): Promise<void> {
     const tokenStorage = this.http.getTokenStorage();
-    await tokenStorage.setAccessToken(response.accessToken);
-    await tokenStorage.setRefreshToken(response.refreshToken);
+    await tokenStorage.setAccessToken(response.access_token);
+    await tokenStorage.setRefreshToken(response.refresh_token);
   }
 }

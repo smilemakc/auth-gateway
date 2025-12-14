@@ -18,14 +18,13 @@ export function useUserSessions(userId: string, page: number = 1, pageSize: numb
       const response = await apiClient.admin.sessions.list(page, pageSize);
 
       // Client-side filtering if backend doesn't support it
-      const sessions = (response.sessions || response.items || []).filter(
-        (session: any) => session.userId === userId
+      const sessions = (response.sessions || []).filter(
+        (session: any) => session.user_id === userId
       );
 
       return {
         ...response,
         sessions,
-        items: sessions,
       };
     },
     enabled: !!userId,

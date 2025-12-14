@@ -14,8 +14,8 @@ export interface SendSMSRequest {
 /** Send SMS response */
 export interface SendSMSResponse {
   success: boolean;
-  messageId: string;
-  expiresAt: string;
+  message_id: string;
+  expires_at: string;
 }
 
 /** Verify SMS OTP request */
@@ -27,16 +27,16 @@ export interface VerifySMSRequest {
 /** Verify SMS OTP response */
 export interface VerifySMSResponse {
   valid: boolean;
-  accessToken?: string;
-  refreshToken?: string;
+  access_token?: string;
+  refresh_token?: string;
   user?: User;
 }
 
 /** SMS statistics (admin only) */
 export interface SMSStatsResponse {
-  totalSent: number;
-  sentToday: number;
-  deliveryRate: number;
+  total_sent: number;
+  sent_today: number;
+  delivery_rate: number;
   providers: SMSProviderStats[];
 }
 
@@ -55,15 +55,15 @@ export type SMSProvider = 'twilio' | 'aws_sns' | 'vonage' | 'mock';
 export interface SMSSettings {
   id: string;
   provider: SMSProvider;
-  isActive: boolean;
+  is_active: boolean;
   config: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 /** Create/Update SMS settings request */
 export interface SMSSettingsRequest {
   provider: SMSProvider;
-  isActive?: boolean;
+  is_active?: boolean;
   config: Record<string, unknown>;
 }

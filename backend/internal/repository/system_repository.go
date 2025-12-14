@@ -67,7 +67,7 @@ func (r *SystemRepository) UpdateSetting(ctx context.Context, key, value string,
 	result, err := r.db.NewUpdate().
 		Model((*models.SystemSetting)(nil)).
 		Set("value = ?", value).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Set("updated_by = ?", updatedBy).
 		Where("key = ?", key).
 		Exec(ctx)

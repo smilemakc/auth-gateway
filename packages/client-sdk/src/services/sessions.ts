@@ -72,7 +72,7 @@ export class SessionsService extends BaseService {
    */
   async getCurrent(): Promise<Session | undefined> {
     const { sessions } = await this.list(1, 100);
-    return sessions.find((s) => s.isCurrent);
+    return sessions.find((s) => s.is_current);
   }
 
   /**

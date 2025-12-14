@@ -79,7 +79,7 @@ func (r *SessionRepository) GetUserSessions(ctx context.Context, userID uuid.UUI
 		Model(&sessions).
 		Where("user_id = ?", userID).
 		Where("revoked_at IS NULL").
-		Where("expires_at > ?", bun.Ident("NOW()")).
+		Where("expires_at > ?", bun.Safe("NOW()")).
 		Order("last_active_at DESC").
 		Scan(ctx)
 
@@ -99,7 +99,7 @@ func (r *SessionRepository) GetUserSessionsPaginated(ctx context.Context, userID
 		Model((*models.Session)(nil)).
 		Where("user_id = ?", userID).
 		Where("revoked_at IS NULL").
-		Where("expires_at > ?", bun.Ident("NOW()")).
+		Where("expires_at > ?", bun.Safe("NOW()")).
 		Count(ctx)
 
 	if err != nil {
@@ -113,7 +113,7 @@ func (r *SessionRepository) GetUserSessionsPaginated(ctx context.Context, userID
 		Model(&sessions).
 		Where("user_id = ?", userID).
 		Where("revoked_at IS NULL").
-		Where("expires_at > ?", bun.Ident("NOW()")).
+		Where("expires_at > ?", bun.Safe("NOW()")).
 		Order("last_active_at DESC").
 		Limit(perPage).
 		Offset(offset).
@@ -134,7 +134,7 @@ func (r *SessionRepository) GetAllActiveSessionsPaginated(ctx context.Context, p
 	total, err := r.db.NewSelect().
 		Model((*models.Session)(nil)).
 		Where("revoked_at IS NULL").
-		Where("expires_at > ?", bun.Ident("NOW()")).
+		Where("expires_at > ?", bun.Safe("NOW()")).
 		Count(ctx)
 
 	if err != nil {
@@ -147,7 +147,7 @@ func (r *SessionRepository) GetAllActiveSessionsPaginated(ctx context.Context, p
 	err = r.db.NewSelect().
 		Model(&sessions).
 		Where("revoked_at IS NULL").
-		Where("expires_at > ?", bun.Ident("NOW()")).
+		Where("expires_at > ?", bun.Safe("NOW()")).
 		Order("last_active_at DESC").
 		Limit(perPage).
 		Offset(offset).
@@ -169,7 +169,7 @@ func (r *SessionRepository) GetAllSessionsPaginated(ctx context.Context, page, p
 func (r *SessionRepository) UpdateSessionActivity(ctx context.Context, id uuid.UUID) error {
 	_, err := r.db.NewUpdate().
 		Model((*models.Session)(nil)).
-		Set("last_active_at = ?", bun.Ident("NOW()")).
+		Set("last_active_at = ?", bun.Safe("NOW()")).
 		Where("id = ?", id).
 		Exec(ctx)
 
@@ -208,7 +208,7 @@ func (r *SessionRepository) UpdateSessionName(ctx context.Context, id uuid.UUID,
 func (r *SessionRepository) RevokeSession(ctx context.Context, id uuid.UUID) error {
 	result, err := r.db.NewUpdate().
 		Model((*models.Session)(nil)).
-		Set("revoked_at = ?", bun.Ident("NOW()")).
+		Set("revoked_at = ?", bun.Safe("NOW()")).
 		Where("id = ?", id).
 		Where("revoked_at IS NULL").
 		Exec(ctx)
@@ -233,7 +233,7 @@ func (r *SessionRepository) RevokeSession(ctx context.Context, id uuid.UUID) err
 func (r *SessionRepository) RevokeUserSession(ctx context.Context, userID, sessionID uuid.UUID) error {
 	result, err := r.db.NewUpdate().
 		Model((*models.Session)(nil)).
-		Set("revoked_at = ?", bun.Ident("NOW()")).
+		Set("revoked_at = ?", bun.Safe("NOW()")).
 		Where("id = ?", sessionID).
 		Where("user_id = ?", userID).
 		Where("revoked_at IS NULL").
@@ -259,7 +259,7 @@ func (r *SessionRepository) RevokeUserSession(ctx context.Context, userID, sessi
 func (r *SessionRepository) RevokeAllUserSessions(ctx context.Context, userID uuid.UUID, exceptSessionID *uuid.UUID) error {
 	query := r.db.NewUpdate().
 		Model((*models.Session)(nil)).
-		Set("revoked_at = ?", bun.Ident("NOW()")).
+		Set("revoked_at = ?", bun.Safe("NOW()")).
 		Where("user_id = ?", userID).
 		Where("revoked_at IS NULL")
 
@@ -281,7 +281,7 @@ func (r *SessionRepository) GetSessionStats(ctx context.Context) (*models.Sessio
 	total, err := r.db.NewSelect().
 		Model((*models.Session)(nil)).
 		Where("revoked_at IS NULL").
-		Where("expires_at > ?", bun.Ident("NOW()")).
+		Where("expires_at > ?", bun.Safe("NOW()")).
 		Count(ctx)
 
 	if err != nil {
@@ -307,7 +307,7 @@ func (r *SessionRepository) GetSessionStats(ctx context.Context) (*models.Sessio
 		ColumnExpr("COALESCE(device_type, 'unknown') as device_type").
 		ColumnExpr("COUNT(*) as count").
 		Where("revoked_at IS NULL").
-		Where("expires_at > ?", bun.Ident("NOW()")).
+		Where("expires_at > ?", bun.Safe("NOW()")).
 		Group("device_type").
 		Scan(ctx, &deviceCounts)
 
@@ -331,7 +331,7 @@ func (r *SessionRepository) GetSessionStats(ctx context.Context) (*models.Sessio
 		ColumnExpr("COALESCE(os, 'unknown') as os").
 		ColumnExpr("COUNT(*) as count").
 		Where("revoked_at IS NULL").
-		Where("expires_at > ?", bun.Ident("NOW()")).
+		Where("expires_at > ?", bun.Safe("NOW()")).
 		Group("os").
 		Order("count DESC").
 		Limit(10).
@@ -357,7 +357,7 @@ func (r *SessionRepository) GetSessionStats(ctx context.Context) (*models.Sessio
 		ColumnExpr("COALESCE(browser, 'unknown') as browser").
 		ColumnExpr("COUNT(*) as count").
 		Where("revoked_at IS NULL").
-		Where("expires_at > ?", bun.Ident("NOW()")).
+		Where("expires_at > ?", bun.Safe("NOW()")).
 		Group("browser").
 		Order("count DESC").
 		Limit(10).
@@ -380,7 +380,7 @@ func (r *SessionRepository) CountUserActiveSessions(ctx context.Context, userID 
 		Model((*models.Session)(nil)).
 		Where("user_id = ?", userID).
 		Where("revoked_at IS NULL").
-		Where("expires_at > ?", bun.Ident("NOW()")).
+		Where("expires_at > ?", bun.Safe("NOW()")).
 		Count(ctx)
 
 	if err != nil {
@@ -394,8 +394,8 @@ func (r *SessionRepository) CountUserActiveSessions(ctx context.Context, userID 
 func (r *SessionRepository) DeleteExpiredSessions(ctx context.Context, olderThan time.Duration) error {
 	_, err := r.db.NewDelete().
 		Model((*models.Session)(nil)).
-		WhereOr("expires_at < ?", bun.Ident("NOW()")).
-		WhereOr("(revoked_at IS NOT NULL AND revoked_at < ? - ?::interval)", bun.Ident("NOW()"), olderThan).
+		WhereOr("expires_at < ?", bun.Safe("NOW()")).
+		WhereOr("(revoked_at IS NOT NULL AND revoked_at < ? - ?::interval)", bun.Safe("NOW()"), olderThan).
 		Exec(ctx)
 
 	if err != nil {

@@ -13,7 +13,7 @@ const ApiKeys: React.FC = () => {
   const revokeApiKeyMutation = useRevokeApiKey();
   const deleteApiKeyMutation = useDeleteApiKey();
 
-  const keys = data?.apiKeys || data?.items || [];
+  const keys = data?.api_keys || [];
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -73,29 +73,29 @@ const ApiKeys: React.FC = () => {
           <div key={apiKey.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${apiKey.status === 'active' ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-500'}`}>
+                <div className={`p-2 rounded-lg ${apiKey.is_active ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-500'}`}>
                   <div className="font-mono text-xl font-bold">K</div>
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">{apiKey.name}</h3>
-                  <p className="text-sm text-gray-500">{t('keys.owner')}: {apiKey.ownerName}</p>
+                  <p className="text-sm text-gray-500">{t('keys.owner')}: {apiKey.user_email || apiKey.user_name || 'N/A'}</p>
                 </div>
               </div>
               <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                apiKey.status === 'active' 
-                  ? 'bg-green-100 text-green-700' 
+                apiKey.is_active
+                  ? 'bg-green-100 text-green-700'
                   : 'bg-red-100 text-red-700'
               }`}>
-                {apiKey.status === 'active' ? t('users.active') : t('keys.revoked')}
+                {apiKey.is_active ? t('users.active') : t('keys.revoked')}
               </span>
             </div>
             
             <div className="bg-gray-50 rounded-md p-3 mb-4 flex items-center justify-between group">
               <code className="text-sm text-gray-600 font-mono">
-                {apiKey.prefix}****************
+                {apiKey.key_prefix}****************
               </code>
-              <button 
-                onClick={() => handleCopy(apiKey.prefix, apiKey.id)}
+              <button
+                onClick={() => handleCopy(apiKey.key_prefix, apiKey.id)}
                 className="text-gray-400 hover:text-blue-600 transition-colors"
               >
                 {copiedId === apiKey.id ? <CheckCircle size={16} className="text-green-500" /> : <Copy size={16} />}
@@ -111,11 +111,11 @@ const ApiKeys: React.FC = () => {
             </div>
 
             <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between text-sm">
-               <span className="text-gray-500">{t('common.created')}: {new Date(apiKey.createdAt).toLocaleDateString()}</span>
+               <span className="text-gray-500">{t('common.created')}: {new Date(apiKey.created_at).toLocaleDateString()}</span>
                
                <div className="flex gap-2">
-                 {apiKey.status === 'active' && (
-                   <button 
+                 {apiKey.is_active && (
+                   <button
                     onClick={() => handleRevoke(apiKey.id)}
                     className="p-1.5 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors" title={t('user.revoke')}>
                      <Ban size={18} />

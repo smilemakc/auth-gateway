@@ -67,7 +67,7 @@ const EmailTemplates: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Calendar size={14} />
-                <span>Updated {new Date(template.lastUpdated).toLocaleDateString()}</span>
+                <span>Updated {new Date(template.updated_at).toLocaleDateString()}</span>
               </div>
             </div>
           </div>

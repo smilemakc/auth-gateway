@@ -11,3 +11,6 @@ export { AdminBrandingService } from './branding';
 export { AdminSystemService } from './system';
 export { AdminAPIKeysService } from './api-keys';
 export { AdminSMSSettingsService } from './sms-settings';
+export { AdminOAuthProvidersService } from './oauth-providers';
+export { AdminTemplatesService } from './templates';
+export { AdminWebhooksService } from './webhooks';

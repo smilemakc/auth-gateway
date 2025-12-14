@@ -42,8 +42,8 @@ export class PasswordlessService extends BaseService {
 
     // Store tokens
     const tokenStorage = this.http.getTokenStorage();
-    await tokenStorage.setAccessToken(response.data.accessToken);
-    await tokenStorage.setRefreshToken(response.data.refreshToken);
+    await tokenStorage.setAccessToken(response.data.access_token);
+    await tokenStorage.setRefreshToken(response.data.refresh_token);
 
     return response.data;
   }

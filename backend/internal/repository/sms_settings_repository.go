@@ -106,7 +106,7 @@ func (r *SMSSettingsRepository) Update(ctx context.Context, id uuid.UUID, settin
 		Set("max_per_hour = ?", settings.MaxPerHour).
 		Set("max_per_day = ?", settings.MaxPerDay).
 		Set("max_per_number = ?", settings.MaxPerNumber).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", id).
 		Exec(ctx)
 
@@ -154,7 +154,7 @@ func (r *SMSSettingsRepository) DisableAll(ctx context.Context) error {
 	_, err := r.db.NewUpdate().
 		Model((*models.SMSSettings)(nil)).
 		Set("enabled = ?", false).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Exec(ctx)
 
 	if err != nil {

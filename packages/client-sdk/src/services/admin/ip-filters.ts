@@ -66,7 +66,7 @@ export class AdminIPFiltersService extends BaseService {
    */
   async whitelist(ipAddress: string, description?: string): Promise<IPFilter> {
     return this.create({
-      ipAddress,
+      ip_address: ipAddress,
       type: 'whitelist',
       description,
     });
@@ -80,7 +80,7 @@ export class AdminIPFiltersService extends BaseService {
    */
   async blacklist(ipAddress: string, description?: string): Promise<IPFilter> {
     return this.create({
-      ipAddress,
+      ip_address: ipAddress,
       type: 'blacklist',
       description,
     });
@@ -131,7 +131,7 @@ export class AdminIPFiltersService extends BaseService {
    */
   async isWhitelisted(ipAddress: string): Promise<boolean> {
     const whitelist = await this.getWhitelist();
-    return whitelist.some((f) => f.ipAddress === ipAddress);
+    return whitelist.some((f) => f.ip_address === ipAddress);
   }
 
   /**
@@ -141,6 +141,6 @@ export class AdminIPFiltersService extends BaseService {
    */
   async isBlacklisted(ipAddress: string): Promise<boolean> {
     const blacklist = await this.getBlacklist();
-    return blacklist.some((f) => f.ipAddress === ipAddress);
+    return blacklist.some((f) => f.ip_address === ipAddress);
   }
 }

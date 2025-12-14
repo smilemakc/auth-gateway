@@ -230,7 +230,7 @@ func (r *RBACRepository) UpdateRole(ctx context.Context, id uuid.UUID, displayNa
 		Model((*models.Role)(nil)).
 		Set("display_name = ?", displayName).
 		Set("description = ?", description).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", id).
 		Exec(ctx)
 

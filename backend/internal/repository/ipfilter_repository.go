@@ -97,7 +97,7 @@ func (r *IPFilterRepository) GetActiveIPFilters(ctx context.Context) ([]models.I
 		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
 				Where("expires_at IS NULL").
-				WhereOr("expires_at > ?", bun.Ident("NOW()"))
+				WhereOr("expires_at > ?", bun.Safe("NOW()"))
 		}).
 		Order("filter_type", "created_at DESC").
 		Scan(ctx)
@@ -116,7 +116,7 @@ func (r *IPFilterRepository) GetActiveFiltersByType(ctx context.Context, filterT
 		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
 				Where("expires_at IS NULL").
-				WhereOr("expires_at > ?", bun.Ident("NOW()"))
+				WhereOr("expires_at > ?", bun.Safe("NOW()"))
 		}).
 		Order("created_at DESC").
 		Scan(ctx)
@@ -130,7 +130,7 @@ func (r *IPFilterRepository) UpdateIPFilter(ctx context.Context, id uuid.UUID, r
 		Model((*models.IPFilter)(nil)).
 		Set("reason = ?", reason).
 		Set("is_active = ?", isActive).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", id).
 		Exec(ctx)
 
@@ -178,7 +178,7 @@ func (r *IPFilterRepository) DeleteExpiredFilters(ctx context.Context) error {
 	_, err := r.db.NewDelete().
 		Model((*models.IPFilter)(nil)).
 		Where("expires_at IS NOT NULL").
-		Where("expires_at < ?", bun.Ident("NOW()")).
+		Where("expires_at < ?", bun.Safe("NOW()")).
 		Exec(ctx)
 
 	return err

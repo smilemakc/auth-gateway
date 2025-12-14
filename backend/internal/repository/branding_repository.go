@@ -37,7 +37,7 @@ func (r *BrandingRepository) UpdateBrandingSettings(ctx context.Context, setting
 		Column("logo_url", "favicon_url", "primary_color", "secondary_color").
 		Column("background_color", "custom_css", "company_name", "support_email").
 		Column("terms_url", "privacy_url").
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Set("updated_by = ?", updatedBy).
 		WherePK().
 		Exec(ctx)

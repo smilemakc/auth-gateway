@@ -17,7 +17,7 @@ const RoleEditor: React.FC = () => {
     name: '',
     description: '',
     permissions: [],
-    isSystem: false
+    is_system_role: false
   });
   
   const [availablePermissions, setAvailablePermissions] = useState<Permission[]>([]);
@@ -125,7 +125,7 @@ const RoleEditor: React.FC = () => {
                 onChange={(e) => setRole(prev => ({ ...prev, name: e.target.value }))}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="e.g. Content Manager"
-                disabled={role.isSystem} 
+                disabled={role.is_system_role} 
               />
             </div>
             <div>
@@ -150,7 +150,7 @@ const RoleEditor: React.FC = () => {
           </div>
           
           <div className="divide-y divide-gray-100">
-            {Object.entries(groupedPermissions).map(([resource, permissions]) => {
+            {Object.entries(groupedPermissions).map(([resource, permissions]: [string, Permission[]]) => {
               const allSelected = permissions.every(p => role.permissions?.includes(p.id));
               
               return (

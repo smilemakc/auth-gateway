@@ -93,13 +93,13 @@ export class AdminSMSSettingsService extends BaseService {
     // First deactivate all others
     const allSettings = await this.list();
     for (const setting of allSettings) {
-      if (setting.id !== id && setting.isActive) {
-        await this.update(setting.id, { isActive: false });
+      if (setting.id !== id && setting.is_active) {
+        await this.update(setting.id, { is_active: false });
       }
     }
 
     // Activate the target setting
-    return this.update(id, { isActive: true });
+    return this.update(id, { is_active: true });
   }
 
   /**
@@ -108,6 +108,6 @@ export class AdminSMSSettingsService extends BaseService {
    * @returns Updated SMS setting
    */
   async deactivate(id: string): Promise<SMSSettings> {
-    return this.update(id, { isActive: false });
+    return this.update(id, { is_active: false });
   }
 }

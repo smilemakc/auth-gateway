@@ -89,7 +89,7 @@ export class APIKeysService extends BaseService {
    * @returns List of active API keys
    */
   async getActive(): Promise<APIKey[]> {
-    const { apiKeys } = await this.list();
-    return apiKeys.filter((key) => key.isActive);
+    const { api_keys } = await this.list();
+    return api_keys.filter((key: APIKey) => key.is_active);
   }
 }

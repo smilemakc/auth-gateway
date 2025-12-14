@@ -23,23 +23,23 @@ export interface CreatePermissionRequest {
 /** Role entity */
 export interface Role extends TimestampedEntity {
   name: string;
-  displayName: string;
+  display_name: string;
   description?: string;
-  isSystemRole: boolean;
+  is_system_role: boolean;
   permissions: Permission[];
 }
 
 /** Create role request */
 export interface CreateRoleRequest {
   name: string;
-  displayName: string;
+  display_name: string;
   description?: string;
   permissions: string[]; // Permission IDs
 }
 
 /** Update role request */
 export interface UpdateRoleRequest {
-  displayName?: string;
+  display_name?: string;
   description?: string;
   permissions?: string[]; // Permission IDs
 }

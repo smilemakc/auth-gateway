@@ -8,7 +8,7 @@ import type { AccountType, TimestampedEntity, UserRole } from './common';
 export interface RoleInfo {
   id: string;
   name: string;
-  displayName: string;
+  display_name: string;
 }
 
 /** User entity */
@@ -16,61 +16,62 @@ export interface User extends TimestampedEntity {
   email: string;
   phone?: string;
   username: string;
-  fullName: string;
-  profilePictureUrl?: string;
+  full_name: string;
+  profile_picture_url?: string;
   roles: RoleInfo[];
-  accountType: AccountType;
-  emailVerified: boolean;
-  phoneVerified: boolean;
-  isActive: boolean;
-  totpEnabled: boolean;
-  totpEnabledAt?: string;
+  account_type: AccountType;
+  email_verified: boolean;
+  phone_verified: boolean;
+  is_active: boolean;
+  totp_enabled: boolean;
+  totp_enabled_at?: string;
 }
 
 /** User for public display (minimal info) */
 export interface PublicUser {
   id: string;
   username: string;
-  fullName: string;
-  profilePictureUrl?: string;
+  full_name: string;
+  profile_picture_url?: string;
 }
 
 /** User profile update request */
 export interface UpdateProfileRequest {
-  fullName?: string;
-  profilePictureUrl?: string;
+  full_name?: string;
+  profile_picture_url?: string;
 }
 
 /** Change password request */
 export interface ChangePasswordRequest {
-  oldPassword: string;
-  newPassword: string;
+  old_password: string;
+  new_password: string;
 }
 
 /** Admin user response with additional fields */
 export interface AdminUserResponse extends User {
-  lastLogin?: string;
+  last_login?: string;
 }
 
-/** Admin user update request */
+/** Admin user update request (snake_case for backend API) */
 export interface AdminUpdateUserRequest {
-  roleIds?: string[];
-  isActive?: boolean;
+  role_ids?: string[];
+  is_active?: boolean;
 }
 
-/** Admin user create request */
+/** Admin user create request (snake_case for backend API) */
 export interface AdminCreateUserRequest {
   email: string;
   username: string;
-  password?: string;
-  fullName: string;
-  roleIds?: string[];
+  password: string;
+  full_name: string;
+  role_ids?: string[];
+  account_type?: 'human' | 'service';
 }
 
 
-/** Assign role request */
+/** Assign role request (snake_case for backend API) */
 export interface AssignRoleRequest {
-  roleId: string;
+  role_id: string;
 }
 
 /** Admin user list response */
@@ -78,16 +79,16 @@ export interface AdminUserListResponse {
   users: AdminUserResponse[];
   total: number;
   page: number;
-  pageSize: number;
+  page_size: number;
 }
 
 /** Admin statistics response */
 export interface AdminStatsResponse {
-  totalUsers: number;
-  activeUsers: number;
-  newUsersToday: number;
-  totalApiKeys: number;
-  activeApiKeys: number;
-  loginAttemptsToday: number;
-  failedLoginAttemptsToday: number;
+  total_users: number;
+  active_users: number;
+  new_users_today: number;
+  total_api_keys: number;
+  active_api_keys: number;
+  login_attempts_today: number;
+  failed_login_attempts_today: number;
 }

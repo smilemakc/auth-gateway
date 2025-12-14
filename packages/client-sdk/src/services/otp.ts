@@ -68,10 +68,10 @@ export class OTPService extends BaseService {
     );
 
     // Store tokens if returned (login OTP)
-    if (response.data.accessToken && response.data.refreshToken) {
+    if (response.data.access_token && response.data.refresh_token) {
       const tokenStorage = this.http.getTokenStorage();
-      await tokenStorage.setAccessToken(response.data.accessToken);
-      await tokenStorage.setRefreshToken(response.data.refreshToken);
+      await tokenStorage.setAccessToken(response.data.access_token);
+      await tokenStorage.setRefreshToken(response.data.refresh_token);
     }
 
     return response.data;
@@ -96,10 +96,10 @@ export class OTPService extends BaseService {
     );
 
     // Store tokens if returned (login OTP)
-    if (response.data.accessToken && response.data.refreshToken) {
+    if (response.data.access_token && response.data.refresh_token) {
       const tokenStorage = this.http.getTokenStorage();
-      await tokenStorage.setAccessToken(response.data.accessToken);
-      await tokenStorage.setRefreshToken(response.data.refreshToken);
+      await tokenStorage.setAccessToken(response.data.access_token);
+      await tokenStorage.setRefreshToken(response.data.refresh_token);
     }
 
     return response.data;

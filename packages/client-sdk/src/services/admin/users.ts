@@ -92,7 +92,7 @@ export class AdminUsersService extends BaseService {
    * @returns Updated user
    */
   async activate(id: string): Promise<AdminUserResponse> {
-    return this.update(id, { isActive: true });
+    return this.update(id, { is_active: true });
   }
 
   /**
@@ -101,7 +101,7 @@ export class AdminUsersService extends BaseService {
    * @returns Updated user
    */
   async deactivate(id: string): Promise<AdminUserResponse> {
-    return this.update(id, { isActive: false });
+    return this.update(id, { is_active: false });
   }
 
   /**
@@ -122,7 +122,7 @@ export class AdminUsersService extends BaseService {
    * @returns Updated user
    */
   async setRoles(id: string, roleIds: string[]): Promise<AdminUserResponse> {
-    return this.update(id, { roleIds });
+    return this.update(id, { role_ids: roleIds });
   }
 
   /**
@@ -134,7 +134,7 @@ export class AdminUsersService extends BaseService {
   async assignRole(id: string, roleId: string): Promise<MessageResponse> {
     const response = await this.http.post<MessageResponse>(
       `/admin/users/${id}/roles`,
-      { roleId }
+      { role_id: roleId }
     );
     return response.data;
   }
@@ -169,7 +169,7 @@ export class AdminUsersService extends BaseService {
         (user) =>
           user.email.toLowerCase().includes(lowerQuery) ||
           user.username.toLowerCase().includes(lowerQuery) ||
-          user.fullName.toLowerCase().includes(lowerQuery)
+          user.full_name.toLowerCase().includes(lowerQuery)
       );
 
       results.push(...matches);

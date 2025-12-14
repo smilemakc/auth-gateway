@@ -97,7 +97,7 @@ func (r *APIKeyRepository) GetActiveByUserID(ctx context.Context, userID uuid.UU
 		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
 				Where("expires_at IS NULL").
-				WhereOr("expires_at > ?", bun.Ident("NOW()"))
+				WhereOr("expires_at > ?", bun.Safe("NOW()"))
 		}).
 		Order("created_at DESC").
 		Scan(ctx)
@@ -114,7 +114,7 @@ func (r *APIKeyRepository) Update(ctx context.Context, apiKey *models.APIKey) er
 	result, err := r.db.NewUpdate().
 		Model(apiKey).
 		Column("name", "description", "scopes", "is_active").
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		WherePK().
 		Returning("updated_at").
 		Exec(ctx)
@@ -142,7 +142,7 @@ func (r *APIKeyRepository) Update(ctx context.Context, apiKey *models.APIKey) er
 func (r *APIKeyRepository) UpdateLastUsed(ctx context.Context, id uuid.UUID) error {
 	result, err := r.db.NewUpdate().
 		Model((*models.APIKey)(nil)).
-		Set("last_used_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("last_used_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", id).
 		Exec(ctx)
 
@@ -167,7 +167,7 @@ func (r *APIKeyRepository) Revoke(ctx context.Context, id uuid.UUID) error {
 	result, err := r.db.NewUpdate().
 		Model((*models.APIKey)(nil)).
 		Set("is_active = ?", false).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", id).
 		Exec(ctx)
 
@@ -215,7 +215,7 @@ func (r *APIKeyRepository) DeleteExpired(ctx context.Context) error {
 	_, err := r.db.NewDelete().
 		Model((*models.APIKey)(nil)).
 		Where("expires_at IS NOT NULL").
-		Where("expires_at < ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Where("expires_at < ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Exec(ctx)
 
 	if err != nil {
@@ -248,7 +248,7 @@ func (r *APIKeyRepository) CountActive(ctx context.Context, userID uuid.UUID) (i
 		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
 				Where("expires_at IS NULL").
-				WhereOr("expires_at > ?", bun.Ident("CURRENT_TIMESTAMP"))
+				WhereOr("expires_at > ?", bun.Safe("CURRENT_TIMESTAMP"))
 		}).
 		Count(ctx)
 

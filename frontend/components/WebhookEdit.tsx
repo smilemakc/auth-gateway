@@ -29,7 +29,7 @@ const WebhookEdit: React.FC = () => {
     url: '',
     description: '',
     events: [],
-    isActive: true
+    is_active: true
   });
 
   useEffect(() => {
@@ -136,14 +136,14 @@ const WebhookEdit: React.FC = () => {
             <div className="pt-4 border-t border-gray-100">
               <label className="flex items-center cursor-pointer">
                 <div className="relative">
-                  <input 
-                    type="checkbox" 
-                    className="sr-only" 
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
                   />
-                  <div className={`block w-10 h-6 rounded-full transition-colors ${formData.isActive ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
-                  <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.isActive ? 'transform translate-x-4' : ''}`}></div>
+                  <div className={`block w-10 h-6 rounded-full transition-colors ${formData.is_active ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+                  <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.is_active ? 'transform translate-x-4' : ''}`}></div>
                 </div>
                 <div className="ml-3 text-sm font-medium text-gray-700">
                   {t('oauth.enable')}

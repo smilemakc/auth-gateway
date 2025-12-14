@@ -133,7 +133,7 @@ func (r *UserRepository) UpdatePassword(ctx context.Context, userID uuid.UUID, p
 	result, err := r.db.NewUpdate().
 		Model((*models.User)(nil)).
 		Set("password_hash = ?", passwordHash).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", userID).
 		Exec(ctx)
 
@@ -158,7 +158,7 @@ func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	result, err := r.db.NewUpdate().
 		Model((*models.User)(nil)).
 		Set("is_active = ?", false).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", id).
 		Exec(ctx)
 
@@ -211,8 +211,8 @@ func (r *UserRepository) MarkEmailVerified(ctx context.Context, userID uuid.UUID
 	result, err := r.db.NewUpdate().
 		Model((*models.User)(nil)).
 		Set("email_verified = ?", true).
-		Set("email_verified_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("email_verified_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", userID).
 		Exec(ctx)
 
@@ -382,7 +382,7 @@ func (r *UserRepository) UpdateTOTPSecret(ctx context.Context, userID uuid.UUID,
 	result, err := r.db.NewUpdate().
 		Model((*models.User)(nil)).
 		Set("totp_secret = ?", secret).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", userID).
 		Exec(ctx)
 
@@ -407,8 +407,8 @@ func (r *UserRepository) EnableTOTP(ctx context.Context, userID uuid.UUID) error
 	result, err := r.db.NewUpdate().
 		Model((*models.User)(nil)).
 		Set("totp_enabled = ?", true).
-		Set("totp_enabled_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("totp_enabled_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", userID).
 		Exec(ctx)
 
@@ -435,7 +435,7 @@ func (r *UserRepository) DisableTOTP(ctx context.Context, userID uuid.UUID) erro
 		Set("totp_enabled = ?", false).
 		Set("totp_secret = ?", nil).
 		Set("totp_enabled_at = ?", nil).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", userID).
 		Exec(ctx)
 
@@ -498,7 +498,7 @@ func (r *UserRepository) MarkPhoneVerified(ctx context.Context, userID uuid.UUID
 	result, err := r.db.NewUpdate().
 		Model((*models.User)(nil)).
 		Set("phone_verified = ?", true).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", userID).
 		Exec(ctx)
 

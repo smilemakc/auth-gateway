@@ -110,31 +110,31 @@ export class AdminSystemService extends BaseService {
     limit = 10,
     days = 30
   ): Promise<
-    Array<{ countryCode: string; countryName: string; loginCount: number }>
+    Array<{ country_code: string; country_name: string; login_count: number }>
   > {
     const geo = await this.getGeoDistribution(days);
 
     // Aggregate by country
     const countryMap = new Map<
       string,
-      { countryCode: string; countryName: string; loginCount: number }
+      { country_code: string; country_name: string; login_count: number }
     >();
 
     for (const loc of geo.locations) {
-      const existing = countryMap.get(loc.countryCode);
+      const existing = countryMap.get(loc.country_code);
       if (existing) {
-        existing.loginCount += loc.loginCount;
+        existing.login_count += loc.login_count;
       } else {
-        countryMap.set(loc.countryCode, {
-          countryCode: loc.countryCode,
-          countryName: loc.countryName,
-          loginCount: loc.loginCount,
+        countryMap.set(loc.country_code, {
+          country_code: loc.country_code,
+          country_name: loc.country_name,
+          login_count: loc.login_count,
         });
       }
     }
 
     return Array.from(countryMap.values())
-      .sort((a, b) => b.loginCount - a.loginCount)
+      .sort((a, b) => b.login_count - a.login_count)
       .slice(0, limit);
   }
 }

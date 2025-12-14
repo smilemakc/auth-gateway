@@ -27,7 +27,7 @@ const OAuthProviders: React.FC = () => {
   }, []);
 
   const handleToggle = (id: string, currentStatus: boolean) => {
-    const updated = updateOAuthProvider(id, { isEnabled: !currentStatus });
+    const updated = updateOAuthProvider(id, { is_enabled: !currentStatus });
     if (updated) {
       setProviders(prev => prev.map(p => p.id === id ? updated : p));
     }
@@ -69,18 +69,18 @@ const OAuthProviders: React.FC = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900 capitalize text-lg">{provider.provider}</h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`w-2 h-2 rounded-full ${provider.isEnabled ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                      <span className={`w-2 h-2 rounded-full ${provider.is_enabled ? 'bg-green-500' : 'bg-gray-300'}`}></span>
                       <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                        {provider.isEnabled ? 'Enabled' : 'Disabled'}
+                        {provider.is_enabled ? 'Enabled' : 'Disabled'}
                       </span>
                     </div>
                   </div>
                 </div>
-                <button 
-                  onClick={() => handleToggle(provider.id, provider.isEnabled)}
-                  className={`transition-colors ${provider.isEnabled ? 'text-green-600 hover:text-green-700' : 'text-gray-300 hover:text-gray-400'}`}
+                <button
+                  onClick={() => handleToggle(provider.id, provider.is_enabled)}
+                  className={`transition-colors ${provider.is_enabled ? 'text-green-600 hover:text-green-700' : 'text-gray-300 hover:text-gray-400'}`}
                 >
-                  {provider.isEnabled ? <ToggleRight size={36} /> : <ToggleLeft size={36} />}
+                  {provider.is_enabled ? <ToggleRight size={36} /> : <ToggleLeft size={36} />}
                 </button>
               </div>
 
@@ -88,13 +88,13 @@ const OAuthProviders: React.FC = () => {
                 <div>
                   <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">{t('oauth.client_id')}</label>
                   <code className="block bg-gray-50 rounded px-3 py-2 text-sm text-gray-600 font-mono truncate border border-gray-100">
-                    {provider.clientId}
+                    {provider.client_id}
                   </code>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Callback URL</label>
-                  <div className="text-xs text-gray-500 truncate" title={provider.redirectUris[0]}>
-                    {provider.redirectUris[0] || <span className="italic text-gray-400">Not configured</span>}
+                  <div className="text-xs text-gray-500 truncate" title={provider.redirect_uris[0]}>
+                    {provider.redirect_uris[0] || <span className="italic text-gray-400">Not configured</span>}
                   </div>
                 </div>
               </div>
@@ -102,7 +102,7 @@ const OAuthProviders: React.FC = () => {
 
             <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex items-center justify-between">
               <span className="text-xs text-gray-400">
-                {new Date(provider.createdAt).toLocaleDateString()}
+                {new Date(provider.created_at).toLocaleDateString()}
               </span>
               <div className="flex items-center gap-2">
                 <Link 

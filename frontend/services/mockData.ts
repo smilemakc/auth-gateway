@@ -1,5 +1,16 @@
 
-import { User, UserRole, ApiKey, AuditLog, DashboardStats, OAuthAccount, OAuthProviderConfig, EmailTemplate, RoleDefinition, Permission, UserSession, IpRule, WebhookEndpoint, ServiceAccount, BrandingConfig, SmsConfig, SystemStatus, PasswordPolicy } from '../types';
+import { User, UserRole, ApiKey, AuditLog, DashboardStats, OAuthAccount, OAuthProviderConfig, EmailTemplate, RoleDefinition, Permission, UserSession, IpRule, WebhookEndpoint, ServiceAccount, BrandingConfig, SmsConfig, PasswordPolicy } from '../types';
+
+// Local type for SystemStatus (not in SDK)
+export interface SystemStatus {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  database: 'connected' | 'disconnected';
+  redis: 'connected' | 'disconnected';
+  uptime: number;
+  version: string;
+  maintenanceMode: boolean;
+  maintenanceMessage?: string;
+}
 
 // Helpers
 const randomId = () => Math.random().toString(36).substring(2, 11);
@@ -14,23 +25,25 @@ export const generateUsers = (count: number): User[] => {
     const shuffled = [...roleDefinitions].sort(() => 0.5 - Math.random());
     const userRoles = shuffled.slice(0, numRoles).map(r => ({
       id: r.id,
-      name: r.id,
-      displayName: r.name
+      name: r.name,
+      display_name: r.display_name
     }));
 
     return {
       id: randomId(),
       email: `user${i}@example.com`,
       username: `user_${i}`,
-      fullName: `User Name ${i}`,
+      full_name: `User Name ${i}`,
       roles: userRoles,
-      isActive: Math.random() > 0.1,
-      isEmailVerified: Math.random() > 0.2,
-      is2FAEnabled: Math.random() > 0.7,
+      account_type: 'human' as const,
+      is_active: Math.random() > 0.1,
+      email_verified: Math.random() > 0.2,
+      phone_verified: Math.random() > 0.6,
+      totp_enabled: Math.random() > 0.7,
       phone: Math.random() > 0.5 ? `+1 (555) 000-${1000 + i}` : undefined,
-      createdAt: randomDate(new Date(2023, 0, 1), new Date()),
-      lastLogin: randomDate(new Date(2023, 0, 1), new Date()),
-      avatarUrl: `https://picsum.photos/seed/${i}/200/200`
+      created_at: randomDate(new Date(2023, 0, 1), new Date()),
+      updated_at: randomDate(new Date(2023, 0, 1), new Date()),
+      profile_picture_url: `https://picsum.photos/seed/${i}/200/200`
     };
   });
 };
@@ -39,16 +52,17 @@ export const generateUsers = (count: number): User[] => {
 export const generateApiKeys = (count: number, users: User[]): ApiKey[] => {
   return Array.from({ length: count }).map((_, i) => {
     const user = users[Math.floor(Math.random() * users.length)];
+    const createdAt = randomDate(new Date(2023, 0, 1), new Date());
     return {
       id: randomId(),
       name: `Key for ${user.username} - ${i}`,
-      prefix: `agw_${randomId().substring(0, 4)}`,
-      ownerId: user.id,
-      ownerName: user.username,
+      key_prefix: `agw_${randomId().substring(0, 4)}`,
+      user_id: user.id,
       scopes: ['users:read', 'profile:read'],
-      status: Math.random() > 0.2 ? 'active' : 'revoked',
-      lastUsed: randomDate(new Date(2023, 6, 1), new Date()),
-      createdAt: randomDate(new Date(2023, 0, 1), new Date()),
+      is_active: Math.random() > 0.2,
+      last_used_at: randomDate(new Date(2023, 6, 1), new Date()),
+      created_at: createdAt,
+      updated_at: createdAt,
     };
   });
 };
@@ -56,46 +70,38 @@ export const generateApiKeys = (count: number, users: User[]): ApiKey[] => {
 // Mock Audit Logs
 export const generateAuditLogs = (count: number, users?: User[]): AuditLog[] => {
   const actions = ['signin', 'signup', 'api_key_create', 'password_reset', 'oauth_link'];
-  const statuses: ('success' | 'failed' | 'blocked')[] = ['success', 'success', 'success', 'failed', 'blocked'];
-  
+  const statuses: ('success' | 'failure')[] = ['success', 'success', 'success', 'failure', 'failure'];
+  const userAgents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+  ];
+
   return Array.from({ length: count }).map((_, i) => {
     const user = users ? users[Math.floor(Math.random() * users.length)] : undefined;
     return {
       id: randomId(),
       action: actions[Math.floor(Math.random() * actions.length)],
-      userId: user?.id || `user_${Math.floor(Math.random() * 10)}`,
-      userEmail: user?.email || `user${Math.floor(Math.random() * 10)}@example.com`,
+      user_id: user?.id || `user_${Math.floor(Math.random() * 10)}`,
       resource: 'auth',
-      ip: `192.168.1.${Math.floor(Math.random() * 255)}`,
+      ip_address: `192.168.1.${Math.floor(Math.random() * 255)}`,
+      user_agent: userAgents[Math.floor(Math.random() * userAgents.length)],
       status: statuses[Math.floor(Math.random() * statuses.length)],
-      timestamp: randomDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), new Date()),
+      created_at: randomDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), new Date()),
     };
   });
 };
 
 export const getMockStats = (): DashboardStats => {
-  // Generate last 30 days data
-  const registrations = [];
-  const activity = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    registrations.push({ date: dateStr, count: Math.floor(Math.random() * 50) + 10 });
-    activity.push({ 
-      date: dateStr, 
-      success: Math.floor(Math.random() * 200) + 50, 
-      failed: Math.floor(Math.random() * 20) 
-    });
-  }
-
   return {
     totalUsers: 1234,
     activeUsers: 956,
-    usersWith2FA: 789,
+    newUsersToday: 23,
     totalApiKeys: 156,
-    recentRegistrations: registrations,
-    loginActivity: activity
+    activeApiKeys: 142,
+    loginAttemptsToday: 487,
+    failedLoginAttemptsToday: 12
   };
 };
 
@@ -104,29 +110,32 @@ export const mockOAuthProviders: OAuthProviderConfig[] = [
   {
     id: '1',
     provider: 'google',
-    clientId: '782934234-random-string.apps.googleusercontent.com',
-    clientSecret: 'GOCSPX-random-secret-string',
-    redirectUris: ['https://auth.example.com/api/v1/auth/google/callback'],
-    isEnabled: true,
-    createdAt: new Date('2023-01-15').toISOString()
+    client_id: '782934234-random-string.apps.googleusercontent.com',
+    client_secret: 'GOCSPX-random-secret-string',
+    redirect_uris: ['https://auth.example.com/api/v1/auth/google/callback'],
+    is_enabled: true,
+    created_at: new Date('2023-01-15').toISOString(),
+    updated_at: new Date('2023-01-15').toISOString()
   },
   {
     id: '2',
     provider: 'github',
-    clientId: 'Iv1.8a9c8b7d6e5f4g3h',
-    clientSecret: '8a9c8b7d6e5f4g3h2i1j0k9l8m7n6o5p',
-    redirectUris: ['https://auth.example.com/api/v1/auth/github/callback'],
-    isEnabled: true,
-    createdAt: new Date('2023-02-20').toISOString()
+    client_id: 'Iv1.8a9c8b7d6e5f4g3h',
+    client_secret: '8a9c8b7d6e5f4g3h2i1j0k9l8m7n6o5p',
+    redirect_uris: ['https://auth.example.com/api/v1/auth/github/callback'],
+    is_enabled: true,
+    created_at: new Date('2023-02-20').toISOString(),
+    updated_at: new Date('2023-02-20').toISOString()
   },
   {
     id: '3',
     provider: 'telegram',
-    clientId: '123456789:AAH-random-token',
-    clientSecret: '',
-    redirectUris: ['https://auth.example.com/api/v1/auth/telegram/callback'],
-    isEnabled: false,
-    createdAt: new Date('2023-03-10').toISOString()
+    client_id: '123456789:AAH-random-token',
+    client_secret: '',
+    redirect_uris: ['https://auth.example.com/api/v1/auth/telegram/callback'],
+    is_enabled: false,
+    created_at: new Date('2023-03-10').toISOString(),
+    updated_at: new Date('2023-03-10').toISOString()
   }
 ];
 
@@ -137,7 +146,7 @@ export const mockEmailTemplates: EmailTemplate[] = [
     type: 'verification',
     name: 'Email Verification',
     subject: 'Verify your email address',
-    bodyHtml: `<!DOCTYPE html>
+    html_body: `<!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f9fafb;">
   <div style="max-width: 600px; margin: 40px auto; padding: 40px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -155,14 +164,16 @@ export const mockEmailTemplates: EmailTemplate[] = [
 </body>
 </html>`,
     variables: ['{{name}}', '{{action_url}}', '{{email}}'],
-    lastUpdated: new Date('2023-09-10').toISOString()
+    is_active: true,
+    created_at: new Date('2023-09-10').toISOString(),
+    updated_at: new Date('2023-09-10').toISOString()
   },
   {
     id: 'tpl_reset',
-    type: 'reset_password',
+    type: 'password_reset',
     name: 'Password Reset',
     subject: 'Reset your password',
-    bodyHtml: `<!DOCTYPE html>
+    html_body: `<!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f9fafb;">
   <div style="max-width: 600px; margin: 40px auto; padding: 40px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -178,14 +189,16 @@ export const mockEmailTemplates: EmailTemplate[] = [
 </body>
 </html>`,
     variables: ['{{name}}', '{{action_url}}', '{{ip_address}}'],
-    lastUpdated: new Date('2023-09-15').toISOString()
+    is_active: true,
+    created_at: new Date('2023-09-15').toISOString(),
+    updated_at: new Date('2023-09-15').toISOString()
   },
   {
     id: 'tpl_welcome',
     type: 'welcome',
     name: 'Welcome Email',
     subject: 'Welcome to the platform!',
-    bodyHtml: `<!DOCTYPE html>
+    html_body: `<!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -198,65 +211,72 @@ export const mockEmailTemplates: EmailTemplate[] = [
 </body>
 </html>`,
     variables: ['{{name}}', '{{username}}'],
-    lastUpdated: new Date('2023-10-01').toISOString()
+    is_active: true,
+    created_at: new Date('2023-10-01').toISOString(),
+    updated_at: new Date('2023-10-01').toISOString()
   }
 ];
 
 // Mock RBAC Data
+const baseTimestamp = new Date('2023-01-01').toISOString();
 export const mockPermissions: Permission[] = [
   // User Management
-  { id: 'users:read', resource: 'users', action: 'read', name: 'Read Users', description: 'View user list and details' },
-  { id: 'users:write', resource: 'users', action: 'write', name: 'Create/Edit Users', description: 'Create and modify users' },
-  { id: 'users:delete', resource: 'users', action: 'delete', name: 'Delete Users', description: 'Delete users from system' },
-  
+  { id: 'users:read', resource: 'users', action: 'read', name: 'Read Users', description: 'View user list and details', created_at: baseTimestamp, updated_at: baseTimestamp },
+  { id: 'users:write', resource: 'users', action: 'write', name: 'Create/Edit Users', description: 'Create and modify users', created_at: baseTimestamp, updated_at: baseTimestamp },
+  { id: 'users:delete', resource: 'users', action: 'delete', name: 'Delete Users', description: 'Delete users from system', created_at: baseTimestamp, updated_at: baseTimestamp },
+
   // API Keys
-  { id: 'api_keys:read', resource: 'api_keys', action: 'read', name: 'View API Keys', description: 'View all API keys' },
-  { id: 'api_keys:revoke', resource: 'api_keys', action: 'revoke', name: 'Revoke API Keys', description: 'Revoke any API key' },
-  
+  { id: 'api_keys:read', resource: 'api_keys', action: 'read', name: 'View API Keys', description: 'View all API keys', created_at: baseTimestamp, updated_at: baseTimestamp },
+  { id: 'api_keys:revoke', resource: 'api_keys', action: 'revoke', name: 'Revoke API Keys', description: 'Revoke any API key', created_at: baseTimestamp, updated_at: baseTimestamp },
+
   // System Settings
-  { id: 'system:read', resource: 'system', action: 'read', name: 'View Settings', description: 'View system configuration' },
-  { id: 'system:write', resource: 'system', action: 'write', name: 'Edit Settings', description: 'Modify system configuration' },
-  
+  { id: 'system:read', resource: 'system', action: 'read', name: 'View Settings', description: 'View system configuration', created_at: baseTimestamp, updated_at: baseTimestamp },
+  { id: 'system:write', resource: 'system', action: 'write', name: 'Edit Settings', description: 'Modify system configuration', created_at: baseTimestamp, updated_at: baseTimestamp },
+
   // Audit Logs
-  { id: 'logs:read', resource: 'audit_logs', action: 'read', name: 'View Logs', description: 'Access audit trail' },
+  { id: 'logs:read', resource: 'audit_logs', action: 'read', name: 'View Logs', description: 'Access audit trail', created_at: baseTimestamp, updated_at: baseTimestamp },
 ];
 
 export const mockRoles: RoleDefinition[] = [
   {
     id: 'admin',
-    name: 'Administrator',
+    name: 'admin',
+    display_name: 'Administrator',
     description: 'Full system access',
-    isSystem: true,
-    permissions: mockPermissions.map(p => p.id),
-    userCount: 5,
-    createdAt: new Date('2023-01-01').toISOString()
+    is_system_role: true,
+    permissions: mockPermissions,
+    created_at: new Date('2023-01-01').toISOString(),
+    updated_at: new Date('2023-01-01').toISOString()
   },
   {
     id: 'moderator',
-    name: 'Moderator',
+    name: 'moderator',
+    display_name: 'Moderator',
     description: 'Can manage users but not system settings',
-    isSystem: true,
-    permissions: ['users:read', 'users:write', 'logs:read', 'api_keys:read'],
-    userCount: 12,
-    createdAt: new Date('2023-02-15').toISOString()
+    is_system_role: true,
+    permissions: mockPermissions.filter(p => ['users:read', 'users:write', 'logs:read', 'api_keys:read'].includes(p.id)),
+    created_at: new Date('2023-02-15').toISOString(),
+    updated_at: new Date('2023-02-15').toISOString()
   },
   {
     id: 'user',
-    name: 'User',
+    name: 'user',
+    display_name: 'User',
     description: 'Standard user access',
-    isSystem: true,
+    is_system_role: true,
     permissions: [],
-    userCount: 1217,
-    createdAt: new Date('2023-03-20').toISOString()
+    created_at: new Date('2023-03-20').toISOString(),
+    updated_at: new Date('2023-03-20').toISOString()
   },
   {
     id: 'support',
-    name: 'Support Agent',
+    name: 'support',
+    display_name: 'Support Agent',
     description: 'Read-only access to users and logs',
-    isSystem: false,
-    permissions: ['users:read', 'logs:read'],
-    userCount: 3,
-    createdAt: new Date('2023-06-10').toISOString()
+    is_system_role: false,
+    permissions: mockPermissions.filter(p => ['users:read', 'logs:read'].includes(p.id)),
+    created_at: new Date('2023-06-10').toISOString(),
+    updated_at: new Date('2023-06-10').toISOString()
   }
 ];
 
@@ -265,18 +285,18 @@ export const mockIpRules: IpRule[] = [
   {
     id: 'ip_1',
     type: 'blacklist',
-    ipAddress: '192.168.1.55',
+    ip_address: '192.168.1.55',
     description: 'Malicious bot activity',
-    createdAt: new Date('2023-10-15').toISOString(),
-    createdBy: 'System'
+    created_at: new Date('2023-10-15').toISOString(),
+    updated_at: new Date('2023-10-15').toISOString()
   },
   {
     id: 'ip_2',
     type: 'whitelist',
-    ipAddress: '10.0.0.0/8',
+    ip_address: '10.0.0.0/8',
     description: 'Internal corporate network',
-    createdAt: new Date('2023-01-01').toISOString(),
-    createdBy: 'Admin'
+    created_at: new Date('2023-01-01').toISOString(),
+    updated_at: new Date('2023-01-01').toISOString()
   }
 ];
 
@@ -284,25 +304,27 @@ export const mockIpRules: IpRule[] = [
 export const mockWebhooks: WebhookEndpoint[] = [
   {
     id: 'wh_1',
+    name: 'Main Application Sync',
     url: 'https://api.myapp.com/webhooks/auth',
-    description: 'Main application sync',
     events: ['user.created', 'user.deleted', 'user.updated'],
-    secret: 'whsec_test_1234567890',
-    isActive: true,
-    failureCount: 0,
-    lastTriggeredAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    createdAt: new Date('2023-08-01').toISOString()
+    secret_key: 'whsec_test_1234567890',
+    is_active: true,
+    failure_count: 0,
+    last_triggered_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+    created_at: new Date('2023-08-01').toISOString(),
+    updated_at: new Date('2023-08-01').toISOString()
   },
   {
     id: 'wh_2',
+    name: 'Analytics Tracking',
     url: 'https://analytics.example.com/ingest',
-    description: 'Analytics tracking',
     events: ['auth.login.success', 'auth.login.failed'],
-    secret: 'whsec_test_abcdefghij',
-    isActive: false,
-    failureCount: 12,
-    lastTriggeredAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    createdAt: new Date('2023-09-15').toISOString()
+    secret_key: 'whsec_test_abcdefghij',
+    is_active: false,
+    failure_count: 12,
+    last_triggered_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    created_at: new Date('2023-09-15').toISOString(),
+    updated_at: new Date('2023-09-15').toISOString()
   }
 ];
 
@@ -312,33 +334,38 @@ export const mockServiceAccounts: ServiceAccount[] = [
     id: 'sa_1',
     name: 'Payment Service',
     description: 'Backend service for processing payments',
-    clientId: 'svc_payment_8a7d9f2',
-    isActive: true,
-    createdAt: new Date('2023-05-10').toISOString(),
-    lastUsedAt: new Date().toISOString()
+    client_id: 'svc_payment_8a7d9f2',
+    is_active: true,
+    created_at: new Date('2023-05-10').toISOString(),
+    last_used_at: new Date().toISOString()
   },
   {
     id: 'sa_2',
     name: 'Notification Worker',
     description: 'Async worker for sending emails',
-    clientId: 'svc_notify_3k2j1h4',
-    isActive: true,
-    createdAt: new Date('2023-06-22').toISOString(),
-    lastUsedAt: new Date(Date.now() - 1000 * 60 * 60).toISOString()
+    client_id: 'svc_notify_3k2j1h4',
+    is_active: true,
+    created_at: new Date('2023-06-22').toISOString(),
+    last_used_at: new Date(Date.now() - 1000 * 60 * 60).toISOString()
   }
 ];
 
 // Mock Branding
 export let mockBranding: BrandingConfig = {
-  companyName: 'Auth Gateway',
-  logoUrl: '',
-  faviconUrl: '',
-  primaryColor: '#2563EB', // blue-600
-  accentColor: '#1E40AF', // blue-800
-  backgroundColor: '#F3F4F6', // gray-100
-  loginPageTitle: 'Sign in to your account',
-  loginPageSubtitle: 'Welcome back! Please enter your details.',
-  showSocialLogins: true
+  id: 'branding_1',
+  company_name: 'Auth Gateway',
+  logo_url: '',
+  favicon_url: '',
+  theme: {
+    primary_color: '#2563EB', // blue-600
+    secondary_color: '#1E40AF', // blue-800
+    background_color: '#F3F4F6' // gray-100
+  },
+  support_email: 'support@example.com',
+  terms_url: '/terms',
+  privacy_url: '/privacy',
+  created_at: new Date('2023-01-01').toISOString(),
+  updated_at: new Date('2023-01-01').toISOString()
 };
 
 // Mock SMS Config
@@ -384,16 +411,19 @@ export const generateSessions = (users: User[]): UserSession[] => {
     if (Math.random() > 0.3) {
       const count = Math.floor(Math.random() * 3) + 1;
       for(let i=0; i<count; i++) {
+          const createdDate = randomDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), new Date(Date.now() - 24 * 60 * 60 * 1000));
+          const lastActive = randomDate(new Date(Date.now() - 24 * 60 * 60 * 1000), new Date());
+          const deviceType = Math.random() > 0.6 ? 'desktop' : 'mobile';
+          const os = Math.random() > 0.5 ? (Math.random() > 0.5 ? 'Windows 11' : 'macOS 14') : (Math.random() > 0.5 ? 'iOS 17' : 'Android 14');
+          const browser = Math.random() > 0.3 ? 'Chrome 120.0' : 'Safari 17.0';
+
           sessions.push({
               id: randomId(),
-              userId: user.id,
-              deviceType: Math.random() > 0.6 ? 'desktop' : 'mobile',
-              os: Math.random() > 0.5 ? (Math.random() > 0.5 ? 'Windows 11' : 'macOS 14') : (Math.random() > 0.5 ? 'iOS 17' : 'Android 14'),
-              browser: Math.random() > 0.3 ? 'Chrome 120.0' : 'Safari 17.0',
-              ipAddress: `192.168.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`,
-              lastActive: randomDate(new Date(Date.now() - 24 * 60 * 60 * 1000), new Date()), // recent
-              isCurrent: i === 0 && Math.random() > 0.5,
-              location: ['New York, US', 'London, UK', 'Berlin, DE', 'Tokyo, JP'][Math.floor(Math.random() * 4)]
+              ip_address: `192.168.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`,
+              user_agent: `Mozilla/5.0 (${deviceType}; ${os}) AppleWebKit/537.36 (KHTML, like Gecko) ${browser}`,
+              created_at: createdDate,
+              last_activity: lastActive,
+              is_current: i === 0 && Math.random() > 0.5
           });
       }
     }
@@ -420,22 +450,26 @@ export const updateUser = (id: string, data: Partial<User>): User | undefined =>
 
 export const createUser = (data: Partial<User>): User => {
   const defaultRole = mockRoles.find(r => r.id === 'user');
+  const now = new Date().toISOString();
   const newUser: User = {
     id: randomId(),
     email: data.email || '',
     username: data.username || '',
-    fullName: data.fullName || '',
+    full_name: data.full_name || '',
     roles: data.roles || (defaultRole ? [{
       id: defaultRole.id,
-      name: defaultRole.id,
-      displayName: defaultRole.name
+      name: defaultRole.name,
+      display_name: defaultRole.display_name
     }] : []),
-    isActive: data.isActive ?? true,
-    isEmailVerified: data.isEmailVerified ?? false,
-    is2FAEnabled: data.is2FAEnabled ?? false,
+    account_type: data.account_type || 'human',
+    is_active: data.is_active ?? true,
+    email_verified: data.email_verified ?? false,
+    phone_verified: data.phone_verified ?? false,
+    totp_enabled: data.totp_enabled ?? false,
     phone: data.phone,
-    createdAt: new Date().toISOString(),
-    avatarUrl: `https://picsum.photos/seed/${Math.random()}/200/200`
+    created_at: now,
+    updated_at: now,
+    profile_picture_url: data.profile_picture_url || `https://picsum.photos/seed/${Math.random()}/200/200`
   };
   mockUsers.unshift(newUser);
   return newUser;
@@ -443,7 +477,7 @@ export const createUser = (data: Partial<User>): User => {
 
 // User Actions
 export const resetUserTwoFA = (userId: string): boolean => {
-  const user = updateUser(userId, { is2FAEnabled: false });
+  const user = updateUser(userId, { totp_enabled: false });
   return !!user;
 }
 
@@ -454,28 +488,32 @@ export const sendPasswordResetEmail = (userId: string): boolean => {
 }
 
 export const getUserApiKeys = (userId: string): ApiKey[] => {
-  return mockApiKeys.filter(k => k.ownerId === userId);
+  return mockApiKeys.filter(k => k.user_id === userId);
 };
 
 export const getUserLogs = (userId: string): AuditLog[] => {
-  return mockLogs.filter(l => l.userId === userId).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return mockLogs.filter(l => l.user_id === userId).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 };
 
 export const getUserOAuthAccounts = (userId: string): OAuthAccount[] => {
   const providers: OAuthAccount['provider'][] = ['google', 'github', 'yandex', 'telegram'];
   const count = Math.floor(Math.random() * 3);
-  
-  return Array.from({ length: count }).map((_, i) => ({
-    id: `oauth_${userId}_${i}`,
-    provider: providers[i % providers.length],
-    userId: userId,
-    userName: `user_oauth_${i}`,
-    connectedAt: randomDate(new Date(2023, 0, 1), new Date())
-  }));
+
+  return Array.from({ length: count }).map((_, i) => {
+    const createdDate = randomDate(new Date(2023, 0, 1), new Date());
+    return {
+      id: `oauth_${userId}_${i}`,
+      provider: providers[i % providers.length],
+      user_id: userId,
+      provider_user_id: `provider_user_${randomId()}`,
+      created_at: createdDate,
+      updated_at: createdDate
+    };
+  });
 };
 
 export const getUserSessions = (userId: string): UserSession[] => {
-  return mockSessions.filter(s => s.userId === userId).sort((a, b) => new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime());
+  return mockSessions.sort((a, b) => new Date(b.last_activity).getTime() - new Date(a.last_activity).getTime());
 };
 
 export const revokeUserSession = (sessionId: string): boolean => {
@@ -505,11 +543,13 @@ export const updateOAuthProvider = (id: string, data: Partial<OAuthProviderConfi
   return undefined;
 };
 
-export const createOAuthProvider = (data: Omit<OAuthProviderConfig, 'id' | 'createdAt'>): OAuthProviderConfig => {
+export const createOAuthProvider = (data: Omit<OAuthProviderConfig, 'id' | 'created_at' | 'updated_at'>): OAuthProviderConfig => {
+  const now = new Date().toISOString();
   const newProvider: OAuthProviderConfig = {
     ...data,
     id: randomId(),
-    createdAt: new Date().toISOString()
+    created_at: now,
+    updated_at: now
   };
   mockOAuthProviders.push(newProvider);
   return newProvider;
@@ -536,7 +576,7 @@ export const getEmailTemplate = (id: string): EmailTemplate | undefined => {
 export const updateEmailTemplate = (id: string, data: Partial<EmailTemplate>): EmailTemplate | undefined => {
   const index = mockEmailTemplates.findIndex(t => t.id === id);
   if (index !== -1) {
-    mockEmailTemplates[index] = { ...mockEmailTemplates[index], ...data, lastUpdated: new Date().toISOString() };
+    mockEmailTemplates[index] = { ...mockEmailTemplates[index], ...data, updated_at: new Date().toISOString() };
     return mockEmailTemplates[index];
   }
   return undefined;
@@ -545,6 +585,10 @@ export const updateEmailTemplate = (id: string, data: Partial<EmailTemplate>): E
 // RBAC Access
 export const getRoles = (): RoleDefinition[] => {
   return mockRoles;
+};
+
+export const getRoleUserCount = (roleId: string): number => {
+  return mockUsers.filter(user => user.roles.some(r => r.id === roleId)).length;
 };
 
 export const getRole = (id: string): RoleDefinition | undefined => {
@@ -563,13 +607,16 @@ export const createPermission = (data: Partial<Permission>): Permission => {
   const resource = data.resource?.toLowerCase() || 'unknown';
   const action = data.action?.toLowerCase() || 'unknown';
   const id = `${resource}:${action}`;
-  
+  const now = new Date().toISOString();
+
   const newPerm: Permission = {
     id: id,
     name: data.name || `${resource} ${action}`,
     resource: resource,
     action: action,
-    description: data.description || ''
+    description: data.description || '',
+    created_at: now,
+    updated_at: now
   };
   mockPermissions.push(newPerm);
   return newPerm;
@@ -603,14 +650,17 @@ export const updateRole = (id: string, data: Partial<RoleDefinition>): RoleDefin
 };
 
 export const createRole = (data: Partial<RoleDefinition>): RoleDefinition => {
+  const now = new Date().toISOString();
+  const roleName = data.name || data.display_name || 'New Role';
   const newRole: RoleDefinition = {
-    id: data.name?.toLowerCase().replace(/\s+/g, '_') || randomId(),
-    name: data.name || 'New Role',
+    id: roleName.toLowerCase().replace(/\s+/g, '_') || randomId(),
+    name: roleName.toLowerCase().replace(/\s+/g, '_'),
+    display_name: data.display_name || roleName,
     description: data.description || '',
-    isSystem: false,
+    is_system_role: false,
     permissions: data.permissions || [],
-    userCount: 0,
-    createdAt: new Date().toISOString()
+    created_at: now,
+    updated_at: now
   };
   mockRoles.push(newRole);
   return newRole;
@@ -618,7 +668,7 @@ export const createRole = (data: Partial<RoleDefinition>): RoleDefinition => {
 
 export const deleteRole = (id: string): boolean => {
   const index = mockRoles.findIndex(r => r.id === id);
-  if (index !== -1 && !mockRoles[index].isSystem) {
+  if (index !== -1 && !mockRoles[index].is_system_role) {
     mockRoles.splice(index, 1);
     return true;
   }
@@ -634,13 +684,14 @@ export const getIpRules = (type?: 'whitelist' | 'blacklist'): IpRule[] => {
 };
 
 export const createIpRule = (data: Partial<IpRule>): IpRule => {
+  const now = new Date().toISOString();
   const newRule: IpRule = {
     id: randomId(),
     type: data.type || 'blacklist',
-    ipAddress: data.ipAddress || '',
+    ip_address: data.ip_address || '',
     description: data.description,
-    createdAt: new Date().toISOString(),
-    createdBy: 'Admin'
+    created_at: now,
+    updated_at: now
   };
   mockIpRules.unshift(newRule);
   return newRule;
@@ -665,15 +716,17 @@ export const getWebhook = (id: string): WebhookEndpoint | undefined => {
 };
 
 export const createWebhook = (data: Partial<WebhookEndpoint>): WebhookEndpoint => {
+  const now = new Date().toISOString();
   const newWebhook: WebhookEndpoint = {
     id: randomId(),
+    name: data.name || 'New Webhook',
     url: data.url || '',
-    description: data.description,
     events: data.events || [],
-    secret: `whsec_${randomId()}${randomId()}`,
-    isActive: data.isActive ?? true,
-    failureCount: 0,
-    createdAt: new Date().toISOString()
+    secret_key: `whsec_${randomId()}${randomId()}`,
+    is_active: data.is_active ?? true,
+    failure_count: 0,
+    created_at: now,
+    updated_at: now
   };
   mockWebhooks.unshift(newWebhook);
   return newWebhook;
@@ -712,9 +765,9 @@ export const createServiceAccount = (data: Partial<ServiceAccount>): { account: 
     id: randomId(),
     name: data.name || 'New Service',
     description: data.description || '',
-    clientId: `svc_${randomId()}`,
-    isActive: data.isActive ?? true,
-    createdAt: new Date().toISOString()
+    client_id: `svc_${randomId()}`,
+    is_active: data.is_active ?? true,
+    created_at: new Date().toISOString()
   };
   mockServiceAccounts.unshift(newAccount);
   return { account: newAccount, clientSecret };

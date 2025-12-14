@@ -30,7 +30,7 @@ func (r *OAuthRepository) CreateOAuthAccount(ctx context.Context, account *model
 		Set("refresh_token = EXCLUDED.refresh_token").
 		Set("token_expires_at = EXCLUDED.token_expires_at").
 		Set("profile_data = EXCLUDED.profile_data").
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Returning("*").
 		Exec(ctx)
 
@@ -83,7 +83,7 @@ func (r *OAuthRepository) UpdateOAuthAccount(ctx context.Context, account *model
 	result, err := r.db.NewUpdate().
 		Model(account).
 		Column("access_token", "refresh_token", "token_expires_at", "profile_data").
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		WherePK().
 		Returning("updated_at").
 		Exec(ctx)

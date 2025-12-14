@@ -148,10 +148,10 @@ export class OAuthService extends BaseService {
     );
 
     // Store tokens
-    if (response.data.accessToken) {
+    if (response.data.access_token) {
       const tokenStorage = this.http.getTokenStorage();
-      await tokenStorage.setAccessToken(response.data.accessToken);
-      await tokenStorage.setRefreshToken(response.data.refreshToken);
+      await tokenStorage.setAccessToken(response.data.access_token);
+      await tokenStorage.setRefreshToken(response.data.refresh_token);
     }
 
     return response.data;
@@ -172,10 +172,10 @@ export class OAuthService extends BaseService {
     );
 
     // Store tokens
-    if (response.data.accessToken) {
+    if (response.data.access_token) {
       const tokenStorage = this.http.getTokenStorage();
-      await tokenStorage.setAccessToken(response.data.accessToken);
-      await tokenStorage.setRefreshToken(response.data.refreshToken);
+      await tokenStorage.setAccessToken(response.data.access_token);
+      await tokenStorage.setRefreshToken(response.data.refresh_token);
     }
 
     return response.data;

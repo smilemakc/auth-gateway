@@ -7,6 +7,13 @@ import {
 // Get base URL from environment
 const baseUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api`;
 
+// Custom event for auth failure - allows React components to react to auth failures
+export const AUTH_FAILURE_EVENT = 'auth:failure';
+
+export function dispatchAuthFailure() {
+  window.dispatchEvent(new CustomEvent(AUTH_FAILURE_EVENT));
+}
+
 // Custom token storage with debugging
 const customTokenStorage: TokenStorage = {
   async getAccessToken(): Promise<string | null> {
@@ -31,7 +38,7 @@ const customTokenStorage: TokenStorage = {
     localStorage.setItem('auth_gateway_refresh_token', token);
   },
 
-  async clearTokens(): Promise<void> {
+  async clear(): Promise<void> {
     console.log('[TokenStorage] Clearing tokens');
     localStorage.removeItem('auth_gateway_access_token');
     localStorage.removeItem('auth_gateway_refresh_token');
@@ -48,12 +55,13 @@ export const apiClient: AuthGatewayClient = createClient({
 
   callbacks: {
     onAuthFailure: () => {
-      console.error('[Auth] Authentication failed - clearing tokens and redirecting to login');
+      console.error('[Auth] Authentication failed - clearing tokens and dispatching auth failure event');
       // Clear all auth-related items
       localStorage.removeItem('auth_gateway_access_token');
       localStorage.removeItem('auth_gateway_refresh_token');
       localStorage.removeItem('auth_token');
-      window.location.href = '/#/login';
+      // Dispatch custom event so AuthContext can update its state
+      dispatchAuthFailure();
     },
 
     onTokenRefresh: (tokens) => {

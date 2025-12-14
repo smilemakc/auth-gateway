@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Shield, ShieldOff, Check, X, Filter, Eye, Edit } from 'lucide-react';
-import { UserRole } from '../types';
+import type { AdminUserResponse } from '@auth-gateway/client-sdk';
 import { useLanguage } from '../services/i18n';
 import { useUsers, useUpdateUser } from '../hooks/useUsers';
 
@@ -20,7 +20,7 @@ const Users: React.FC = () => {
     try {
       await updateUserMutation.mutateAsync({
         id,
-        data: { isActive: !currentStatus },
+        data: { is_active: !currentStatus },
       });
     } catch (error) {
       console.error('Failed to toggle user status:', error);
@@ -46,10 +46,10 @@ const Users: React.FC = () => {
 
   const users = data?.users || [];
 
-  const filterUsersByRole = (userList: any[]) => {
+  const filterUsersByRole = (userList: AdminUserResponse[]) => {
     if (roleFilter === 'all') return userList;
-    return userList.filter((u: any) =>
-      u.roles?.some((r: any) => r.name === roleFilter)
+    return userList.filter((u) =>
+      u.roles?.some((r) => r.name === roleFilter)
     );
   };
 
@@ -82,15 +82,15 @@ const Users: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <Filter size={20} className="text-gray-400" />
-            <select 
+            <select
               className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
             >
               <option value="all">{t('users.filter_role')}</option>
-              <option value={UserRole.ADMIN}>Admin</option>
-              <option value={UserRole.MODERATOR}>Moderator</option>
-              <option value={UserRole.USER}>User</option>
+              <option value="admin">Admin</option>
+              <option value="moderator">Moderator</option>
+              <option value="user">User</option>
             </select>
           </div>
         </div>
@@ -114,7 +114,7 @@ const Users: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        <img className="h-10 w-10 rounded-full" src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}`} alt="" />
+                        <img className="h-10 w-10 rounded-full" src={user.profile_picture_url || `https://ui-avatars.com/api/?name=${user.username}`} alt="" />
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{user.username}</div>
@@ -130,27 +130,27 @@ const Users: React.FC = () => {
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
                             ${role.name === 'admin' ? 'bg-purple-100 text-purple-800' :
                               role.name === 'moderator' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'}`}>
-                          {role.displayName || role.name}
+                          {role.display_name || role.name}
                         </span>
                       ))}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${user.isActive ? 'bg-green-600' : 'bg-red-600'}`}></span>
-                      {user.isActive ? t('users.active') : t('users.blocked')}
+                      ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${user.is_active ? 'bg-green-600' : 'bg-red-600'}`}></span>
+                      {user.is_active ? t('users.active') : t('users.blocked')}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.is2FAEnabled ? (
+                    {user.totp_enabled ? (
                       <Check size={16} className="text-green-500" />
                     ) : (
                       <X size={16} className="text-gray-300" />
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {new Date(user.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
@@ -169,11 +169,11 @@ const Users: React.FC = () => {
                         <Edit size={18} />
                       </Link>
                       <button
-                        onClick={() => toggleStatus(user.id, user.isActive)}
-                        className={`p-1 rounded-md hover:bg-gray-100 ${user.isActive ? 'text-gray-400 hover:text-red-600' : 'text-gray-400 hover:text-green-600'}`}
+                        onClick={() => toggleStatus(user.id, user.is_active)}
+                        className={`p-1 rounded-md hover:bg-gray-100 ${user.is_active ? 'text-gray-400 hover:text-red-600' : 'text-gray-400 hover:text-green-600'}`}
                         disabled={updateUserMutation.isPending}
                       >
-                        {user.isActive ? <ShieldOff size={18} /> : <Shield size={18} />}
+                        {user.is_active ? <ShieldOff size={18} /> : <Shield size={18} />}
                       </button>
                     </div>
                   </td>

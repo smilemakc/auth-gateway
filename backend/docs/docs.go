@@ -1473,6 +1473,447 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/admin/templates": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all email templates",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email Templates"
+                ],
+                "summary": "List all email templates",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "templates": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/EmailTemplate"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new email template for customized emails",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email Templates"
+                ],
+                "summary": "Create a new email template",
+                "parameters": [
+                    {
+                        "description": "Template data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateEmailTemplateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/EmailTemplate"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/templates/preview": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Render a template with sample data for preview",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email Templates"
+                ],
+                "summary": "Preview an email template",
+                "parameters": [
+                    {
+                        "description": "Preview data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PreviewEmailTemplateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PreviewEmailTemplateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/templates/types": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all available email template types",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email Templates"
+                ],
+                "summary": "Get available template types",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "types": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/templates/variables/{type}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the list of default variables available for a specific template type",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email Templates"
+                ],
+                "summary": "Get default variables for a template type",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Template type",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "variables": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/templates/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a specific email template by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email Templates"
+                ],
+                "summary": "Get email template by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/EmailTemplate"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing email template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email Templates"
+                ],
+                "summary": "Update an email template",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Template update data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateEmailTemplateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete an email template by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Email Templates"
+                ],
+                "summary": "Delete an email template",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/admin/users": {
             "get": {
                 "security": [
@@ -1936,6 +2377,494 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/webhooks": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a paginated list of all webhooks",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "List all webhooks",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Items per page",
+                        "name": "per_page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/WebhookListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new webhook for receiving event notifications",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Create a new webhook",
+                "parameters": [
+                    {
+                        "description": "Webhook data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateWebhookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "secret_key": {
+                                    "type": "string"
+                                },
+                                "webhook": {
+                                    "$ref": "#/definitions/Webhook"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/webhooks/events": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all available webhook event types",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Get available webhook events",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "events": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/webhooks/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a specific webhook by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Get webhook by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Webhook ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Webhook"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing webhook configuration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Update a webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Webhook ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Webhook update data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateWebhookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a webhook by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Delete a webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Webhook ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/webhooks/{id}/deliveries": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a paginated list of webhook delivery attempts",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "List webhook deliveries",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Webhook ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Items per page",
+                        "name": "per_page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/WebhookDeliveryListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/webhooks/{id}/test": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Send a test event to a webhook",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Test a webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Webhook ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Test data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/TestWebhookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -2766,6 +3695,107 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/signup/phone": {
+            "post": {
+                "description": "Start two-step registration without password. Sends OTP to email or phone.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Initiate passwordless registration",
+                "parameters": [
+                    {
+                        "description": "Registration data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/InitPasswordlessRegistrationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/signup/phone/verify": {
+            "post": {
+                "description": "Complete registration by verifying OTP code. Creates user account and returns tokens.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Complete passwordless registration",
+                "parameters": [
+                    {
+                        "description": "OTP verification",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CompletePasswordlessRegistrationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -4398,6 +5428,29 @@ const docTemplate = `{
                 }
             }
         },
+        "CompletePasswordlessRegistrationRequest": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "description": "6-digit OTP code received via email or SMS",
+                    "type": "string",
+                    "example": "123456"
+                },
+                "email": {
+                    "description": "User's email address (must match init request)",
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "phone": {
+                    "description": "User's phone number (must match init request)",
+                    "type": "string",
+                    "example": "+1234567890"
+                }
+            }
+        },
         "CreateAPIKeyRequest": {
             "type": "object",
             "required": [
@@ -4451,6 +5504,64 @@ const docTemplate = `{
                     "description": "Plain text API key (shown only once at creation)",
                     "type": "string",
                     "example": "agw_1234567890abcdef1234567890abcdef"
+                }
+            }
+        },
+        "CreateEmailTemplateRequest": {
+            "type": "object",
+            "required": [
+                "html_body",
+                "name",
+                "subject",
+                "type"
+            ],
+            "properties": {
+                "html_body": {
+                    "description": "HTML email body",
+                    "type": "string",
+                    "example": "\u003cp\u003eHello {{username}}, your verification code is {{code}}\u003c/p\u003e"
+                },
+                "name": {
+                    "description": "Template name (max 100 characters)",
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "Email Verification Template"
+                },
+                "subject": {
+                    "description": "Email subject line (max 200 characters)",
+                    "type": "string",
+                    "maxLength": 200,
+                    "example": "Verify your email address"
+                },
+                "text_body": {
+                    "description": "Plain text email body",
+                    "type": "string",
+                    "example": "Hello {{username}}, your verification code is {{code}}"
+                },
+                "type": {
+                    "description": "Template type: verification, password_reset, welcome, 2fa, or custom",
+                    "type": "string",
+                    "enum": [
+                        "verification",
+                        "password_reset",
+                        "welcome",
+                        "2fa",
+                        "custom"
+                    ],
+                    "example": "verification"
+                },
+                "variables": {
+                    "description": "Available variable names for template",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "username",
+                        "email",
+                        "code",
+                        "expiry_minutes"
+                    ]
                 }
             }
         },
@@ -4654,6 +5765,60 @@ const docTemplate = `{
                 }
             }
         },
+        "CreateWebhookRequest": {
+            "type": "object",
+            "required": [
+                "events",
+                "name",
+                "url"
+            ],
+            "properties": {
+                "events": {
+                    "description": "List of events to subscribe to",
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "user.created",
+                        "user.updated",
+                        "user.login"
+                    ]
+                },
+                "headers": {
+                    "description": "Custom HTTP headers to send with webhook requests",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "Authorization": "Bearer token123",
+                        "X-Custom-Header": "value"
+                    }
+                },
+                "name": {
+                    "description": "Webhook name (max 100 characters)",
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "User Events Webhook"
+                },
+                "retry_config": {
+                    "description": "Retry configuration for failed deliveries",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/RetryConfig"
+                        }
+                    ]
+                },
+                "url": {
+                    "description": "Webhook URL endpoint (max 500 characters)",
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "https://api.example.com/webhooks/auth"
+                }
+            }
+        },
         "DatabaseConnectionInfo": {
             "type": "object",
             "properties": {
@@ -4674,6 +5839,59 @@ const docTemplate = `{
                 },
                 "wait_duration_ms": {
                     "type": "integer"
+                }
+            }
+        },
+        "EmailTemplate": {
+            "type": "object",
+            "required": [
+                "html_body",
+                "name",
+                "subject",
+                "type"
+            ],
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "html_body": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "subject": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "text_body": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "verification",
+                        "password_reset",
+                        "welcome",
+                        "2fa"
+                    ]
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "variables": {
+                    "description": "Available variables as JSON array",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },
@@ -4878,6 +6096,33 @@ const docTemplate = `{
                 }
             }
         },
+        "InitPasswordlessRegistrationRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "description": "User's email address (optional if phone is provided)",
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "full_name": {
+                    "description": "User's full name (optional)",
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "phone": {
+                    "description": "User's phone number (optional if email is provided)",
+                    "type": "string",
+                    "example": "+1234567890"
+                },
+                "username": {
+                    "description": "Optional username (will be auto-generated if not provided)",
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3,
+                    "example": "johndoe"
+                }
+            }
+        },
         "ListAPIKeysResponse": {
             "type": "object",
             "properties": {
@@ -4951,6 +6196,16 @@ const docTemplate = `{
                 }
             }
         },
+        "MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "Response message",
+                    "type": "string",
+                    "example": "Operation completed successfully"
+                }
+            }
+        },
         "OAuthLoginResponse": {
             "type": "object",
             "properties": {
@@ -5002,13 +6257,15 @@ const docTemplate = `{
                 "verification",
                 "password_reset",
                 "2fa",
-                "login"
+                "login",
+                "registration"
             ],
             "x-enum-varnames": [
                 "OTPTypeVerification",
                 "OTPTypePasswordReset",
                 "OTPType2FA",
-                "OTPTypeLogin"
+                "OTPTypeLogin",
+                "OTPTypeRegistration"
             ]
         },
         "Permission": {
@@ -5083,6 +6340,24 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "PreviewEmailTemplateRequest": {
+            "type": "object"
+        },
+        "PreviewEmailTemplateResponse": {
+            "type": "object",
+            "properties": {
+                "rendered_html": {
+                    "description": "Rendered HTML content",
+                    "type": "string",
+                    "example": "\u003cp\u003eHello John Doe\u003c/p\u003e"
+                },
+                "rendered_text": {
+                    "description": "Rendered text content",
+                    "type": "string",
+                    "example": "Hello John Doe"
                 }
             }
         },
@@ -5199,6 +6474,28 @@ const docTemplate = `{
                 },
                 "resource": {
                     "type": "string"
+                }
+            }
+        },
+        "RetryConfig": {
+            "type": "object",
+            "properties": {
+                "backoff_seconds": {
+                    "description": "Delay in seconds for each retry attempt",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        60,
+                        300,
+                        900
+                    ]
+                },
+                "max_attempts": {
+                    "description": "Maximum number of retry attempts",
+                    "type": "integer",
+                    "example": 3
                 }
             }
         },
@@ -5612,6 +6909,9 @@ const docTemplate = `{
                 }
             }
         },
+        "TestWebhookRequest": {
+            "type": "object"
+        },
         "TwoFactorDisableRequest": {
             "type": "object",
             "required": [
@@ -5816,6 +7116,49 @@ const docTemplate = `{
                 }
             }
         },
+        "UpdateEmailTemplateRequest": {
+            "type": "object",
+            "properties": {
+                "html_body": {
+                    "description": "HTML email body",
+                    "type": "string",
+                    "example": "\u003cp\u003eUpdated HTML content\u003c/p\u003e"
+                },
+                "is_active": {
+                    "description": "Whether the template is active",
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "description": "Template name (max 100 characters)",
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "Updated Template Name"
+                },
+                "subject": {
+                    "description": "Email subject line (max 200 characters)",
+                    "type": "string",
+                    "maxLength": 200,
+                    "example": "Updated subject"
+                },
+                "text_body": {
+                    "description": "Plain text email body",
+                    "type": "string",
+                    "example": "Updated text content"
+                },
+                "variables": {
+                    "description": "Available variable names for template",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "username",
+                        "email"
+                    ]
+                }
+            }
+        },
         "UpdateRoleRequest": {
             "type": "object",
             "properties": {
@@ -5902,6 +7245,58 @@ const docTemplate = `{
                     "description": "URL to user's profile picture",
                     "type": "string",
                     "example": "https://example.com/avatars/user.jpg"
+                }
+            }
+        },
+        "UpdateWebhookRequest": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "description": "List of events to subscribe to",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "user.created",
+                        "user.deleted"
+                    ]
+                },
+                "headers": {
+                    "description": "Custom HTTP headers to send with webhook requests",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "Authorization": "Bearer newtoken",
+                        "X-Custom": "value"
+                    }
+                },
+                "is_active": {
+                    "description": "Whether the webhook is active",
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "description": "Webhook name (max 100 characters)",
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "Updated Webhook Name"
+                },
+                "retry_config": {
+                    "description": "Retry configuration for failed deliveries",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/RetryConfig"
+                        }
+                    ]
+                },
+                "url": {
+                    "description": "Webhook URL endpoint (max 500 characters)",
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "https://api.example.com/webhooks/updated"
                 }
             }
         },
@@ -6108,6 +7503,236 @@ const docTemplate = `{
                     "description": "Whether the OTP is valid",
                     "type": "boolean",
                     "example": true
+                }
+            }
+        },
+        "Webhook": {
+            "type": "object",
+            "required": [
+                "name",
+                "url"
+            ],
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "events": {
+                    "description": "JSON array of event types",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "headers": {
+                    "description": "Custom headers as JSON object",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "last_triggered_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "retry_config": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "secret_key": {
+                    "description": "Only sent on creation",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string",
+                    "maxLength": 500
+                }
+            }
+        },
+        "WebhookDelivery": {
+            "type": "object",
+            "properties": {
+                "attempts": {
+                    "type": "integer"
+                },
+                "completed_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "event_type": {
+                    "type": "string"
+                },
+                "http_status_code": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "next_retry_at": {
+                    "type": "string"
+                },
+                "payload": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "response_body": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "\"pending\", \"success\", \"failed\"",
+                    "type": "string"
+                },
+                "webhook_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "WebhookDeliveryListResponse": {
+            "type": "object",
+            "properties": {
+                "deliveries": {
+                    "description": "List of webhook deliveries",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/WebhookDelivery"
+                    }
+                },
+                "page": {
+                    "description": "Current page number",
+                    "type": "integer",
+                    "example": 1
+                },
+                "per_page": {
+                    "description": "Number of items per page",
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "description": "Total number of deliveries",
+                    "type": "integer",
+                    "example": 150
+                },
+                "total_pages": {
+                    "description": "Total number of pages",
+                    "type": "integer",
+                    "example": 8
+                }
+            }
+        },
+        "WebhookListResponse": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "description": "Current page number",
+                    "type": "integer",
+                    "example": 1
+                },
+                "per_page": {
+                    "description": "Number of items per page",
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "description": "Total number of webhooks",
+                    "type": "integer",
+                    "example": 15
+                },
+                "total_pages": {
+                    "description": "Total number of pages",
+                    "type": "integer",
+                    "example": 1
+                },
+                "webhooks": {
+                    "description": "List of webhooks",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/WebhookWithCreator"
+                    }
+                }
+            }
+        },
+        "WebhookWithCreator": {
+            "type": "object",
+            "required": [
+                "name",
+                "url"
+            ],
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "creator_email": {
+                    "type": "string"
+                },
+                "creator_username": {
+                    "type": "string"
+                },
+                "events": {
+                    "description": "JSON array of event types",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "headers": {
+                    "description": "Custom headers as JSON object",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "last_triggered_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "retry_config": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "secret_key": {
+                    "description": "Only sent on creation",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string",
+                    "maxLength": 500
                 }
             }
         }

@@ -111,6 +111,9 @@ export {
   AdminSystemService,
   AdminAPIKeysService,
   AdminSMSSettingsService,
+  AdminOAuthProvidersService,
+  AdminTemplatesService,
+  AdminWebhooksService,
   type AuditLogQueryOptions,
 } from './services';
 

@@ -66,6 +66,9 @@ export const queryKeys = {
   emailTemplates: {
     all: ['emailTemplates'] as const,
     detail: (id: string) => ['emailTemplates', 'detail', id] as const,
+    types: ['emailTemplates', 'types'] as const,
+    variables: (type: string) => ['emailTemplates', 'variables', type] as const,
+    byType: (type: string) => ['emailTemplates', 'byType', type] as const,
   },
 
   // RBAC
@@ -97,6 +100,7 @@ export const queryKeys = {
     branding: ['settings', 'branding'] as const,
     sms: ['settings', 'sms'] as const,
     passwordPolicy: ['settings', 'passwordPolicy'] as const,
+    maintenance: ['settings', 'maintenance'] as const,
   },
 
   // IP Filters
@@ -110,6 +114,7 @@ export const queryKeys = {
   // Webhooks
   webhooks: {
     all: ['webhooks'] as const,
+    list: (page: number, pageSize: number) => ['webhooks', 'list', { page, pageSize }] as const,
     detail: (id: string) => ['webhooks', 'detail', id] as const,
   },
 

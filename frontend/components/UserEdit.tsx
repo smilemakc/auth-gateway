@@ -6,10 +6,29 @@ import {
   Save,
   AlertCircle
 } from 'lucide-react';
-import { UserRole } from '../types';
+import type {
+  AdminUserResponse,
+  AdminCreateUserRequest,
+  AdminUpdateUserRequest,
+  AccountType
+} from '@auth-gateway/client-sdk';
+import type { Role } from '@auth-gateway/client-sdk';
 import { useLanguage } from '../services/i18n';
 import { useUserDetail, useUpdateUser, useCreateUser } from '../hooks/useUsers';
 import { useRoles } from '../hooks/useRBAC';
+
+interface UserFormData {
+  full_name: string;
+  username: string;
+  email: string;
+  password: string;
+  phone: string;
+  role_ids: string[];
+  account_type: AccountType;
+  is_active: boolean;
+  email_verified: boolean;
+  totp_enabled: boolean;
+}
 
 const UserEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,30 +39,40 @@ const UserEdit: React.FC = () => {
   const isEditMode = !!id;
 
   // Fetch user data if in edit mode
-  const { data: user, isLoading: userLoading } = useUserDetail(id!, { enabled: isEditMode });
+  const { data: user, isLoading: userLoading } = useUserDetail(id!);
   const { data: rolesData } = useRoles();
   const updateUserMutation = useUpdateUser();
   const createUserMutation = useCreateUser();
 
-  const availableRoles = rolesData?.roles || [];
+  const availableRoles = rolesData || [];
 
-  const [formData, setFormData] = useState<any>({
-    fullName: '',
+  const [formData, setFormData] = useState<UserFormData>({
+    full_name: '',
     username: '',
     email: '',
+    password: '',
     phone: '',
-    roleIds: [],
-    isActive: true,
-    isEmailVerified: false,
-    is2FAEnabled: false
+    role_ids: [],
+    account_type: 'human',
+    is_active: true,
+    email_verified: false,
+    totp_enabled: false
   });
 
   // Sync user data to form when loaded
   useEffect(() => {
     if (isEditMode && user) {
       setFormData({
-        ...user,
-        roleIds: user.roles?.map((role: any) => role.id) || []
+        full_name: user.full_name || '',
+        username: user.username || '',
+        email: user.email || '',
+        password: '', // Don't load password
+        phone: user.phone || '',
+        role_ids: user.roles?.map((role) => role.id) || [],
+        account_type: user.account_type || 'human',
+        is_active: user.is_active ?? true,
+        email_verified: user.email_verified ?? false,
+        totp_enabled: user.totp_enabled ?? false
       });
     }
   }, [isEditMode, user]);
@@ -65,15 +94,30 @@ const UserEdit: React.FC = () => {
 
     try {
       if (isEditMode) {
-        await updateUserMutation.mutateAsync({ id: id!, data: formData });
+        // For update, send only updatable fields in snake_case
+        const updateData: AdminUpdateUserRequest = {
+          role_ids: formData.role_ids,
+          is_active: formData.is_active
+        };
+        await updateUserMutation.mutateAsync({ id: id!, data: updateData });
         navigate(`/users/${id}`);
       } else {
-        const newUser = await createUserMutation.mutateAsync(formData);
+        // For create, already in snake_case
+        const createData: AdminCreateUserRequest = {
+          email: formData.email,
+          username: formData.username,
+          password: formData.password,
+          full_name: formData.full_name,
+          role_ids: formData.role_ids,
+          account_type: formData.account_type
+        };
+        const newUser = await createUserMutation.mutateAsync(createData);
         navigate(`/users/${newUser.id}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save user:', err);
-      setError(err.message || 'Failed to save user');
+      const message = err instanceof Error ? err.message : 'Failed to save user';
+      setError(message);
     }
   };
 
@@ -139,36 +183,36 @@ const UserEdit: React.FC = () => {
                   <label key={role.id} className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={formData.roleIds.includes(role.id)}
+                      checked={formData.role_ids.includes(role.id)}
                       onChange={(e) => {
                         if (e.target.checked) {
                           setFormData({
                             ...formData,
-                            roleIds: [...formData.roleIds, role.id]
+                            role_ids: [...formData.role_ids, role.id]
                           });
                         } else {
                           setFormData({
                             ...formData,
-                            roleIds: formData.roleIds.filter((id: string) => id !== role.id)
+                            role_ids: formData.role_ids.filter((id: string) => id !== role.id)
                           });
                         }
                       }}
                       className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <span className="ml-2 text-sm text-gray-700">{role.displayName || role.name}</span>
+                    <span className="ml-2 text-sm text-gray-700">{role.display_name || role.name}</span>
                   </label>
                 ))}
               </div>
             </div>
 
             <div className="sm:col-span-6">
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">{t('user.form.fullname')}</label>
+              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">{t('user.form.fullname')}</label>
               <div className="mt-1">
                 <input
                   type="text"
-                  name="fullName"
-                  id="fullName"
-                  value={formData.fullName}
+                  name="full_name"
+                  id="full_name"
+                  value={formData.full_name}
                   onChange={handleChange}
                   className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2.5 border"
                 />
@@ -190,7 +234,26 @@ const UserEdit: React.FC = () => {
               </div>
             </div>
 
-            <div className="sm:col-span-3">
+            {!isEditMode && (
+              <div className="sm:col-span-3">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">{t('auth.password')}</label>
+                <div className="mt-1">
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2.5 border"
+                    required
+                    minLength={8}
+                    placeholder={t('user.form.password_placeholder') || 'Minimum 8 characters'}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className={isEditMode ? "sm:col-span-3" : "sm:col-span-6"}>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700">{t('user.form.phone')}</label>
               <div className="mt-1">
                 <input
@@ -205,22 +268,52 @@ const UserEdit: React.FC = () => {
             </div>
           </div>
 
+          {!isEditMode && (
+            <div className="pt-6 border-t border-gray-200">
+              <h3 className="text-sm font-medium text-gray-900 mb-4">{t('user.form.account_type') || 'Account Type'}</h3>
+              <div className="flex gap-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="account_type"
+                    value="human"
+                    checked={formData.account_type === 'human'}
+                    onChange={handleChange}
+                    className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{t('user.form.account_human') || 'Human'}</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="account_type"
+                    value="service"
+                    checked={formData.account_type === 'service'}
+                    onChange={handleChange}
+                    className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{t('user.form.account_service') || 'Service'}</span>
+                </label>
+              </div>
+            </div>
+          )}
+
           <div className="pt-6 border-t border-gray-200">
             <h3 className="text-sm font-medium text-gray-900 mb-4">{t('settings.roles')} & {t('common.status')}</h3>
             <div className="space-y-4">
               <div className="flex items-start">
                 <div className="flex items-center h-5">
                   <input
-                    id="isActive"
-                    name="isActive"
+                    id="is_active"
+                    name="is_active"
                     type="checkbox"
-                    checked={formData.isActive}
+                    checked={formData.is_active}
                     onChange={handleChange}
                     className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
                   />
                 </div>
                 <div className="ml-3 text-sm">
-                  <label htmlFor="isActive" className="font-medium text-gray-700">{t('user.form.active')}</label>
+                  <label htmlFor="is_active" className="font-medium text-gray-700">{t('user.form.active')}</label>
                   <p className="text-gray-500">{t('user.form.active_desc')}</p>
                 </div>
               </div>
@@ -228,32 +321,32 @@ const UserEdit: React.FC = () => {
               <div className="flex items-start">
                 <div className="flex items-center h-5">
                   <input
-                    id="isEmailVerified"
-                    name="isEmailVerified"
+                    id="email_verified"
+                    name="email_verified"
                     type="checkbox"
-                    checked={formData.isEmailVerified}
+                    checked={formData.email_verified}
                     onChange={handleChange}
                     className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
                   />
                 </div>
                 <div className="ml-3 text-sm">
-                  <label htmlFor="isEmailVerified" className="font-medium text-gray-700">{t('user.email_verified')}</label>
+                  <label htmlFor="email_verified" className="font-medium text-gray-700">{t('user.email_verified')}</label>
                 </div>
               </div>
 
               <div className="flex items-start">
                 <div className="flex items-center h-5">
                   <input
-                    id="is2FAEnabled"
-                    name="is2FAEnabled"
+                    id="totp_enabled"
+                    name="totp_enabled"
                     type="checkbox"
-                    checked={formData.is2FAEnabled}
+                    checked={formData.totp_enabled}
                     onChange={handleChange}
                     className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
                   />
                 </div>
                 <div className="ml-3 text-sm">
-                  <label htmlFor="is2FAEnabled" className="font-medium text-gray-700">{t('user.form.2fa_force')}</label>
+                  <label htmlFor="totp_enabled" className="font-medium text-gray-700">{t('user.form.2fa_force')}</label>
                 </div>
               </div>
             </div>

@@ -12,8 +12,8 @@ export interface TwoFactorSetupRequest {
 /** 2FA setup response */
 export interface TwoFactorSetupResponse {
   secret: string;
-  qrCodeUrl: string;
-  backupCodes: string[];
+  qr_code_url: string;
+  backup_codes: string[];
 }
 
 /** 2FA verify request */
@@ -23,7 +23,7 @@ export interface TwoFactorVerifyRequest {
 
 /** 2FA login verify request */
 export interface TwoFactorLoginVerifyRequest {
-  twoFactorToken: string;
+  two_factor_token: string;
   code: string;
 }
 
@@ -39,8 +39,8 @@ export interface TwoFactorDisableRequest {
 /** 2FA status response */
 export interface TwoFactorStatusResponse {
   enabled: boolean;
-  enabledAt?: string;
-  backupCodesRemaining: number;
+  enabled_at?: string;
+  backup_codes_remaining: number;
 }
 
 /** Regenerate backup codes request */
@@ -50,6 +50,6 @@ export interface RegenerateBackupCodesRequest {
 
 /** Regenerate backup codes response */
 export interface RegenerateBackupCodesResponse {
-  backupCodes: string[];
+  backup_codes: string[];
   message: string;
 }

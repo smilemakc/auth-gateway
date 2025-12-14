@@ -1,19 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiClient } from './apiClient';
-
-// Define User type locally since SDK types might not be available
-interface User {
-  id: string;
-  email: string;
-  username: string;
-  fullName?: string;
-  roles: { id: string; name: string; displayName: string }[];
-  isActive: boolean;
-  emailVerified?: boolean;
-  is2FAEnabled?: boolean;
-  createdAt: string;
-  [key: string]: any;
-}
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import type { User } from '@auth-gateway/client-sdk';
+import { apiClient, AUTH_FAILURE_EVENT } from './apiClient';
 
 interface AuthContextType {
   user: User | null;
@@ -29,6 +16,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Handle auth failure event from apiClient (e.g., when token refresh fails)
+  const handleAuthFailure = useCallback(() => {
+    console.log('[AuthContext] Auth failure event received - logging out user');
+    setUser(null);
+  }, []);
+
+  // Listen to auth failure events
+  useEffect(() => {
+    window.addEventListener(AUTH_FAILURE_EVENT, handleAuthFailure);
+    return () => {
+      window.removeEventListener(AUTH_FAILURE_EVENT, handleAuthFailure);
+    };
+  }, [handleAuthFailure]);
 
   // Check authentication on mount
   useEffect(() => {
@@ -83,7 +84,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     try {
-      await apiClient.auth.signOut();
+      await apiClient.auth.logout();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {

@@ -86,7 +86,7 @@ func (r *TemplateRepository) UpdateEmailTemplate(ctx context.Context, id uuid.UU
 		Set("text_body = ?", textBody).
 		Set("variables = ?", variables).
 		Set("is_active = ?", isActive).
-		Set("updated_at = ?", bun.Ident("CURRENT_TIMESTAMP")).
+		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Where("id = ?", id).
 		Exec(ctx)
 

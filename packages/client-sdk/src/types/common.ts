@@ -25,8 +25,8 @@ export interface ValidationResponse {
 
 /** Timestamp fields */
 export interface Timestamps {
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 /** Entity with ID */
@@ -41,7 +41,7 @@ export interface TimestampedEntity extends Entity, Timestamps {}
 export interface ListResponse<T> {
   total: number;
   page?: number;
-  pageSize?: number;
+  page_size?: number;
 }
 
 /** Error response from API */

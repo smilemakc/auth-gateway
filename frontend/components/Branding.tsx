@@ -10,15 +10,20 @@ const Branding: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [config, setConfig] = useState<BrandingConfig>({
-    companyName: 'Auth Gateway',
-    logoUrl: '',
-    faviconUrl: '',
-    primaryColor: '#2563EB',
-    accentColor: '#1E40AF',
-    backgroundColor: '#F3F4F6',
+    company_name: 'Auth Gateway',
+    logo_url: '',
+    favicon_url: '',
+    theme: {
+      primary_color: '#2563EB',
+      secondary_color: '#1E40AF',
+      background_color: '#F3F4F6'
+    },
     loginPageTitle: 'Sign in to your account',
     loginPageSubtitle: 'Welcome back! Please enter your details.',
-    showSocialLogins: true
+    showSocialLogins: true,
+    id: '',
+    created_at: '',
+    updated_at: ''
   });
   
   const [loading, setLoading] = useState(false);
@@ -31,10 +36,22 @@ const Branding: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setConfig(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+
+    // Handle nested theme properties
+    if (name === 'primary_color' || name === 'secondary_color' || name === 'background_color') {
+      setConfig(prev => ({
+        ...prev,
+        theme: {
+          ...prev.theme,
+          [name]: value
+        }
+      }));
+    } else {
+      setConfig(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
   };
 
   const handleSave = () => {
@@ -91,8 +108,8 @@ const Branding: React.FC = () => {
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t('brand.company')}</label>
                 <input
                   type="text"
-                  name="companyName"
-                  value={config.companyName}
+                  name="company_name"
+                  value={config.company_name}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
                 />
@@ -101,8 +118,8 @@ const Branding: React.FC = () => {
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t('brand.logo')}</label>
                 <input
                   type="text"
-                  name="logoUrl"
-                  value={config.logoUrl}
+                  name="logo_url"
+                  value={config.logo_url}
                   onChange={handleChange}
                   placeholder="https://example.com/logo.png"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
@@ -123,15 +140,15 @@ const Branding: React.FC = () => {
                   <div className="flex gap-2">
                     <input
                       type="color"
-                      name="primaryColor"
-                      value={config.primaryColor}
+                      name="primary_color"
+                      value={config.theme.primary_color}
                       onChange={handleChange}
                       className="h-9 w-9 p-1 rounded border border-gray-300 cursor-pointer"
                     />
                     <input
                       type="text"
-                      name="primaryColor"
-                      value={config.primaryColor}
+                      name="primary_color"
+                      value={config.theme.primary_color}
                       onChange={handleChange}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm font-mono"
                     />
@@ -142,15 +159,15 @@ const Branding: React.FC = () => {
                   <div className="flex gap-2">
                     <input
                       type="color"
-                      name="backgroundColor"
-                      value={config.backgroundColor}
+                      name="background_color"
+                      value={config.theme.background_color}
                       onChange={handleChange}
                       className="h-9 w-9 p-1 rounded border border-gray-300 cursor-pointer"
                     />
                     <input
                       type="text"
-                      name="backgroundColor"
-                      value={config.backgroundColor}
+                      name="background_color"
+                      value={config.theme.background_color}
                       onChange={handleChange}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm font-mono"
                     />
@@ -210,22 +227,22 @@ const Branding: React.FC = () => {
              <span className="flex items-center gap-1"><Lock size={10}/> auth.example.com/login</span>
           </div>
           
-          <div 
+          <div
              className="flex-1 flex items-center justify-center p-4 relative"
-             style={{ backgroundColor: config.backgroundColor }}
+             style={{ backgroundColor: config.theme.background_color }}
           >
              {/* Mock Login Card */}
              <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
                 <div className="p-8">
                    <div className="text-center mb-8">
-                      {config.logoUrl ? (
-                         <img src={config.logoUrl} alt="Logo" className="h-12 mx-auto mb-4 object-contain" />
+                      {config.logo_url ? (
+                         <img src={config.logo_url} alt="Logo" className="h-12 mx-auto mb-4 object-contain" />
                       ) : (
-                         <div 
+                         <div
                             className="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4 text-white font-bold text-xl"
-                            style={{ backgroundColor: config.primaryColor }}
+                            style={{ backgroundColor: config.theme.primary_color }}
                          >
-                            {config.companyName.charAt(0)}
+                            {config.company_name.charAt(0)}
                          </div>
                       )}
                       <h2 className="text-2xl font-bold text-gray-900">{config.loginPageTitle}</h2>
@@ -242,9 +259,9 @@ const Branding: React.FC = () => {
                          <input disabled type="password" className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50" placeholder="••••••••" />
                       </div>
                       
-                      <button 
+                      <button
                          className="w-full py-2 px-4 text-white font-medium rounded-lg shadow-sm"
-                         style={{ backgroundColor: config.primaryColor }}
+                         style={{ backgroundColor: config.theme.primary_color }}
                       >
                          Sign In
                       </button>
@@ -272,13 +289,13 @@ const Branding: React.FC = () => {
                    </div>
                 </div>
                 <div className="bg-gray-50 px-8 py-4 text-center text-sm text-gray-500 border-t border-gray-100">
-                   Don't have an account? <span style={{ color: config.primaryColor }} className="font-medium">Sign up</span>
+                   Don't have an account? <span style={{ color: config.theme.primary_color }} className="font-medium">Sign up</span>
                 </div>
              </div>
-             
+
              {/* Footer Mock */}
              <div className="absolute bottom-4 text-xs text-gray-400">
-                &copy; {new Date().getFullYear()} {config.companyName}. All rights reserved.
+                &copy; {new Date().getFullYear()} {config.company_name}. All rights reserved.
              </div>
           </div>
         </div>

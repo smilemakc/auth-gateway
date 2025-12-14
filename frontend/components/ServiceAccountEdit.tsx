@@ -17,7 +17,7 @@ const ServiceAccountEdit: React.FC = () => {
   const [formData, setFormData] = useState<Partial<ServiceAccount>>({
     name: '',
     description: '',
-    isActive: true
+    is_active: true
   });
   
   // State for newly created credentials
@@ -41,7 +41,7 @@ const ServiceAccountEdit: React.FC = () => {
     setTimeout(() => {
       if (isNewMode) {
         const result = createServiceAccount(formData);
-        setCreatedCredentials({ clientId: result.account.clientId, clientSecret: result.clientSecret });
+        setCreatedCredentials({ clientId: result.account.client_id, clientSecret: result.clientSecret });
         setLoading(false);
         // Don't navigate away yet, show credentials
       } else if (id) {
@@ -148,14 +148,14 @@ const ServiceAccountEdit: React.FC = () => {
 
           <div className="pt-2 border-t border-gray-100">
             <label className="flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                className="sr-only" 
-                checked={formData.isActive}
-                onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={formData.is_active}
+                onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
               />
-              <div className={`block w-10 h-6 rounded-full transition-colors ${formData.isActive ? 'bg-green-600' : 'bg-gray-300'}`}></div>
-              <div className={`dot absolute bg-white w-4 h-4 rounded-full transition-transform transform ${formData.isActive ? 'translate-x-5' : 'translate-x-1'} mt-1 ml-0.5`}></div>
+              <div className={`block w-10 h-6 rounded-full transition-colors ${formData.is_active ? 'bg-green-600' : 'bg-gray-300'}`}></div>
+              <div className={`dot absolute bg-white w-4 h-4 rounded-full transition-transform transform ${formData.is_active ? 'translate-x-5' : 'translate-x-1'} mt-1 ml-0.5`}></div>
               <span className="ml-3 text-sm font-medium text-gray-700">{t('users.active')}</span>
             </label>
           </div>

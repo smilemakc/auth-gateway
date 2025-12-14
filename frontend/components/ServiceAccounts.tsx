@@ -56,7 +56,7 @@ const ServiceAccounts: React.FC = () => {
                 <div>
                   <h3 className="font-semibold text-gray-900">{account.name}</h3>
                   <div className="flex items-center gap-2 mt-0.5">
-                    {account.isActive 
+                    {account.is_active
                       ? <span className="text-green-600 text-xs font-medium flex items-center"><CheckCircle size={10} className="mr-1"/> {t('users.active')}</span>
                       : <span className="text-gray-500 text-xs font-medium flex items-center"><XCircle size={10} className="mr-1"/> Disabled</span>
                     }
@@ -72,9 +72,9 @@ const ServiceAccounts: React.FC = () => {
             <div className="bg-gray-50 rounded-lg p-3 mb-6 border border-gray-100">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Client ID</label>
               <div className="flex items-center justify-between">
-                <code className="text-sm font-mono text-gray-800 truncate mr-2">{account.clientId}</code>
-                <button 
-                  onClick={() => copyToClipboard(account.clientId, account.id)}
+                <code className="text-sm font-mono text-gray-800 truncate mr-2">{account.client_id}</code>
+                <button
+                  onClick={() => copyToClipboard(account.client_id, account.id)}
                   className="text-gray-400 hover:text-blue-600"
                 >
                   {copiedId === account.id ? <CheckCircle size={16} className="text-green-500"/> : <Copy size={16}/>}
@@ -83,7 +83,7 @@ const ServiceAccounts: React.FC = () => {
             </div>
 
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-100">
-               <span className="text-xs text-gray-400">{new Date(account.createdAt).toLocaleDateString()}</span>
+               <span className="text-xs text-gray-400">{new Date(account.created_at).toLocaleDateString()}</span>
                <div className="flex gap-2">
                  <Link 
                    to={`/developers/service-accounts/${account.id}`}

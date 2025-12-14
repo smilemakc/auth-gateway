@@ -20,9 +20,9 @@ export interface SignUpRequest {
   email: string;
   username: string;
   password: string;
-  fullName?: string;
+  full_name?: string;
   phone?: string;
-  accountType?: AccountType;
+  account_type?: AccountType;
 }
 
 /** Sign in request (email-based) */
@@ -42,17 +42,17 @@ export type SignInRequest = SignInEmailRequest | SignInPhoneRequest;
 
 /** Authentication response */
 export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
+  access_token: string;
+  refresh_token: string;
   user: User;
-  expiresIn: number;
-  requires2FA?: boolean;
-  twoFactorToken?: string;
+  expires_in: number;
+  requires_2fa?: boolean;
+  two_factor_token?: string;
 }
 
 /** Refresh token request */
 export interface RefreshTokenRequest {
-  refreshToken: string;
+  refresh_token: string;
 }
 
 /** Email verification request */
@@ -75,7 +75,7 @@ export interface PasswordResetRequestRequest {
 export interface PasswordResetCompleteRequest {
   email: string;
   code: string;
-  newPassword: string;
+  new_password: string;
 }
 
 /** Send OTP request */
@@ -95,8 +95,8 @@ export interface VerifyOTPRequest {
 
 /** Verify OTP response */
 export interface VerifyOTPResponse extends ValidationResponse {
-  accessToken?: string;
-  refreshToken?: string;
+  access_token?: string;
+  refresh_token?: string;
   user?: User;
 }
 

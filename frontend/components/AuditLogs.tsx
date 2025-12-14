@@ -58,13 +58,13 @@ const AuditLogs: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-gray-600">
                       <User size={16} />
-                      {log.user_id || log.userId || 'System'}
+                      {log.user_id || 'System'}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-gray-500 font-mono text-xs">
                       <Globe size={14} />
-                      {log.ip || log.ipAddress || '-'}
+                      {log.ip_address || '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -77,7 +77,7 @@ const AuditLogs: React.FC = () => {
                   <td className="px-6 py-4 text-gray-500">
                     <div className="flex items-center gap-2">
                       <Clock size={14} />
-                      {new Date(log.created_at || log.createdAt).toLocaleString()}
+                      {new Date(log.created_at).toLocaleString()}
                     </div>
                   </td>
                 </tr>

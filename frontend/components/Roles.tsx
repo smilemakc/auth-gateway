@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getRoles, deleteRole } from '../services/mockData';
+import { getRoles, deleteRole, getRoleUserCount } from '../services/mockData';
 import { RoleDefinition } from '../types';
 import { ArrowLeft, Shield, Plus, Edit2, Trash2, Users } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
@@ -64,11 +64,11 @@ const Roles: React.FC = () => {
                 <tr key={role.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${role.isSystem ? 'bg-purple-50 text-purple-600' : 'bg-gray-100 text-gray-600'}`}>
+                      <div className={`p-2 rounded-lg ${role.is_system_role ? 'bg-purple-50 text-purple-600' : 'bg-gray-100 text-gray-600'}`}>
                         <Shield size={18} />
                       </div>
                       <span className="font-medium text-gray-900">{role.name}</span>
-                      {role.isSystem && (
+                      {role.is_system_role && (
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-500 uppercase">{t('roles.system_role')}</span>
                       )}
                     </div>
@@ -79,7 +79,7 @@ const Roles: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-500">
                       <Users size={14} className="mr-1.5" />
-                      {role.userCount}
+                      {getRoleUserCount(role.id)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -88,7 +88,7 @@ const Roles: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {role.createdAt ? new Date(role.createdAt).toLocaleDateString() : '-'}
+                    {role.created_at ? new Date(role.created_at).toLocaleDateString() : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
@@ -98,8 +98,8 @@ const Roles: React.FC = () => {
                       >
                         <Edit2 size={18} />
                       </Link>
-                      {!role.isSystem && (
-                        <button 
+                      {!role.is_system_role && (
+                        <button
                           onClick={() => handleDelete(role.id)}
                           className="p-1 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100"
                         >
