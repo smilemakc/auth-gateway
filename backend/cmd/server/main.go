@@ -340,6 +340,7 @@ func main() {
 		tokenRepo,
 		rbacRepo,
 		apiKeyService,
+		authService,
 		redis,
 		log,
 	)

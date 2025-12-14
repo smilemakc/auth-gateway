@@ -9,6 +9,7 @@ service AuthService {
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
   rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
   rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
 }
 
 message ValidateTokenRequest {
@@ -75,4 +76,21 @@ message IntrospectTokenResponse {
   string subject = 9;
   bool blacklisted = 10;
   string error_message = 11;
+}
+
+message CreateUserRequest {
+  string email = 1;
+  string phone = 2;
+  string username = 3;
+  string password = 4;
+  string full_name = 5;
+  string account_type = 6;
+}
+
+message CreateUserResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 expires_in = 4;
+  string error_message = 5;
 }

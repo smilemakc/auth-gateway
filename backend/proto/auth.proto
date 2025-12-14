@@ -17,6 +17,9 @@ service AuthService {
 
   // IntrospectToken provides detailed information about a token
   rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse);
+
+  // CreateUser creates a new user account
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
 }
 
 // ValidateTokenRequest contains the token to validate
@@ -93,4 +96,23 @@ message IntrospectTokenResponse {
   string subject = 9;
   bool blacklisted = 10;
   string error_message = 11;
+}
+
+// CreateUserRequest contains data for creating a new user
+message CreateUserRequest {
+  string email = 1;
+  string phone = 2;
+  string username = 3;
+  string password = 4;
+  string full_name = 5;
+  string account_type = 6; // "human" or "service"
+}
+
+// CreateUserResponse contains the result of user creation
+message CreateUserResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 expires_in = 4;
+  string error_message = 5;
 }

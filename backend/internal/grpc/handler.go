@@ -24,6 +24,7 @@ type AuthHandlerV2 struct {
 	tokenRepo     *repository.TokenRepository
 	rbacRepo      *repository.RBACRepository
 	apiKeyService *service.APIKeyService
+	authService   *service.AuthService
 	redis         *service.RedisService
 	logger        *logger.Logger
 }
@@ -35,6 +36,7 @@ func NewAuthHandlerV2(
 	tokenRepo *repository.TokenRepository,
 	rbacRepo *repository.RBACRepository,
 	apiKeyService *service.APIKeyService,
+	authService *service.AuthService,
 	redis *service.RedisService,
 	log *logger.Logger,
 ) *AuthHandlerV2 {
@@ -44,6 +46,7 @@ func NewAuthHandlerV2(
 		tokenRepo:     tokenRepo,
 		rbacRepo:      rbacRepo,
 		apiKeyService: apiKeyService,
+		authService:   authService,
 		redis:         redis,
 		logger:        log,
 	}
@@ -287,4 +290,94 @@ func extractRoleNames(roles []models.Role) []string {
 		names[i] = role.Name
 	}
 	return names
+}
+
+// CreateUser creates a new user account
+func (h *AuthHandlerV2) CreateUser(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error) {
+	// Validate required fields
+	if req.Username == "" {
+		return nil, status.Error(codes.InvalidArgument, "username is required")
+	}
+	if req.Password == "" {
+		return nil, status.Error(codes.InvalidArgument, "password is required")
+	}
+	if req.Email == "" && req.Phone == "" {
+		return nil, status.Error(codes.InvalidArgument, "either email or phone is required")
+	}
+
+	// Convert phone string to pointer if provided
+	var phone *string
+	if req.Phone != "" {
+		phone = &req.Phone
+	}
+
+	// Create user request for AuthService
+	createReq := &models.CreateUserRequest{
+		Email:       req.Email,
+		Phone:       phone,
+		Username:    req.Username,
+		Password:    req.Password,
+		FullName:    req.FullName,
+		AccountType: req.AccountType,
+	}
+
+	// Create device info for token generation (gRPC doesn't have browser/device info)
+	deviceInfo := models.DeviceInfo{
+		DeviceType: "grpc_client",
+		OS:         "unknown",
+		Browser:    "grpc",
+	}
+
+	// Call AuthService.SignUp
+	authResp, err := h.authService.SignUp(ctx, createReq, "", "", deviceInfo)
+	if err != nil {
+		h.logger.Error("Failed to create user via gRPC", map[string]interface{}{
+			"error":    err.Error(),
+			"username": req.Username,
+		})
+
+		// Convert error to appropriate gRPC status
+		if appErr, ok := err.(*models.AppError); ok {
+			switch appErr.Code {
+			case 400:
+				return nil, status.Error(codes.InvalidArgument, appErr.Message)
+			case 409:
+				return nil, status.Error(codes.AlreadyExists, appErr.Message)
+			default:
+				return nil, status.Error(codes.Internal, appErr.Message)
+			}
+		}
+
+		// Check for known error types
+		switch err {
+		case models.ErrEmailAlreadyExists:
+			return nil, status.Error(codes.AlreadyExists, "email already exists")
+		case models.ErrUsernameAlreadyExists:
+			return nil, status.Error(codes.AlreadyExists, "username already exists")
+		case models.ErrPhoneAlreadyExists:
+			return nil, status.Error(codes.AlreadyExists, "phone already exists")
+		default:
+			return nil, status.Error(codes.Internal, "failed to create user")
+		}
+	}
+
+	// Convert response
+	user := authResp.User
+	return &CreateUserResponse{
+		User: &User{
+			Id:                user.ID.String(),
+			Email:             user.Email,
+			Username:          user.Username,
+			FullName:          user.FullName,
+			ProfilePictureUrl: user.ProfilePictureURL,
+			Roles:             mapRolesToProto(user.Roles),
+			EmailVerified:     user.EmailVerified,
+			IsActive:          user.IsActive,
+			CreatedAt:         user.CreatedAt.Unix(),
+			UpdatedAt:         user.UpdatedAt.Unix(),
+		},
+		AccessToken:  authResp.AccessToken,
+		RefreshToken: authResp.RefreshToken,
+		ExpiresIn:    authResp.ExpiresIn,
+	}, nil
 }
