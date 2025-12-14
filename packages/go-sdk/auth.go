@@ -158,3 +158,63 @@ func (s *AuthService) ResetPassword(ctx context.Context, email, code, newPasswor
 	}
 	return &resp, nil
 }
+
+// InitPasswordlessRegistration initiates a two-step passwordless registration.
+// Step 1: User provides email or phone and optional name/username.
+// An OTP is sent to the provided email or phone.
+func (s *AuthService) InitPasswordlessRegistration(ctx context.Context, req *models.InitPasswordlessRegistrationRequest) (*models.InitPasswordlessRegistrationResponse, error) {
+	var resp models.InitPasswordlessRegistrationResponse
+	if err := s.client.post(ctx, "/api/auth/signup/phone", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// CompletePasswordlessRegistration completes the two-step passwordless registration.
+// Step 2: User provides the OTP code received via email or SMS.
+// Returns tokens and user info on success.
+func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req *models.CompletePasswordlessRegistrationRequest) (*models.AuthResponse, error) {
+	var resp models.AuthResponse
+	if err := s.client.post(ctx, "/api/auth/signup/phone/verify", req, &resp); err != nil {
+		return nil, err
+	}
+
+	// Store tokens if received
+	if resp.AccessToken != "" {
+		s.client.SetTokens(resp.AccessToken, resp.RefreshToken, resp.ExpiresIn)
+	}
+
+	return &resp, nil
+}
+
+// InitPasswordlessRegistrationWithEmail is a convenience method to initiate registration with email.
+func (s *AuthService) InitPasswordlessRegistrationWithEmail(ctx context.Context, email, fullName string) (*models.InitPasswordlessRegistrationResponse, error) {
+	return s.InitPasswordlessRegistration(ctx, &models.InitPasswordlessRegistrationRequest{
+		Email:    &email,
+		FullName: fullName,
+	})
+}
+
+// InitPasswordlessRegistrationWithPhone is a convenience method to initiate registration with phone.
+func (s *AuthService) InitPasswordlessRegistrationWithPhone(ctx context.Context, phone, fullName string) (*models.InitPasswordlessRegistrationResponse, error) {
+	return s.InitPasswordlessRegistration(ctx, &models.InitPasswordlessRegistrationRequest{
+		Phone:    &phone,
+		FullName: fullName,
+	})
+}
+
+// CompletePasswordlessRegistrationWithEmail is a convenience method to complete registration with email.
+func (s *AuthService) CompletePasswordlessRegistrationWithEmail(ctx context.Context, email, code string) (*models.AuthResponse, error) {
+	return s.CompletePasswordlessRegistration(ctx, &models.CompletePasswordlessRegistrationRequest{
+		Email: &email,
+		Code:  code,
+	})
+}
+
+// CompletePasswordlessRegistrationWithPhone is a convenience method to complete registration with phone.
+func (s *AuthService) CompletePasswordlessRegistrationWithPhone(ctx context.Context, phone, code string) (*models.AuthResponse, error) {
+	return s.CompletePasswordlessRegistration(ctx, &models.CompletePasswordlessRegistrationRequest{
+		Phone: &phone,
+		Code:  code,
+	})
+}

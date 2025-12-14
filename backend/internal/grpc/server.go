@@ -11,6 +11,7 @@ import (
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
+	pb "github.com/smilemakc/auth-gateway/proto"
 )
 
 // Server represents the gRPC server
@@ -37,7 +38,6 @@ func NewServer(
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen on port %s: %w", port, err)
 	}
-
 	// Create gRPC server with interceptors
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
@@ -48,7 +48,7 @@ func NewServer(
 
 	// Register auth service handler
 	handler := NewAuthHandlerV2(jwtService, userRepo, tokenRepo, rbacRepo, apiKeyService, authService, redis, log)
-	RegisterAuthServiceServer(grpcServer, handler)
+	pb.RegisterAuthServiceServer(grpcServer, handler)
 
 	// Register reflection service for debugging
 	reflection.Register(grpcServer)

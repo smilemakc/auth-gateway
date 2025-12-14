@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/smilemakc/auth-gateway/internal/config"
+	"github.com/smilemakc/auth-gateway/internal/models"
 )
 
 // RedisService provides Redis operations
@@ -106,4 +108,34 @@ func (r *RedisService) IncrementRateLimit(ctx context.Context, key string, windo
 	}
 
 	return count, nil
+}
+
+// StorePendingRegistration stores pending registration data in Redis
+func (r *RedisService) StorePendingRegistration(ctx context.Context, identifier string, data *models.PendingRegistration, expiration time.Duration) error {
+	key := fmt.Sprintf("pending:registration:%s", identifier)
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("failed to marshal pending registration: %w", err)
+	}
+	return r.Set(ctx, key, jsonData, expiration)
+}
+
+// GetPendingRegistration retrieves pending registration data from Redis
+func (r *RedisService) GetPendingRegistration(ctx context.Context, identifier string) (*models.PendingRegistration, error) {
+	key := fmt.Sprintf("pending:registration:%s", identifier)
+	data, err := r.Get(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	var pending models.PendingRegistration
+	if err := json.Unmarshal([]byte(data), &pending); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal pending registration: %w", err)
+	}
+	return &pending, nil
+}
+
+// DeletePendingRegistration deletes pending registration data from Redis
+func (r *RedisService) DeletePendingRegistration(ctx context.Context, identifier string) error {
+	key := fmt.Sprintf("pending:registration:%s", identifier)
+	return r.Delete(ctx, key)
 }

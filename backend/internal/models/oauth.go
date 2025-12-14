@@ -81,6 +81,7 @@ const (
 	OTPTypePasswordReset OTPType = "password_reset"
 	OTPType2FA           OTPType = "2fa"
 	OTPTypeLogin         OTPType = "login"
+	OTPTypeRegistration  OTPType = "registration"
 )
 
 // IsExpired checks if OTP is expired
@@ -95,37 +96,54 @@ func (o *OTP) IsValid() bool {
 
 // SendOTPRequest represents OTP send request
 type SendOTPRequest struct {
-	Email *string `json:"email,omitempty" binding:"omitempty,email"`
-	Phone *string `json:"phone,omitempty"`
-	Type  OTPType `json:"type" binding:"required"`
+	// Email address to send OTP to (required if phone not provided)
+	Email *string `json:"email,omitempty" binding:"omitempty,email" example:"user@example.com"`
+	// Phone number to send OTP to (required if email not provided)
+	Phone *string `json:"phone,omitempty" example:"+1234567890"`
+	// OTP type (verification, password_reset, 2fa, login)
+	Type OTPType `json:"type" binding:"required" example:"verification"`
 }
 
 // VerifyOTPRequest represents OTP verification request
 type VerifyOTPRequest struct {
-	Email *string `json:"email,omitempty" binding:"omitempty,email"`
-	Phone *string `json:"phone,omitempty"`
-	Code  string  `json:"code" binding:"required,len=6"`
-	Type  OTPType `json:"type" binding:"required"`
+	// Email address that received the OTP
+	Email *string `json:"email,omitempty" binding:"omitempty,email" example:"user@example.com"`
+	// Phone number that received the OTP
+	Phone *string `json:"phone,omitempty" example:"+1234567890"`
+	// 6-digit OTP code
+	Code string `json:"code" binding:"required,len=6" example:"123456"`
+	// OTP type (verification, password_reset, 2fa, login)
+	Type OTPType `json:"type" binding:"required" example:"verification"`
 }
 
 // VerifyOTPResponse represents OTP verification response
 type VerifyOTPResponse struct {
-	Valid        bool   `json:"valid"`
-	AccessToken  string `json:"access_token,omitempty"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-	User         *User  `json:"user,omitempty"`
+	// Whether the OTP is valid
+	Valid bool `json:"valid" example:"true"`
+	// Access token (if OTP is for login)
+	AccessToken string `json:"access_token,omitempty" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	// Refresh token (if OTP is for login)
+	RefreshToken string `json:"refresh_token,omitempty" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	// User information (if OTP is for login)
+	User *User `json:"user,omitempty"`
 }
 
 // OAuthCallbackRequest represents OAuth callback data
 type OAuthCallbackRequest struct {
-	Code  string `json:"code" form:"code" binding:"required"`
-	State string `json:"state" form:"state" binding:"required"`
+	// Authorization code from OAuth provider
+	Code string `json:"code" form:"code" binding:"required" example:"4/0AY0e-g7xxxxxxxxxxxxxxxxxxx"`
+	// State parameter for CSRF protection
+	State string `json:"state" form:"state" binding:"required" example:"random_state_string_123"`
 }
 
 // OAuthLoginResponse represents OAuth login response
 type OAuthLoginResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	User         *User  `json:"user"`
-	IsNewUser    bool   `json:"is_new_user"`
+	// JWT access token
+	AccessToken string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	// Refresh token for obtaining new access tokens
+	RefreshToken string `json:"refresh_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	// Authenticated user information
+	User *User `json:"user"`
+	// Whether this is a newly created user
+	IsNewUser bool `json:"is_new_user" example:"false"`
 }

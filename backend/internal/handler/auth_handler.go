@@ -30,7 +30,8 @@ func NewAuthHandler(authService *service.AuthService, userService *service.UserS
 
 // SignUp handles user registration
 // @Summary Register a new user
-// @Tags auth
+// @Description Create a new user account with email and password
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param request body models.CreateUserRequest true "User registration data"
@@ -38,7 +39,7 @@ func NewAuthHandler(authService *service.AuthService, userService *service.UserS
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 409 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /auth/signup [post]
+// @Router /api/auth/signup [post]
 func (h *AuthHandler) SignUp(c *gin.Context) {
 	var req models.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -81,7 +82,8 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 
 // SignIn handles user login
 // @Summary Login user
-// @Tags auth
+// @Description Authenticate user with email and password
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param request body models.SignInRequest true "User login data"
@@ -89,7 +91,7 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /auth/signin [post]
+// @Router /api/auth/signin [post]
 func (h *AuthHandler) SignIn(c *gin.Context) {
 	var req models.SignInRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -118,7 +120,8 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 
 // RefreshToken handles token refresh
 // @Summary Refresh access token
-// @Tags auth
+// @Description Generate new access token using refresh token
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param request body models.RefreshTokenRequest true "Refresh token"
@@ -126,7 +129,7 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /auth/refresh [post]
+// @Router /api/auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	var req models.RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -155,12 +158,13 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 // Logout handles user logout
 // @Summary Logout user
-// @Tags auth
+// @Description Invalidate the current access token
+// @Tags Authentication
 // @Security BearerAuth
 // @Success 200 {object} map[string]string
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /auth/logout [post]
+// @Router /api/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	// Get token from header
 	authHeader := c.GetHeader("Authorization")
@@ -194,14 +198,15 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 // GetProfile retrieves the authenticated user's profile
 // @Summary Get user profile
-// @Tags auth
+// @Description Get the profile information of the authenticated user
+// @Tags Authentication
 // @Security BearerAuth
 // @Produce json
 // @Success 200 {object} models.User
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /auth/profile [get]
+// @Router /api/auth/profile [get]
 func (h *AuthHandler) GetProfile(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {
@@ -224,7 +229,8 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 
 // UpdateProfile updates the authenticated user's profile
 // @Summary Update user profile
-// @Tags auth
+// @Description Update the profile information of the authenticated user
+// @Tags Authentication
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -233,7 +239,7 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /auth/profile [put]
+// @Router /api/auth/profile [put]
 func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {
@@ -267,7 +273,8 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 
 // ChangePassword changes the authenticated user's password
 // @Summary Change password
-// @Tags auth
+// @Description Change the password for the authenticated user
+// @Tags Authentication
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -276,7 +283,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /auth/change-password [post]
+// @Router /api/auth/change-password [post]
 func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {
@@ -309,14 +316,15 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 
 // ResendVerificationEmail resends the email verification code
 // @Summary Resend verification email
-// @Tags auth
+// @Description Resend the email verification code to the user's email
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param request body map[string]string true "Email"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 429 {object} models.ErrorResponse
-// @Router /auth/verify/resend [post]
+// @Router /api/auth/verify/resend [post]
 func (h *AuthHandler) ResendVerificationEmail(c *gin.Context) {
 	var req struct {
 		Email string `json:"email" binding:"required,email"`
@@ -355,14 +363,15 @@ func (h *AuthHandler) ResendVerificationEmail(c *gin.Context) {
 
 // VerifyEmail verifies the user's email with OTP code
 // @Summary Verify email address
-// @Tags auth
+// @Description Verify the user's email address using OTP code
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param request body map[string]string true "Email and Code"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
-// @Router /auth/verify/email [post]
+// @Router /api/auth/verify/email [post]
 func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 	var req struct {
 		Email string `json:"email" binding:"required,email"`
@@ -412,7 +421,8 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 
 // RequestPasswordReset sends a password reset OTP code
 // @Summary Request password reset
-// @Tags auth
+// @Description Send a password reset code to the user's email
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param request body map[string]string true "Email"
@@ -420,7 +430,7 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 429 {object} models.ErrorResponse
-// @Router /auth/password/reset/request [post]
+// @Router /api/auth/password/reset/request [post]
 func (h *AuthHandler) RequestPasswordReset(c *gin.Context) {
 	var req struct {
 		Email string `json:"email" binding:"required,email"`
@@ -471,14 +481,15 @@ func (h *AuthHandler) RequestPasswordReset(c *gin.Context) {
 
 // ResetPassword resets the password using OTP verification
 // @Summary Reset password with OTP
-// @Tags auth
+// @Description Complete password reset using OTP verification
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param request body models.ResetPasswordRequest true "Password reset data"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
-// @Router /auth/password/reset/complete [post]
+// @Router /api/auth/password/reset/complete [post]
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	var req models.ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -549,14 +560,15 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 
 // Verify2FA verifies 2FA code during login
 // @Summary Verify 2FA during login
-// @Tags auth
+// @Description Complete two-factor authentication during login
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param request body models.TwoFactorLoginVerifyRequest true "2FA verification"
 // @Success 200 {object} models.AuthResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
-// @Router /auth/2fa/login/verify [post]
+// @Router /api/auth/2fa/login/verify [post]
 func (h *AuthHandler) Verify2FA(c *gin.Context) {
 	var req models.TwoFactorLoginVerifyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -581,4 +593,126 @@ func (h *AuthHandler) Verify2FA(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, authResp)
+}
+
+// InitPasswordlessRegistration initiates passwordless registration
+// @Summary Initiate passwordless registration
+// @Description Start two-step registration without password. Sends OTP to email or phone.
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body models.InitPasswordlessRegistrationRequest true "Registration data"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 409 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/auth/signup/phone [post]
+func (h *AuthHandler) InitPasswordlessRegistration(c *gin.Context) {
+	var req models.InitPasswordlessRegistrationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid request", err.Error()),
+		))
+		return
+	}
+
+	ip := utils.GetClientIP(c)
+	userAgent := utils.GetUserAgent(c)
+
+	if err := h.authService.InitPasswordlessRegistration(c.Request.Context(), &req, ip, userAgent); err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+		} else {
+			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
+		}
+		return
+	}
+
+	// Send OTP via email or SMS
+	if req.Email != nil && *req.Email != "" {
+		otpReq := &models.SendOTPRequest{
+			Email: req.Email,
+			Type:  models.OTPTypeRegistration,
+		}
+		if err := h.otpService.SendOTP(c.Request.Context(), otpReq); err != nil {
+			h.logger.Error("Failed to send registration OTP email", map[string]interface{}{
+				"error": err.Error(),
+				"email": *req.Email,
+			})
+			// Don't fail - registration is initiated, OTP might be resent
+		}
+	}
+
+	// Determine message based on delivery method
+	message := "Registration initiated. Please check your email for the verification code."
+	if req.Phone != nil && *req.Phone != "" && (req.Email == nil || *req.Email == "") {
+		message = "Registration initiated. Please check your phone for the verification code."
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": message,
+	})
+}
+
+// CompletePasswordlessRegistration completes passwordless registration after OTP verification
+// @Summary Complete passwordless registration
+// @Description Complete registration by verifying OTP code. Creates user account and returns tokens.
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body models.CompletePasswordlessRegistrationRequest true "OTP verification"
+// @Success 201 {object} models.AuthResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/auth/signup/phone/verify [post]
+func (h *AuthHandler) CompletePasswordlessRegistration(c *gin.Context) {
+	var req models.CompletePasswordlessRegistrationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid request", err.Error()),
+		))
+		return
+	}
+
+	// First verify the OTP
+	verifyReq := &models.VerifyOTPRequest{
+		Email: req.Email,
+		Phone: req.Phone,
+		Code:  req.Code,
+		Type:  models.OTPTypeRegistration,
+	}
+
+	response, err := h.otpService.VerifyOTP(c.Request.Context(), verifyReq)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+		} else {
+			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
+		}
+		return
+	}
+
+	if !response.Valid {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(
+			models.NewAppError(http.StatusUnauthorized, "Invalid or expired verification code"),
+		))
+		return
+	}
+
+	// OTP verified, complete registration
+	ip := utils.GetClientIP(c)
+	userAgent := utils.GetUserAgent(c)
+	deviceInfo := utils.GetDeviceInfoFromContext(c)
+
+	authResp, err := h.authService.CompletePasswordlessRegistration(c.Request.Context(), &req, ip, userAgent, deviceInfo)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+		} else {
+			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
+		}
+		return
+	}
+
+	c.JSON(http.StatusCreated, authResp)
 }

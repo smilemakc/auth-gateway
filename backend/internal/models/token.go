@@ -42,26 +42,38 @@ type TokenBlacklist struct {
 
 // AuthResponse represents the response after successful authentication
 type AuthResponse struct {
-	AccessToken    string `json:"access_token,omitempty"`
-	RefreshToken   string `json:"refresh_token,omitempty"`
-	User           *User  `json:"user,omitempty"`
-	ExpiresIn      int64  `json:"expires_in,omitempty"` // in seconds
-	Requires2FA    bool   `json:"requires_2fa,omitempty"`
-	TwoFactorToken string `json:"two_factor_token,omitempty"` // Temporary token for 2FA verification
+	// JWT access token for API authentication
+	AccessToken string `json:"access_token,omitempty" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	// Refresh token for obtaining new access tokens
+	RefreshToken string `json:"refresh_token,omitempty" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	// Authenticated user information
+	User *User `json:"user,omitempty"`
+	// Access token expiration time in seconds
+	ExpiresIn int64 `json:"expires_in,omitempty" example:"900"`
+	// Whether 2FA verification is required
+	Requires2FA bool `json:"requires_2fa,omitempty" example:"false"`
+	// Temporary token for 2FA verification (if 2FA is required)
+	TwoFactorToken string `json:"two_factor_token,omitempty" example:"temp_2fa_token_xyz"`
 }
 
 // TwoFactorLoginVerifyRequest represents 2FA verification during login
 type TwoFactorLoginVerifyRequest struct {
-	TwoFactorToken string `json:"two_factor_token" binding:"required"`
-	Code           string `json:"code" binding:"required,len=6"`
+	// Temporary 2FA token from initial login response
+	TwoFactorToken string `json:"two_factor_token" binding:"required" example:"temp_2fa_token_xyz"`
+	// 6-digit TOTP code from authenticator app
+	Code string `json:"code" binding:"required,len=6" example:"123456"`
 }
 
 // JWTClaims represents custom JWT claims
 type JWTClaims struct {
-	UserID   uuid.UUID `json:"user_id"`
-	Email    string    `json:"email"`
-	Username string    `json:"username"`
-	Roles    []string  `json:"roles"`
+	// User's unique identifier
+	UserID uuid.UUID `json:"user_id" example:"123e4567-e89b-12d3-a456-426614174000"`
+	// User's email address
+	Email string `json:"email" example:"user@example.com"`
+	// User's username
+	Username string `json:"username" example:"johndoe"`
+	// User's role names
+	Roles []string `json:"roles" example:"user,admin"`
 }
 
 // IsExpired checks if the refresh token is expired

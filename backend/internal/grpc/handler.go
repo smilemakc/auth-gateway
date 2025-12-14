@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -14,11 +15,12 @@ import (
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
+	pb "github.com/smilemakc/auth-gateway/proto"
 )
 
 // AuthHandlerV2 implements the gRPC AuthService with API key support
 type AuthHandlerV2 struct {
-	UnimplementedAuthServiceServer
+	pb.UnimplementedAuthServiceServer
 	jwtService    *jwt.Service
 	userRepo      *repository.UserRepository
 	tokenRepo     *repository.TokenRepository
@@ -53,9 +55,9 @@ func NewAuthHandlerV2(
 }
 
 // ValidateToken validates a JWT access token or API key and returns user information
-func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenRequest) (*ValidateTokenResponse, error) {
+func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *pb.ValidateTokenRequest) (*pb.ValidateTokenResponse, error) {
 	if req.AccessToken == "" {
-		return &ValidateTokenResponse{
+		return &pb.ValidateTokenResponse{
 			Valid:        false,
 			ErrorMessage: "access_token is required",
 		}, nil
@@ -69,7 +71,7 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenReq
 			h.logger.Debug("API key validation failed", map[string]interface{}{
 				"error": err.Error(),
 			})
-			return &ValidateTokenResponse{
+			return &pb.ValidateTokenResponse{
 				Valid:        false,
 				ErrorMessage: err.Error(),
 			}, nil
@@ -82,14 +84,14 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenReq
 				"user_id": user.ID.String(),
 				"error":   err.Error(),
 			})
-			return &ValidateTokenResponse{
+			return &pb.ValidateTokenResponse{
 				Valid:        false,
 				ErrorMessage: "failed to load user roles",
 			}, nil
 		}
 
 		// Return successful validation
-		return &ValidateTokenResponse{
+		return &pb.ValidateTokenResponse{
 			Valid:     user.IsActive,
 			UserId:    userWithRoles.ID.String(),
 			Email:     userWithRoles.Email,
@@ -107,7 +109,7 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenReq
 			"error": err.Error(),
 		})
 
-		return &ValidateTokenResponse{
+		return &pb.ValidateTokenResponse{
 			Valid:        false,
 			ErrorMessage: err.Error(),
 		}, nil
@@ -125,14 +127,14 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenReq
 	}
 
 	if blacklisted {
-		return &ValidateTokenResponse{
+		return &pb.ValidateTokenResponse{
 			Valid:        false,
 			ErrorMessage: "token is blacklisted",
 		}, nil
 	}
 
 	// Return successful validation
-	return &ValidateTokenResponse{
+	return &pb.ValidateTokenResponse{
 		Valid:     claims.IsActive,
 		UserId:    claims.UserID.String(),
 		Email:     claims.Email,
@@ -143,7 +145,7 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *ValidateTokenReq
 }
 
 // GetUser retrieves user information by ID
-func (h *AuthHandlerV2) GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error) {
+func (h *AuthHandlerV2) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
@@ -168,14 +170,14 @@ func (h *AuthHandlerV2) GetUser(ctx context.Context, req *GetUserRequest) (*GetU
 	}
 
 	// Convert to proto user
-	return &GetUserResponse{
-		User: &User{
+	return &pb.GetUserResponse{
+		User: &pb.User{
 			Id:                user.ID.String(),
 			Email:             user.Email,
 			Username:          user.Username,
 			FullName:          user.FullName,
 			ProfilePictureUrl: user.ProfilePictureURL,
-			Roles:             mapRolesToProto(user.Roles),
+			Roles:             extractRoleNames(user.Roles),
 			EmailVerified:     user.EmailVerified,
 			IsActive:          user.IsActive,
 			CreatedAt:         user.CreatedAt.Unix(),
@@ -185,7 +187,7 @@ func (h *AuthHandlerV2) GetUser(ctx context.Context, req *GetUserRequest) (*GetU
 }
 
 // CheckPermission checks if a user has specific permission
-func (h *AuthHandlerV2) CheckPermission(ctx context.Context, req *CheckPermissionRequest) (*CheckPermissionResponse, error) {
+func (h *AuthHandlerV2) CheckPermission(ctx context.Context, req *pb.CheckPermissionRequest) (*pb.CheckPermissionResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
@@ -207,9 +209,8 @@ func (h *AuthHandlerV2) CheckPermission(ctx context.Context, req *CheckPermissio
 	}
 
 	if len(roles) == 0 {
-		return &CheckPermissionResponse{
+		return &pb.CheckPermissionResponse{
 			Allowed:      false,
-			Roles:        []string{},
 			ErrorMessage: "user has no roles",
 		}, nil
 	}
@@ -218,23 +219,22 @@ func (h *AuthHandlerV2) CheckPermission(ctx context.Context, req *CheckPermissio
 	for _, role := range roles {
 		for _, permission := range role.Permissions {
 			if permission.Resource == req.Resource && permission.Action == req.Action {
-				return &CheckPermissionResponse{
+				return &pb.CheckPermissionResponse{
 					Allowed: true,
-					Roles:   extractRoleNames(roles),
+					Role:    role.Name,
 				}, nil
 			}
 		}
 	}
 
 	// Permission denied
-	return &CheckPermissionResponse{
+	return &pb.CheckPermissionResponse{
 		Allowed: false,
-		Roles:   extractRoleNames(roles),
 	}, nil
 }
 
 // IntrospectToken provides detailed information about a token
-func (h *AuthHandlerV2) IntrospectToken(ctx context.Context, req *IntrospectTokenRequest) (*IntrospectTokenResponse, error) {
+func (h *AuthHandlerV2) IntrospectToken(ctx context.Context, req *pb.IntrospectTokenRequest) (*pb.IntrospectTokenResponse, error) {
 	if req.AccessToken == "" {
 		return nil, status.Error(codes.InvalidArgument, "access_token is required")
 	}
@@ -242,7 +242,7 @@ func (h *AuthHandlerV2) IntrospectToken(ctx context.Context, req *IntrospectToke
 	// Validate token
 	claims, err := h.jwtService.ValidateAccessToken(req.AccessToken)
 	if err != nil {
-		return &IntrospectTokenResponse{
+		return &pb.IntrospectTokenResponse{
 			Active:       false,
 			ErrorMessage: err.Error(),
 		}, nil
@@ -255,13 +255,19 @@ func (h *AuthHandlerV2) IntrospectToken(ctx context.Context, req *IntrospectToke
 		blacklisted, _ = h.tokenRepo.IsBlacklisted(ctx, tokenHash)
 	}
 
+	// Get role (use first role if multiple)
+	role := ""
+	if len(claims.Roles) > 0 {
+		role = claims.Roles[0]
+	}
+
 	// Return detailed token information
-	return &IntrospectTokenResponse{
+	return &pb.IntrospectTokenResponse{
 		Active:      !blacklisted,
 		UserId:      claims.UserID.String(),
 		Email:       claims.Email,
 		Username:    claims.Username,
-		Roles:       claims.Roles,
+		Role:        role,
 		IssuedAt:    claims.IssuedAt.Unix(),
 		ExpiresAt:   claims.ExpiresAt.Unix(),
 		NotBefore:   claims.NotBefore.Unix(),
@@ -270,17 +276,137 @@ func (h *AuthHandlerV2) IntrospectToken(ctx context.Context, req *IntrospectToke
 	}, nil
 }
 
-// mapRolesToProto converts model Roles to proto RoleInfo array
-func mapRolesToProto(roles []models.Role) []RoleInfo {
-	protoRoles := make([]RoleInfo, len(roles))
-	for i, role := range roles {
-		protoRoles[i] = RoleInfo{
-			Id:          role.ID.String(),
-			Name:        role.Name,
-			DisplayName: role.DisplayName,
-		}
+// InitPasswordlessRegistration initiates passwordless two-step registration
+func (h *AuthHandlerV2) InitPasswordlessRegistration(ctx context.Context, req *pb.InitPasswordlessRegistrationRequest) (*pb.InitPasswordlessRegistrationResponse, error) {
+	// Validate that either email or phone is provided
+	if req.Email == "" && req.Phone == "" {
+		return nil, status.Error(codes.InvalidArgument, "either email or phone is required")
 	}
-	return protoRoles
+
+	// Convert to internal model
+	var email, phone *string
+	if req.Email != "" {
+		email = &req.Email
+	}
+	if req.Phone != "" {
+		phone = &req.Phone
+	}
+
+	internalReq := &models.InitPasswordlessRegistrationRequest{
+		Email:    email,
+		Phone:    phone,
+		Username: req.Username,
+		FullName: req.FullName,
+	}
+
+	// Call AuthService (gRPC doesn't have IP/UserAgent)
+	err := h.authService.InitPasswordlessRegistration(ctx, internalReq, "", "grpc")
+	if err != nil {
+		h.logger.Error("Failed to init passwordless registration via gRPC", map[string]interface{}{
+			"error": err.Error(),
+		})
+
+		// Convert error to appropriate gRPC status
+		if appErr, ok := err.(*models.AppError); ok {
+			switch appErr.Code {
+			case 400:
+				return nil, status.Error(codes.InvalidArgument, appErr.Message)
+			case 409:
+				return nil, status.Error(codes.AlreadyExists, appErr.Message)
+			default:
+				return nil, status.Error(codes.Internal, appErr.Message)
+			}
+		}
+
+		// Check for known error types
+		if errors.Is(err, models.ErrEmailAlreadyExists) {
+			return nil, status.Error(codes.AlreadyExists, "email already exists")
+		}
+		if errors.Is(err, models.ErrPhoneAlreadyExists) {
+			return nil, status.Error(codes.AlreadyExists, "phone already exists")
+		}
+		return nil, status.Error(codes.Internal, "failed to initiate registration")
+	}
+
+	return &pb.InitPasswordlessRegistrationResponse{
+		Success: true,
+		Message: "OTP sent successfully. Please verify to complete registration.",
+	}, nil
+}
+
+// CompletePasswordlessRegistration completes registration after OTP verification
+func (h *AuthHandlerV2) CompletePasswordlessRegistration(ctx context.Context, req *pb.CompletePasswordlessRegistrationRequest) (*pb.CompletePasswordlessRegistrationResponse, error) {
+	// Validate required fields
+	if req.Code == "" {
+		return nil, status.Error(codes.InvalidArgument, "code is required")
+	}
+	if req.Email == "" && req.Phone == "" {
+		return nil, status.Error(codes.InvalidArgument, "either email or phone is required")
+	}
+
+	// Convert to internal model
+	var email, phone *string
+	if req.Email != "" {
+		email = &req.Email
+	}
+	if req.Phone != "" {
+		phone = &req.Phone
+	}
+
+	internalReq := &models.CompletePasswordlessRegistrationRequest{
+		Email: email,
+		Phone: phone,
+		Code:  req.Code,
+	}
+
+	// Create device info for token generation (gRPC doesn't have browser/device info)
+	deviceInfo := models.DeviceInfo{
+		DeviceType: "grpc_client",
+		OS:         "unknown",
+		Browser:    "grpc",
+	}
+
+	// Call AuthService
+	resp, err := h.authService.CompletePasswordlessRegistration(ctx, internalReq, "", "", deviceInfo)
+	if err != nil {
+		h.logger.Error("Failed to complete passwordless registration via gRPC", map[string]interface{}{
+			"error": err.Error(),
+		})
+
+		// Convert error to appropriate gRPC status
+		if appErr, ok := err.(*models.AppError); ok {
+			switch appErr.Code {
+			case 400:
+				return nil, status.Error(codes.InvalidArgument, appErr.Message)
+			case 404:
+				return nil, status.Error(codes.NotFound, appErr.Message)
+			default:
+				return nil, status.Error(codes.Internal, appErr.Message)
+			}
+		}
+
+		return nil, status.Error(codes.Internal, "failed to complete registration")
+	}
+
+	// Convert user to proto
+	user := resp.User
+	return &pb.CompletePasswordlessRegistrationResponse{
+		User: &pb.User{
+			Id:                user.ID.String(),
+			Email:             user.Email,
+			Username:          user.Username,
+			FullName:          user.FullName,
+			ProfilePictureUrl: user.ProfilePictureURL,
+			Roles:             extractRoleNames(user.Roles),
+			EmailVerified:     user.EmailVerified,
+			IsActive:          user.IsActive,
+			CreatedAt:         user.CreatedAt.Unix(),
+			UpdatedAt:         user.UpdatedAt.Unix(),
+		},
+		AccessToken:  resp.AccessToken,
+		RefreshToken: resp.RefreshToken,
+		ExpiresIn:    resp.ExpiresIn,
+	}, nil
 }
 
 // extractRoleNames extracts role names from Role array
@@ -293,11 +419,8 @@ func extractRoleNames(roles []models.Role) []string {
 }
 
 // CreateUser creates a new user account
-func (h *AuthHandlerV2) CreateUser(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error) {
+func (h *AuthHandlerV2) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
 	// Validate required fields
-	if req.Username == "" {
-		return nil, status.Error(codes.InvalidArgument, "username is required")
-	}
 	if req.Password == "" {
 		return nil, status.Error(codes.InvalidArgument, "password is required")
 	}
@@ -305,17 +428,18 @@ func (h *AuthHandlerV2) CreateUser(ctx context.Context, req *CreateUserRequest) 
 		return nil, status.Error(codes.InvalidArgument, "either email or phone is required")
 	}
 
-	// Convert phone string to pointer if provided
-	var phone *string
-	if req.Phone != "" {
-		phone = &req.Phone
+	email := utils.NormalizeEmail(req.Email)
+	phone := utils.NormalizePhone(req.Phone)
+	username := req.Username
+	if username == "" {
+		username = utils.Default(email, strings.ReplaceAll(phone, "+", ""))
 	}
 
 	// Create user request for AuthService
 	createReq := &models.CreateUserRequest{
-		Email:       req.Email,
-		Phone:       phone,
-		Username:    req.Username,
+		Email:       email,
+		Phone:       utils.Ptr(phone),
+		Username:    username,
 		Password:    req.Password,
 		FullName:    req.FullName,
 		AccountType: req.AccountType,
@@ -333,7 +457,7 @@ func (h *AuthHandlerV2) CreateUser(ctx context.Context, req *CreateUserRequest) 
 	if err != nil {
 		h.logger.Error("Failed to create user via gRPC", map[string]interface{}{
 			"error":    err.Error(),
-			"username": req.Username,
+			"username": username,
 		})
 
 		// Convert error to appropriate gRPC status
@@ -349,28 +473,28 @@ func (h *AuthHandlerV2) CreateUser(ctx context.Context, req *CreateUserRequest) 
 		}
 
 		// Check for known error types
-		switch err {
-		case models.ErrEmailAlreadyExists:
+		if errors.Is(err, models.ErrEmailAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, "email already exists")
-		case models.ErrUsernameAlreadyExists:
-			return nil, status.Error(codes.AlreadyExists, "username already exists")
-		case models.ErrPhoneAlreadyExists:
-			return nil, status.Error(codes.AlreadyExists, "phone already exists")
-		default:
-			return nil, status.Error(codes.Internal, "failed to create user")
 		}
+		if errors.Is(err, models.ErrUsernameAlreadyExists) {
+			return nil, status.Error(codes.AlreadyExists, "username already exists")
+		}
+		if errors.Is(err, models.ErrPhoneAlreadyExists) {
+			return nil, status.Error(codes.AlreadyExists, "phone already exists")
+		}
+		return nil, status.Error(codes.Internal, "failed to create user")
 	}
 
 	// Convert response
 	user := authResp.User
-	return &CreateUserResponse{
-		User: &User{
+	return &pb.CreateUserResponse{
+		User: &pb.User{
 			Id:                user.ID.String(),
 			Email:             user.Email,
 			Username:          user.Username,
 			FullName:          user.FullName,
 			ProfilePictureUrl: user.ProfilePictureURL,
-			Roles:             mapRolesToProto(user.Roles),
+			Roles:             extractRoleNames(user.Roles),
 			EmailVerified:     user.EmailVerified,
 			IsActive:          user.IsActive,
 			CreatedAt:         user.CreatedAt.Unix(),

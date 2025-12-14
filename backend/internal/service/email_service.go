@@ -65,7 +65,7 @@ func (s *EmailService) SendOTP(to, code, otpType string) error {
         </div>
         <div class="footer">
             <p>This is an automated message, please do not reply.</p>
-            <p>&copy; 2024 Auth Gateway. All rights reserved.</p>
+            <p>&copy; 2025 Auth Gateway. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -175,7 +175,7 @@ func (s *EmailService) SendWelcome(to, username string) error {
             <p>If you have any questions, feel free to contact our support team.</p>
         </div>
         <div class="footer">
-            <p>&copy; 2024 Auth Gateway. All rights reserved.</p>
+            <p>&copy; 2025 Auth Gateway. All rights reserved.</p>
         </div>
     </div>
 </body>

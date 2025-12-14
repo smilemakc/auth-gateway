@@ -42,22 +42,17 @@ func IsValidPhone(phone string) bool {
 	return phoneRegex.MatchString(normalized)
 }
 
-// NormalizePhone normalizes a phone number (removes spaces, adds + if missing)
+// NormalizePhone normalizes a phone number by removing non-digit characters
+// (except '+') and ensuring it starts with '+'
 func NormalizePhone(phone string) string {
-	// Remove all spaces, dashes, parentheses
-	phone = strings.Map(func(r rune) rune {
-		if r == ' ' || r == '-' || r == '(' || r == ')' {
-			return -1
-		}
-		return r
-	}, phone)
+	// Remove everything except digits and '+'
+	re := regexp.MustCompile(`[^\d+]`)
+	normalized := re.ReplaceAllString(phone, "")
 
-	phone = strings.TrimSpace(phone)
-
-	// Add + if missing and starts with digit
-	if len(phone) > 0 && phone[0] != '+' && phone[0] >= '0' && phone[0] <= '9' {
-		phone = "+" + phone
+	// Add '+' if missing and first character is a digit
+	if normalized != "" && normalized[0] >= '0' && normalized[0] <= '9' {
+		return "+" + normalized
 	}
 
-	return phone
+	return normalized
 }

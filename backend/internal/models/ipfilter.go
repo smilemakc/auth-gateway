@@ -28,36 +28,52 @@ type IPFilterWithCreator struct {
 
 // CreateIPFilterRequest is the request to create an IP filter
 type CreateIPFilterRequest struct {
-	IPCIDR     string     `json:"ip_cidr" binding:"required"`
-	FilterType string     `json:"filter_type" binding:"required,oneof=whitelist blacklist"`
-	Reason     string     `json:"reason"`
-	ExpiresAt  *time.Time `json:"expires_at"`
+	// IP address or CIDR range (e.g., "192.168.1.1" or "192.168.1.0/24")
+	IPCIDR string `json:"ip_cidr" binding:"required" example:"192.168.1.0/24"`
+	// Filter type: "whitelist" or "blacklist"
+	FilterType string `json:"filter_type" binding:"required,oneof=whitelist blacklist" example:"blacklist"`
+	// Reason for the filter
+	Reason string `json:"reason" example:"Suspicious activity detected"`
+	// Optional expiration date
+	ExpiresAt *time.Time `json:"expires_at" example:"2024-12-31T23:59:59Z"`
 }
 
 // UpdateIPFilterRequest is the request to update an IP filter
 type UpdateIPFilterRequest struct {
-	Reason    string     `json:"reason"`
-	IsActive  *bool      `json:"is_active"`
-	ExpiresAt *time.Time `json:"expires_at"`
+	// Updated reason for the filter
+	Reason string `json:"reason" example:"Updated reason"`
+	// Whether the filter is active
+	IsActive *bool `json:"is_active" example:"true"`
+	// Updated expiration date
+	ExpiresAt *time.Time `json:"expires_at" example:"2024-12-31T23:59:59Z"`
 }
 
 // IPFilterListResponse contains paginated IP filter list
 type IPFilterListResponse struct {
-	Filters    []IPFilterWithCreator `json:"filters"`
-	Total      int                   `json:"total"`
-	Page       int                   `json:"page"`
-	PerPage    int                   `json:"per_page"`
-	TotalPages int                   `json:"total_pages"`
+	// List of IP filters
+	Filters []IPFilterWithCreator `json:"filters"`
+	// Total number of filters
+	Total int `json:"total" example:"25"`
+	// Current page number
+	Page int `json:"page" example:"1"`
+	// Number of items per page
+	PerPage int `json:"per_page" example:"20"`
+	// Total number of pages
+	TotalPages int `json:"total_pages" example:"2"`
 }
 
 // CheckIPRequest is used to check if an IP is allowed
 type CheckIPRequest struct {
-	IPAddress string `json:"ip_address" binding:"required"`
+	// IP address to check
+	IPAddress string `json:"ip_address" binding:"required" example:"192.168.1.100"`
 }
 
 // CheckIPResponse returns whether the IP is allowed
 type CheckIPResponse struct {
-	Allowed    bool   `json:"allowed"`
-	Reason     string `json:"reason,omitempty"`
-	FilterType string `json:"filter_type,omitempty"` // "whitelist", "blacklist", or ""
+	// Whether the IP is allowed
+	Allowed bool `json:"allowed" example:"true"`
+	// Reason if IP is blocked
+	Reason string `json:"reason,omitempty" example:"IP is blacklisted"`
+	// Filter type that matched: "whitelist", "blacklist", or empty
+	FilterType string `json:"filter_type,omitempty" example:"blacklist"`
 }

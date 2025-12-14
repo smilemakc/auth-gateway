@@ -47,10 +47,15 @@ func NewAdvancedAdminHandler(
 
 // ListPermissions godoc
 // @Summary List all permissions
+// @Description Get a list of all available permissions in the system
 // @Tags Admin - RBAC
+// @Security BearerAuth
 // @Produce json
 // @Success 200 {array} models.Permission
-// @Router /admin/rbac/permissions [get]
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/rbac/permissions [get]
 func (h *AdvancedAdminHandler) ListPermissions(c *gin.Context) {
 	permissions, err := h.rbacService.ListPermissions(c.Request.Context())
 	if err != nil {
@@ -63,12 +68,17 @@ func (h *AdvancedAdminHandler) ListPermissions(c *gin.Context) {
 
 // CreatePermission godoc
 // @Summary Create a new permission
+// @Description Create a new permission in the RBAC system
 // @Tags Admin - RBAC
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param permission body models.CreatePermissionRequest true "Permission data"
 // @Success 201 {object} models.Permission
-// @Router /admin/rbac/permissions [post]
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Router /api/admin/rbac/permissions [post]
 func (h *AdvancedAdminHandler) CreatePermission(c *gin.Context) {
 	var req models.CreatePermissionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -87,10 +97,15 @@ func (h *AdvancedAdminHandler) CreatePermission(c *gin.Context) {
 
 // ListRoles godoc
 // @Summary List all roles
+// @Description Get a list of all roles in the RBAC system
 // @Tags Admin - RBAC
+// @Security BearerAuth
 // @Produce json
 // @Success 200 {array} models.Role
-// @Router /admin/rbac/roles [get]
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/rbac/roles [get]
 func (h *AdvancedAdminHandler) ListRoles(c *gin.Context) {
 	roles, err := h.rbacService.ListRoles(c.Request.Context())
 	if err != nil {
@@ -103,12 +118,17 @@ func (h *AdvancedAdminHandler) ListRoles(c *gin.Context) {
 
 // CreateRole godoc
 // @Summary Create a new role
+// @Description Create a new role in the RBAC system
 // @Tags Admin - RBAC
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param role body models.CreateRoleRequest true "Role data"
 // @Success 201 {object} models.Role
-// @Router /admin/rbac/roles [post]
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Router /api/admin/rbac/roles [post]
 func (h *AdvancedAdminHandler) CreateRole(c *gin.Context) {
 	var req models.CreateRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -127,11 +147,17 @@ func (h *AdvancedAdminHandler) CreateRole(c *gin.Context) {
 
 // GetRole godoc
 // @Summary Get a role by ID
+// @Description Get details of a specific role
 // @Tags Admin - RBAC
+// @Security BearerAuth
 // @Produce json
 // @Param id path string true "Role ID"
 // @Success 200 {object} models.Role
-// @Router /admin/rbac/roles/{id} [get]
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/rbac/roles/{id} [get]
 func (h *AdvancedAdminHandler) GetRole(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -150,13 +176,19 @@ func (h *AdvancedAdminHandler) GetRole(c *gin.Context) {
 
 // UpdateRole godoc
 // @Summary Update a role
+// @Description Update an existing role in the RBAC system
 // @Tags Admin - RBAC
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path string true "Role ID"
 // @Param role body models.UpdateRoleRequest true "Role data"
 // @Success 200 {object} models.Role
-// @Router /admin/rbac/roles/{id} [put]
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/rbac/roles/{id} [put]
 func (h *AdvancedAdminHandler) UpdateRole(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -181,10 +213,16 @@ func (h *AdvancedAdminHandler) UpdateRole(c *gin.Context) {
 
 // DeleteRole godoc
 // @Summary Delete a role
+// @Description Delete a role from the RBAC system
 // @Tags Admin - RBAC
+// @Security BearerAuth
 // @Param id path string true "Role ID"
 // @Success 204
-// @Router /admin/rbac/roles/{id} [delete]
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/rbac/roles/{id} [delete]
 func (h *AdvancedAdminHandler) DeleteRole(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -203,10 +241,15 @@ func (h *AdvancedAdminHandler) DeleteRole(c *gin.Context) {
 
 // GetPermissionMatrix godoc
 // @Summary Get permission matrix for all roles
+// @Description Get a matrix showing which roles have which permissions
 // @Tags Admin - RBAC
+// @Security BearerAuth
 // @Produce json
 // @Success 200 {object} models.PermissionMatrix
-// @Router /admin/rbac/permission-matrix [get]
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/rbac/permission-matrix [get]
 func (h *AdvancedAdminHandler) GetPermissionMatrix(c *gin.Context) {
 	matrix, err := h.rbacService.GetPermissionMatrix(c.Request.Context())
 	if err != nil {
@@ -223,12 +266,16 @@ func (h *AdvancedAdminHandler) GetPermissionMatrix(c *gin.Context) {
 
 // ListUserSessions godoc
 // @Summary List all sessions for the current user
+// @Description Get a list of all active sessions for the authenticated user
 // @Tags Sessions
+// @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
 // @Param per_page query int false "Items per page" default(20)
 // @Success 200 {object} models.SessionListResponse
-// @Router /sessions [get]
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/sessions [get]
 func (h *AdvancedAdminHandler) ListUserSessions(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
@@ -253,11 +300,15 @@ func (h *AdvancedAdminHandler) ListUserSessions(c *gin.Context) {
 
 // RevokeSession godoc
 // @Summary Revoke a specific session
+// @Description Terminate a specific session for the authenticated user
 // @Tags Sessions
-// @Accept json
+// @Security BearerAuth
 // @Param id path string true "Session ID"
 // @Success 204
-// @Router /sessions/{id} [delete]
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/sessions/{id} [delete]
 func (h *AdvancedAdminHandler) RevokeSession(c *gin.Context) {
 	userID, _ := c.Get("userID")
 	sessionID, err := uuid.Parse(c.Param("id"))
@@ -277,9 +328,13 @@ func (h *AdvancedAdminHandler) RevokeSession(c *gin.Context) {
 
 // RevokeAllSessions godoc
 // @Summary Revoke all sessions except current
+// @Description Terminate all active sessions except the current one
 // @Tags Sessions
+// @Security BearerAuth
 // @Success 204
-// @Router /sessions/revoke-all [post]
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/sessions/revoke-all [post]
 func (h *AdvancedAdminHandler) RevokeAllSessions(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
@@ -294,10 +349,15 @@ func (h *AdvancedAdminHandler) RevokeAllSessions(c *gin.Context) {
 
 // GetSessionStats godoc
 // @Summary Get session statistics (admin only)
+// @Description Get statistics about all sessions in the system
 // @Tags Admin - Sessions
+// @Security BearerAuth
 // @Produce json
 // @Success 200 {object} models.SessionStats
-// @Router /admin/sessions/stats [get]
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/sessions/stats [get]
 func (h *AdvancedAdminHandler) GetSessionStats(c *gin.Context) {
 	stats, err := h.sessionService.GetSessionStats(c.Request.Context())
 	if err != nil {
@@ -310,12 +370,17 @@ func (h *AdvancedAdminHandler) GetSessionStats(c *gin.Context) {
 
 // ListAllSessions godoc
 // @Summary List all sessions (admin only)
+// @Description Get a list of all active sessions in the system
 // @Tags Admin - Sessions
+// @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
 // @Param per_page query int false "Items per page" default(50)
 // @Success 200 {array} models.ActiveSessionResponse
-// @Router /admin/sessions [get]
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/sessions [get]
 func (h *AdvancedAdminHandler) ListAllSessions(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "50"))
@@ -342,13 +407,18 @@ func (h *AdvancedAdminHandler) ListAllSessions(c *gin.Context) {
 
 // ListIPFilters godoc
 // @Summary List IP filters
+// @Description Get a list of all IP filters (whitelist/blacklist)
 // @Tags Admin - IP Filters
+// @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
 // @Param per_page query int false "Items per page" default(20)
 // @Param type query string false "Filter type (whitelist/blacklist)"
 // @Success 200 {object} models.IPFilterListResponse
-// @Router /admin/ip-filters [get]
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/ip-filters [get]
 func (h *AdvancedAdminHandler) ListIPFilters(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
@@ -372,12 +442,17 @@ func (h *AdvancedAdminHandler) ListIPFilters(c *gin.Context) {
 
 // CreateIPFilter godoc
 // @Summary Create an IP filter
+// @Description Create a new IP filter rule (whitelist or blacklist)
 // @Tags Admin - IP Filters
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param filter body models.CreateIPFilterRequest true "IP filter data"
 // @Success 201 {object} models.IPFilter
-// @Router /admin/ip-filters [post]
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Router /api/admin/ip-filters [post]
 func (h *AdvancedAdminHandler) CreateIPFilter(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
@@ -398,10 +473,16 @@ func (h *AdvancedAdminHandler) CreateIPFilter(c *gin.Context) {
 
 // DeleteIPFilter godoc
 // @Summary Delete an IP filter
+// @Description Delete an existing IP filter rule
 // @Tags Admin - IP Filters
+// @Security BearerAuth
 // @Param id path string true "Filter ID"
 // @Success 204
-// @Router /admin/ip-filters/{id} [delete]
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/ip-filters/{id} [delete]
 func (h *AdvancedAdminHandler) DeleteIPFilter(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -455,12 +536,18 @@ func (h *AdvancedAdminHandler) GetBranding(c *gin.Context) {
 
 // UpdateBranding godoc
 // @Summary Update branding settings (admin only)
+// @Description Update the system's branding and theming settings
 // @Tags Admin - Branding
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param branding body models.UpdateBrandingRequest true "Branding data"
 // @Success 200 {object} models.BrandingSettings
-// @Router /admin/branding [put]
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/branding [put]
 func (h *AdvancedAdminHandler) UpdateBranding(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
@@ -547,12 +634,18 @@ func (h *AdvancedAdminHandler) GetMaintenanceMode(c *gin.Context) {
 
 // SetMaintenanceMode godoc
 // @Summary Set maintenance mode (admin only)
+// @Description Enable or disable system maintenance mode
 // @Tags Admin - System
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param mode body models.MaintenanceModeRequest true "Maintenance mode data"
 // @Success 200 {object} models.MaintenanceModeResponse
-// @Router /admin/system/maintenance [put]
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/system/maintenance [put]
 func (h *AdvancedAdminHandler) SetMaintenanceMode(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
@@ -594,10 +687,14 @@ func (h *AdvancedAdminHandler) SetMaintenanceMode(c *gin.Context) {
 
 // GetSystemHealth godoc
 // @Summary Get system health metrics
+// @Description Get health status of system components (database, redis, etc.)
 // @Tags Admin - System
+// @Security BearerAuth
 // @Produce json
 // @Success 200 {object} models.SystemHealthResponse
-// @Router /admin/system/health [get]
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Router /api/admin/system/health [get]
 func (h *AdvancedAdminHandler) GetSystemHealth(c *gin.Context) {
 	// This is a placeholder - implement actual health checks
 	response := models.SystemHealthResponse{
@@ -616,11 +713,16 @@ func (h *AdvancedAdminHandler) GetSystemHealth(c *gin.Context) {
 
 // GetGeoDistribution godoc
 // @Summary Get login geo-distribution for map
+// @Description Get geographical distribution of logins for analytics and mapping
 // @Tags Admin - Analytics
+// @Security BearerAuth
 // @Produce json
 // @Param days query int false "Number of days" default(30)
 // @Success 200 {object} models.GeoDistributionResponse
-// @Router /admin/analytics/geo-distribution [get]
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/analytics/geo-distribution [get]
 func (h *AdvancedAdminHandler) GetGeoDistribution(c *gin.Context) {
 	days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
 	if days < 1 || days > 365 {

@@ -19,6 +19,11 @@ import (
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "github.com/smilemakc/auth-gateway/docs"
 )
 
 func main() {
@@ -79,8 +84,8 @@ func main() {
 	rbacRepo := repository.NewRBACRepository(db)
 	sessionRepo := repository.NewSessionRepository(db)
 	ipFilterRepo := repository.NewIPFilterRepository(db)
-	// webhookRepo := repository.NewWebhookRepository(db)
-	// templateRepo := repository.NewTemplateRepository(db)
+	webhookRepo := repository.NewWebhookRepository(db)
+	templateRepo := repository.NewTemplateRepository(db)
 	brandingRepo := repository.NewBrandingRepository(db)
 	systemRepo := repository.NewSystemRepository(db)
 	geoRepo := repository.NewGeoRepository(db)
@@ -107,6 +112,8 @@ func main() {
 	rbacService := service.NewRBACService(rbacRepo, auditService)
 	sessionService := service.NewSessionService(sessionRepo)
 	ipFilterService := service.NewIPFilterService(ipFilterRepo)
+	webhookService := service.NewWebhookService(webhookRepo, auditService)
+	templateService := service.NewTemplateService(templateRepo, auditService)
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService, userService, otpService, log)
@@ -117,6 +124,8 @@ func main() {
 	twoFAHandler := handler.NewTwoFactorHandler(twoFAService, userService, log)
 	adminHandler := handler.NewAdminHandler(adminService, log)
 	advancedAdminHandler := handler.NewAdvancedAdminHandler(rbacService, sessionService, ipFilterService, brandingRepo, systemRepo, geoRepo)
+	webhookHandler := handler.NewWebhookHandler(webhookService, log)
+	templateHandler := handler.NewTemplateHandler(templateService, log)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, redis, tokenRepo)
@@ -142,10 +151,13 @@ func main() {
 	router.Use(maintenanceMiddleware.CheckMaintenance())
 	router.Use(ipFilterMiddleware.CheckIPFilter())
 
+	// Swagger documentation
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	// Health check endpoints (no auth required)
-	router.GET("/auth/health", healthHandler.Health)
-	router.GET("/auth/ready", healthHandler.Readiness)
-	router.GET("/auth/live", healthHandler.Liveness)
+	router.GET("/health", healthHandler.Health)
+	router.GET("/ready", healthHandler.Readiness)
+	router.GET("/live", healthHandler.Liveness)
 
 	// Public system status endpoint
 	router.GET("/system/maintenance", advancedAdminHandler.GetMaintenanceMode)
@@ -184,6 +196,13 @@ func main() {
 		{
 			passwordlessGroup.POST("/request", otpHandler.RequestPasswordlessLogin)
 			passwordlessGroup.POST("/verify", otpHandler.VerifyPasswordlessLogin)
+		}
+
+		// Passwordless registration endpoints (two-step signup without password)
+		signupPhoneGroup := apiGroup.Group("/auth/signup/phone")
+		{
+			signupPhoneGroup.POST("", rateLimitMiddleware.LimitSignup(), authHandler.InitPasswordlessRegistration)
+			signupPhoneGroup.POST("/verify", authHandler.CompletePasswordlessRegistration)
 		}
 
 		// OAuth endpoints
@@ -291,6 +310,32 @@ func main() {
 			analyticsGroup := adminGroup.Group("/analytics")
 			{
 				analyticsGroup.GET("/geo-distribution", advancedAdminHandler.GetGeoDistribution)
+			}
+
+			// Webhooks Management
+			webhooksGroup := adminGroup.Group("/webhooks")
+			{
+				webhooksGroup.GET("", webhookHandler.ListWebhooks)
+				webhooksGroup.POST("", webhookHandler.CreateWebhook)
+				webhooksGroup.GET("/events", webhookHandler.GetAvailableEvents)
+				webhooksGroup.GET("/:id", webhookHandler.GetWebhook)
+				webhooksGroup.PUT("/:id", webhookHandler.UpdateWebhook)
+				webhooksGroup.DELETE("/:id", webhookHandler.DeleteWebhook)
+				webhooksGroup.POST("/:id/test", webhookHandler.TestWebhook)
+				webhooksGroup.GET("/:id/deliveries", webhookHandler.ListWebhookDeliveries)
+			}
+
+			// Email Templates Management
+			templatesGroup := adminGroup.Group("/templates")
+			{
+				templatesGroup.GET("", templateHandler.ListEmailTemplates)
+				templatesGroup.POST("", templateHandler.CreateEmailTemplate)
+				templatesGroup.GET("/types", templateHandler.GetAvailableTemplateTypes)
+				templatesGroup.POST("/preview", templateHandler.PreviewEmailTemplate)
+				templatesGroup.GET("/variables/:type", templateHandler.GetDefaultVariables)
+				templatesGroup.GET("/:id", templateHandler.GetEmailTemplate)
+				templatesGroup.PUT("/:id", templateHandler.UpdateEmailTemplate)
+				templatesGroup.DELETE("/:id", templateHandler.DeleteEmailTemplate)
 			}
 		}
 

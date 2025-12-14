@@ -43,6 +43,17 @@ const (
 	ActionRoleAssigned   AuditAction = "role_assigned"
 	ActionRoleRevoked    AuditAction = "role_revoked"
 	ActionRolesUpdated   AuditAction = "roles_updated"
+	ActionCreate         AuditAction = "create"
+	ActionUpdate         AuditAction = "update"
+	ActionDelete         AuditAction = "delete"
+)
+
+// AuditResource represents the type of resource being audited
+type AuditResource string
+
+const (
+	ResourceWebhook       AuditResource = "webhook"
+	ResourceEmailTemplate AuditResource = "email_template"
 )
 
 // AuditStatus represents the status of an audited action

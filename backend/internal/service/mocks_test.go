@@ -377,9 +377,12 @@ func (m *mockRBACStore) GetPermissionMatrix(ctx context.Context) (*models.Permis
 }
 
 type mockCacheService struct {
-	IsBlacklistedFunc      func(ctx context.Context, tokenHash string) (bool, error)
-	AddToBlacklistFunc     func(ctx context.Context, tokenHash string, expiration time.Duration) error
-	IncrementRateLimitFunc func(ctx context.Context, key string, window time.Duration) (int64, error)
+	IsBlacklistedFunc             func(ctx context.Context, tokenHash string) (bool, error)
+	AddToBlacklistFunc            func(ctx context.Context, tokenHash string, expiration time.Duration) error
+	IncrementRateLimitFunc        func(ctx context.Context, key string, window time.Duration) (int64, error)
+	StorePendingRegistrationFunc  func(ctx context.Context, identifier string, data *models.PendingRegistration, expiration time.Duration) error
+	GetPendingRegistrationFunc    func(ctx context.Context, identifier string) (*models.PendingRegistration, error)
+	DeletePendingRegistrationFunc func(ctx context.Context, identifier string) error
 }
 
 func (m *mockCacheService) IsBlacklisted(ctx context.Context, tokenHash string) (bool, error) {
@@ -399,6 +402,24 @@ func (m *mockCacheService) IncrementRateLimit(ctx context.Context, key string, w
 		return m.IncrementRateLimitFunc(ctx, key, window)
 	}
 	return 1, nil
+}
+func (m *mockCacheService) StorePendingRegistration(ctx context.Context, identifier string, data *models.PendingRegistration, expiration time.Duration) error {
+	if m.StorePendingRegistrationFunc != nil {
+		return m.StorePendingRegistrationFunc(ctx, identifier, data, expiration)
+	}
+	return nil
+}
+func (m *mockCacheService) GetPendingRegistration(ctx context.Context, identifier string) (*models.PendingRegistration, error) {
+	if m.GetPendingRegistrationFunc != nil {
+		return m.GetPendingRegistrationFunc(ctx, identifier)
+	}
+	return nil, nil
+}
+func (m *mockCacheService) DeletePendingRegistration(ctx context.Context, identifier string) error {
+	if m.DeletePendingRegistrationFunc != nil {
+		return m.DeletePendingRegistrationFunc(ctx, identifier)
+	}
+	return nil
 }
 
 type mockSMSLogStore struct {
@@ -973,6 +994,7 @@ func (m *mockAPIKeyStore) ListAll(ctx context.Context) ([]*models.APIKey, error)
 type mockSessionStore struct {
 	CreateSessionFunc            func(ctx context.Context, session *models.Session) error
 	GetUserSessionsPaginatedFunc func(ctx context.Context, userID uuid.UUID, page, perPage int) ([]models.Session, int, error)
+	GetAllSessionsPaginatedFunc  func(ctx context.Context, page, perPage int) ([]models.Session, int, error)
 	RevokeUserSessionFunc        func(ctx context.Context, userID, sessionID uuid.UUID) error
 	RevokeAllUserSessionsFunc    func(ctx context.Context, userID uuid.UUID, exceptSessionID *uuid.UUID) error
 	UpdateSessionNameFunc        func(ctx context.Context, sessionID uuid.UUID, name string) error
@@ -989,6 +1011,12 @@ func (m *mockSessionStore) CreateSession(ctx context.Context, session *models.Se
 func (m *mockSessionStore) GetUserSessionsPaginated(ctx context.Context, userID uuid.UUID, page, perPage int) ([]models.Session, int, error) {
 	if m.GetUserSessionsPaginatedFunc != nil {
 		return m.GetUserSessionsPaginatedFunc(ctx, userID, page, perPage)
+	}
+	return nil, 0, nil
+}
+func (m *mockSessionStore) GetAllSessionsPaginated(ctx context.Context, page, perPage int) ([]models.Session, int, error) {
+	if m.GetAllSessionsPaginatedFunc != nil {
+		return m.GetAllSessionsPaginatedFunc(ctx, page, perPage)
 	}
 	return nil, 0, nil
 }

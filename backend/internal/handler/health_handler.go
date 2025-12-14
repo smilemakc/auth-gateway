@@ -36,7 +36,7 @@ type HealthResponse struct {
 // @Produce json
 // @Success 200 {object} HealthResponse
 // @Failure 503 {object} HealthResponse
-// @Router /auth/health [get]
+// @Router /health [get]
 func (h *HealthHandler) Health(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
@@ -76,7 +76,7 @@ func (h *HealthHandler) Health(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} map[string]string
 // @Failure 503 {object} map[string]string
-// @Router /auth/ready [get]
+// @Router /ready [get]
 func (h *HealthHandler) Readiness(c *gin.Context) {
 	// Simple readiness check
 	c.JSON(http.StatusOK, gin.H{"status": "ready"})
@@ -87,7 +87,7 @@ func (h *HealthHandler) Readiness(c *gin.Context) {
 // @Tags health
 // @Produce json
 // @Success 200 {object} map[string]string
-// @Router /auth/live [get]
+// @Router /live [get]
 func (h *HealthHandler) Liveness(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "alive"})
 }

@@ -98,3 +98,28 @@ func TestNormalizeUsername(t *testing.T) {
 		})
 	}
 }
+
+// TestNormalizePhone validates phone normalization using regexp
+func TestNormalizePhone(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"Already normalized", "+1234567890", "+1234567890"},
+		{"Spaces and dashes", "123 456-7890", "+1234567890"},
+		{"Parentheses", "(123) 456 7890", "+1234567890"},
+		{"Plus with formatting", "+1 (234) 567-890", "+1234567890"},
+		{"Empty", "", ""},
+		{"Letters inside", "12a3b4", "+1234"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NormalizePhone(tt.input)
+			if result != tt.expected {
+				t.Fatalf("expected %q, got %q", tt.expected, result)
+			}
+		})
+	}
+}

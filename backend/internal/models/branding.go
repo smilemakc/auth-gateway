@@ -25,32 +25,52 @@ type BrandingSettings struct {
 
 // UpdateBrandingRequest is the request to update branding settings
 type UpdateBrandingRequest struct {
-	LogoURL         string `json:"logo_url" binding:"omitempty,url,max=500"`
-	FaviconURL      string `json:"favicon_url" binding:"omitempty,url,max=500"`
-	PrimaryColor    string `json:"primary_color" binding:"omitempty,hexcolor"`
-	SecondaryColor  string `json:"secondary_color" binding:"omitempty,hexcolor"`
-	BackgroundColor string `json:"background_color" binding:"omitempty,hexcolor"`
-	CustomCSS       string `json:"custom_css"`
-	CompanyName     string `json:"company_name" binding:"max=100"`
-	SupportEmail    string `json:"support_email" binding:"omitempty,email"`
-	TermsURL        string `json:"terms_url" binding:"omitempty,url,max=500"`
-	PrivacyURL      string `json:"privacy_url" binding:"omitempty,url,max=500"`
+	// URL to company logo image
+	LogoURL string `json:"logo_url" binding:"omitempty,url,max=500" example:"https://example.com/logo.png"`
+	// URL to favicon image
+	FaviconURL string `json:"favicon_url" binding:"omitempty,url,max=500" example:"https://example.com/favicon.ico"`
+	// Primary brand color (hex format)
+	PrimaryColor string `json:"primary_color" binding:"omitempty,hexcolor" example:"#3B82F6"`
+	// Secondary brand color (hex format)
+	SecondaryColor string `json:"secondary_color" binding:"omitempty,hexcolor" example:"#8B5CF6"`
+	// Background color (hex format)
+	BackgroundColor string `json:"background_color" binding:"omitempty,hexcolor" example:"#FFFFFF"`
+	// Custom CSS to inject
+	CustomCSS string `json:"custom_css" example:".custom-class { color: red; }"`
+	// Company name (max 100 characters)
+	CompanyName string `json:"company_name" binding:"max=100" example:"Acme Corporation"`
+	// Support email address
+	SupportEmail string `json:"support_email" binding:"omitempty,email" example:"support@example.com"`
+	// URL to terms of service
+	TermsURL string `json:"terms_url" binding:"omitempty,url,max=500" example:"https://example.com/terms"`
+	// URL to privacy policy
+	PrivacyURL string `json:"privacy_url" binding:"omitempty,url,max=500" example:"https://example.com/privacy"`
 }
 
 // BrandingTheme contains the color scheme for frontend
 type BrandingTheme struct {
-	PrimaryColor    string `json:"primary_color"`
-	SecondaryColor  string `json:"secondary_color"`
-	BackgroundColor string `json:"background_color"`
+	// Primary brand color
+	PrimaryColor string `json:"primary_color" example:"#3B82F6"`
+	// Secondary brand color
+	SecondaryColor string `json:"secondary_color" example:"#8B5CF6"`
+	// Background color
+	BackgroundColor string `json:"background_color" example:"#FFFFFF"`
 }
 
 // PublicBrandingResponse is the branding info exposed to public API
 type PublicBrandingResponse struct {
-	LogoURL      string        `json:"logo_url,omitempty"`
-	FaviconURL   string        `json:"favicon_url,omitempty"`
-	Theme        BrandingTheme `json:"theme"`
-	CompanyName  string        `json:"company_name,omitempty"`
-	SupportEmail string        `json:"support_email,omitempty"`
-	TermsURL     string        `json:"terms_url,omitempty"`
-	PrivacyURL   string        `json:"privacy_url,omitempty"`
+	// URL to company logo
+	LogoURL string `json:"logo_url,omitempty" example:"https://example.com/logo.png"`
+	// URL to favicon
+	FaviconURL string `json:"favicon_url,omitempty" example:"https://example.com/favicon.ico"`
+	// Color theme
+	Theme BrandingTheme `json:"theme"`
+	// Company name
+	CompanyName string `json:"company_name,omitempty" example:"Acme Corporation"`
+	// Support email
+	SupportEmail string `json:"support_email,omitempty" example:"support@example.com"`
+	// Terms of service URL
+	TermsURL string `json:"terms_url,omitempty" example:"https://example.com/terms"`
+	// Privacy policy URL
+	PrivacyURL string `json:"privacy_url,omitempty" example:"https://example.com/privacy"`
 }

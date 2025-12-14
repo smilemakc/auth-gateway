@@ -28,35 +28,52 @@ type Session struct {
 
 // ActiveSessionResponse is returned to the user
 type ActiveSessionResponse struct {
-	ID           uuid.UUID `json:"id"`
-	DeviceType   string    `json:"device_type,omitempty"`
-	OS           string    `json:"os,omitempty"`
-	Browser      string    `json:"browser,omitempty"`
-	IPAddress    string    `json:"ip_address,omitempty"`
-	SessionName  string    `json:"session_name,omitempty"`
-	LastActiveAt time.Time `json:"last_active_at"`
-	CreatedAt    time.Time `json:"created_at"`
-	ExpiresAt    time.Time `json:"expires_at"`
-	IsCurrent    bool      `json:"is_current"` // True if this is the current session
+	// Session unique identifier
+	ID uuid.UUID `json:"id" example:"123e4567-e89b-12d3-a456-426614174000"`
+	// Device type (mobile, desktop, tablet)
+	DeviceType string `json:"device_type,omitempty" example:"desktop"`
+	// Operating system with version
+	OS string `json:"os,omitempty" example:"Windows 11"`
+	// Browser name with version
+	Browser string `json:"browser,omitempty" example:"Chrome 120"`
+	// IP address of the session
+	IPAddress string `json:"ip_address,omitempty" example:"192.168.1.1"`
+	// Custom session name set by user
+	SessionName string `json:"session_name,omitempty" example:"Home Desktop"`
+	// Timestamp of last activity
+	LastActiveAt time.Time `json:"last_active_at" example:"2024-01-15T10:30:00Z"`
+	// Timestamp when session was created
+	CreatedAt time.Time `json:"created_at" example:"2024-01-15T10:30:00Z"`
+	// Timestamp when session expires
+	ExpiresAt time.Time `json:"expires_at" example:"2024-01-22T10:30:00Z"`
+	// Whether this is the current session
+	IsCurrent bool `json:"is_current" example:"true"`
 }
 
 // RevokeSessionRequest is the request to revoke a specific session
 type RevokeSessionRequest struct {
-	SessionID uuid.UUID `json:"session_id" binding:"required"`
+	// Session ID to revoke
+	SessionID uuid.UUID `json:"session_id" binding:"required" example:"123e4567-e89b-12d3-a456-426614174000"`
 }
 
 // UpdateSessionNameRequest is the request to update session name
 type UpdateSessionNameRequest struct {
-	SessionName string `json:"session_name" binding:"required,max=100"`
+	// New session name (max 100 characters)
+	SessionName string `json:"session_name" binding:"required,max=100" example:"Work Laptop"`
 }
 
 // SessionListResponse contains paginated session list
 type SessionListResponse struct {
-	Sessions   []ActiveSessionResponse `json:"sessions"`
-	Total      int                     `json:"total"`
-	Page       int                     `json:"page"`
-	PerPage    int                     `json:"per_page"`
-	TotalPages int                     `json:"total_pages"`
+	// List of active sessions
+	Sessions []ActiveSessionResponse `json:"sessions"`
+	// Total number of sessions
+	Total int `json:"total" example:"5"`
+	// Current page number
+	Page int `json:"page" example:"1"`
+	// Number of items per page
+	PerPage int `json:"per_page" example:"20"`
+	// Total number of pages
+	TotalPages int `json:"total_pages" example:"1"`
 }
 
 // DeviceInfo contains parsed device information from user agent

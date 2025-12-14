@@ -47,30 +47,42 @@ const (
 
 // CreateAPIKeyRequest represents a request to create a new API key
 type CreateAPIKeyRequest struct {
-	Name        string     `json:"name" binding:"required,min=3,max=100"`
-	Description string     `json:"description,omitempty"`
-	Scopes      []string   `json:"scopes" binding:"required,min=1"`
-	ExpiresAt   *time.Time `json:"expires_at,omitempty"` // Optional expiration
+	// API key name (3-100 characters)
+	Name string `json:"name" binding:"required,min=3,max=100" example:"Production API Key"`
+	// API key description
+	Description string `json:"description,omitempty" example:"API key for production environment"`
+	// List of permission scopes
+	Scopes []string `json:"scopes" binding:"required,min=1" example:"users:read,token:validate"`
+	// Optional expiration date (null for no expiration)
+	ExpiresAt *time.Time `json:"expires_at,omitempty" example:"2024-12-31T23:59:59Z"`
 }
 
 // UpdateAPIKeyRequest represents a request to update an API key
 type UpdateAPIKeyRequest struct {
-	Name        string   `json:"name,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Scopes      []string `json:"scopes,omitempty"`
-	IsActive    *bool    `json:"is_active,omitempty"`
+	// API key name
+	Name string `json:"name,omitempty" example:"Updated API Key Name"`
+	// API key description
+	Description string `json:"description,omitempty" example:"Updated description"`
+	// List of permission scopes
+	Scopes []string `json:"scopes,omitempty" example:"users:read,users:write"`
+	// Whether the key is active
+	IsActive *bool `json:"is_active,omitempty" example:"true"`
 }
 
 // CreateAPIKeyResponse represents the response when creating an API key
 type CreateAPIKeyResponse struct {
-	APIKey   *APIKey `json:"api_key"`
-	PlainKey string  `json:"plain_key"` // Only returned once during creation
+	// Created API key metadata
+	APIKey *APIKey `json:"api_key"`
+	// Plain text API key (shown only once at creation)
+	PlainKey string `json:"plain_key" example:"agw_1234567890abcdef1234567890abcdef"`
 }
 
 // ListAPIKeysResponse represents a list of API keys
 type ListAPIKeysResponse struct {
+	// List of API keys
 	APIKeys []*APIKey `json:"api_keys"`
-	Total   int       `json:"total"`
+	// Total number of API keys
+	Total int `json:"total" example:"5"`
 }
 
 // IsValidScope checks if a scope is valid

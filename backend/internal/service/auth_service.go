@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -52,7 +53,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 
 	// Normalize inputs
 	var email string
-	var normalizedPhone *string
+	var phone string
 
 	if req.Email != "" {
 		email = utils.NormalizeEmail(req.Email)
@@ -73,8 +74,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 	}
 
 	if req.Phone != nil && *req.Phone != "" {
-		phone := utils.NormalizePhone(*req.Phone)
-		normalizedPhone = &phone
+		phone = utils.NormalizePhone(*req.Phone)
 		// Validate phone
 		if !utils.IsValidPhone(phone) {
 			return nil, models.NewAppError(400, "Invalid phone format")
@@ -92,6 +92,10 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 	}
 
 	username := utils.NormalizeUsername(req.Username)
+
+	if username == "" {
+		username = utils.Default(email, strings.ReplaceAll(phone, "+", ""))
+	}
 
 	if !utils.IsValidUsername(username) {
 		return nil, models.NewAppError(400, "Invalid username format")
@@ -128,7 +132,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 	user := &models.User{
 		ID:           uuid.New(),
 		Email:        email,
-		Phone:        normalizedPhone,
+		Phone:        utils.Ptr(phone),
 		Username:     username,
 		PasswordHash: passwordHash,
 		FullName:     req.FullName,
@@ -472,6 +476,208 @@ func (s *AuthService) ResetPassword(ctx context.Context, userID uuid.UUID, newPa
 	})
 
 	return nil
+}
+
+// PendingRegistrationExpiration is the TTL for pending registration data in Redis
+const PendingRegistrationExpiration = 10 * time.Minute
+
+// InitPasswordlessRegistration initiates a passwordless registration by storing pending data and sending OTP
+func (s *AuthService) InitPasswordlessRegistration(ctx context.Context, req *models.InitPasswordlessRegistrationRequest, ip, userAgent string) error {
+	// Require either email or phone
+	if (req.Email == nil || *req.Email == "") && (req.Phone == nil || *req.Phone == "") {
+		return models.NewAppError(400, "Either email or phone is required")
+	}
+
+	var email string
+	var phone string
+	var identifier string
+
+	// Normalize and validate email
+	if req.Email != nil && *req.Email != "" {
+		email = utils.NormalizeEmail(*req.Email)
+		if !utils.IsValidEmail(email) {
+			return models.NewAppError(400, "Invalid email format")
+		}
+		identifier = email
+		// Check if email exists
+		if exists, err := s.userRepo.EmailExists(ctx, email); err != nil {
+			return err
+		} else if exists {
+			s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				"reason": "email_exists",
+				"email":  email,
+			})
+			return models.ErrEmailAlreadyExists
+		}
+	}
+
+	// Normalize and validate phone
+	if req.Phone != nil && *req.Phone != "" {
+		phone = utils.NormalizePhone(*req.Phone)
+		if !utils.IsValidPhone(phone) {
+			return models.NewAppError(400, "Invalid phone format")
+		}
+		if identifier == "" {
+			identifier = phone
+		}
+		// Check if phone exists
+		if exists, err := s.userRepo.PhoneExists(ctx, phone); err != nil {
+			return err
+		} else if exists {
+			s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				"reason": "phone_exists",
+				"phone":  phone,
+			})
+			return models.ErrPhoneAlreadyExists
+		}
+	}
+
+	// Generate username if not provided
+	username := utils.NormalizeUsername(req.Username)
+	if username == "" {
+		if email != "" {
+			// Extract local part from email
+			parts := strings.Split(email, "@")
+			username = parts[0]
+		} else {
+			// Use phone number without +
+			username = strings.ReplaceAll(phone, "+", "")
+		}
+	}
+
+	// Validate username
+	if !utils.IsValidUsername(username) {
+		return models.NewAppError(400, "Invalid username format")
+	}
+
+	// Check if username exists
+	if exists, err := s.userRepo.UsernameExists(ctx, username); err != nil {
+		return err
+	} else if exists {
+		// Append random suffix to make unique
+		username = fmt.Sprintf("%s_%d", username, time.Now().UnixNano()%10000)
+	}
+
+	// Store pending registration in Redis
+	pending := &models.PendingRegistration{
+		Email:     email,
+		Phone:     phone,
+		Username:  username,
+		FullName:  req.FullName,
+		CreatedAt: time.Now().Unix(),
+	}
+
+	if err := s.redis.StorePendingRegistration(ctx, identifier, pending, PendingRegistrationExpiration); err != nil {
+		return fmt.Errorf("failed to store pending registration: %w", err)
+	}
+
+	// Log init registration
+	s.logAudit(nil, models.ActionSignUp, models.StatusSuccess, ip, userAgent, map[string]interface{}{
+		"step":       "init",
+		"identifier": identifier,
+	})
+
+	return nil
+}
+
+// CompletePasswordlessRegistration completes the registration after OTP verification
+func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req *models.CompletePasswordlessRegistrationRequest, ip, userAgent string, deviceInfo models.DeviceInfo) (*models.AuthResponse, error) {
+	// Require either email or phone
+	if (req.Email == nil || *req.Email == "") && (req.Phone == nil || *req.Phone == "") {
+		return nil, models.NewAppError(400, "Either email or phone is required")
+	}
+
+	var identifier string
+	var email string
+	var phone string
+
+	if req.Email != nil && *req.Email != "" {
+		email = utils.NormalizeEmail(*req.Email)
+		identifier = email
+	}
+
+	if req.Phone != nil && *req.Phone != "" {
+		phone = utils.NormalizePhone(*req.Phone)
+		if identifier == "" {
+			identifier = phone
+		}
+	}
+
+	// Retrieve pending registration from Redis
+	pending, err := s.redis.GetPendingRegistration(ctx, identifier)
+	if err != nil {
+		s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			"reason":     "pending_not_found",
+			"identifier": identifier,
+		})
+		return nil, models.NewAppError(400, "Registration not initiated or expired. Please start again.")
+	}
+
+	// Verify pending data matches
+	if (email != "" && pending.Email != email) || (phone != "" && pending.Phone != phone) {
+		return nil, models.NewAppError(400, "Registration data mismatch")
+	}
+
+	// Get default "user" role
+	defaultRole, err := s.rbacRepo.GetRoleByName(ctx, "user")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default role: %w", err)
+	}
+
+	// Create user without password (passwordless registration)
+	user := &models.User{
+		ID:            uuid.New(),
+		Email:         pending.Email,
+		Phone:         utils.Ptr(pending.Phone),
+		Username:      pending.Username,
+		PasswordHash:  "", // No password for passwordless registration
+		FullName:      pending.FullName,
+		IsActive:      true,
+		EmailVerified: email != "", // Mark email as verified if registering via email
+		PhoneVerified: phone != "", // Mark phone as verified if registering via phone
+	}
+
+	if err := s.userRepo.Create(ctx, user); err != nil {
+		s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			"reason": "create_failed",
+			"error":  err.Error(),
+		})
+		return nil, err
+	}
+
+	// Assign default "user" role
+	if err := s.rbacRepo.AssignRoleToUser(ctx, user.ID, defaultRole.ID, user.ID); err != nil {
+		s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			"reason": "role_assignment_failed",
+			"error":  err.Error(),
+		})
+		return nil, fmt.Errorf("failed to assign default role: %w", err)
+	}
+
+	// Reload user with roles for token generation
+	user, err = s.userRepo.GetByIDWithRoles(ctx, user.ID, utils.Ptr(true))
+	if err != nil {
+		return nil, fmt.Errorf("failed to reload user with roles: %w", err)
+	}
+
+	// Delete pending registration from Redis
+	if err := s.redis.DeletePendingRegistration(ctx, identifier); err != nil {
+		// Log but don't fail - user is already created
+		fmt.Printf("Failed to delete pending registration: %v\n", err)
+	}
+
+	// Generate tokens with device info
+	authResp, err := s.generateAuthResponse(ctx, user, ip, deviceInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	// Log successful signup
+	s.logAudit(&user.ID, models.ActionSignUp, models.StatusSuccess, ip, userAgent, map[string]interface{}{
+		"passwordless": true,
+	})
+
+	return authResp, nil
 }
 
 // generateAuthResponse generates access and refresh tokens and saves refresh token with device info

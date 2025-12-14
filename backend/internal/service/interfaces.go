@@ -92,6 +92,10 @@ type CacheService interface {
 	IsBlacklisted(ctx context.Context, tokenHash string) (bool, error)
 	AddToBlacklist(ctx context.Context, tokenHash string, expiration time.Duration) error
 	IncrementRateLimit(ctx context.Context, key string, window time.Duration) (int64, error)
+	// Pending registration methods
+	StorePendingRegistration(ctx context.Context, identifier string, data *models.PendingRegistration, expiration time.Duration) error
+	GetPendingRegistration(ctx context.Context, identifier string) (*models.PendingRegistration, error)
+	DeletePendingRegistration(ctx context.Context, identifier string) error
 }
 
 // SMSLogStore defines the interface for SMS log storage

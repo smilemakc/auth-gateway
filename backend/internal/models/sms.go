@@ -86,29 +86,40 @@ type UpdateSMSSettingsRequest struct {
 
 // SendSMSRequest represents the request to send an SMS
 type SendSMSRequest struct {
-	Phone string  `json:"phone" binding:"required"`
-	Type  OTPType `json:"type" binding:"required,oneof=verification password_reset 2fa login"`
+	// Phone number to send SMS to
+	Phone string `json:"phone" binding:"required" example:"+1234567890"`
+	// OTP type: verification, password_reset, 2fa, or login
+	Type OTPType `json:"type" binding:"required,oneof=verification password_reset 2fa login" example:"verification"`
 }
 
 // SendSMSResponse represents the response after sending an SMS
 type SendSMSResponse struct {
-	Success   bool      `json:"success"`
-	MessageID *string   `json:"message_id,omitempty"`
-	ExpiresAt time.Time `json:"expires_at"`
+	// Whether SMS was sent successfully
+	Success bool `json:"success" example:"true"`
+	// Message ID from SMS provider
+	MessageID *string `json:"message_id,omitempty" example:"SM1234567890abcdef"`
+	// OTP expiration timestamp
+	ExpiresAt time.Time `json:"expires_at" example:"2024-01-15T10:40:00Z"`
 }
 
 // VerifySMSOTPRequest represents the request to verify SMS OTP
 type VerifySMSOTPRequest struct {
-	Phone string  `json:"phone" binding:"required"`
-	Code  string  `json:"code" binding:"required,len=6"`
-	Type  OTPType `json:"type" binding:"required,oneof=verification password_reset 2fa login"`
+	// Phone number that received the OTP
+	Phone string `json:"phone" binding:"required" example:"+1234567890"`
+	// 6-digit OTP code
+	Code string `json:"code" binding:"required,len=6" example:"123456"`
+	// OTP type: verification, password_reset, 2fa, or login
+	Type OTPType `json:"type" binding:"required,oneof=verification password_reset 2fa login" example:"verification"`
 }
 
 // VerifySMSOTPResponse represents the response after verifying SMS OTP
 type VerifySMSOTPResponse struct {
-	Valid   bool   `json:"valid"`
-	Message string `json:"message,omitempty"`
-	User    *User  `json:"user,omitempty"`
+	// Whether the OTP is valid
+	Valid bool `json:"valid" example:"true"`
+	// Response message
+	Message string `json:"message,omitempty" example:"OTP verified successfully"`
+	// User information (if verification was for login)
+	User *User `json:"user,omitempty"`
 }
 
 // SMSStatsResponse represents SMS statistics

@@ -26,9 +26,9 @@ type TwoFASetupResponse struct {
 
 // TwoFAStatusResponse contains 2FA status.
 type TwoFAStatusResponse struct {
-	Enabled       bool   `json:"enabled"`
-	EnabledAt     string `json:"enabled_at,omitempty"`
-	BackupCodesRemaining int `json:"backup_codes_remaining"`
+	Enabled              bool   `json:"enabled"`
+	EnabledAt            string `json:"enabled_at,omitempty"`
+	BackupCodesRemaining int    `json:"backup_codes_remaining"`
 }
 
 // BackupCodesResponse contains regenerated backup codes.
@@ -53,20 +53,26 @@ type OTPResponse struct {
 	ExpiresIn int    `json:"expires_in"`
 }
 
+// InitPasswordlessRegistrationResponse contains the result of passwordless registration initiation.
+type InitPasswordlessRegistrationResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
 // PermissionMatrixResponse contains the permission matrix for UI.
 type PermissionMatrixResponse struct {
-	Roles       []Role             `json:"roles"`
-	Permissions []Permission       `json:"permissions"`
+	Roles       []Role              `json:"roles"`
+	Permissions []Permission        `json:"permissions"`
 	Matrix      map[string][]string `json:"matrix"` // role_id -> []permission_id
 }
 
 // ErrorResponse represents an API error.
 type ErrorResponse struct {
-	Error       string            `json:"error"`
-	Message     string            `json:"message"`
-	Code        string            `json:"code,omitempty"`
-	Details     map[string]string `json:"details,omitempty"`
-	StatusCode  int               `json:"-"`
+	Error      string            `json:"error"`
+	Message    string            `json:"message"`
+	Code       string            `json:"code,omitempty"`
+	Details    map[string]string `json:"details,omitempty"`
+	StatusCode int               `json:"-"`
 }
 
 func (e *ErrorResponse) String() string {

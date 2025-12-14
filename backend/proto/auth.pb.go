@@ -1210,7 +1210,7 @@ const file_proto_auth_proto_rawDesc = "" +
 	"\n" +
 	"CreateUser\x12\x17.auth.CreateUserRequest\x1a\x18.auth.CreateUserResponse\x12u\n" +
 	"\x1cInitPasswordlessRegistration\x12).auth.InitPasswordlessRegistrationRequest\x1a*.auth.InitPasswordlessRegistrationResponse\x12\x81\x01\n" +
-	" CompletePasswordlessRegistration\x12-.auth.CompletePasswordlessRegistrationRequest\x1a..auth.CompletePasswordlessRegistrationResponseB9Z7github.com/smilemakc/auth-gateway/packages/go-sdk/protob\x06proto3"
+	" CompletePasswordlessRegistration\x12-.auth.CompletePasswordlessRegistrationRequest\x1a..auth.CompletePasswordlessRegistrationResponseB)Z'github.com/smilemakc/auth-gateway/protob\x06proto3"
 
 var (
 	file_proto_auth_proto_rawDescOnce sync.Once

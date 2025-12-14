@@ -99,6 +99,11 @@ grpc-example: ## Run gRPC client example
 	@echo "Running gRPC client example..."
 	cd examples/grpc-client && go run main.go
 
+swagger-gen: ## Generate Swagger documentation
+	@echo "Generating Swagger documentation..."
+	@which swag > /dev/null || (echo "swag not installed. Install: go install github.com/swaggo/swag/cmd/swag@latest" && exit 1)
+	swag init --pd --st -g cmd/server/main.go -o docs --parseInternal
+
 all: clean deps build test ## Clean, download deps, build and test
 
 .DEFAULT_GOAL := help

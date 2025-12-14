@@ -34,53 +34,80 @@ type EmailTemplateVersion struct {
 
 // CreateEmailTemplateRequest is the request to create an email template
 type CreateEmailTemplateRequest struct {
-	Type      string   `json:"type" binding:"required,oneof=verification password_reset welcome 2fa custom"`
-	Name      string   `json:"name" binding:"required,max=100"`
-	Subject   string   `json:"subject" binding:"required,max=200"`
-	HTMLBody  string   `json:"html_body" binding:"required"`
-	TextBody  string   `json:"text_body"`
-	Variables []string `json:"variables"` // Available variable names
+	// Template type: verification, password_reset, welcome, 2fa, or custom
+	Type string `json:"type" binding:"required,oneof=verification password_reset welcome 2fa custom" example:"verification"`
+	// Template name (max 100 characters)
+	Name string `json:"name" binding:"required,max=100" example:"Email Verification Template"`
+	// Email subject line (max 200 characters)
+	Subject string `json:"subject" binding:"required,max=200" example:"Verify your email address"`
+	// HTML email body
+	HTMLBody string `json:"html_body" binding:"required" example:"<p>Hello {{username}}, your verification code is {{code}}</p>"`
+	// Plain text email body
+	TextBody string `json:"text_body" example:"Hello {{username}}, your verification code is {{code}}"`
+	// Available variable names for template
+	Variables []string `json:"variables" example:"username,email,code,expiry_minutes"`
 }
 
 // UpdateEmailTemplateRequest is the request to update an email template
 type UpdateEmailTemplateRequest struct {
-	Name      string   `json:"name" binding:"max=100"`
-	Subject   string   `json:"subject" binding:"max=200"`
-	HTMLBody  string   `json:"html_body"`
-	TextBody  string   `json:"text_body"`
-	Variables []string `json:"variables"`
-	IsActive  *bool    `json:"is_active"`
+	// Template name (max 100 characters)
+	Name string `json:"name" binding:"max=100" example:"Updated Template Name"`
+	// Email subject line (max 200 characters)
+	Subject string `json:"subject" binding:"max=200" example:"Updated subject"`
+	// HTML email body
+	HTMLBody string `json:"html_body" example:"<p>Updated HTML content</p>"`
+	// Plain text email body
+	TextBody string `json:"text_body" example:"Updated text content"`
+	// Available variable names for template
+	Variables []string `json:"variables" example:"username,email"`
+	// Whether the template is active
+	IsActive *bool `json:"is_active" example:"true"`
 }
 
 // PreviewEmailTemplateRequest is used to preview a template with sample data
 type PreviewEmailTemplateRequest struct {
-	HTMLBody  string                 `json:"html_body" binding:"required"`
-	TextBody  string                 `json:"text_body"`
-	Variables map[string]interface{} `json:"variables"` // Sample variable values
+	// HTML template to preview
+	HTMLBody string `json:"html_body" binding:"required" example:"<p>Hello {{username}}</p>"`
+	// Text template to preview
+	TextBody string `json:"text_body" example:"Hello {{username}}"`
+	// Sample variable values for preview
+	Variables map[string]interface{} `json:"variables" example:"username:John Doe,email:john@example.com"`
 }
 
 // PreviewEmailTemplateResponse returns rendered template preview
 type PreviewEmailTemplateResponse struct {
-	RenderedHTML string `json:"rendered_html"`
-	RenderedText string `json:"rendered_text"`
+	// Rendered HTML content
+	RenderedHTML string `json:"rendered_html" example:"<p>Hello John Doe</p>"`
+	// Rendered text content
+	RenderedText string `json:"rendered_text" example:"Hello John Doe"`
 }
 
 // EmailTemplateListResponse contains paginated template list
 type EmailTemplateListResponse struct {
-	Templates  []EmailTemplate `json:"templates"`
-	Total      int             `json:"total"`
-	Page       int             `json:"page"`
-	PerPage    int             `json:"per_page"`
-	TotalPages int             `json:"total_pages"`
+	// List of email templates
+	Templates []EmailTemplate `json:"templates"`
+	// Total number of templates
+	Total int `json:"total" example:"10"`
+	// Current page number
+	Page int `json:"page" example:"1"`
+	// Number of items per page
+	PerPage int `json:"per_page" example:"20"`
+	// Total number of pages
+	TotalPages int `json:"total_pages" example:"1"`
 }
 
 // EmailTemplateVersionListResponse contains version history
 type EmailTemplateVersionListResponse struct {
-	Versions   []EmailTemplateVersion `json:"versions"`
-	Total      int                    `json:"total"`
-	Page       int                    `json:"page"`
-	PerPage    int                    `json:"per_page"`
-	TotalPages int                    `json:"total_pages"`
+	// List of template versions
+	Versions []EmailTemplateVersion `json:"versions"`
+	// Total number of versions
+	Total int `json:"total" example:"5"`
+	// Current page number
+	Page int `json:"page" example:"1"`
+	// Number of items per page
+	PerPage int `json:"per_page" example:"20"`
+	// Total number of pages
+	TotalPages int `json:"total_pages" example:"1"`
 }
 
 // Email template types

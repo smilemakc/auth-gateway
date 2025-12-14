@@ -47,10 +47,7 @@ func NewGRPCClient(config GRPCConfig) (*GRPCClient, error) {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.DialTimeout)
-	defer cancel()
-
-	conn, err := grpc.DialContext(ctx, config.Address, opts...)
+	conn, err := grpc.NewClient(config.Address, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to gRPC server: %w", err)
 	}
@@ -161,6 +158,44 @@ func (c *GRPCClient) CreateUser(ctx context.Context, req *proto.CreateUserReques
 	resp, err := c.client.CreateUser(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeBadRequest,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
+
+// InitPasswordlessRegistration initiates a two-step passwordless registration via gRPC.
+// Step 1: Provide email or phone and optional name/username.
+// An OTP is sent to the provided email or phone.
+func (c *GRPCClient) InitPasswordlessRegistration(ctx context.Context, req *proto.InitPasswordlessRegistrationRequest) (*proto.InitPasswordlessRegistrationResponse, error) {
+	resp, err := c.client.InitPasswordlessRegistration(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init passwordless registration: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeBadRequest,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
+
+// CompletePasswordlessRegistration completes the two-step passwordless registration via gRPC.
+// Step 2: Provide the OTP code received via email or SMS.
+// Returns tokens and user info on success.
+func (c *GRPCClient) CompletePasswordlessRegistration(ctx context.Context, req *proto.CompletePasswordlessRegistrationRequest) (*proto.CompletePasswordlessRegistrationResponse, error) {
+	resp, err := c.client.CompletePasswordlessRegistration(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to complete passwordless registration: %w", err)
 	}
 
 	if resp.ErrorMessage != "" {

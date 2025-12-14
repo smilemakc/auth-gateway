@@ -306,3 +306,231 @@ func TestAuthService_ChangePassword(t *testing.T) {
 		assert.ErrorIs(t, err, models.ErrInvalidCredentials)
 	})
 }
+
+func TestAuthService_InitPasswordlessRegistration(t *testing.T) {
+	svc, mUser, _, _, mAudit, _, mCache := setupAuthService()
+	ctx := context.Background()
+
+	t.Run("Success_Email", func(t *testing.T) {
+		email := "newuser@example.com"
+		req := &models.InitPasswordlessRegistrationRequest{
+			Email:    &email,
+			FullName: "New User",
+		}
+
+		mUser.EmailExistsFunc = func(ctx context.Context, e string) (bool, error) { return false, nil }
+		mUser.UsernameExistsFunc = func(ctx context.Context, username string) (bool, error) { return false, nil }
+		mCache.StorePendingRegistrationFunc = func(ctx context.Context, identifier string, data *models.PendingRegistration, expiration time.Duration) error {
+			assert.Equal(t, email, identifier)
+			assert.Equal(t, email, data.Email)
+			assert.Equal(t, "newuser", data.Username) // Auto-generated from email
+			assert.Equal(t, "New User", data.FullName)
+			return nil
+		}
+		mAudit.LogFunc = func(params AuditLogParams) {
+			assert.Equal(t, models.ActionSignUp, params.Action)
+		}
+
+		err := svc.InitPasswordlessRegistration(ctx, req, "1.1.1.1", "ua")
+		assert.NoError(t, err)
+	})
+
+	t.Run("Success_Phone", func(t *testing.T) {
+		phone := "+1234567890"
+		req := &models.InitPasswordlessRegistrationRequest{
+			Phone:    &phone,
+			FullName: "Phone User",
+		}
+
+		mUser.PhoneExistsFunc = func(ctx context.Context, p string) (bool, error) { return false, nil }
+		mUser.UsernameExistsFunc = func(ctx context.Context, username string) (bool, error) { return false, nil }
+		mCache.StorePendingRegistrationFunc = func(ctx context.Context, identifier string, data *models.PendingRegistration, expiration time.Duration) error {
+			assert.Equal(t, "+1234567890", identifier)
+			assert.Equal(t, "+1234567890", data.Phone)
+			return nil
+		}
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		err := svc.InitPasswordlessRegistration(ctx, req, "1.1.1.1", "ua")
+		assert.NoError(t, err)
+	})
+
+	t.Run("EmailAlreadyExists", func(t *testing.T) {
+		email := "existing@example.com"
+		req := &models.InitPasswordlessRegistrationRequest{
+			Email: &email,
+		}
+
+		mUser.EmailExistsFunc = func(ctx context.Context, e string) (bool, error) { return true, nil }
+		mAudit.LogFunc = func(params AuditLogParams) {
+			assert.Equal(t, models.ActionSignUp, params.Action)
+			assert.Equal(t, models.StatusFailed, params.Status)
+		}
+
+		err := svc.InitPasswordlessRegistration(ctx, req, "1.1.1.1", "ua")
+		assert.ErrorIs(t, err, models.ErrEmailAlreadyExists)
+	})
+
+	t.Run("PhoneAlreadyExists", func(t *testing.T) {
+		phone := "+1234567890"
+		req := &models.InitPasswordlessRegistrationRequest{
+			Phone: &phone,
+		}
+
+		mUser.PhoneExistsFunc = func(ctx context.Context, p string) (bool, error) { return true, nil }
+		mAudit.LogFunc = func(params AuditLogParams) {
+			assert.Equal(t, models.ActionSignUp, params.Action)
+			assert.Equal(t, models.StatusFailed, params.Status)
+		}
+
+		err := svc.InitPasswordlessRegistration(ctx, req, "1.1.1.1", "ua")
+		assert.ErrorIs(t, err, models.ErrPhoneAlreadyExists)
+	})
+
+	t.Run("NoEmailOrPhone", func(t *testing.T) {
+		req := &models.InitPasswordlessRegistrationRequest{
+			FullName: "No Contact",
+		}
+
+		err := svc.InitPasswordlessRegistration(ctx, req, "1.1.1.1", "ua")
+		assert.Error(t, err)
+		appErr, ok := err.(*models.AppError)
+		assert.True(t, ok)
+		assert.Equal(t, 400, appErr.Code)
+	})
+}
+
+func TestAuthService_CompletePasswordlessRegistration(t *testing.T) {
+	svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache := setupAuthService()
+	ctx := context.Background()
+
+	t.Run("Success_Email", func(t *testing.T) {
+		email := "newuser@example.com"
+		req := &models.CompletePasswordlessRegistrationRequest{
+			Email: &email,
+			Code:  "123456",
+		}
+
+		// Mock pending registration data
+		mCache.GetPendingRegistrationFunc = func(ctx context.Context, identifier string) (*models.PendingRegistration, error) {
+			return &models.PendingRegistration{
+				Email:     email,
+				Username:  "newuser",
+				FullName:  "New User",
+				CreatedAt: time.Now().Unix(),
+			}, nil
+		}
+		mCache.DeletePendingRegistrationFunc = func(ctx context.Context, identifier string) error { return nil }
+
+		// Mock user creation
+		mRBAC.GetRoleByNameFunc = func(ctx context.Context, name string) (*models.Role, error) {
+			return &models.Role{ID: uuid.New(), Name: "user"}, nil
+		}
+		mUser.CreateFunc = func(ctx context.Context, user *models.User) error {
+			assert.Equal(t, email, user.Email)
+			assert.Equal(t, "newuser", user.Username)
+			assert.Empty(t, user.PasswordHash) // No password for passwordless
+			assert.True(t, user.EmailVerified)
+			return nil
+		}
+		mRBAC.AssignRoleToUserFunc = func(ctx context.Context, userID, roleID, assignedBy uuid.UUID) error { return nil }
+		mUser.GetByIDWithRolesFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+			return &models.User{ID: id, Email: email, Username: "newuser", Roles: []models.Role{{Name: "user"}}}, nil
+		}
+
+		// Mock token generation
+		mJWT.GenerateAccessTokenFunc = func(user *models.User) (string, error) { return "access_token", nil }
+		mJWT.GenerateRefreshTokenFunc = func(user *models.User) (string, error) { return "refresh_token", nil }
+		mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
+		mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
+		mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.CompletePasswordlessRegistration(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, "access_token", resp.AccessToken)
+		assert.Equal(t, "refresh_token", resp.RefreshToken)
+	})
+
+	t.Run("Success_Phone", func(t *testing.T) {
+		phone := "+1234567890"
+		req := &models.CompletePasswordlessRegistrationRequest{
+			Phone: &phone,
+			Code:  "123456",
+		}
+
+		// Mock pending registration data
+		mCache.GetPendingRegistrationFunc = func(ctx context.Context, identifier string) (*models.PendingRegistration, error) {
+			return &models.PendingRegistration{
+				Phone:     "+1234567890",
+				Username:  "1234567890",
+				FullName:  "Phone User",
+				CreatedAt: time.Now().Unix(),
+			}, nil
+		}
+		mCache.DeletePendingRegistrationFunc = func(ctx context.Context, identifier string) error { return nil }
+
+		// Mock user creation
+		mRBAC.GetRoleByNameFunc = func(ctx context.Context, name string) (*models.Role, error) {
+			return &models.Role{ID: uuid.New(), Name: "user"}, nil
+		}
+		mUser.CreateFunc = func(ctx context.Context, user *models.User) error {
+			assert.Equal(t, "+1234567890", *user.Phone)
+			assert.True(t, user.PhoneVerified)
+			return nil
+		}
+		mRBAC.AssignRoleToUserFunc = func(ctx context.Context, userID, roleID, assignedBy uuid.UUID) error { return nil }
+		mUser.GetByIDWithRolesFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+			return &models.User{ID: id, Phone: &phone, Roles: []models.Role{{Name: "user"}}}, nil
+		}
+
+		// Mock token generation
+		mJWT.GenerateAccessTokenFunc = func(user *models.User) (string, error) { return "at", nil }
+		mJWT.GenerateRefreshTokenFunc = func(user *models.User) (string, error) { return "rt", nil }
+		mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
+		mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
+		mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.CompletePasswordlessRegistration(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("PendingNotFound", func(t *testing.T) {
+		email := "unknown@example.com"
+		req := &models.CompletePasswordlessRegistrationRequest{
+			Email: &email,
+			Code:  "123456",
+		}
+
+		mCache.GetPendingRegistrationFunc = func(ctx context.Context, identifier string) (*models.PendingRegistration, error) {
+			return nil, errors.New("not found")
+		}
+		mAudit.LogFunc = func(params AuditLogParams) {
+			assert.Equal(t, models.ActionSignUp, params.Action)
+			assert.Equal(t, models.StatusFailed, params.Status)
+		}
+
+		resp, err := svc.CompletePasswordlessRegistration(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{})
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		appErr, ok := err.(*models.AppError)
+		assert.True(t, ok)
+		assert.Equal(t, 400, appErr.Code)
+	})
+
+	t.Run("NoEmailOrPhone", func(t *testing.T) {
+		req := &models.CompletePasswordlessRegistrationRequest{
+			Code: "123456",
+		}
+
+		resp, err := svc.CompletePasswordlessRegistration(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{})
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		appErr, ok := err.(*models.AppError)
+		assert.True(t, ok)
+		assert.Equal(t, 400, appErr.Code)
+	})
+}

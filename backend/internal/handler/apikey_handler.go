@@ -27,7 +27,8 @@ func NewAPIKeyHandler(apiKeyService *service.APIKeyService, log *logger.Logger) 
 
 // Create creates a new API key
 // @Summary Create API key
-// @Tags api-keys
+// @Description Create a new API key for service-to-service authentication
+// @Tags API Keys
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -36,7 +37,7 @@ func NewAPIKeyHandler(apiKeyService *service.APIKeyService, log *logger.Logger) 
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /api-keys [post]
+// @Router /api/api-keys [post]
 func (h *APIKeyHandler) Create(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {
@@ -70,13 +71,14 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 
 // List lists all API keys for the authenticated user
 // @Summary List API keys
-// @Tags api-keys
+// @Description Get all API keys belonging to the authenticated user
+// @Tags API Keys
 // @Security BearerAuth
 // @Produce json
 // @Success 200 {object} models.ListAPIKeysResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /api-keys [get]
+// @Router /api/api-keys [get]
 func (h *APIKeyHandler) List(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {
@@ -102,7 +104,8 @@ func (h *APIKeyHandler) List(c *gin.Context) {
 
 // Get retrieves a specific API key
 // @Summary Get API key
-// @Tags api-keys
+// @Description Get details of a specific API key
+// @Tags API Keys
 // @Security BearerAuth
 // @Produce json
 // @Param id path string true "API Key ID"
@@ -111,7 +114,7 @@ func (h *APIKeyHandler) List(c *gin.Context) {
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /api-keys/{id} [get]
+// @Router /api/api-keys/{id} [get]
 func (h *APIKeyHandler) Get(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {
@@ -142,7 +145,8 @@ func (h *APIKeyHandler) Get(c *gin.Context) {
 
 // Update updates an API key
 // @Summary Update API key
-// @Tags api-keys
+// @Description Update API key metadata (name, scopes, etc.)
+// @Tags API Keys
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -153,7 +157,7 @@ func (h *APIKeyHandler) Get(c *gin.Context) {
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /api-keys/{id} [put]
+// @Router /api/api-keys/{id} [put]
 func (h *APIKeyHandler) Update(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {
@@ -195,7 +199,8 @@ func (h *APIKeyHandler) Update(c *gin.Context) {
 
 // Revoke revokes an API key
 // @Summary Revoke API key
-// @Tags api-keys
+// @Description Revoke an API key to prevent further use
+// @Tags API Keys
 // @Security BearerAuth
 // @Param id path string true "API Key ID"
 // @Success 200 {object} map[string]string
@@ -203,7 +208,7 @@ func (h *APIKeyHandler) Update(c *gin.Context) {
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /api-keys/{id}/revoke [post]
+// @Router /api/api-keys/{id}/revoke [post]
 func (h *APIKeyHandler) Revoke(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {
@@ -236,7 +241,8 @@ func (h *APIKeyHandler) Revoke(c *gin.Context) {
 
 // Delete deletes an API key
 // @Summary Delete API key
-// @Tags api-keys
+// @Description Permanently delete an API key
+// @Tags API Keys
 // @Security BearerAuth
 // @Param id path string true "API Key ID"
 // @Success 200 {object} map[string]string
@@ -244,7 +250,7 @@ func (h *APIKeyHandler) Revoke(c *gin.Context) {
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /api-keys/{id} [delete]
+// @Router /api/api-keys/{id} [delete]
 func (h *APIKeyHandler) Delete(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {

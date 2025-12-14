@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package auth;
 
-option go_package = "github.com/smilemakc/auth-gateway/api/proto";
+option go_package = "github.com/smilemakc/auth-gateway/proto";
 
 // AuthService provides authentication and authorization operations for microservices
 service AuthService {
@@ -20,6 +20,12 @@ service AuthService {
 
   // CreateUser creates a new user account
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  // InitPasswordlessRegistration initiates passwordless two-step registration
+  rpc InitPasswordlessRegistration(InitPasswordlessRegistrationRequest) returns (InitPasswordlessRegistrationResponse);
+
+  // CompletePasswordlessRegistration completes registration after OTP verification
+  rpc CompletePasswordlessRegistration(CompletePasswordlessRegistrationRequest) returns (CompletePasswordlessRegistrationResponse);
 }
 
 // ValidateTokenRequest contains the token to validate
@@ -110,6 +116,37 @@ message CreateUserRequest {
 
 // CreateUserResponse contains the result of user creation
 message CreateUserResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 expires_in = 4;
+  string error_message = 5;
+}
+
+// InitPasswordlessRegistrationRequest contains data to initiate passwordless registration
+message InitPasswordlessRegistrationRequest {
+  string email = 1;    // Optional if phone is provided
+  string phone = 2;    // Optional if email is provided
+  string username = 3; // Optional, will be auto-generated if not provided
+  string full_name = 4;
+}
+
+// InitPasswordlessRegistrationResponse contains the result of registration initiation
+message InitPasswordlessRegistrationResponse {
+  bool success = 1;
+  string message = 2;
+  string error_message = 3;
+}
+
+// CompletePasswordlessRegistrationRequest contains data to complete registration
+message CompletePasswordlessRegistrationRequest {
+  string email = 1; // Must match init request
+  string phone = 2; // Must match init request
+  string code = 3;  // 6-digit OTP code
+}
+
+// CompletePasswordlessRegistrationResponse contains the result of completed registration
+message CompletePasswordlessRegistrationResponse {
   User user = 1;
   string access_token = 2;
   string refresh_token = 3;

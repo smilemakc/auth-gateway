@@ -29,13 +29,14 @@ func NewAdminHandler(adminService *service.AdminService, logger *logger.Logger) 
 // GetStats returns system statistics
 // @Summary Get system statistics
 // @Description Get system-wide statistics (admin only)
-// @Tags admin
+// @Tags Admin - Management
 // @Security BearerAuth
 // @Produce json
 // @Success 200 {object} models.AdminStatsResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
-// @Router /admin/stats [get]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/stats [get]
 func (h *AdminHandler) GetStats(c *gin.Context) {
 	stats, err := h.adminService.GetStats(c.Request.Context())
 	if err != nil {
@@ -52,7 +53,7 @@ func (h *AdminHandler) GetStats(c *gin.Context) {
 // ListUsers returns paginated list of users
 // @Summary List all users
 // @Description Get paginated list of all users (admin only)
-// @Tags admin
+// @Tags Admin - Management
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
@@ -60,7 +61,8 @@ func (h *AdminHandler) GetStats(c *gin.Context) {
 // @Success 200 {object} models.AdminUserListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
-// @Router /admin/users [get]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/users [get]
 func (h *AdminHandler) ListUsers(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
@@ -80,14 +82,17 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 // GetUser returns detailed user information
 // @Summary Get user details
 // @Description Get detailed information about a specific user (admin only)
-// @Tags admin
+// @Tags Admin - Management
 // @Security BearerAuth
 // @Produce json
 // @Param id path string true "User ID"
 // @Success 200 {object} models.AdminUserResponse
 // @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
-// @Router /admin/users/{id} [get]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/users/{id} [get]
 func (h *AdminHandler) GetUser(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -113,7 +118,7 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 // UpdateUser updates user information
 // @Summary Update user
 // @Description Update user information (admin only)
-// @Tags admin
+// @Tags Admin - Management
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -121,8 +126,11 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 // @Param request body models.AdminUpdateUserRequest true "User update data"
 // @Success 200 {object} models.AdminUserResponse
 // @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
-// @Router /admin/users/{id} [put]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/users/{id} [put]
 func (h *AdminHandler) UpdateUser(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -163,16 +171,18 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 // CreateUser creates a new user
 // @Summary Create user
 // @Description Create a new user (admin only)
-// @Tags admin
+// @Tags Admin - Management
 // @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param request body models.AdminCreateUserRequest true "User creation data"
-// @Success 200 {object} models.AdminUserResponse
+// @Success 201 {object} models.AdminUserResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
-// @Router /admin/users [post]
+// @Failure 409 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/users [post]
 func (h *AdminHandler) CreateUser(c *gin.Context) {
 	var req models.AdminCreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -205,13 +215,16 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 // DeleteUser deletes a user
 // @Summary Delete user
 // @Description Soft delete a user (admin only)
-// @Tags admin
+// @Tags Admin - Management
 // @Security BearerAuth
 // @Param id path string true "User ID"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
-// @Router /admin/users/{id} [delete]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/users/{id} [delete]
 func (h *AdminHandler) DeleteUser(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -236,7 +249,7 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 // ListAPIKeys returns all API keys
 // @Summary List all API keys
 // @Description Get list of all API keys (admin only)
-// @Tags admin
+// @Tags Admin - Management
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
@@ -244,7 +257,8 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 // @Success 200 {array} models.AdminAPIKeyResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
-// @Router /admin/api-keys [get]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/api-keys [get]
 func (h *AdminHandler) ListAPIKeys(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
@@ -264,13 +278,16 @@ func (h *AdminHandler) ListAPIKeys(c *gin.Context) {
 // RevokeAPIKey revokes an API key
 // @Summary Revoke API key
 // @Description Revoke an API key (admin only)
-// @Tags admin
+// @Tags Admin - Management
 // @Security BearerAuth
 // @Param id path string true "API Key ID"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
-// @Router /admin/api-keys/{id}/revoke [post]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/api-keys/{id}/revoke [post]
 func (h *AdminHandler) RevokeAPIKey(c *gin.Context) {
 	keyID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -295,16 +312,18 @@ func (h *AdminHandler) RevokeAPIKey(c *gin.Context) {
 // ListAuditLogs returns audit logs
 // @Summary List audit logs
 // @Description Get paginated audit logs (admin only)
-// @Tags admin
+// @Tags Admin - Management
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Page size" default(50)
 // @Param user_id query string false "Filter by user ID"
 // @Success 200 {array} models.AdminAuditLogResponse
+// @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
-// @Router /admin/audit-logs [get]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/audit-logs [get]
 func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
@@ -336,7 +355,7 @@ func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
 // AssignRole assigns a role to a user
 // @Summary Assign role to user
 // @Description Assign a role to a user (admin only)
-// @Tags admin
+// @Tags Admin - Management
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -344,8 +363,11 @@ func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
 // @Param request body models.AssignRoleRequest true "Role assignment data"
 // @Success 200 {object} models.AdminUserResponse
 // @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
-// @Router /admin/users/{id}/roles [post]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/users/{id}/roles [post]
 func (h *AdminHandler) AssignRole(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -385,14 +407,17 @@ func (h *AdminHandler) AssignRole(c *gin.Context) {
 // RemoveRole removes a role from a user
 // @Summary Remove role from user
 // @Description Remove a role from a user (admin only)
-// @Tags admin
+// @Tags Admin - Management
 // @Security BearerAuth
 // @Param id path string true "User ID"
 // @Param roleId path string true "Role ID"
 // @Success 200 {object} models.AdminUserResponse
 // @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
-// @Router /admin/users/{id}/roles/{roleId} [delete]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/users/{id}/roles/{roleId} [delete]
 func (h *AdminHandler) RemoveRole(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("id"))
 	if err != nil {

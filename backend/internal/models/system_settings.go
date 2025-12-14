@@ -19,24 +19,30 @@ type SystemSetting struct {
 
 // UpdateSystemSettingRequest is the request to update a system setting
 type UpdateSystemSettingRequest struct {
-	Value string `json:"value" binding:"required"`
+	// New value for the setting
+	Value string `json:"value" binding:"required" example:"true"`
 }
 
 // SystemSettingsListResponse contains all system settings
 type SystemSettingsListResponse struct {
+	// List of system settings
 	Settings []SystemSetting `json:"settings"`
 }
 
 // MaintenanceModeRequest is used to toggle maintenance mode
 type MaintenanceModeRequest struct {
-	Enabled bool   `json:"enabled"`
-	Message string `json:"message"`
+	// Whether maintenance mode is enabled
+	Enabled bool `json:"enabled" example:"true"`
+	// Message to display during maintenance
+	Message string `json:"message" example:"System is under maintenance. Please try again later."`
 }
 
 // MaintenanceModeResponse returns the current maintenance mode status
 type MaintenanceModeResponse struct {
-	Enabled bool   `json:"enabled"`
-	Message string `json:"message"`
+	// Whether maintenance mode is enabled
+	Enabled bool `json:"enabled" example:"false"`
+	// Maintenance message
+	Message string `json:"message" example:""`
 }
 
 // System setting keys

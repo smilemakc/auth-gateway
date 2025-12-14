@@ -112,6 +112,21 @@ type PasswordlessVerifyRequest struct {
 	Code  string  `json:"code"`
 }
 
+// InitPasswordlessRegistrationRequest initiates passwordless registration (two-step signup).
+type InitPasswordlessRegistrationRequest struct {
+	Email    *string `json:"email,omitempty"`    // Optional if phone is provided
+	Phone    *string `json:"phone,omitempty"`    // Optional if email is provided
+	Username string  `json:"username,omitempty"` // Optional, auto-generated if not provided
+	FullName string  `json:"full_name,omitempty"`
+}
+
+// CompletePasswordlessRegistrationRequest completes passwordless registration with OTP.
+type CompletePasswordlessRegistrationRequest struct {
+	Email *string `json:"email,omitempty"` // Must match init request
+	Phone *string `json:"phone,omitempty"` // Must match init request
+	Code  string  `json:"code"`            // 6-digit OTP code
+}
+
 // CreateUserRequest is for admin user creation.
 type CreateUserRequest struct {
 	Email       string  `json:"email"`
@@ -168,13 +183,13 @@ type CreateIPFilterRequest struct {
 
 // UpdateBrandingRequest updates branding settings.
 type UpdateBrandingRequest struct {
-	LogoURL         string `json:"logo_url,omitempty"`
-	PrimaryColor    string `json:"primary_color,omitempty"`
-	SecondaryColor  string `json:"secondary_color,omitempty"`
-	CompanyName     string `json:"company_name,omitempty"`
-	SupportEmail    string `json:"support_email,omitempty"`
-	TermsURL        string `json:"terms_url,omitempty"`
-	PrivacyURL      string `json:"privacy_url,omitempty"`
+	LogoURL        string `json:"logo_url,omitempty"`
+	PrimaryColor   string `json:"primary_color,omitempty"`
+	SecondaryColor string `json:"secondary_color,omitempty"`
+	CompanyName    string `json:"company_name,omitempty"`
+	SupportEmail   string `json:"support_email,omitempty"`
+	TermsURL       string `json:"terms_url,omitempty"`
+	PrivacyURL     string `json:"privacy_url,omitempty"`
 }
 
 // MaintenanceModeRequest enables/disables maintenance mode.

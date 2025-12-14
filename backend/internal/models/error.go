@@ -59,9 +59,12 @@ func NewAppError(code int, message string, details ...string) *AppError {
 
 // ErrorResponse represents an error response
 type ErrorResponse struct {
-	Error   string `json:"error"`
-	Message string `json:"message"`
-	Details string `json:"details,omitempty"`
+	// HTTP error status text
+	Error string `json:"error" example:"Bad Request"`
+	// Human-readable error message
+	Message string `json:"message" example:"Invalid request parameters"`
+	// Additional error details
+	Details string `json:"details,omitempty" example:"Email field is required"`
 }
 
 // NewErrorResponse creates a new error response
@@ -77,4 +80,10 @@ func NewErrorResponse(err error) *ErrorResponse {
 		Error:   "Internal Server Error",
 		Message: err.Error(),
 	}
+}
+
+// MessageResponse represents a simple message response
+type MessageResponse struct {
+	// Response message
+	Message string `json:"message" example:"Operation completed successfully"`
 }
