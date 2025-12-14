@@ -1,0 +1,4118 @@
+definitions:
+  APIKey:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      expires_at:
+        description: NULL = never expires
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      key_prefix:
+        description: First 8 chars for identification
+        type: string
+      last_used_at:
+        type: string
+      name:
+        type: string
+      scopes:
+        description: JSON array of permissions
+        items:
+          type: integer
+        type: array
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  ActiveSessionResponse:
+    properties:
+      browser:
+        description: Browser name with version
+        example: Chrome 120
+        type: string
+      created_at:
+        description: Timestamp when session was created
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      device_type:
+        description: Device type (mobile, desktop, tablet)
+        example: desktop
+        type: string
+      expires_at:
+        description: Timestamp when session expires
+        example: "2024-01-22T10:30:00Z"
+        type: string
+      id:
+        description: Session unique identifier
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      ip_address:
+        description: IP address of the session
+        example: 192.168.1.1
+        type: string
+      is_current:
+        description: Whether this is the current session
+        example: true
+        type: boolean
+      last_active_at:
+        description: Timestamp of last activity
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      os:
+        description: Operating system with version
+        example: Windows 11
+        type: string
+      session_name:
+        description: Custom session name set by user
+        example: Home Desktop
+        type: string
+    type: object
+  AdminAPIKeyResponse:
+    properties:
+      created_at:
+        description: Timestamp when key was created
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      expires_at:
+        description: Expiration timestamp (null if never expires)
+        example: "2024-12-31T23:59:59Z"
+        type: string
+      id:
+        description: API key ID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      is_revoked:
+        description: Whether the key is revoked
+        example: false
+        type: boolean
+      last_used_at:
+        description: Last usage timestamp
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      name:
+        description: API key name
+        example: Production API Key
+        type: string
+      prefix:
+        description: API key prefix (first 12 characters)
+        example: agw_abc123de
+        type: string
+      revoked_at:
+        description: Timestamp when key was revoked
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      scopes:
+        description: API key scopes/permissions
+        example:
+        - users:read
+        - token:validate
+        items:
+          type: string
+        type: array
+      user_id:
+        description: User ID who owns the key
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      username:
+        description: Username of the key owner
+        example: johndoe
+        type: string
+    type: object
+  AdminAuditLogResponse:
+    properties:
+      action:
+        description: Action performed
+        example: signin
+        type: string
+      created_at:
+        description: Timestamp when action was performed
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      details:
+        additionalProperties: true
+        description: Additional details about the action
+        type: object
+      id:
+        description: Audit log entry ID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      ip:
+        description: IP address of the request
+        example: 192.168.1.1
+        type: string
+      status:
+        description: Action status
+        example: success
+        type: string
+      user_agent:
+        description: User agent string
+        example: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        type: string
+      user_id:
+        description: User ID who performed the action
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+    type: object
+  AdminCreateUserRequest:
+    properties:
+      account_type:
+        description: 'Account type: "human" or "service" (defaults to "human")'
+        example: human
+        type: string
+      email:
+        description: User's email address
+        example: newuser@example.com
+        type: string
+      full_name:
+        description: User's full name
+        example: New User
+        type: string
+      password:
+        description: User's password (minimum 8 characters)
+        example: SecurePass123!
+        minLength: 8
+        type: string
+      role_ids:
+        description: Role IDs to assign to the user
+        example:
+        - 123e4567-e89b-12d3-a456-426614174000
+        items:
+          type: string
+        type: array
+      username:
+        description: Unique username (3-100 characters)
+        example: newuser
+        maxLength: 100
+        minLength: 3
+        type: string
+    required:
+    - email
+    - full_name
+    - password
+    - username
+    type: object
+  AdminStatsResponse:
+    properties:
+      active_api_keys:
+        description: Number of active API keys
+        example: 38
+        type: integer
+      active_users:
+        description: Number of active users
+        example: 1100
+        type: integer
+      recent_logins_24h:
+        description: Number of logins in the last 24 hours
+        example: 450
+        type: integer
+      recent_signups_24h:
+        description: Number of signups in the last 24 hours
+        example: 12
+        type: integer
+      total_api_keys:
+        description: Total number of API keys
+        example: 45
+        type: integer
+      total_oauth_accounts:
+        description: Total number of OAuth accounts
+        example: 425
+        type: integer
+      total_users:
+        description: Total number of users in the system
+        example: 1250
+        type: integer
+      users_2fa_enabled:
+        description: Number of users with 2FA enabled
+        example: 320
+        type: integer
+      users_by_role:
+        additionalProperties:
+          type: integer
+        description: Users count by role (users with multiple roles are counted in
+          each)
+        example:
+          admin: 5
+          moderator: 15
+          user: 1200
+        type: object
+      verified_email_users:
+        description: Number of users with verified email
+        example: 950
+        type: integer
+      verified_phone_users:
+        description: Number of users with verified phone
+        example: 650
+        type: integer
+    type: object
+  AdminUpdateUserRequest:
+    properties:
+      is_active:
+        description: Whether the account should be active
+        example: true
+        type: boolean
+      role_ids:
+        description: Role IDs to assign to the user
+        example:
+        - 123e4567-e89b-12d3-a456-426614174000
+        - 223e4567-e89b-12d3-a456-426614174001
+        items:
+          type: string
+        type: array
+    type: object
+  AdminUserListResponse:
+    properties:
+      page:
+        description: Current page number
+        example: 1
+        type: integer
+      page_size:
+        description: Number of items per page
+        example: 20
+        type: integer
+      total:
+        description: Total number of users matching the query
+        example: 1250
+        type: integer
+      total_pages:
+        description: Total number of pages
+        example: 63
+        type: integer
+      users:
+        description: List of users
+        items:
+          $ref: '#/definitions/AdminUserResponse'
+        type: array
+    type: object
+  AdminUserResponse:
+    properties:
+      account_type:
+        description: 'Account type: "human" or "service"'
+        example: human
+        type: string
+      api_keys_count:
+        description: Number of API keys owned by user
+        example: 3
+        type: integer
+      created_at:
+        description: Timestamp when user was created
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      email:
+        description: User's email address
+        example: user@example.com
+        type: string
+      email_verified:
+        description: Whether email has been verified
+        example: true
+        type: boolean
+      full_name:
+        description: User's full name
+        example: John Doe
+        type: string
+      id:
+        description: User's unique identifier
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      is_active:
+        description: Whether the account is active
+        example: true
+        type: boolean
+      last_login_at:
+        description: Timestamp of last login
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      oauth_accounts_count:
+        description: Number of OAuth accounts linked to user
+        example: 2
+        type: integer
+      phone:
+        description: User's phone number
+        example: "+1234567890"
+        type: string
+      phone_verified:
+        description: Whether phone has been verified
+        example: false
+        type: boolean
+      profile_picture_url:
+        description: URL to user's profile picture
+        example: https://example.com/avatars/user.jpg
+        type: string
+      roles:
+        description: User's assigned roles
+        items:
+          $ref: '#/definitions/RoleInfo'
+        type: array
+      totp_enabled:
+        description: Whether TOTP 2FA is enabled
+        example: false
+        type: boolean
+      totp_enabled_at:
+        description: Timestamp when TOTP 2FA was enabled
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      updated_at:
+        description: Timestamp when user was last updated
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      username:
+        description: User's username
+        example: johndoe
+        type: string
+    type: object
+  AssignRoleRequest:
+    properties:
+      role_id:
+        description: Role ID to assign
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+    required:
+    - role_id
+    type: object
+  AuthResponse:
+    properties:
+      access_token:
+        description: JWT access token for API authentication
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      expires_in:
+        description: Access token expiration time in seconds
+        example: 900
+        type: integer
+      refresh_token:
+        description: Refresh token for obtaining new access tokens
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      requires_2fa:
+        description: Whether 2FA verification is required
+        example: false
+        type: boolean
+      two_factor_token:
+        description: Temporary token for 2FA verification (if 2FA is required)
+        example: temp_2fa_token_xyz
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/User'
+        description: Authenticated user information
+    type: object
+  BrandingSettings:
+    properties:
+      background_color:
+        description: Hex color
+        type: string
+      company_name:
+        type: string
+      custom_css:
+        type: string
+      favicon_url:
+        type: string
+      id:
+        type: string
+      logo_url:
+        type: string
+      primary_color:
+        description: Hex color
+        type: string
+      privacy_url:
+        type: string
+      secondary_color:
+        description: Hex color
+        type: string
+      support_email:
+        type: string
+      terms_url:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  BrandingTheme:
+    properties:
+      background_color:
+        description: Background color
+        example: '#FFFFFF'
+        type: string
+      primary_color:
+        description: Primary brand color
+        example: '#3B82F6'
+        type: string
+      secondary_color:
+        description: Secondary brand color
+        example: '#8B5CF6'
+        type: string
+    type: object
+  ChangePasswordRequest:
+    properties:
+      new_password:
+        description: New password (minimum 8 characters)
+        example: NewSecurePass123!
+        minLength: 8
+        type: string
+      old_password:
+        description: Current password
+        example: OldPass123!
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
+  CreateAPIKeyRequest:
+    properties:
+      description:
+        description: API key description
+        example: API key for production environment
+        type: string
+      expires_at:
+        description: Optional expiration date (null for no expiration)
+        example: "2024-12-31T23:59:59Z"
+        type: string
+      name:
+        description: API key name (3-100 characters)
+        example: Production API Key
+        maxLength: 100
+        minLength: 3
+        type: string
+      scopes:
+        description: List of permission scopes
+        example:
+        - users:read
+        - token:validate
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - name
+    - scopes
+    type: object
+  CreateAPIKeyResponse:
+    properties:
+      api_key:
+        allOf:
+        - $ref: '#/definitions/APIKey'
+        description: Created API key metadata
+      plain_key:
+        description: Plain text API key (shown only once at creation)
+        example: agw_1234567890abcdef1234567890abcdef
+        type: string
+    type: object
+  CreateIPFilterRequest:
+    properties:
+      expires_at:
+        description: Optional expiration date
+        example: "2024-12-31T23:59:59Z"
+        type: string
+      filter_type:
+        description: 'Filter type: "whitelist" or "blacklist"'
+        enum:
+        - whitelist
+        - blacklist
+        example: blacklist
+        type: string
+      ip_cidr:
+        description: IP address or CIDR range (e.g., "192.168.1.1" or "192.168.1.0/24")
+        example: 192.168.1.0/24
+        type: string
+      reason:
+        description: Reason for the filter
+        example: Suspicious activity detected
+        type: string
+    required:
+    - filter_type
+    - ip_cidr
+    type: object
+  CreatePermissionRequest:
+    properties:
+      action:
+        description: Action name (2-50 characters)
+        example: delete
+        maxLength: 50
+        minLength: 2
+        type: string
+      description:
+        description: Permission description
+        example: Allows deleting users from the system
+        type: string
+      name:
+        description: Permission name (3-100 characters)
+        example: users.delete
+        maxLength: 100
+        minLength: 3
+        type: string
+      resource:
+        description: Resource name (2-50 characters)
+        example: users
+        maxLength: 50
+        minLength: 2
+        type: string
+    required:
+    - action
+    - name
+    - resource
+    type: object
+  CreateRoleRequest:
+    properties:
+      description:
+        description: Role description
+        example: Can manage users and content
+        type: string
+      display_name:
+        description: Role display name (2-100 characters)
+        example: Moderator
+        maxLength: 100
+        minLength: 2
+        type: string
+      name:
+        description: Role system name (2-50 characters)
+        example: moderator
+        maxLength: 50
+        minLength: 2
+        type: string
+      permissions:
+        description: List of permission IDs to assign to the role
+        example:
+        - 123e4567-e89b-12d3-a456-426614174000
+        - 223e4567-e89b-12d3-a456-426614174001
+        items:
+          type: string
+        type: array
+    required:
+    - display_name
+    - name
+    type: object
+  CreateSMSSettingsRequest:
+    properties:
+      account_sid:
+        type: string
+      auth_token:
+        type: string
+      aws_access_key_id:
+        type: string
+      aws_region:
+        type: string
+      aws_secret_access_key:
+        type: string
+      aws_sender_id:
+        type: string
+      enabled:
+        type: boolean
+      from_number:
+        type: string
+      max_per_day:
+        type: integer
+      max_per_hour:
+        type: integer
+      max_per_number:
+        type: integer
+      provider:
+        enum:
+        - twilio
+        - aws_sns
+        - vonage
+        - mock
+        type: string
+    required:
+    - provider
+    type: object
+  CreateUserRequest:
+    properties:
+      account_type:
+        description: 'Account type: "human" or "service" (defaults to "human")'
+        example: human
+        type: string
+      email:
+        description: User's email address (optional if phone is provided)
+        example: user@example.com
+        type: string
+      full_name:
+        description: User's full name (optional)
+        example: John Doe
+        type: string
+      password:
+        description: User's password (minimum 8 characters)
+        example: SecurePass123!
+        minLength: 8
+        type: string
+      phone:
+        description: User's phone number (optional)
+        example: "+1234567890"
+        type: string
+      username:
+        description: Unique username (3-100 characters)
+        example: johndoe
+        maxLength: 100
+        minLength: 3
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  DatabaseConnectionInfo:
+    properties:
+      idle:
+        type: integer
+      in_use:
+        type: integer
+      max_open:
+        type: integer
+      open:
+        type: integer
+      wait_count:
+        type: integer
+      wait_duration_ms:
+        type: integer
+    type: object
+  ErrorResponse:
+    properties:
+      details:
+        description: Additional error details
+        example: Email field is required
+        type: string
+      error:
+        description: HTTP error status text
+        example: Bad Request
+        type: string
+      message:
+        description: Human-readable error message
+        example: Invalid request parameters
+        type: string
+    type: object
+  GeoDistributionResponse:
+    properties:
+      locations:
+        items:
+          $ref: '#/definitions/LoginLocation'
+        type: array
+      total_logins:
+        type: integer
+      unique_cities:
+        type: integer
+      unique_countries:
+        type: integer
+    type: object
+  HealthMetric:
+    properties:
+      id:
+        type: string
+      metadata:
+        description: JSON metadata
+        type: string
+      metric_name:
+        type: string
+      metric_unit:
+        description: '"bytes", "percentage", "count", "milliseconds"'
+        type: string
+      metric_value:
+        type: number
+      recorded_at:
+        type: string
+    type: object
+  HealthResponse:
+    properties:
+      services:
+        additionalProperties:
+          type: string
+        type: object
+      status:
+        type: string
+    type: object
+  IPFilter:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      expires_at:
+        type: string
+      filter_type:
+        description: '"whitelist" or "blacklist"'
+        enum:
+        - whitelist
+        - blacklist
+        type: string
+      id:
+        type: string
+      ip_cidr:
+        description: IP address or CIDR range
+        type: string
+      is_active:
+        type: boolean
+      reason:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - filter_type
+    - ip_cidr
+    type: object
+  IPFilterListResponse:
+    properties:
+      filters:
+        description: List of IP filters
+        items:
+          $ref: '#/definitions/IPFilterWithCreator'
+        type: array
+      page:
+        description: Current page number
+        example: 1
+        type: integer
+      per_page:
+        description: Number of items per page
+        example: 20
+        type: integer
+      total:
+        description: Total number of filters
+        example: 25
+        type: integer
+      total_pages:
+        description: Total number of pages
+        example: 2
+        type: integer
+    type: object
+  IPFilterWithCreator:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      creator_email:
+        type: string
+      creator_username:
+        type: string
+      expires_at:
+        type: string
+      filter_type:
+        description: '"whitelist" or "blacklist"'
+        enum:
+        - whitelist
+        - blacklist
+        type: string
+      id:
+        type: string
+      ip_cidr:
+        description: IP address or CIDR range
+        type: string
+      is_active:
+        type: boolean
+      reason:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - filter_type
+    - ip_cidr
+    type: object
+  ListAPIKeysResponse:
+    properties:
+      api_keys:
+        description: List of API keys
+        items:
+          $ref: '#/definitions/APIKey'
+        type: array
+      total:
+        description: Total number of API keys
+        example: 5
+        type: integer
+    type: object
+  LoginLocation:
+    properties:
+      city:
+        type: string
+      country_code:
+        type: string
+      country_name:
+        type: string
+      last_login_at:
+        type: string
+      latitude:
+        type: number
+      login_count:
+        type: integer
+      longitude:
+        type: number
+    type: object
+  MaintenanceModeRequest:
+    properties:
+      enabled:
+        description: Whether maintenance mode is enabled
+        example: true
+        type: boolean
+      message:
+        description: Message to display during maintenance
+        example: System is under maintenance. Please try again later.
+        type: string
+    type: object
+  MaintenanceModeResponse:
+    properties:
+      enabled:
+        description: Whether maintenance mode is enabled
+        example: false
+        type: boolean
+      message:
+        description: Maintenance message
+        example: ""
+        type: string
+    type: object
+  OAuthLoginResponse:
+    properties:
+      access_token:
+        description: JWT access token
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      is_new_user:
+        description: Whether this is a newly created user
+        example: false
+        type: boolean
+      refresh_token:
+        description: Refresh token for obtaining new access tokens
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/User'
+        description: Authenticated user information
+    type: object
+  OAuthProviderInfo:
+    properties:
+      display_name:
+        type: string
+      enabled:
+        type: boolean
+      icon_url:
+        type: string
+      name:
+        type: string
+    type: object
+  OTPType:
+    enum:
+    - verification
+    - password_reset
+    - 2fa
+    - login
+    type: string
+    x-enum-varnames:
+    - OTPTypeVerification
+    - OTPTypePasswordReset
+    - OTPType2FA
+    - OTPTypeLogin
+  Permission:
+    properties:
+      action:
+        description: Action allowed on the resource (e.g., "create", "read", "update",
+          "delete")
+        example: delete
+        type: string
+      created_at:
+        description: Timestamp when permission was created
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      description:
+        description: Human-readable description of the permission
+        example: Allows deleting users from the system
+        type: string
+      id:
+        description: Permission unique identifier
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      name:
+        description: Permission name (e.g., "users.delete", "api_keys.view")
+        example: users.delete
+        type: string
+      resource:
+        description: Resource the permission applies to (e.g., "users", "api_keys")
+        example: users
+        type: string
+    required:
+    - action
+    - name
+    - resource
+    type: object
+  PermissionMatrix:
+    properties:
+      resources:
+        items:
+          $ref: '#/definitions/ResourcePermissions'
+        type: array
+    type: object
+  PermissionWithRoles:
+    properties:
+      action:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      permission_id:
+        type: string
+      roles:
+        description: Role IDs that have this permission
+        items:
+          type: string
+        type: array
+    type: object
+  PublicBrandingResponse:
+    properties:
+      company_name:
+        description: Company name
+        example: Acme Corporation
+        type: string
+      favicon_url:
+        description: URL to favicon
+        example: https://example.com/favicon.ico
+        type: string
+      logo_url:
+        description: URL to company logo
+        example: https://example.com/logo.png
+        type: string
+      privacy_url:
+        description: Privacy policy URL
+        example: https://example.com/privacy
+        type: string
+      support_email:
+        description: Support email
+        example: support@example.com
+        type: string
+      terms_url:
+        description: Terms of service URL
+        example: https://example.com/terms
+        type: string
+      theme:
+        allOf:
+        - $ref: '#/definitions/BrandingTheme'
+        description: Color theme
+    type: object
+  RedisMemoryInfo:
+    properties:
+      max_memory_bytes:
+        type: integer
+      max_memory_human:
+        type: string
+      memory_usage_percentage:
+        type: number
+      used_memory_bytes:
+        type: integer
+      used_memory_human:
+        type: string
+    type: object
+  RefreshTokenRequest:
+    properties:
+      refresh_token:
+        description: Refresh token obtained during authentication
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    required:
+    - refresh_token
+    type: object
+  ResetPasswordRequest:
+    properties:
+      code:
+        description: 6-digit verification code sent to email
+        example: "123456"
+        type: string
+      email:
+        description: Email address associated with the account
+        example: user@example.com
+        type: string
+      new_password:
+        description: New password (minimum 8 characters)
+        example: NewSecurePass123!
+        minLength: 8
+        type: string
+    required:
+    - code
+    - email
+    - new_password
+    type: object
+  ResourcePermissions:
+    properties:
+      permissions:
+        items:
+          $ref: '#/definitions/PermissionWithRoles'
+        type: array
+      resource:
+        type: string
+    type: object
+  Role:
+    properties:
+      created_at:
+        description: Timestamp when role was created
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      description:
+        description: Role description
+        example: Full system access with all permissions
+        type: string
+      display_name:
+        description: Human-readable display name
+        example: Administrator
+        type: string
+      id:
+        description: Role unique identifier
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      is_system_role:
+        description: Whether this is a system-defined role (cannot be deleted)
+        example: true
+        type: boolean
+      name:
+        description: System name for the role
+        example: admin
+        type: string
+      permissions:
+        description: Many-to-many relation with Permission
+        items:
+          $ref: '#/definitions/Permission'
+        type: array
+      updated_at:
+        description: Timestamp when role was last updated
+        example: "2024-01-15T10:30:00Z"
+        type: string
+    required:
+    - display_name
+    - name
+    type: object
+  RoleInfo:
+    properties:
+      display_name:
+        description: Role's display name
+        example: Administrator
+        type: string
+      id:
+        description: Role's unique identifier
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      name:
+        description: Role's system name
+        example: admin
+        type: string
+    type: object
+  SMSLog:
+    properties:
+      created_at:
+        type: string
+      error_message:
+        type: string
+      id:
+        type: string
+      ip_address:
+        type: string
+      message:
+        type: string
+      message_id:
+        type: string
+      phone:
+        type: string
+      provider:
+        type: string
+      sent_at:
+        type: string
+      status:
+        $ref: '#/definitions/SMSStatus'
+      type:
+        $ref: '#/definitions/OTPType'
+      user_id:
+        type: string
+    type: object
+  SMSSettings:
+    properties:
+      account_sid:
+        type: string
+      aws_access_key_id:
+        type: string
+      aws_region:
+        type: string
+      aws_sender_id:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      enabled:
+        type: boolean
+      from_number:
+        type: string
+      id:
+        type: string
+      max_per_day:
+        type: integer
+      max_per_hour:
+        type: integer
+      max_per_number:
+        type: integer
+      provider:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  SMSStatsResponse:
+    properties:
+      by_status:
+        additionalProperties:
+          format: int64
+          type: integer
+        type: object
+      by_type:
+        additionalProperties:
+          format: int64
+          type: integer
+        type: object
+      recent_messages:
+        items:
+          $ref: '#/definitions/SMSLog'
+        type: array
+      sent_this_hour:
+        type: integer
+      sent_today:
+        type: integer
+      total_failed:
+        type: integer
+      total_sent:
+        type: integer
+    type: object
+  SMSStatus:
+    enum:
+    - pending
+    - sent
+    - failed
+    - delivered
+    type: string
+    x-enum-comments:
+      SMSStatusDelivered: If delivery status is available
+    x-enum-descriptions:
+    - ""
+    - ""
+    - ""
+    - If delivery status is available
+    x-enum-varnames:
+    - SMSStatusPending
+    - SMSStatusSent
+    - SMSStatusFailed
+    - SMSStatusDelivered
+  SendOTPRequest:
+    properties:
+      email:
+        description: Email address to send OTP to (required if phone not provided)
+        example: user@example.com
+        type: string
+      phone:
+        description: Phone number to send OTP to (required if email not provided)
+        example: "+1234567890"
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/OTPType'
+        description: OTP type (verification, password_reset, 2fa, login)
+        example: verification
+    required:
+    - type
+    type: object
+  SendSMSRequest:
+    properties:
+      phone:
+        description: Phone number to send SMS to
+        example: "+1234567890"
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/OTPType'
+        description: 'OTP type: verification, password_reset, 2fa, or login'
+        enum:
+        - verification
+        - password_reset
+        - 2fa
+        - login
+        example: verification
+    required:
+    - phone
+    - type
+    type: object
+  SendSMSResponse:
+    properties:
+      expires_at:
+        description: OTP expiration timestamp
+        example: "2024-01-15T10:40:00Z"
+        type: string
+      message_id:
+        description: Message ID from SMS provider
+        example: SM1234567890abcdef
+        type: string
+      success:
+        description: Whether SMS was sent successfully
+        example: true
+        type: boolean
+    type: object
+  SessionListResponse:
+    properties:
+      page:
+        description: Current page number
+        example: 1
+        type: integer
+      per_page:
+        description: Number of items per page
+        example: 20
+        type: integer
+      sessions:
+        description: List of active sessions
+        items:
+          $ref: '#/definitions/ActiveSessionResponse'
+        type: array
+      total:
+        description: Total number of sessions
+        example: 5
+        type: integer
+      total_pages:
+        description: Total number of pages
+        example: 1
+        type: integer
+    type: object
+  SessionStats:
+    properties:
+      sessions_by_browser:
+        additionalProperties:
+          type: integer
+        description: browser -> count
+        type: object
+      sessions_by_device:
+        additionalProperties:
+          type: integer
+        description: device_type -> count
+        type: object
+      sessions_by_os:
+        additionalProperties:
+          type: integer
+        description: os -> count
+        type: object
+      total_active_sessions:
+        type: integer
+    type: object
+  SignInRequest:
+    properties:
+      email:
+        description: User's email address (required if phone not provided)
+        example: user@example.com
+        type: string
+      password:
+        description: User's password
+        example: SecurePass123!
+        type: string
+      phone:
+        description: User's phone number (optional)
+        example: "+1234567890"
+        type: string
+    required:
+    - password
+    type: object
+  SystemHealthResponse:
+    properties:
+      database_connections:
+        $ref: '#/definitions/DatabaseConnectionInfo'
+      database_status:
+        type: string
+      metrics:
+        items:
+          $ref: '#/definitions/HealthMetric'
+        type: array
+      redis_memory:
+        $ref: '#/definitions/RedisMemoryInfo'
+      redis_status:
+        type: string
+      status:
+        description: '"healthy", "degraded", "down"'
+        type: string
+      uptime_seconds:
+        type: integer
+    type: object
+  TwoFactorDisableRequest:
+    properties:
+      code:
+        description: 6-digit TOTP code from authenticator app
+        example: "123456"
+        type: string
+      password:
+        description: User's current password for verification
+        example: SecurePass123!
+        type: string
+    required:
+    - code
+    - password
+    type: object
+  TwoFactorLoginVerifyRequest:
+    properties:
+      code:
+        description: 6-digit TOTP code from authenticator app
+        example: "123456"
+        type: string
+      two_factor_token:
+        description: Temporary 2FA token from initial login response
+        example: temp_2fa_token_xyz
+        type: string
+    required:
+    - code
+    - two_factor_token
+    type: object
+  TwoFactorSetupRequest:
+    properties:
+      password:
+        description: User's current password for verification
+        example: SecurePass123!
+        type: string
+    required:
+    - password
+    type: object
+  TwoFactorSetupResponse:
+    properties:
+      backup_codes:
+        description: List of backup codes for account recovery
+        example:
+        - "123456"
+        - "234567"
+        - "345678"
+        - "456789"
+        - "567890"
+        items:
+          type: string
+        type: array
+      qr_code_url:
+        description: QR code URL for scanning with authenticator app
+        example: otpauth://totp/AuthGateway:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=AuthGateway
+        type: string
+      secret:
+        description: TOTP secret for manual entry
+        example: JBSWY3DPEHPK3PXP
+        type: string
+    type: object
+  TwoFactorStatusResponse:
+    properties:
+      backup_codes_remaining:
+        description: Number of remaining backup codes
+        example: 3
+        type: integer
+      enabled:
+        description: Whether 2FA is enabled
+        example: true
+        type: boolean
+      enabled_at:
+        description: Timestamp when 2FA was enabled
+        example: "2024-01-15T10:30:00Z"
+        type: string
+    type: object
+  TwoFactorVerifyRequest:
+    properties:
+      code:
+        description: 6-digit TOTP code from authenticator app
+        example: "123456"
+        type: string
+    required:
+    - code
+    type: object
+  UpdateAPIKeyRequest:
+    properties:
+      description:
+        description: API key description
+        example: Updated description
+        type: string
+      is_active:
+        description: Whether the key is active
+        example: true
+        type: boolean
+      name:
+        description: API key name
+        example: Updated API Key Name
+        type: string
+      scopes:
+        description: List of permission scopes
+        example:
+        - users:read
+        - users:write
+        items:
+          type: string
+        type: array
+    type: object
+  UpdateBrandingRequest:
+    properties:
+      background_color:
+        description: Background color (hex format)
+        example: '#FFFFFF'
+        type: string
+      company_name:
+        description: Company name (max 100 characters)
+        example: Acme Corporation
+        maxLength: 100
+        type: string
+      custom_css:
+        description: Custom CSS to inject
+        example: '.custom-class { color: red; }'
+        type: string
+      favicon_url:
+        description: URL to favicon image
+        example: https://example.com/favicon.ico
+        maxLength: 500
+        type: string
+      logo_url:
+        description: URL to company logo image
+        example: https://example.com/logo.png
+        maxLength: 500
+        type: string
+      primary_color:
+        description: Primary brand color (hex format)
+        example: '#3B82F6'
+        type: string
+      privacy_url:
+        description: URL to privacy policy
+        example: https://example.com/privacy
+        maxLength: 500
+        type: string
+      secondary_color:
+        description: Secondary brand color (hex format)
+        example: '#8B5CF6'
+        type: string
+      support_email:
+        description: Support email address
+        example: support@example.com
+        type: string
+      terms_url:
+        description: URL to terms of service
+        example: https://example.com/terms
+        maxLength: 500
+        type: string
+    type: object
+  UpdateRoleRequest:
+    properties:
+      description:
+        description: Role description
+        example: Updated role description
+        type: string
+      display_name:
+        description: Role display name (2-100 characters)
+        example: Updated Moderator
+        maxLength: 100
+        minLength: 2
+        type: string
+      permissions:
+        description: List of permission IDs to assign to the role
+        example:
+        - 123e4567-e89b-12d3-a456-426614174000
+        items:
+          type: string
+        type: array
+    type: object
+  UpdateSMSSettingsRequest:
+    properties:
+      account_sid:
+        type: string
+      auth_token:
+        type: string
+      aws_access_key_id:
+        type: string
+      aws_region:
+        type: string
+      aws_secret_access_key:
+        type: string
+      aws_sender_id:
+        type: string
+      enabled:
+        type: boolean
+      from_number:
+        type: string
+      max_per_day:
+        type: integer
+      max_per_hour:
+        type: integer
+      max_per_number:
+        type: integer
+      provider:
+        enum:
+        - twilio
+        - aws_sns
+        - vonage
+        - mock
+        type: string
+    type: object
+  UpdateUserRequest:
+    properties:
+      full_name:
+        description: User's full name
+        example: John Doe
+        type: string
+      profile_picture_url:
+        description: URL to user's profile picture
+        example: https://example.com/avatars/user.jpg
+        type: string
+    type: object
+  User:
+    properties:
+      account_type:
+        description: 'Account type: "human" or "service"'
+        example: human
+        type: string
+      created_at:
+        description: Timestamp when user was created
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      email:
+        description: User's email address
+        example: user@example.com
+        type: string
+      email_verified:
+        description: Whether email has been verified
+        example: true
+        type: boolean
+      email_verified_at:
+        description: Timestamp when email was verified
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      full_name:
+        description: User's full name
+        example: John Doe
+        type: string
+      id:
+        description: Unique user identifier
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      is_active:
+        description: Whether the account is active
+        example: true
+        type: boolean
+      phone:
+        description: User's phone number (optional)
+        example: "+1234567890"
+        type: string
+      phone_verified:
+        description: Whether phone number has been verified
+        example: false
+        type: boolean
+      profile_picture_url:
+        description: URL to user's profile picture
+        example: https://example.com/avatars/user.jpg
+        type: string
+      roles:
+        description: Relations
+        items:
+          $ref: '#/definitions/Role'
+        type: array
+      totp_enabled:
+        description: Whether TOTP 2FA is enabled
+        example: false
+        type: boolean
+      totp_enabled_at:
+        description: Timestamp when TOTP 2FA was enabled
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      updated_at:
+        description: Timestamp when user was last updated
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      username:
+        description: Unique username for the user
+        example: johndoe
+        type: string
+    type: object
+  VerifyOTPRequest:
+    properties:
+      code:
+        description: 6-digit OTP code
+        example: "123456"
+        type: string
+      email:
+        description: Email address that received the OTP
+        example: user@example.com
+        type: string
+      phone:
+        description: Phone number that received the OTP
+        example: "+1234567890"
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/OTPType'
+        description: OTP type (verification, password_reset, 2fa, login)
+        example: verification
+    required:
+    - code
+    - type
+    type: object
+  VerifyOTPResponse:
+    properties:
+      access_token:
+        description: Access token (if OTP is for login)
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      refresh_token:
+        description: Refresh token (if OTP is for login)
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/User'
+        description: User information (if OTP is for login)
+      valid:
+        description: Whether the OTP is valid
+        example: true
+        type: boolean
+    type: object
+  VerifySMSOTPRequest:
+    properties:
+      code:
+        description: 6-digit OTP code
+        example: "123456"
+        type: string
+      phone:
+        description: Phone number that received the OTP
+        example: "+1234567890"
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/OTPType'
+        description: 'OTP type: verification, password_reset, 2fa, or login'
+        enum:
+        - verification
+        - password_reset
+        - 2fa
+        - login
+        example: verification
+    required:
+    - code
+    - phone
+    - type
+    type: object
+  VerifySMSOTPResponse:
+    properties:
+      message:
+        description: Response message
+        example: OTP verified successfully
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/User'
+        description: User information (if verification was for login)
+      valid:
+        description: Whether the OTP is valid
+        example: true
+        type: boolean
+    type: object
+info:
+  contact: {}
+paths:
+  /admin/sms/settings:
+    get:
+      description: Get all SMS settings (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/SMSSettings'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all SMS settings
+      tags:
+      - SMS Settings
+    post:
+      consumes:
+      - application/json
+      description: Create new SMS provider settings (admin only)
+      parameters:
+      - description: Create SMS settings request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateSMSSettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/SMSSettings'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create SMS settings
+      tags:
+      - SMS Settings
+  /admin/sms/settings/{id}:
+    delete:
+      description: Delete SMS settings by ID (admin only)
+      parameters:
+      - description: Settings ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete SMS settings
+      tags:
+      - SMS Settings
+    get:
+      description: Get SMS settings by ID (admin only)
+      parameters:
+      - description: Settings ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SMSSettings'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get SMS settings
+      tags:
+      - SMS Settings
+    put:
+      consumes:
+      - application/json
+      description: Update SMS settings by ID (admin only)
+      parameters:
+      - description: Settings ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update SMS settings request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateSMSSettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SMSSettings'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update SMS settings
+      tags:
+      - SMS Settings
+  /admin/sms/settings/active:
+    get:
+      description: Get the currently active SMS settings (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SMSSettings'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get active SMS settings
+      tags:
+      - SMS Settings
+  /api/admin/analytics/geo-distribution:
+    get:
+      description: Get geographical distribution of logins for analytics and mapping
+      parameters:
+      - default: 30
+        description: Number of days
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GeoDistributionResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get login geo-distribution for map
+      tags:
+      - Admin - Analytics
+  /api/admin/api-keys:
+    get:
+      description: Get list of all API keys (admin only)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 50
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/AdminAPIKeyResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all API keys
+      tags:
+      - Admin - Management
+  /api/admin/api-keys/{id}/revoke:
+    post:
+      description: Revoke an API key (admin only)
+      parameters:
+      - description: API Key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke API key
+      tags:
+      - Admin - Management
+  /api/admin/audit-logs:
+    get:
+      description: Get paginated audit logs (admin only)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 50
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Filter by user ID
+        in: query
+        name: user_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/AdminAuditLogResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List audit logs
+      tags:
+      - Admin - Management
+  /api/admin/branding:
+    put:
+      consumes:
+      - application/json
+      description: Update the system's branding and theming settings
+      parameters:
+      - description: Branding data
+        in: body
+        name: branding
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateBrandingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/BrandingSettings'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update branding settings (admin only)
+      tags:
+      - Admin - Branding
+  /api/admin/ip-filters:
+    get:
+      description: Get a list of all IP filters (whitelist/blacklist)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Filter type (whitelist/blacklist)
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/IPFilterListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List IP filters
+      tags:
+      - Admin - IP Filters
+    post:
+      consumes:
+      - application/json
+      description: Create a new IP filter rule (whitelist or blacklist)
+      parameters:
+      - description: IP filter data
+        in: body
+        name: filter
+        required: true
+        schema:
+          $ref: '#/definitions/CreateIPFilterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/IPFilter'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create an IP filter
+      tags:
+      - Admin - IP Filters
+  /api/admin/ip-filters/{id}:
+    delete:
+      description: Delete an existing IP filter rule
+      parameters:
+      - description: Filter ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete an IP filter
+      tags:
+      - Admin - IP Filters
+  /api/admin/rbac/permission-matrix:
+    get:
+      description: Get a matrix showing which roles have which permissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PermissionMatrix'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get permission matrix for all roles
+      tags:
+      - Admin - RBAC
+  /api/admin/rbac/permissions:
+    get:
+      description: Get a list of all available permissions in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/Permission'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all permissions
+      tags:
+      - Admin - RBAC
+    post:
+      consumes:
+      - application/json
+      description: Create a new permission in the RBAC system
+      parameters:
+      - description: Permission data
+        in: body
+        name: permission
+        required: true
+        schema:
+          $ref: '#/definitions/CreatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Permission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new permission
+      tags:
+      - Admin - RBAC
+  /api/admin/rbac/roles:
+    get:
+      description: Get a list of all roles in the RBAC system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/Role'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all roles
+      tags:
+      - Admin - RBAC
+    post:
+      consumes:
+      - application/json
+      description: Create a new role in the RBAC system
+      parameters:
+      - description: Role data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Role'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new role
+      tags:
+      - Admin - RBAC
+  /api/admin/rbac/roles/{id}:
+    delete:
+      description: Delete a role from the RBAC system
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a role
+      tags:
+      - Admin - RBAC
+    get:
+      description: Get details of a specific role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Role'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a role by ID
+      tags:
+      - Admin - RBAC
+    put:
+      consumes:
+      - application/json
+      description: Update an existing role in the RBAC system
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Role'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a role
+      tags:
+      - Admin - RBAC
+  /api/admin/sessions:
+    get:
+      description: Get a list of all active sessions in the system
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 50
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ActiveSessionResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all sessions (admin only)
+      tags:
+      - Admin - Sessions
+  /api/admin/sessions/stats:
+    get:
+      description: Get statistics about all sessions in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SessionStats'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get session statistics (admin only)
+      tags:
+      - Admin - Sessions
+  /api/admin/stats:
+    get:
+      description: Get system-wide statistics (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AdminStatsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get system statistics
+      tags:
+      - Admin - Management
+  /api/admin/system/health:
+    get:
+      description: Get health status of system components (database, redis, etc.)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SystemHealthResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get system health metrics
+      tags:
+      - Admin - System
+  /api/admin/system/maintenance:
+    put:
+      consumes:
+      - application/json
+      description: Enable or disable system maintenance mode
+      parameters:
+      - description: Maintenance mode data
+        in: body
+        name: mode
+        required: true
+        schema:
+          $ref: '#/definitions/MaintenanceModeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MaintenanceModeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Set maintenance mode (admin only)
+      tags:
+      - Admin - System
+  /api/admin/users:
+    get:
+      description: Get paginated list of all users (admin only)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AdminUserListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all users
+      tags:
+      - Admin - Management
+    post:
+      consumes:
+      - application/json
+      description: Create a new user (admin only)
+      parameters:
+      - description: User creation data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/AdminCreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/AdminUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create user
+      tags:
+      - Admin - Management
+  /api/admin/users/{id}:
+    delete:
+      description: Soft delete a user (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete user
+      tags:
+      - Admin - Management
+    get:
+      description: Get detailed information about a specific user (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AdminUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user details
+      tags:
+      - Admin - Management
+    put:
+      consumes:
+      - application/json
+      description: Update user information (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/AdminUpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AdminUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user
+      tags:
+      - Admin - Management
+  /api/admin/users/{id}/roles:
+    post:
+      consumes:
+      - application/json
+      description: Assign a role to a user (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role assignment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/AssignRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AdminUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Assign role to user
+      tags:
+      - Admin - Management
+  /api/admin/users/{id}/roles/{roleId}:
+    delete:
+      description: Remove a role from a user (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role ID
+        in: path
+        name: roleId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AdminUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove role from user
+      tags:
+      - Admin - Management
+  /api/api-keys:
+    get:
+      description: Get all API keys belonging to the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ListAPIKeysResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List API keys
+      tags:
+      - API Keys
+    post:
+      consumes:
+      - application/json
+      description: Create a new API key for service-to-service authentication
+      parameters:
+      - description: API key data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateAPIKeyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/CreateAPIKeyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create API key
+      tags:
+      - API Keys
+  /api/api-keys/{id}:
+    delete:
+      description: Permanently delete an API key
+      parameters:
+      - description: API Key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete API key
+      tags:
+      - API Keys
+    get:
+      description: Get details of a specific API key
+      parameters:
+      - description: API Key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIKey'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get API key
+      tags:
+      - API Keys
+    put:
+      consumes:
+      - application/json
+      description: Update API key metadata (name, scopes, etc.)
+      parameters:
+      - description: API Key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateAPIKeyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIKey'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update API key
+      tags:
+      - API Keys
+  /api/api-keys/{id}/revoke:
+    post:
+      description: Revoke an API key to prevent further use
+      parameters:
+      - description: API Key ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke API key
+      tags:
+      - API Keys
+  /api/auth/2fa/login/verify:
+    post:
+      consumes:
+      - application/json
+      description: Complete two-factor authentication during login
+      parameters:
+      - description: 2FA verification
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/TwoFactorLoginVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Verify 2FA during login
+      tags:
+      - Authentication
+  /api/auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Change the password for the authenticated user
+      parameters:
+      - description: Password change data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Change password
+      tags:
+      - Authentication
+  /api/auth/logout:
+    post:
+      description: Invalidate the current access token
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - Authentication
+  /api/auth/password/reset/complete:
+    post:
+      consumes:
+      - application/json
+      description: Complete password reset using OTP verification
+      parameters:
+      - description: Password reset data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Reset password with OTP
+      tags:
+      - Authentication
+  /api/auth/password/reset/request:
+    post:
+      consumes:
+      - application/json
+      description: Send a password reset code to the user's email
+      parameters:
+      - description: Email
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Request password reset
+      tags:
+      - Authentication
+  /api/auth/profile:
+    get:
+      description: Get the profile information of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - Authentication
+    put:
+      consumes:
+      - application/json
+      description: Update the profile information of the authenticated user
+      parameters:
+      - description: Profile update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - Authentication
+  /api/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Generate new access token using refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - Authentication
+  /api/auth/signin:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password
+      parameters:
+      - description: User login data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/SignInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Login user
+      tags:
+      - Authentication
+  /api/auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account with email and password
+      parameters:
+      - description: User registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Register a new user
+      tags:
+      - Authentication
+  /api/auth/verify/email:
+    post:
+      consumes:
+      - application/json
+      description: Verify the user's email address using OTP code
+      parameters:
+      - description: Email and Code
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Verify email address
+      tags:
+      - Authentication
+  /api/auth/verify/resend:
+    post:
+      consumes:
+      - application/json
+      description: Resend the email verification code to the user's email
+      parameters:
+      - description: Email
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Resend verification email
+      tags:
+      - Authentication
+  /api/sessions:
+    get:
+      description: Get a list of all active sessions for the authenticated user
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SessionListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all sessions for the current user
+      tags:
+      - Sessions
+  /api/sessions/{id}:
+    delete:
+      description: Terminate a specific session for the authenticated user
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke a specific session
+      tags:
+      - Sessions
+  /api/sessions/revoke-all:
+    post:
+      description: Terminate all active sessions except the current one
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke all sessions except current
+      tags:
+      - Sessions
+  /auth/{provider}:
+    get:
+      description: Redirect to OAuth provider for authentication
+      parameters:
+      - description: OAuth provider
+        enum:
+        - google
+        - yandex
+        - github
+        - instagram
+        - telegram
+        in: path
+        name: provider
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Found
+      summary: Initiate OAuth login
+      tags:
+      - OAuth
+  /auth/{provider}/callback:
+    get:
+      description: Process OAuth callback and create/login user
+      parameters:
+      - description: OAuth provider
+        in: path
+        name: provider
+        required: true
+        type: string
+      - description: Authorization code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: CSRF state
+        in: query
+        name: state
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Found
+      summary: Handle OAuth callback
+      tags:
+      - OAuth
+  /auth/2fa/backup-codes/regenerate:
+    post:
+      consumes:
+      - application/json
+      description: Generate new backup codes
+      parameters:
+      - description: Password
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Regenerate backup codes
+      tags:
+      - 2FA
+  /auth/2fa/disable:
+    post:
+      consumes:
+      - application/json
+      description: Disable TOTP 2FA
+      parameters:
+      - description: Password and TOTP code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/TwoFactorDisableRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Disable 2FA
+      tags:
+      - 2FA
+  /auth/2fa/setup:
+    post:
+      consumes:
+      - application/json
+      description: Generate TOTP secret and backup codes
+      parameters:
+      - description: Password for verification
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/TwoFactorSetupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/TwoFactorSetupResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Setup 2FA
+      tags:
+      - 2FA
+  /auth/2fa/status:
+    get:
+      description: Get current 2FA status for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/TwoFactorStatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get 2FA status
+      tags:
+      - 2FA
+  /auth/2fa/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify initial TOTP code and enable 2FA
+      parameters:
+      - description: TOTP code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/TwoFactorVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Verify 2FA setup
+      tags:
+      - 2FA
+  /auth/passwordless/request:
+    post:
+      consumes:
+      - application/json
+      description: Send OTP code for passwordless login
+      parameters:
+      - description: Email
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Request passwordless login
+      tags:
+      - OTP
+  /auth/passwordless/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify OTP code and login
+      parameters:
+      - description: Email and Code
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/VerifyOTPResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Verify passwordless login
+      tags:
+      - OTP
+  /auth/providers:
+    get:
+      description: List all configured OAuth providers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/OAuthProviderInfo'
+            type: array
+      summary: Get available OAuth providers
+      tags:
+      - OAuth
+  /auth/telegram/callback:
+    post:
+      consumes:
+      - application/json
+      description: Process Telegram widget authentication
+      parameters:
+      - description: Telegram auth data
+        in: body
+        name: data
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/OAuthLoginResponse'
+      summary: Handle Telegram auth callback
+      tags:
+      - OAuth
+  /branding:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PublicBrandingResponse'
+      summary: Get branding settings
+      tags:
+      - Branding
+  /health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/HealthResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/HealthResponse'
+      summary: Health check
+      tags:
+      - health
+  /live:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Liveness check
+      tags:
+      - health
+  /otp/send:
+    post:
+      consumes:
+      - application/json
+      description: Send an OTP code to email for verification, password reset, or
+        login
+      parameters:
+      - description: Send OTP request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/SendOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Send OTP code
+      tags:
+      - OTP
+  /otp/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify an OTP code for email verification, password reset, or login
+      parameters:
+      - description: Verify OTP request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/VerifyOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/VerifyOTPResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Verify OTP code
+      tags:
+      - OTP
+  /ready:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Readiness check
+      tags:
+      - health
+  /sms/send:
+    post:
+      consumes:
+      - application/json
+      description: Send an OTP code via SMS for verification, password reset, or login
+      parameters:
+      - description: Send SMS request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/SendSMSRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendSMSResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Send SMS OTP code
+      tags:
+      - SMS
+  /sms/stats:
+    get:
+      description: Get statistics about sent SMS messages
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SMSStatsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get SMS statistics
+      tags:
+      - SMS
+  /sms/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify an OTP code sent via SMS for verification, password reset,
+        or login
+      parameters:
+      - description: Verify SMS OTP request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/VerifySMSOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/VerifySMSOTPResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Verify SMS OTP code
+      tags:
+      - SMS
+  /system/maintenance:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MaintenanceModeResponse'
+      summary: Get maintenance mode status
+      tags:
+      - System
+swagger: "2.0"
