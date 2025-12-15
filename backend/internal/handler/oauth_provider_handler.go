@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -61,7 +62,7 @@ func (h *OAuthProviderHandler) Authorize(c *gin.Context) {
 
 	authResp, err := h.service.Authorize(c.Request.Context(), &req, userID)
 	if err != nil {
-		if err == service.ErrConsentRequired {
+		if errors.Is(err, service.ErrConsentRequired) {
 			consentURL := h.buildConsentURL(c.Request.URL.Query())
 			c.Redirect(http.StatusTemporaryRedirect, consentURL)
 			return
@@ -137,21 +138,21 @@ func (h *OAuthProviderHandler) Token(c *gin.Context) {
 		errorCode := h.mapErrorToOAuthCode(err)
 		errorDesc := err.Error()
 
-		if err == service.ErrAuthorizationPending {
+		if errors.Is(err, service.ErrAuthorizationPending) {
 			h.oauthError(c, http.StatusBadRequest, errorCode, "The authorization request is still pending")
 			return
 		}
-		if err == service.ErrSlowDown {
+		if errors.Is(err, service.ErrSlowDown) {
 			h.oauthError(c, http.StatusBadRequest, errorCode, "Polling too frequently, slow down")
 			return
 		}
-		if err == service.ErrExpiredToken {
+		if errors.Is(err, service.ErrExpiredToken) {
 			h.oauthError(c, http.StatusBadRequest, errorCode, "The device code has expired")
 			return
 		}
 
 		statusCode := http.StatusBadRequest
-		if err == service.ErrInvalidClient {
+		if errors.Is(err, service.ErrInvalidClient) {
 			statusCode = http.StatusUnauthorized
 		}
 

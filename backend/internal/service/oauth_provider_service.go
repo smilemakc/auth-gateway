@@ -67,22 +67,22 @@ type ScopeInfo struct {
 }
 
 type OAuthProviderService struct {
-	repo                   OAuthProviderStore
-	userRepo               UserStore
-	auditRepo              AuditStore
-	sessionCreationService *SessionCreationService
-	oidcJWT                *jwt.OIDCService
-	keyManager             *keys.Manager
-	logger                 *logger.Logger
-	issuer                 string
-	baseURL                string
+	repo           OAuthProviderStore
+	userRepo       UserStore
+	auditRepo      AuditStore
+	sessionService *SessionService
+	oidcJWT        *jwt.OIDCService
+	keyManager     *keys.Manager
+	logger         *logger.Logger
+	issuer         string
+	baseURL        string
 }
 
 func NewOAuthProviderService(
 	repo OAuthProviderStore,
 	userRepo UserStore,
 	auditRepo AuditStore,
-	sessionCreationService *SessionCreationService,
+	sessionService *SessionService,
 	oidcJWT *jwt.OIDCService,
 	keyManager *keys.Manager,
 	log *logger.Logger,
@@ -90,15 +90,15 @@ func NewOAuthProviderService(
 	baseURL string,
 ) *OAuthProviderService {
 	return &OAuthProviderService{
-		repo:                   repo,
-		userRepo:               userRepo,
-		auditRepo:              auditRepo,
-		sessionCreationService: sessionCreationService,
-		oidcJWT:                oidcJWT,
-		keyManager:             keyManager,
-		logger:                 log,
-		issuer:                 issuer,
-		baseURL:                baseURL,
+		repo:           repo,
+		userRepo:       userRepo,
+		auditRepo:      auditRepo,
+		sessionService: sessionService,
+		oidcJWT:        oidcJWT,
+		keyManager:     keyManager,
+		logger:         log,
+		issuer:         issuer,
+		baseURL:        baseURL,
 	}
 }
 
@@ -563,14 +563,15 @@ func (s *OAuthProviderService) ExchangeCode(ctx context.Context, req *models.Tok
 		return nil, err
 	}
 
-	// Create session for the user using universal SessionCreationService
-	if s.sessionCreationService != nil && response.RefreshToken != "" {
-		s.sessionCreationService.CreateSessionNonFatal(ctx, SessionCreationParams{
-			UserID:    authCode.UserID,
-			TokenHash: utils.HashToken(response.RefreshToken),
-			IPAddress: req.IPAddress,
-			UserAgent: req.UserAgent,
-			ExpiresAt: time.Now().Add(time.Duration(client.RefreshTokenTTL) * time.Second),
+	// Create session for the user using SessionService
+	if s.sessionService != nil && response.RefreshToken != "" {
+		s.sessionService.CreateSessionNonFatal(ctx, SessionCreationParams{
+			UserID:          authCode.UserID,
+			TokenHash:       utils.HashToken(response.RefreshToken),
+			AccessTokenHash: utils.HashToken(response.AccessToken),
+			IPAddress:       req.IPAddress,
+			UserAgent:       req.UserAgent,
+			ExpiresAt:       time.Now().Add(time.Duration(client.RefreshTokenTTL) * time.Second),
 		})
 	}
 
@@ -672,14 +673,13 @@ func (s *OAuthProviderService) RefreshToken(ctx context.Context, req *models.Tok
 		return nil, err
 	}
 
-	// Create new session for the refreshed token using universal SessionCreationService
-	if s.sessionCreationService != nil && response.RefreshToken != "" {
-		s.sessionCreationService.CreateSessionNonFatal(ctx, SessionCreationParams{
-			UserID:    refreshToken.UserID,
-			TokenHash: utils.HashToken(response.RefreshToken),
-			IPAddress: req.IPAddress,
-			UserAgent: req.UserAgent,
-			ExpiresAt: time.Now().Add(time.Duration(client.RefreshTokenTTL) * time.Second),
+	// Update existing session with new token hashes instead of creating a new one
+	if s.sessionService != nil && response.RefreshToken != "" {
+		s.sessionService.RefreshSessionNonFatal(ctx, SessionRefreshParams{
+			OldRefreshTokenHash: tokenHash,
+			NewRefreshTokenHash: utils.HashToken(response.RefreshToken),
+			NewAccessTokenHash:  utils.HashToken(response.AccessToken),
+			NewExpiresAt:        time.Now().Add(time.Duration(client.RefreshTokenTTL) * time.Second),
 		})
 	}
 
@@ -817,14 +817,15 @@ func (s *OAuthProviderService) PollDeviceToken(ctx context.Context, req *models.
 			return nil, err
 		}
 
-		// Create session for the device authorization using universal SessionCreationService
-		if s.sessionCreationService != nil && response.RefreshToken != "" {
-			s.sessionCreationService.CreateSessionNonFatal(ctx, SessionCreationParams{
-				UserID:    *deviceCode.UserID,
-				TokenHash: utils.HashToken(response.RefreshToken),
-				IPAddress: req.IPAddress,
-				UserAgent: req.UserAgent,
-				ExpiresAt: time.Now().Add(time.Duration(client.RefreshTokenTTL) * time.Second),
+		// Create session for the device authorization using SessionService
+		if s.sessionService != nil && response.RefreshToken != "" {
+			s.sessionService.CreateSessionNonFatal(ctx, SessionCreationParams{
+				UserID:          *deviceCode.UserID,
+				TokenHash:       utils.HashToken(response.RefreshToken),
+				AccessTokenHash: utils.HashToken(response.AccessToken),
+				IPAddress:       req.IPAddress,
+				UserAgent:       req.UserAgent,
+				ExpiresAt:       time.Now().Add(time.Duration(client.RefreshTokenTTL) * time.Second),
 			})
 		}
 
@@ -910,9 +911,9 @@ func (s *OAuthProviderService) RevokeToken(ctx context.Context, token, tokenType
 	if tokenTypeHint == "" || tokenTypeHint == "access_token" {
 		err := s.repo.RevokeAccessToken(ctx, tokenHash)
 		if err == nil {
-			// Also revoke associated session if exists using SessionCreationService
-			if s.sessionCreationService != nil {
-				s.sessionCreationService.RevokeSessionByTokenHash(ctx, tokenHash)
+			// Also revoke associated session if exists using SessionService
+			if s.sessionService != nil {
+				s.sessionService.RevokeSessionByTokenHash(ctx, tokenHash)
 			}
 			s.logger.Info("access token revoked", map[string]interface{}{
 				"token_type": "access_token",
@@ -924,9 +925,9 @@ func (s *OAuthProviderService) RevokeToken(ctx context.Context, token, tokenType
 	if tokenTypeHint == "" || tokenTypeHint == "refresh_token" {
 		err := s.repo.RevokeRefreshToken(ctx, tokenHash)
 		if err == nil {
-			// Also revoke associated session if exists using SessionCreationService
-			if s.sessionCreationService != nil {
-				s.sessionCreationService.RevokeSessionByTokenHash(ctx, tokenHash)
+			// Also revoke associated session if exists using SessionService
+			if s.sessionService != nil {
+				s.sessionService.RevokeSessionByTokenHash(ctx, tokenHash)
 			}
 			s.logger.Info("refresh token revoked", map[string]interface{}{
 				"token_type": "refresh_token",

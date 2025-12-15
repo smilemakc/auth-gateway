@@ -169,3 +169,17 @@ func GetAvailableEvents() []string {
 		WebhookEventRoleDeleted,
 	}
 }
+
+// CreateWebhookResponse contains the created webhook and its secret key
+type CreateWebhookResponse struct {
+	// Created webhook
+	Webhook Webhook `json:"webhook"`
+	// Secret key for webhook signature verification (only shown once)
+	SecretKey string `json:"secret_key" example:"whsec_abc123xyz456..."`
+}
+
+// WebhookEventsResponse contains available webhook events
+type WebhookEventsResponse struct {
+	// List of available event types
+	Events []string `json:"events" example:"user.created,user.updated,user.login"`
+}

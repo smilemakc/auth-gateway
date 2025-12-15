@@ -28,8 +28,8 @@ func NewWebhookHandler(webhookService *service.WebhookService, log *logger.Logge
 
 // ListWebhooks godoc
 // @Summary List all webhooks
-// @Description Get a paginated list of all webhooks
-// @Tags Webhooks
+// @Description Get a paginated list of all webhooks (admin only)
+// @Tags Admin - Webhooks
 // @Accept json
 // @Produce json
 // @Param page query int false "Page number" default(1)
@@ -56,13 +56,14 @@ func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
 
 // GetWebhook godoc
 // @Summary Get webhook by ID
-// @Description Get a specific webhook by its ID
-// @Tags Webhooks
+// @Description Get a specific webhook by its ID (admin only)
+// @Tags Admin - Webhooks
 // @Accept json
 // @Produce json
-// @Param id path string true "Webhook ID"
+// @Param id path string true "Webhook ID (UUID)"
 // @Security BearerAuth
 // @Success 200 {object} models.Webhook
+// @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
@@ -85,13 +86,13 @@ func (h *WebhookHandler) GetWebhook(c *gin.Context) {
 
 // CreateWebhook godoc
 // @Summary Create a new webhook
-// @Description Create a new webhook for receiving event notifications
-// @Tags Webhooks
+// @Description Create a new webhook for receiving event notifications (admin only)
+// @Tags Admin - Webhooks
 // @Accept json
 // @Produce json
 // @Param request body models.CreateWebhookRequest true "Webhook data"
 // @Security BearerAuth
-// @Success 201 {object} object{webhook=models.Webhook,secret_key=string}
+// @Success 201 {object} models.CreateWebhookResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -125,11 +126,11 @@ func (h *WebhookHandler) CreateWebhook(c *gin.Context) {
 
 // UpdateWebhook godoc
 // @Summary Update a webhook
-// @Description Update an existing webhook configuration
-// @Tags Webhooks
+// @Description Update an existing webhook configuration (admin only)
+// @Tags Admin - Webhooks
 // @Accept json
 // @Produce json
-// @Param id path string true "Webhook ID"
+// @Param id path string true "Webhook ID (UUID)"
 // @Param request body models.UpdateWebhookRequest true "Webhook update data"
 // @Security BearerAuth
 // @Success 200 {object} models.MessageResponse
@@ -168,13 +169,14 @@ func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
 
 // DeleteWebhook godoc
 // @Summary Delete a webhook
-// @Description Delete a webhook by ID
-// @Tags Webhooks
+// @Description Delete a webhook by ID (admin only)
+// @Tags Admin - Webhooks
 // @Accept json
 // @Produce json
-// @Param id path string true "Webhook ID"
+// @Param id path string true "Webhook ID (UUID)"
 // @Security BearerAuth
 // @Success 200 {object} models.MessageResponse
+// @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
@@ -203,11 +205,11 @@ func (h *WebhookHandler) DeleteWebhook(c *gin.Context) {
 
 // TestWebhook godoc
 // @Summary Test a webhook
-// @Description Send a test event to a webhook
-// @Tags Webhooks
+// @Description Send a test event to a webhook (admin only)
+// @Tags Admin - Webhooks
 // @Accept json
 // @Produce json
-// @Param id path string true "Webhook ID"
+// @Param id path string true "Webhook ID (UUID)"
 // @Param request body models.TestWebhookRequest true "Test data"
 // @Security BearerAuth
 // @Success 200 {object} models.MessageResponse
@@ -240,15 +242,16 @@ func (h *WebhookHandler) TestWebhook(c *gin.Context) {
 
 // ListWebhookDeliveries godoc
 // @Summary List webhook deliveries
-// @Description Get a paginated list of webhook delivery attempts
-// @Tags Webhooks
+// @Description Get a paginated list of webhook delivery attempts (admin only)
+// @Tags Admin - Webhooks
 // @Accept json
 // @Produce json
-// @Param id path string true "Webhook ID"
+// @Param id path string true "Webhook ID (UUID)"
 // @Param page query int false "Page number" default(1)
 // @Param per_page query int false "Items per page" default(20)
 // @Security BearerAuth
 // @Success 200 {object} models.WebhookDeliveryListResponse
+// @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
@@ -275,13 +278,14 @@ func (h *WebhookHandler) ListWebhookDeliveries(c *gin.Context) {
 
 // GetAvailableEvents godoc
 // @Summary Get available webhook events
-// @Description Get a list of all available webhook event types
-// @Tags Webhooks
+// @Description Get a list of all available webhook event types (admin only)
+// @Tags Admin - Webhooks
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} object{events=[]string}
+// @Success 200 {object} models.WebhookEventsResponse
 // @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
 // @Router /api/admin/webhooks/events [get]
 func (h *WebhookHandler) GetAvailableEvents(c *gin.Context) {
 	events := h.webhookService.GetAvailableEvents()

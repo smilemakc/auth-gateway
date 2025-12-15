@@ -25,7 +25,7 @@ type OAuthService struct {
 	auditRepo      AuditStore
 	rbacRepo       RBACStore
 	jwtService     JWTService
-	sessionService *SessionCreationService
+	sessionService *SessionService
 	httpClient     HTTPClient
 	providers      map[models.OAuthProvider]*OAuthProviderConfig
 }
@@ -49,7 +49,7 @@ func NewOAuthService(
 	auditRepo AuditStore,
 	rbacRepo RBACStore,
 	jwtService JWTService,
-	sessionService *SessionCreationService,
+	sessionService *SessionService,
 	httpClient HTTPClient,
 ) *OAuthService {
 	// Use default HTTP client if not provided
@@ -397,15 +397,16 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuth
 		return nil, err
 	}
 
-	// Create session using universal SessionCreationService (non-fatal to not block auth)
+	// Create session using SessionService (non-fatal to not block auth)
 	if s.sessionService != nil {
 		s.sessionService.CreateSessionNonFatal(ctx, SessionCreationParams{
-			UserID:      user.ID,
-			TokenHash:   tokenHash,
-			IPAddress:   ipAddress,
-			UserAgent:   userAgent,
-			ExpiresAt:   time.Now().Add(refreshExpiration),
-			SessionName: sessionName,
+			UserID:          user.ID,
+			TokenHash:       tokenHash,
+			AccessTokenHash: utils.HashToken(accessToken),
+			IPAddress:       ipAddress,
+			UserAgent:       userAgent,
+			ExpiresAt:       time.Now().Add(refreshExpiration),
+			SessionName:     sessionName,
 		})
 	}
 

@@ -134,3 +134,15 @@ func GetDefaultTemplateVariables(templateType string) []string {
 		return []string{}
 	}
 }
+
+// TemplateTypesResponse contains available template types
+type TemplateTypesResponse struct {
+	// List of available template types
+	Types []string `json:"types" example:"verification,password_reset,welcome,2fa,custom"`
+}
+
+// TemplateVariablesResponse contains default variables for a template type
+type TemplateVariablesResponse struct {
+	// List of available variables for the template type
+	Variables []string `json:"variables" example:"username,email,code,expiry_minutes"`
+}

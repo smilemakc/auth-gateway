@@ -104,11 +104,11 @@ func (h *APIKeyHandler) List(c *gin.Context) {
 
 // Get retrieves a specific API key
 // @Summary Get API key
-// @Description Get details of a specific API key
+// @Description Get details of a specific API key owned by the authenticated user
 // @Tags API Keys
 // @Security BearerAuth
 // @Produce json
-// @Param id path string true "API Key ID"
+// @Param id path string true "API Key ID (UUID)"
 // @Success 200 {object} models.APIKey
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
@@ -150,7 +150,7 @@ func (h *APIKeyHandler) Get(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param id path string true "API Key ID"
+// @Param id path string true "API Key ID (UUID)"
 // @Param request body models.UpdateAPIKeyRequest true "Update data"
 // @Success 200 {object} models.APIKey
 // @Failure 400 {object} models.ErrorResponse
@@ -202,8 +202,9 @@ func (h *APIKeyHandler) Update(c *gin.Context) {
 // @Description Revoke an API key to prevent further use
 // @Tags API Keys
 // @Security BearerAuth
-// @Param id path string true "API Key ID"
-// @Success 200 {object} map[string]string
+// @Produce json
+// @Param id path string true "API Key ID (UUID)"
+// @Success 200 {object} models.MessageResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
@@ -244,8 +245,9 @@ func (h *APIKeyHandler) Revoke(c *gin.Context) {
 // @Description Permanently delete an API key
 // @Tags API Keys
 // @Security BearerAuth
-// @Param id path string true "API Key ID"
-// @Success 200 {object} map[string]string
+// @Produce json
+// @Param id path string true "API Key ID (UUID)"
+// @Success 200 {object} models.MessageResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse

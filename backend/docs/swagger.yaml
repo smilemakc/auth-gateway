@@ -1,6 +1,15 @@
 basePath: /
 definitions:
-  APIKey:
+  handler.HealthResponse:
+    properties:
+      services:
+        additionalProperties:
+          type: string
+        type: object
+      status:
+        type: string
+    type: object
+  models.APIKey:
     properties:
       created_at:
         type: string
@@ -30,7 +39,7 @@ definitions:
       user_id:
         type: string
     type: object
-  ActiveSessionResponse:
+  models.ActiveSessionResponse:
     properties:
       browser:
         description: Browser name with version
@@ -73,7 +82,7 @@ definitions:
         example: Home Desktop
         type: string
     type: object
-  AdminAPIKeyResponse:
+  models.AdminAPIKeyResponse:
     properties:
       created_at:
         description: Timestamp when key was created
@@ -124,7 +133,7 @@ definitions:
         example: johndoe
         type: string
     type: object
-  AdminAuditLogResponse:
+  models.AdminAuditLogResponse:
     properties:
       action:
         description: Action performed
@@ -159,7 +168,7 @@ definitions:
         example: 123e4567-e89b-12d3-a456-426614174000
         type: string
     type: object
-  AdminCreateUserRequest:
+  models.AdminCreateUserRequest:
     properties:
       account_type:
         description: 'Account type: "human" or "service" (defaults to "human")'
@@ -197,7 +206,7 @@ definitions:
     - password
     - username
     type: object
-  AdminStatsResponse:
+  models.AdminStatsResponse:
     properties:
       active_api_keys:
         description: Number of active API keys
@@ -250,7 +259,7 @@ definitions:
         example: 650
         type: integer
     type: object
-  AdminUpdateUserRequest:
+  models.AdminUpdateUserRequest:
     properties:
       is_active:
         description: Whether the account should be active
@@ -265,7 +274,7 @@ definitions:
           type: string
         type: array
     type: object
-  AdminUserListResponse:
+  models.AdminUserListResponse:
     properties:
       page:
         description: Current page number
@@ -286,10 +295,10 @@ definitions:
       users:
         description: List of users
         items:
-          $ref: '#/definitions/AdminUserResponse'
+          $ref: '#/definitions/models.AdminUserResponse'
         type: array
     type: object
-  AdminUserResponse:
+  models.AdminUserResponse:
     properties:
       account_type:
         description: 'Account type: "human" or "service"'
@@ -346,7 +355,7 @@ definitions:
       roles:
         description: User's assigned roles
         items:
-          $ref: '#/definitions/RoleInfo'
+          $ref: '#/definitions/models.RoleInfo'
         type: array
       totp_enabled:
         description: Whether TOTP 2FA is enabled
@@ -365,7 +374,7 @@ definitions:
         example: johndoe
         type: string
     type: object
-  AssignRoleRequest:
+  models.AssignRoleRequest:
     properties:
       role_id:
         description: Role ID to assign
@@ -374,7 +383,7 @@ definitions:
     required:
     - role_id
     type: object
-  AuthResponse:
+  models.AuthResponse:
     properties:
       access_token:
         description: JWT access token for API authentication
@@ -398,10 +407,28 @@ definitions:
         type: string
       user:
         allOf:
-        - $ref: '#/definitions/User'
+        - $ref: '#/definitions/models.User'
         description: Authenticated user information
     type: object
-  BrandingSettings:
+  models.BackupCodesResponse:
+    properties:
+      backup_codes:
+        description: List of new backup codes
+        example:
+        - ABC123
+        - DEF456
+        - GHI789
+        - JKL012
+        - MNO345
+        items:
+          type: string
+        type: array
+      message:
+        description: Response message
+        example: Backup codes regenerated successfully. Save them in a secure location.
+        type: string
+    type: object
+  models.BrandingSettings:
     properties:
       background_color:
         description: Hex color
@@ -433,7 +460,7 @@ definitions:
       updated_by:
         type: string
     type: object
-  BrandingTheme:
+  models.BrandingTheme:
     properties:
       background_color:
         description: Background color
@@ -448,7 +475,7 @@ definitions:
         example: '#8B5CF6'
         type: string
     type: object
-  ChangePasswordRequest:
+  models.ChangePasswordRequest:
     properties:
       new_password:
         description: New password (minimum 8 characters)
@@ -463,7 +490,7 @@ definitions:
     - new_password
     - old_password
     type: object
-  CompletePasswordlessRegistrationRequest:
+  models.CompletePasswordlessRegistrationRequest:
     properties:
       code:
         description: 6-digit OTP code received via email or SMS
@@ -480,7 +507,7 @@ definitions:
     required:
     - code
     type: object
-  CreateAPIKeyRequest:
+  models.CreateAPIKeyRequest:
     properties:
       description:
         description: API key description
@@ -509,18 +536,18 @@ definitions:
     - name
     - scopes
     type: object
-  CreateAPIKeyResponse:
+  models.CreateAPIKeyResponse:
     properties:
       api_key:
         allOf:
-        - $ref: '#/definitions/APIKey'
+        - $ref: '#/definitions/models.APIKey'
         description: Created API key metadata
       plain_key:
         description: Plain text API key (shown only once at creation)
         example: agw_1234567890abcdef1234567890abcdef
         type: string
     type: object
-  CreateEmailTemplateRequest:
+  models.CreateEmailTemplateRequest:
     properties:
       html_body:
         description: HTML email body
@@ -567,7 +594,7 @@ definitions:
     - subject
     - type
     type: object
-  CreateIPFilterRequest:
+  models.CreateIPFilterRequest:
     properties:
       expires_at:
         description: Optional expiration date
@@ -592,7 +619,7 @@ definitions:
     - filter_type
     - ip_cidr
     type: object
-  CreateOAuthClientRequest:
+  models.CreateOAuthClientRequest:
     properties:
       access_token_ttl:
         example: 900
@@ -665,15 +692,15 @@ definitions:
     - client_type
     - name
     type: object
-  CreateOAuthClientResponse:
+  models.CreateOAuthClientResponse:
     properties:
       client:
-        $ref: '#/definitions/OAuthClient'
+        $ref: '#/definitions/models.OAuthClient'
       client_secret:
         example: client_secret_abc123xyz789
         type: string
     type: object
-  CreatePermissionRequest:
+  models.CreatePermissionRequest:
     properties:
       action:
         description: Action name (2-50 characters)
@@ -702,7 +729,7 @@ definitions:
     - name
     - resource
     type: object
-  CreateRoleRequest:
+  models.CreateRoleRequest:
     properties:
       description:
         description: Role description
@@ -732,7 +759,7 @@ definitions:
     - display_name
     - name
     type: object
-  CreateSMSSettingsRequest:
+  models.CreateSMSSettingsRequest:
     properties:
       account_sid:
         type: string
@@ -766,7 +793,7 @@ definitions:
     required:
     - provider
     type: object
-  CreateUserRequest:
+  models.CreateUserRequest:
     properties:
       account_type:
         description: 'Account type: "human" or "service" (defaults to "human")'
@@ -799,7 +826,7 @@ definitions:
     - password
     - username
     type: object
-  CreateWebhookRequest:
+  models.CreateWebhookRequest:
     properties:
       events:
         description: List of events to subscribe to
@@ -826,7 +853,7 @@ definitions:
         type: string
       retry_config:
         allOf:
-        - $ref: '#/definitions/RetryConfig'
+        - $ref: '#/definitions/models.RetryConfig'
         description: Retry configuration for failed deliveries
       url:
         description: Webhook URL endpoint (max 500 characters)
@@ -838,7 +865,18 @@ definitions:
     - name
     - url
     type: object
-  DatabaseConnectionInfo:
+  models.CreateWebhookResponse:
+    properties:
+      secret_key:
+        description: Secret key for webhook signature verification (only shown once)
+        example: whsec_abc123xyz456...
+        type: string
+      webhook:
+        allOf:
+        - $ref: '#/definitions/models.Webhook'
+        description: Created webhook
+    type: object
+  models.DatabaseConnectionInfo:
     properties:
       idle:
         type: integer
@@ -853,7 +891,7 @@ definitions:
       wait_duration_ms:
         type: integer
     type: object
-  DeviceAuthResponse:
+  models.DeviceAuthResponse:
     properties:
       device_code:
         example: GmRhmhcxhwAzkoEqiMEg_DnyEysNkuNhszIySk9eS
@@ -874,7 +912,7 @@ definitions:
         example: https://auth.example.com/device?user_code=ABCD-EFGH
         type: string
     type: object
-  EmailTemplate:
+  models.EmailTemplate:
     properties:
       created_at:
         type: string
@@ -912,7 +950,31 @@ definitions:
     - subject
     - type
     type: object
-  ErrorResponse:
+  models.EmailTemplateListResponse:
+    properties:
+      page:
+        description: Current page number
+        example: 1
+        type: integer
+      per_page:
+        description: Number of items per page
+        example: 20
+        type: integer
+      templates:
+        description: List of email templates
+        items:
+          $ref: '#/definitions/models.EmailTemplate'
+        type: array
+      total:
+        description: Total number of templates
+        example: 10
+        type: integer
+      total_pages:
+        description: Total number of pages
+        example: 1
+        type: integer
+    type: object
+  models.ErrorResponse:
     properties:
       details:
         description: Additional error details
@@ -927,11 +989,20 @@ definitions:
         example: Invalid request parameters
         type: string
     type: object
-  GeoDistributionResponse:
+  models.ForgotPasswordRequest:
+    properties:
+      email:
+        description: Email address to send password reset code
+        example: user@example.com
+        type: string
+    required:
+    - email
+    type: object
+  models.GeoDistributionResponse:
     properties:
       locations:
         items:
-          $ref: '#/definitions/LoginLocation'
+          $ref: '#/definitions/models.LoginLocation'
         type: array
       total_logins:
         type: integer
@@ -940,7 +1011,7 @@ definitions:
       unique_countries:
         type: integer
     type: object
-  HealthMetric:
+  models.HealthMetric:
     properties:
       id:
         type: string
@@ -957,16 +1028,7 @@ definitions:
       recorded_at:
         type: string
     type: object
-  HealthResponse:
-    properties:
-      services:
-        additionalProperties:
-          type: string
-        type: object
-      status:
-        type: string
-    type: object
-  IPFilter:
+  models.IPFilter:
     properties:
       created_at:
         type: string
@@ -995,12 +1057,12 @@ definitions:
     - filter_type
     - ip_cidr
     type: object
-  IPFilterListResponse:
+  models.IPFilterListResponse:
     properties:
       filters:
         description: List of IP filters
         items:
-          $ref: '#/definitions/IPFilterWithCreator'
+          $ref: '#/definitions/models.IPFilterWithCreator'
         type: array
       page:
         description: Current page number
@@ -1019,7 +1081,7 @@ definitions:
         example: 2
         type: integer
     type: object
-  IPFilterWithCreator:
+  models.IPFilterWithCreator:
     properties:
       created_at:
         type: string
@@ -1052,7 +1114,7 @@ definitions:
     - filter_type
     - ip_cidr
     type: object
-  InitPasswordlessRegistrationRequest:
+  models.InitPasswordlessRegistrationRequest:
     properties:
       email:
         description: User's email address (optional if phone is provided)
@@ -1073,7 +1135,7 @@ definitions:
         minLength: 3
         type: string
     type: object
-  IntrospectionResponse:
+  models.IntrospectionResponse:
     properties:
       active:
         example: true
@@ -1112,7 +1174,7 @@ definitions:
         example: johndoe
         type: string
     type: object
-  JWK:
+  models.JWK:
     properties:
       alg:
         example: RS256
@@ -1176,26 +1238,26 @@ definitions:
         example: x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0
         type: string
     type: object
-  JWKSDocument:
+  models.JWKSDocument:
     properties:
       keys:
         items:
-          $ref: '#/definitions/JWK'
+          $ref: '#/definitions/models.JWK'
         type: array
     type: object
-  ListAPIKeysResponse:
+  models.ListAPIKeysResponse:
     properties:
       api_keys:
         description: List of API keys
         items:
-          $ref: '#/definitions/APIKey'
+          $ref: '#/definitions/models.APIKey'
         type: array
       total:
         description: Total number of API keys
         example: 5
         type: integer
     type: object
-  LoginLocation:
+  models.LoginLocation:
     properties:
       city:
         type: string
@@ -1212,7 +1274,7 @@ definitions:
       longitude:
         type: number
     type: object
-  MaintenanceModeRequest:
+  models.MaintenanceModeRequest:
     properties:
       enabled:
         description: Whether maintenance mode is enabled
@@ -1223,7 +1285,7 @@ definitions:
         example: System is under maintenance. Please try again later.
         type: string
     type: object
-  MaintenanceModeResponse:
+  models.MaintenanceModeResponse:
     properties:
       enabled:
         description: Whether maintenance mode is enabled
@@ -1234,14 +1296,14 @@ definitions:
         example: ""
         type: string
     type: object
-  MessageResponse:
+  models.MessageResponse:
     properties:
       message:
         description: Response message
         example: Operation completed successfully
         type: string
     type: object
-  OAuthClient:
+  models.OAuthClient:
     properties:
       access_token_ttl:
         example: 900
@@ -1299,7 +1361,7 @@ definitions:
         example: My Application
         type: string
       owner:
-        $ref: '#/definitions/User'
+        $ref: '#/definitions/models.User'
       owner_id:
         example: 123e4567-e89b-12d3-a456-426614174000
         type: string
@@ -1322,7 +1384,7 @@ definitions:
         example: "2024-01-15T10:30:00Z"
         type: string
     type: object
-  OAuthLoginResponse:
+  models.OAuthLoginResponse:
     properties:
       access_token:
         description: JWT access token
@@ -1338,10 +1400,10 @@ definitions:
         type: string
       user:
         allOf:
-        - $ref: '#/definitions/User'
+        - $ref: '#/definitions/models.User'
         description: Authenticated user information
     type: object
-  OAuthProviderInfo:
+  models.OAuthProviderInfo:
     properties:
       display_name:
         type: string
@@ -1352,7 +1414,7 @@ definitions:
       name:
         type: string
     type: object
-  OAuthScope:
+  models.OAuthScope:
     properties:
       created_at:
         example: "2024-01-15T10:30:00Z"
@@ -1376,7 +1438,7 @@ definitions:
         example: profile
         type: string
     type: object
-  OIDCDiscoveryDocument:
+  models.OIDCDiscoveryDocument:
     properties:
       acr_values_supported:
         example:
@@ -1568,7 +1630,7 @@ definitions:
           type: string
         type: array
     type: object
-  OTPType:
+  models.OTPType:
     enum:
     - verification
     - password_reset
@@ -1582,7 +1644,30 @@ definitions:
     - OTPType2FA
     - OTPTypeLogin
     - OTPTypeRegistration
-  Permission:
+  models.PasswordlessLoginRequest:
+    properties:
+      email:
+        description: Email address to receive the OTP code
+        example: user@example.com
+        type: string
+    required:
+    - email
+    type: object
+  models.PasswordlessLoginVerifyRequest:
+    properties:
+      code:
+        description: 6-digit OTP code
+        example: "123456"
+        type: string
+      email:
+        description: Email address that received the OTP
+        example: user@example.com
+        type: string
+    required:
+    - code
+    - email
+    type: object
+  models.Permission:
     properties:
       action:
         description: Action allowed on the resource (e.g., "create", "read", "update",
@@ -1614,14 +1699,14 @@ definitions:
     - name
     - resource
     type: object
-  PermissionMatrix:
+  models.PermissionMatrix:
     properties:
       resources:
         items:
-          $ref: '#/definitions/ResourcePermissions'
+          $ref: '#/definitions/models.ResourcePermissions'
         type: array
     type: object
-  PermissionWithRoles:
+  models.PermissionWithRoles:
     properties:
       action:
         type: string
@@ -1637,7 +1722,7 @@ definitions:
           type: string
         type: array
     type: object
-  PreviewEmailTemplateRequest:
+  models.PreviewEmailTemplateRequest:
     properties:
       html_body:
         description: HTML template to preview
@@ -1658,7 +1743,7 @@ definitions:
     required:
     - html_body
     type: object
-  PreviewEmailTemplateResponse:
+  models.PreviewEmailTemplateResponse:
     properties:
       rendered_html:
         description: Rendered HTML content
@@ -1669,7 +1754,7 @@ definitions:
         example: Hello John Doe
         type: string
     type: object
-  PublicBrandingResponse:
+  models.PublicBrandingResponse:
     properties:
       company_name:
         description: Company name
@@ -1697,10 +1782,10 @@ definitions:
         type: string
       theme:
         allOf:
-        - $ref: '#/definitions/BrandingTheme'
+        - $ref: '#/definitions/models.BrandingTheme'
         description: Color theme
     type: object
-  RedisMemoryInfo:
+  models.RedisMemoryInfo:
     properties:
       max_memory_bytes:
         type: integer
@@ -1713,7 +1798,7 @@ definitions:
       used_memory_human:
         type: string
     type: object
-  RefreshTokenRequest:
+  models.RefreshTokenRequest:
     properties:
       refresh_token:
         description: Refresh token obtained during authentication
@@ -1722,7 +1807,25 @@ definitions:
     required:
     - refresh_token
     type: object
-  ResetPasswordRequest:
+  models.RegenerateBackupCodesRequest:
+    properties:
+      password:
+        description: User's current password for verification
+        example: SecurePass123!
+        type: string
+    required:
+    - password
+    type: object
+  models.ResendVerificationRequest:
+    properties:
+      email:
+        description: Email address to resend verification to
+        example: user@example.com
+        type: string
+    required:
+    - email
+    type: object
+  models.ResetPasswordRequest:
     properties:
       code:
         description: 6-digit verification code sent to email
@@ -1742,16 +1845,16 @@ definitions:
     - email
     - new_password
     type: object
-  ResourcePermissions:
+  models.ResourcePermissions:
     properties:
       permissions:
         items:
-          $ref: '#/definitions/PermissionWithRoles'
+          $ref: '#/definitions/models.PermissionWithRoles'
         type: array
       resource:
         type: string
     type: object
-  RetryConfig:
+  models.RetryConfig:
     properties:
       backoff_seconds:
         description: Delay in seconds for each retry attempt
@@ -1767,7 +1870,7 @@ definitions:
         example: 3
         type: integer
     type: object
-  Role:
+  models.Role:
     properties:
       created_at:
         description: Timestamp when role was created
@@ -1796,7 +1899,7 @@ definitions:
       permissions:
         description: Many-to-many relation with Permission
         items:
-          $ref: '#/definitions/Permission'
+          $ref: '#/definitions/models.Permission'
         type: array
       updated_at:
         description: Timestamp when role was last updated
@@ -1806,7 +1909,7 @@ definitions:
     - display_name
     - name
     type: object
-  RoleInfo:
+  models.RoleInfo:
     properties:
       display_name:
         description: Role's display name
@@ -1821,7 +1924,7 @@ definitions:
         example: admin
         type: string
     type: object
-  SMSLog:
+  models.SMSLog:
     properties:
       created_at:
         type: string
@@ -1842,13 +1945,13 @@ definitions:
       sent_at:
         type: string
       status:
-        $ref: '#/definitions/SMSStatus'
+        $ref: '#/definitions/models.SMSStatus'
       type:
-        $ref: '#/definitions/OTPType'
+        $ref: '#/definitions/models.OTPType'
       user_id:
         type: string
     type: object
-  SMSSettings:
+  models.SMSSettings:
     properties:
       account_sid:
         type: string
@@ -1879,7 +1982,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  SMSStatsResponse:
+  models.SMSStatsResponse:
     properties:
       by_status:
         additionalProperties:
@@ -1893,7 +1996,7 @@ definitions:
         type: object
       recent_messages:
         items:
-          $ref: '#/definitions/SMSLog'
+          $ref: '#/definitions/models.SMSLog'
         type: array
       sent_this_hour:
         type: integer
@@ -1904,7 +2007,7 @@ definitions:
       total_sent:
         type: integer
     type: object
-  SMSStatus:
+  models.SMSStatus:
     enum:
     - pending
     - sent
@@ -1923,7 +2026,7 @@ definitions:
     - SMSStatusSent
     - SMSStatusFailed
     - SMSStatusDelivered
-  SendOTPRequest:
+  models.SendOTPRequest:
     properties:
       email:
         description: Email address to send OTP to (required if phone not provided)
@@ -1935,13 +2038,13 @@ definitions:
         type: string
       type:
         allOf:
-        - $ref: '#/definitions/OTPType'
+        - $ref: '#/definitions/models.OTPType'
         description: OTP type (verification, password_reset, 2fa, login)
         example: verification
     required:
     - type
     type: object
-  SendSMSRequest:
+  models.SendSMSRequest:
     properties:
       phone:
         description: Phone number to send SMS to
@@ -1949,7 +2052,7 @@ definitions:
         type: string
       type:
         allOf:
-        - $ref: '#/definitions/OTPType'
+        - $ref: '#/definitions/models.OTPType'
         description: 'OTP type: verification, password_reset, 2fa, or login'
         enum:
         - verification
@@ -1961,7 +2064,7 @@ definitions:
     - phone
     - type
     type: object
-  SendSMSResponse:
+  models.SendSMSResponse:
     properties:
       expires_at:
         description: OTP expiration timestamp
@@ -1976,7 +2079,7 @@ definitions:
         example: true
         type: boolean
     type: object
-  SessionListResponse:
+  models.SessionListResponse:
     properties:
       page:
         description: Current page number
@@ -1989,7 +2092,7 @@ definitions:
       sessions:
         description: List of active sessions
         items:
-          $ref: '#/definitions/ActiveSessionResponse'
+          $ref: '#/definitions/models.ActiveSessionResponse'
         type: array
       total:
         description: Total number of sessions
@@ -2000,7 +2103,7 @@ definitions:
         example: 1
         type: integer
     type: object
-  SessionStats:
+  models.SessionStats:
     properties:
       sessions_by_browser:
         additionalProperties:
@@ -2020,7 +2123,7 @@ definitions:
       total_active_sessions:
         type: integer
     type: object
-  SignInRequest:
+  models.SignInRequest:
     properties:
       email:
         description: User's email address (required if phone not provided)
@@ -2037,18 +2140,18 @@ definitions:
     required:
     - password
     type: object
-  SystemHealthResponse:
+  models.SystemHealthResponse:
     properties:
       database_connections:
-        $ref: '#/definitions/DatabaseConnectionInfo'
+        $ref: '#/definitions/models.DatabaseConnectionInfo'
       database_status:
         type: string
       metrics:
         items:
-          $ref: '#/definitions/HealthMetric'
+          $ref: '#/definitions/models.HealthMetric'
         type: array
       redis_memory:
-        $ref: '#/definitions/RedisMemoryInfo'
+        $ref: '#/definitions/models.RedisMemoryInfo'
       redis_status:
         type: string
       status:
@@ -2057,7 +2160,65 @@ definitions:
       uptime_seconds:
         type: integer
     type: object
-  TestWebhookRequest:
+  models.TelegramAuthData:
+    properties:
+      auth_date:
+        description: Authentication timestamp
+        example: 1234567890
+        type: integer
+      first_name:
+        description: User's first name
+        example: John
+        type: string
+      hash:
+        description: Hash for verification
+        example: abc123def456...
+        type: string
+      id:
+        description: Telegram user ID
+        example: 123456789
+        type: integer
+      last_name:
+        description: User's last name (optional)
+        example: Doe
+        type: string
+      photo_url:
+        description: Profile photo URL (optional)
+        example: https://t.me/i/userpic/123.jpg
+        type: string
+      username:
+        description: Username without @ (optional)
+        example: johndoe
+        type: string
+    type: object
+  models.TemplateTypesResponse:
+    properties:
+      types:
+        description: List of available template types
+        example:
+        - verification
+        - password_reset
+        - welcome
+        - 2fa
+        - custom
+        items:
+          type: string
+        type: array
+    type: object
+  models.TemplateVariablesResponse:
+    properties:
+      variables:
+        description: List of available variables for the template type
+        example:
+        - username
+        - email
+        - code
+        - expiry_minutes
+        items:
+          type: string
+        type: array
+    type: object
+  models.TestWebhookRequest:
     properties:
       event_type:
         description: Event type to simulate
@@ -2074,7 +2235,7 @@ definitions:
     required:
     - event_type
     type: object
-  TokenResponse:
+  models.TokenResponse:
     properties:
       access_token:
         example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -2095,7 +2256,7 @@ definitions:
         example: Bearer
         type: string
     type: object
-  TwoFactorDisableRequest:
+  models.TwoFactorDisableRequest:
     properties:
       code:
         description: 6-digit TOTP code from authenticator app
@@ -2109,7 +2270,7 @@ definitions:
     - code
     - password
     type: object
-  TwoFactorLoginVerifyRequest:
+  models.TwoFactorLoginVerifyRequest:
     properties:
       code:
         description: 6-digit TOTP code from authenticator app
@@ -2123,7 +2284,7 @@ definitions:
     - code
     - two_factor_token
     type: object
-  TwoFactorSetupRequest:
+  models.TwoFactorSetupRequest:
     properties:
       password:
         description: User's current password for verification
@@ -2132,7 +2293,7 @@ definitions:
     required:
     - password
     type: object
-  TwoFactorSetupResponse:
+  models.TwoFactorSetupResponse:
     properties:
       backup_codes:
         description: List of backup codes for account recovery
@@ -2154,7 +2315,7 @@ definitions:
         example: JBSWY3DPEHPK3PXP
         type: string
     type: object
-  TwoFactorStatusResponse:
+  models.TwoFactorStatusResponse:
     properties:
       backup_codes_remaining:
         description: Number of remaining backup codes
@@ -2169,7 +2330,7 @@ definitions:
         example: "2024-01-15T10:30:00Z"
         type: string
     type: object
-  TwoFactorVerifyRequest:
+  models.TwoFactorVerifyRequest:
     properties:
       code:
         description: 6-digit TOTP code from authenticator app
@@ -2178,7 +2339,7 @@ definitions:
     required:
     - code
     type: object
-  UpdateAPIKeyRequest:
+  models.UpdateAPIKeyRequest:
     properties:
       description:
         description: API key description
@@ -2201,7 +2362,7 @@ definitions:
           type: string
         type: array
     type: object
-  UpdateBrandingRequest:
+  models.UpdateBrandingRequest:
     properties:
       background_color:
         description: Background color (hex format)
@@ -2249,7 +2410,7 @@ definitions:
         maxLength: 500
         type: string
     type: object
-  UpdateEmailTemplateRequest:
+  models.UpdateEmailTemplateRequest:
     properties:
       html_body:
         description: HTML email body
@@ -2282,7 +2443,7 @@ definitions:
           type: string
         type: array
     type: object
-  UpdateOAuthClientRequest:
+  models.UpdateOAuthClientRequest:
     properties:
       access_token_ttl:
         example: 900
@@ -2344,7 +2505,7 @@ definitions:
         example: true
         type: boolean
     type: object
-  UpdateRoleRequest:
+  models.UpdateRoleRequest:
     properties:
       description:
         description: Role description
@@ -2364,7 +2525,7 @@ definitions:
           type: string
         type: array
     type: object
-  UpdateSMSSettingsRequest:
+  models.UpdateSMSSettingsRequest:
     properties:
       account_sid:
         type: string
@@ -2396,7 +2557,7 @@ definitions:
         - mock
         type: string
     type: object
-  UpdateUserRequest:
+  models.UpdateUserRequest:
     properties:
       full_name:
         description: User's full name
@@ -2407,7 +2568,7 @@ definitions:
         example: https://example.com/avatars/user.jpg
         type: string
     type: object
-  UpdateWebhookRequest:
+  models.UpdateWebhookRequest:
     properties:
       events:
         description: List of events to subscribe to
@@ -2436,7 +2597,7 @@ definitions:
         type: string
       retry_config:
         allOf:
-        - $ref: '#/definitions/RetryConfig'
+        - $ref: '#/definitions/models.RetryConfig'
         description: Retry configuration for failed deliveries
       url:
         description: Webhook URL endpoint (max 500 characters)
@@ -2444,7 +2605,7 @@ definitions:
         maxLength: 500
         type: string
     type: object
-  User:
+  models.User:
     properties:
       account_type:
         description: 'Account type: "human" or "service"'
@@ -2493,7 +2654,7 @@ definitions:
       roles:
         description: Relations
         items:
-          $ref: '#/definitions/Role'
+          $ref: '#/definitions/models.Role'
         type: array
       totp_enabled:
         description: Whether TOTP 2FA is enabled
@@ -2512,7 +2673,7 @@ definitions:
         example: johndoe
         type: string
     type: object
-  UserInfoResponse:
+  models.UserInfoResponse:
     properties:
       birthdate:
         example: "1990-01-01"
@@ -2572,7 +2733,32 @@ definitions:
         example: America/Los_Angeles
         type: string
     type: object
-  VerifyOTPRequest:
+  models.VerifyEmailRequest:
+    properties:
+      code:
+        description: 6-digit verification code
+        example: "123456"
+        type: string
+      email:
+        description: Email address to verify
+        example: user@example.com
+        type: string
+    required:
+    - code
+    - email
+    type: object
+  models.VerifyEmailResponse:
+    properties:
+      message:
+        description: Human-readable message
+        example: Email verified successfully
+        type: string
+      valid:
+        description: Whether verification was successful
+        example: true
+        type: boolean
+    type: object
+  models.VerifyOTPRequest:
     properties:
       code:
         description: 6-digit OTP code
@@ -2588,14 +2774,14 @@ definitions:
         type: string
       type:
         allOf:
-        - $ref: '#/definitions/OTPType'
+        - $ref: '#/definitions/models.OTPType'
         description: OTP type (verification, password_reset, 2fa, login)
         example: verification
     required:
     - code
     - type
     type: object
-  VerifyOTPResponse:
+  models.VerifyOTPResponse:
     properties:
       access_token:
         description: Access token (if OTP is for login)
@@ -2607,14 +2793,14 @@ definitions:
         type: string
       user:
         allOf:
-        - $ref: '#/definitions/User'
+        - $ref: '#/definitions/models.User'
         description: User information (if OTP is for login)
       valid:
         description: Whether the OTP is valid
         example: true
         type: boolean
     type: object
-  VerifySMSOTPRequest:
+  models.VerifySMSOTPRequest:
     properties:
       code:
         description: 6-digit OTP code
@@ -2626,7 +2812,7 @@ definitions:
         type: string
       type:
         allOf:
-        - $ref: '#/definitions/OTPType'
+        - $ref: '#/definitions/models.OTPType'
         description: 'OTP type: verification, password_reset, 2fa, or login'
         enum:
         - verification
@@ -2639,7 +2825,7 @@ definitions:
     - phone
     - type
     type: object
-  VerifySMSOTPResponse:
+  models.VerifySMSOTPResponse:
     properties:
       message:
         description: Response message
@@ -2647,14 +2833,14 @@ definitions:
         type: string
       user:
         allOf:
-        - $ref: '#/definitions/User'
+        - $ref: '#/definitions/models.User'
         description: User information (if verification was for login)
       valid:
         description: Whether the OTP is valid
         example: true
         type: boolean
     type: object
-  Webhook:
+  models.Webhook:
     properties:
       created_at:
         type: string
@@ -2695,7 +2881,7 @@ definitions:
     - name
     - url
     type: object
-  WebhookDelivery:
+  models.WebhookDelivery:
     properties:
       attempts:
         type: integer
@@ -2723,12 +2909,12 @@ definitions:
       webhook_id:
         type: string
     type: object
-  WebhookDeliveryListResponse:
+  models.WebhookDeliveryListResponse:
     properties:
       deliveries:
         description: List of webhook deliveries
         items:
-          $ref: '#/definitions/WebhookDelivery'
+          $ref: '#/definitions/models.WebhookDelivery'
         type: array
       page:
         description: Current page number
@@ -2747,7 +2933,19 @@ definitions:
         example: 8
         type: integer
     type: object
-  WebhookListResponse:
+  models.WebhookEventsResponse:
+    properties:
+      events:
+        description: List of available event types
+        example:
+        - user.created
+        - user.updated
+        - user.login
+        items:
+          type: string
+        type: array
+    type: object
+  models.WebhookListResponse:
     properties:
       page:
         description: Current page number
@@ -2768,10 +2966,10 @@ definitions:
       webhooks:
         description: List of webhooks
         items:
-          $ref: '#/definitions/WebhookWithCreator'
+          $ref: '#/definitions/models.WebhookWithCreator'
         type: array
     type: object
-  WebhookWithCreator:
+  models.WebhookWithCreator:
     properties:
       created_at:
         type: string
@@ -2821,7 +3019,26 @@ info:
   contact:
     email: maksbalashov@gmail.com
     name: API Support
-  description: Centralized authentication and authorization system for microservices
+  description: |-
+    Centralized authentication and authorization system for microservices ecosystem.
+
+    ## Overview
+    Auth Gateway provides a complete authentication and authorization solution including:
+    - User registration and authentication (email/password, OAuth, passwordless)
+    - Two-factor authentication (TOTP)
+    - API key management for service-to-service communication
+    - Role-based access control (RBAC)
+    - Session management
+    - Webhooks for event notifications
+
+    ## Authentication
+    Most endpoints require authentication via JWT Bearer token or API key.
+
+    ### JWT Authentication
+    Include the access token in the Authorization header: `Authorization: Bearer {token}`
+
+    ### API Key Authentication
+    Include the API key in the X-API-Key header: `X-API-Key: agw_{key}`
   title: Auth Gateway API
   version: "1.0"
 paths:
@@ -2834,7 +3051,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/JWKSDocument'
+            $ref: '#/definitions/models.JWKSDocument'
       summary: JWKS
       tags:
       - OAuth Provider - Discovery
@@ -2847,7 +3064,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/OIDCDiscoveryDocument'
+            $ref: '#/definitions/models.OIDCDiscoveryDocument'
       summary: OIDC Discovery
       tags:
       - OAuth Provider - Discovery
@@ -2861,16 +3078,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/SMSSettings'
+              $ref: '#/definitions/models.SMSSettings'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get all SMS settings
@@ -2886,26 +3103,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/CreateSMSSettingsRequest'
+          $ref: '#/definitions/models.CreateSMSSettingsRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/SMSSettings'
+            $ref: '#/definitions/models.SMSSettings'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create SMS settings
@@ -2926,15 +3143,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete SMS settings
@@ -2954,19 +3171,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SMSSettings'
+            $ref: '#/definitions/models.SMSSettings'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get SMS settings
@@ -2987,30 +3204,30 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/UpdateSMSSettingsRequest'
+          $ref: '#/definitions/models.UpdateSMSSettingsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SMSSettings'
+            $ref: '#/definitions/models.SMSSettings'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update SMS settings
@@ -3025,19 +3242,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SMSSettings'
+            $ref: '#/definitions/models.SMSSettings'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get active SMS settings
@@ -3058,19 +3275,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GeoDistributionResponse'
+            $ref: '#/definitions/models.GeoDistributionResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get login geo-distribution for map
@@ -3097,66 +3314,66 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/AdminAPIKeyResponse'
+              $ref: '#/definitions/models.AdminAPIKeyResponse'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all API keys
       tags:
-      - Admin - Management
+      - Admin - API Keys
   /api/admin/api-keys/{id}/revoke:
     post:
       description: Revoke an API key (admin only)
       parameters:
-      - description: API Key ID
+      - description: API Key ID (UUID)
         in: path
         name: id
         required: true
         type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Revoke API key
       tags:
-      - Admin - Management
+      - Admin - API Keys
   /api/admin/audit-logs:
     get:
       description: Get paginated audit logs (admin only)
@@ -3171,7 +3388,7 @@ paths:
         in: query
         name: page_size
         type: integer
-      - description: Filter by user ID
+      - description: Filter by user ID (UUID)
         in: query
         name: user_id
         type: string
@@ -3182,29 +3399,29 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/AdminAuditLogResponse'
+              $ref: '#/definitions/models.AdminAuditLogResponse'
             type: array
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List audit logs
       tags:
-      - Admin - Management
+      - Admin - Audit Logs
   /api/admin/branding:
     put:
       consumes:
@@ -3216,30 +3433,30 @@ paths:
         name: branding
         required: true
         schema:
-          $ref: '#/definitions/UpdateBrandingRequest'
+          $ref: '#/definitions/models.UpdateBrandingRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BrandingSettings'
+            $ref: '#/definitions/models.BrandingSettings'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update branding settings (admin only)
@@ -3269,19 +3486,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/IPFilterListResponse'
+            $ref: '#/definitions/models.IPFilterListResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List IP filters
@@ -3297,26 +3514,26 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/CreateIPFilterRequest'
+          $ref: '#/definitions/models.CreateIPFilterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/IPFilter'
+            $ref: '#/definitions/models.IPFilter'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create an IP filter
@@ -3326,30 +3543,30 @@ paths:
     delete:
       description: Delete an existing IP filter rule
       parameters:
-      - description: Filter ID
+      - description: Filter ID (UUID)
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: No Content
+          description: IP filter deleted successfully
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete an IP filter
@@ -3384,15 +3601,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List OAuth clients
@@ -3408,34 +3625,34 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/CreateOAuthClientRequest'
+          $ref: '#/definitions/models.CreateOAuthClientRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/CreateOAuthClientResponse'
+            $ref: '#/definitions/models.CreateOAuthClientResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create OAuth client
@@ -3456,23 +3673,23 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete OAuth client
@@ -3492,27 +3709,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/OAuthClient'
+            $ref: '#/definitions/models.OAuthClient'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get OAuth client
@@ -3533,34 +3750,34 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/UpdateOAuthClientRequest'
+          $ref: '#/definitions/models.UpdateOAuthClientRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/OAuthClient'
+            $ref: '#/definitions/models.OAuthClient'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update OAuth client
@@ -3586,23 +3803,23 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List client consents
@@ -3628,23 +3845,23 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Revoke user consent
@@ -3671,23 +3888,23 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Rotate client secret
@@ -3707,15 +3924,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List OAuth scopes
@@ -3740,27 +3957,27 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/OAuthScope'
+            $ref: '#/definitions/models.OAuthScope'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create OAuth scope
@@ -3782,23 +3999,23 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete OAuth scope
@@ -3813,19 +4030,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PermissionMatrix'
+            $ref: '#/definitions/models.PermissionMatrix'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get permission matrix for all roles
@@ -3841,20 +4058,20 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/Permission'
+              $ref: '#/definitions/models.Permission'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all permissions
@@ -3870,26 +4087,26 @@ paths:
         name: permission
         required: true
         schema:
-          $ref: '#/definitions/CreatePermissionRequest'
+          $ref: '#/definitions/models.CreatePermissionRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/Permission'
+            $ref: '#/definitions/models.Permission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create a new permission
@@ -3910,19 +4127,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete a permission
@@ -3938,20 +4155,20 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/Role'
+              $ref: '#/definitions/models.Role'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all roles
@@ -3967,26 +4184,26 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/CreateRoleRequest'
+          $ref: '#/definitions/models.CreateRoleRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/Role'
+            $ref: '#/definitions/models.Role'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create a new role
@@ -3996,30 +4213,30 @@ paths:
     delete:
       description: Delete a role from the RBAC system
       parameters:
-      - description: Role ID
+      - description: Role ID (UUID)
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: No Content
+          description: Role deleted successfully
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete a role
@@ -4028,7 +4245,7 @@ paths:
     get:
       description: Get details of a specific role
       parameters:
-      - description: Role ID
+      - description: Role ID (UUID)
         in: path
         name: id
         required: true
@@ -4039,23 +4256,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Role'
+            $ref: '#/definitions/models.Role'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get a role by ID
@@ -4066,7 +4283,7 @@ paths:
       - application/json
       description: Update an existing role in the RBAC system
       parameters:
-      - description: Role ID
+      - description: Role ID (UUID)
         in: path
         name: id
         required: true
@@ -4076,30 +4293,30 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/UpdateRoleRequest'
+          $ref: '#/definitions/models.UpdateRoleRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Role'
+            $ref: '#/definitions/models.Role'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update a role
@@ -4126,20 +4343,20 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/ActiveSessionResponse'
+              $ref: '#/definitions/models.ActiveSessionResponse'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all sessions (admin only)
@@ -4154,19 +4371,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SessionStats'
+            $ref: '#/definitions/models.SessionStats'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get session statistics (admin only)
@@ -4174,31 +4391,32 @@ paths:
       - Admin - Sessions
   /api/admin/stats:
     get:
-      description: Get system-wide statistics (admin only)
+      description: Get system-wide statistics including user counts, sessions, and
+        API keys (admin only)
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AdminStatsResponse'
+            $ref: '#/definitions/models.AdminStatsResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get system statistics
       tags:
-      - Admin - Management
+      - Admin - Dashboard
   /api/admin/system/health:
     get:
       description: Get health status of system components (database, redis, etc.)
@@ -4208,15 +4426,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SystemHealthResponse'
+            $ref: '#/definitions/models.SystemHealthResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get system health metrics
@@ -4233,30 +4451,30 @@ paths:
         name: mode
         required: true
         schema:
-          $ref: '#/definitions/MaintenanceModeRequest'
+          $ref: '#/definitions/models.MaintenanceModeRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MaintenanceModeResponse'
+            $ref: '#/definitions/models.MaintenanceModeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Set maintenance mode (admin only)
@@ -4266,82 +4484,77 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get a list of all email templates
+      description: Get a list of all email templates (admin only)
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            properties:
-              templates:
-                items:
-                  $ref: '#/definitions/EmailTemplate'
-                type: array
-            type: object
+            $ref: '#/definitions/models.EmailTemplateListResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all email templates
       tags:
-      - Email Templates
+      - Admin - Email Templates
     post:
       consumes:
       - application/json
-      description: Create a new email template for customized emails
+      description: Create a new email template for customized emails (admin only)
       parameters:
       - description: Template data
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/CreateEmailTemplateRequest'
+          $ref: '#/definitions/models.CreateEmailTemplateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/EmailTemplate'
+            $ref: '#/definitions/models.EmailTemplate'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create a new email template
       tags:
-      - Email Templates
+      - Admin - Email Templates
   /api/admin/templates/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete an email template by ID
+      description: Delete an email template by ID (admin only)
       parameters:
-      - description: Template ID
+      - description: Template ID (UUID)
         in: path
         name: id
         required: true
@@ -4352,30 +4565,34 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete an email template
       tags:
-      - Email Templates
+      - Admin - Email Templates
     get:
       consumes:
       - application/json
-      description: Get a specific email template by its ID
+      description: Get a specific email template by its ID (admin only)
       parameters:
-      - description: Template ID
+      - description: Template ID (UUID)
         in: path
         name: id
         required: true
@@ -4386,30 +4603,34 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/EmailTemplate'
+            $ref: '#/definitions/models.EmailTemplate'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get email template by ID
       tags:
-      - Email Templates
+      - Admin - Email Templates
     put:
       consumes:
       - application/json
-      description: Update an existing email template
+      description: Update an existing email template (admin only)
       parameters:
-      - description: Template ID
+      - description: Template ID (UUID)
         in: path
         name: id
         required: true
@@ -4419,105 +4640,104 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/UpdateEmailTemplateRequest'
+          $ref: '#/definitions/models.UpdateEmailTemplateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/models.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update an email template
       tags:
-      - Email Templates
+      - Admin - Email Templates
   /api/admin/templates/preview:
     post:
       consumes:
       - application/json
-      description: Render a template with sample data for preview
+      description: Render a template with sample data for preview (admin only)
       parameters:
       - description: Preview data
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/PreviewEmailTemplateRequest'
+          $ref: '#/definitions/models.PreviewEmailTemplateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PreviewEmailTemplateResponse'
+            $ref: '#/definitions/models.PreviewEmailTemplateResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Preview an email template
       tags:
-      - Email Templates
+      - Admin - Email Templates
   /api/admin/templates/types:
     get:
       consumes:
       - application/json
-      description: Get a list of all available email template types
+      description: Get a list of all available email template types (admin only)
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            properties:
-              types:
-                items:
-                  type: string
-                type: array
-            type: object
+            $ref: '#/definitions/models.TemplateTypesResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get available template types
       tags:
-      - Email Templates
+      - Admin - Email Templates
   /api/admin/templates/variables/{type}:
     get:
       consumes:
       - application/json
       description: Get the list of default variables available for a specific template
-        type
+        type (admin only)
       parameters:
-      - description: Template type
+      - description: Template type (e.g., welcome, password_reset, verification)
         in: path
         name: type
         required: true
@@ -4528,21 +4748,20 @@ paths:
         "200":
           description: OK
           schema:
-            properties:
-              variables:
-                items:
-                  type: string
-                type: array
-            type: object
+            $ref: '#/definitions/models.TemplateVariablesResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get default variables for a template type
       tags:
-      - Email Templates
+      - Admin - Email Templates
   /api/admin/users:
     get:
       description: Get paginated list of all users (admin only)
@@ -4563,24 +4782,24 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AdminUserListResponse'
+            $ref: '#/definitions/models.AdminUserListResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all users
       tags:
-      - Admin - Management
+      - Admin - Users
     post:
       consumes:
       - application/json
@@ -4591,84 +4810,44 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/AdminCreateUserRequest'
+          $ref: '#/definitions/models.AdminCreateUserRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/AdminUserResponse'
+            $ref: '#/definitions/models.AdminUserResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create user
       tags:
-      - Admin - Management
+      - Admin - Users
   /api/admin/users/{id}:
     delete:
       description: Soft delete a user (admin only)
       parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Delete user
-      tags:
-      - Admin - Management
-    get:
-      description: Get detailed information about a specific user (admin only)
-      parameters:
-      - description: User ID
+      - description: User ID (UUID)
         in: path
         name: id
         required: true
@@ -4679,38 +4858,78 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AdminUserResponse'
+            $ref: '#/definitions/models.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete user
+      tags:
+      - Admin - Users
+    get:
+      description: Get detailed information about a specific user (admin only)
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AdminUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get user details
       tags:
-      - Admin - Management
+      - Admin - Users
     put:
       consumes:
       - application/json
       description: Update user information (admin only)
       parameters:
-      - description: User ID
+      - description: User ID (UUID)
         in: path
         name: id
         required: true
@@ -4720,46 +4939,46 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/AdminUpdateUserRequest'
+          $ref: '#/definitions/models.AdminUpdateUserRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AdminUserResponse'
+            $ref: '#/definitions/models.AdminUserResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update user
       tags:
-      - Admin - Management
+      - Admin - Users
   /api/admin/users/{id}/roles:
     post:
       consumes:
       - application/json
       description: Assign a role to a user (admin only)
       parameters:
-      - description: User ID
+      - description: User ID (UUID)
         in: path
         name: id
         required: true
@@ -4769,88 +4988,90 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/AssignRoleRequest'
+          $ref: '#/definitions/models.AssignRoleRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AdminUserResponse'
+            $ref: '#/definitions/models.AdminUserResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Assign role to user
       tags:
-      - Admin - Management
+      - Admin - Users
   /api/admin/users/{id}/roles/{roleId}:
     delete:
       description: Remove a role from a user (admin only)
       parameters:
-      - description: User ID
+      - description: User ID (UUID)
         in: path
         name: id
         required: true
         type: string
-      - description: Role ID
+      - description: Role ID (UUID)
         in: path
         name: roleId
         required: true
         type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AdminUserResponse'
+            $ref: '#/definitions/models.AdminUserResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Remove role from user
       tags:
-      - Admin - Management
+      - Admin - Users
   /api/admin/webhooks:
     get:
       consumes:
       - application/json
-      description: Get a paginated list of all webhooks
+      description: Get a paginated list of all webhooks (admin only)
       parameters:
       - default: 1
         description: Page number
@@ -4868,75 +5089,70 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/WebhookListResponse'
+            $ref: '#/definitions/models.WebhookListResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all webhooks
       tags:
-      - Webhooks
+      - Admin - Webhooks
     post:
       consumes:
       - application/json
-      description: Create a new webhook for receiving event notifications
+      description: Create a new webhook for receiving event notifications (admin only)
       parameters:
       - description: Webhook data
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/CreateWebhookRequest'
+          $ref: '#/definitions/models.CreateWebhookRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            properties:
-              secret_key:
-                type: string
-              webhook:
-                $ref: '#/definitions/Webhook'
-            type: object
+            $ref: '#/definitions/models.CreateWebhookResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create a new webhook
       tags:
-      - Webhooks
+      - Admin - Webhooks
   /api/admin/webhooks/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete a webhook by ID
+      description: Delete a webhook by ID (admin only)
       parameters:
-      - description: Webhook ID
+      - description: Webhook ID (UUID)
         in: path
         name: id
         required: true
@@ -4947,30 +5163,34 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete a webhook
       tags:
-      - Webhooks
+      - Admin - Webhooks
     get:
       consumes:
       - application/json
-      description: Get a specific webhook by its ID
+      description: Get a specific webhook by its ID (admin only)
       parameters:
-      - description: Webhook ID
+      - description: Webhook ID (UUID)
         in: path
         name: id
         required: true
@@ -4981,30 +5201,34 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Webhook'
+            $ref: '#/definitions/models.Webhook'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get webhook by ID
       tags:
-      - Webhooks
+      - Admin - Webhooks
     put:
       consumes:
       - application/json
-      description: Update an existing webhook configuration
+      description: Update an existing webhook configuration (admin only)
       parameters:
-      - description: Webhook ID
+      - description: Webhook ID (UUID)
         in: path
         name: id
         required: true
@@ -5014,42 +5238,42 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/UpdateWebhookRequest'
+          $ref: '#/definitions/models.UpdateWebhookRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/models.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update a webhook
       tags:
-      - Webhooks
+      - Admin - Webhooks
   /api/admin/webhooks/{id}/deliveries:
     get:
       consumes:
       - application/json
-      description: Get a paginated list of webhook delivery attempts
+      description: Get a paginated list of webhook delivery attempts (admin only)
       parameters:
-      - description: Webhook ID
+      - description: Webhook ID (UUID)
         in: path
         name: id
         required: true
@@ -5070,31 +5294,35 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/WebhookDeliveryListResponse'
+            $ref: '#/definitions/models.WebhookDeliveryListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List webhook deliveries
       tags:
-      - Webhooks
+      - Admin - Webhooks
   /api/admin/webhooks/{id}/test:
     post:
       consumes:
       - application/json
-      description: Send a test event to a webhook
+      description: Send a test event to a webhook (admin only)
       parameters:
-      - description: Webhook ID
+      - description: Webhook ID (UUID)
         in: path
         name: id
         required: true
@@ -5104,61 +5332,60 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/TestWebhookRequest'
+          $ref: '#/definitions/models.TestWebhookRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/models.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Test a webhook
       tags:
-      - Webhooks
+      - Admin - Webhooks
   /api/admin/webhooks/events:
     get:
       consumes:
       - application/json
-      description: Get a list of all available webhook event types
+      description: Get a list of all available webhook event types (admin only)
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            properties:
-              events:
-                items:
-                  type: string
-                type: array
-            type: object
+            $ref: '#/definitions/models.WebhookEventsResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get available webhook events
       tags:
-      - Webhooks
+      - Admin - Webhooks
   /api/api-keys:
     get:
       description: Get all API keys belonging to the authenticated user
@@ -5168,15 +5395,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ListAPIKeysResponse'
+            $ref: '#/definitions/models.ListAPIKeysResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List API keys
@@ -5192,26 +5419,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/CreateAPIKeyRequest'
+          $ref: '#/definitions/models.CreateAPIKeyRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/CreateAPIKeyResponse'
+            $ref: '#/definitions/models.CreateAPIKeyResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create API key
@@ -5221,43 +5448,7 @@ paths:
     delete:
       description: Permanently delete an API key
       parameters:
-      - description: API Key ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Delete API key
-      tags:
-      - API Keys
-    get:
-      description: Get details of a specific API key
-      parameters:
-      - description: API Key ID
+      - description: API Key ID (UUID)
         in: path
         name: id
         required: true
@@ -5268,23 +5459,59 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIKey'
+            $ref: '#/definitions/models.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete API key
+      tags:
+      - API Keys
+    get:
+      description: Get details of a specific API key owned by the authenticated user
+      parameters:
+      - description: API Key ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.APIKey'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get API key
@@ -5295,7 +5522,7 @@ paths:
       - application/json
       description: Update API key metadata (name, scopes, etc.)
       parameters:
-      - description: API Key ID
+      - description: API Key ID (UUID)
         in: path
         name: id
         required: true
@@ -5305,30 +5532,30 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/UpdateAPIKeyRequest'
+          $ref: '#/definitions/models.UpdateAPIKeyRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIKey'
+            $ref: '#/definitions/models.APIKey'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update API key
@@ -5338,69 +5565,326 @@ paths:
     post:
       description: Revoke an API key to prevent further use
       parameters:
-      - description: API Key ID
+      - description: API Key ID (UUID)
         in: path
         name: id
         required: true
         type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Revoke API key
-      tags:
-      - API Keys
-  /api/auth/2fa/login/verify:
-    post:
-      consumes:
-      - application/json
-      description: Complete two-factor authentication during login
-      parameters:
-      - description: 2FA verification
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/TwoFactorLoginVerifyRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AuthResponse'
+            $ref: '#/definitions/models.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke API key
+      tags:
+      - API Keys
+  /api/auth/{provider}:
+    get:
+      description: Redirect to OAuth provider for authentication (Google, Yandex,
+        GitHub, Instagram, Telegram)
+      parameters:
+      - description: OAuth provider
+        enum:
+        - google
+        - yandex
+        - github
+        - instagram
+        - telegram
+        in: path
+        name: provider
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Redirect to OAuth provider
+          schema:
+            type: string
+        "400":
+          description: Invalid provider
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Initiate OAuth login
+      tags:
+      - OAuth
+  /api/auth/{provider}/callback:
+    get:
+      description: Process OAuth callback from provider, create or login user, and
+        redirect with tokens
+      parameters:
+      - description: OAuth provider
+        enum:
+        - google
+        - yandex
+        - github
+        - instagram
+        in: path
+        name: provider
+        required: true
+        type: string
+      - description: Authorization code from OAuth provider
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: CSRF state parameter
+        in: query
+        name: state
+        required: true
+        type: string
+      - description: 'Response type: ''json'' for JSON response, otherwise redirect'
+        enum:
+        - json
+        in: query
+        name: response_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JSON response when response_type=json
+          schema:
+            $ref: '#/definitions/models.OAuthLoginResponse'
+        "302":
+          description: Redirect to frontend with tokens
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Handle OAuth callback
+      tags:
+      - OAuth
+  /api/auth/2fa/backup-codes/regenerate:
+    post:
+      consumes:
+      - application/json
+      description: Generate new backup codes for 2FA recovery (invalidates previous
+        codes)
+      parameters:
+      - description: Password for verification
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RegenerateBackupCodesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.BackupCodesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Regenerate backup codes
+      tags:
+      - 2FA
+  /api/auth/2fa/disable:
+    post:
+      consumes:
+      - application/json
+      description: Disable TOTP two-factor authentication for the user account
+      parameters:
+      - description: Password and TOTP code for verification
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.TwoFactorDisableRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Disable 2FA
+      tags:
+      - 2FA
+  /api/auth/2fa/login/verify:
+    post:
+      consumes:
+      - application/json
+      description: Complete two-factor authentication during login using TOTP code
+      parameters:
+      - description: 2FA token and TOTP code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.TwoFactorLoginVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
       summary: Verify 2FA during login
       tags:
       - Authentication
+  /api/auth/2fa/setup:
+    post:
+      consumes:
+      - application/json
+      description: Generate TOTP secret and backup codes for two-factor authentication
+      parameters:
+      - description: Password for verification
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.TwoFactorSetupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TwoFactorSetupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Setup 2FA
+      tags:
+      - 2FA
+  /api/auth/2fa/status:
+    get:
+      description: Get current 2FA status for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TwoFactorStatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get 2FA status
+      tags:
+      - 2FA
+  /api/auth/2fa/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify initial TOTP code and enable 2FA for the user account
+      parameters:
+      - description: TOTP code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.TwoFactorVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Verify 2FA setup
+      tags:
+      - 2FA
   /api/auth/change-password:
     post:
       consumes:
@@ -5412,28 +5896,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/ChangePasswordRequest'
+          $ref: '#/definitions/models.ChangePasswordRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Change password
@@ -5442,21 +5924,21 @@ paths:
   /api/auth/logout:
     post:
       description: Invalidate the current access token
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Logout user
@@ -5468,29 +5950,35 @@ paths:
       - application/json
       description: Complete password reset using OTP verification
       parameters:
-      - description: Password reset data
+      - description: Password reset data with OTP code
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/ResetPasswordRequest'
+          $ref: '#/definitions/models.ResetPasswordRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
       summary: Reset password with OTP
       tags:
       - Authentication
@@ -5500,36 +5988,98 @@ paths:
       - application/json
       description: Send a password reset code to the user's email
       parameters:
-      - description: Email
+      - description: Email address
         in: body
         name: request
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/models.ForgotPasswordRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Request password reset
+      tags:
+      - Authentication
+  /api/auth/passwordless/request:
+    post:
+      consumes:
+      - application/json
+      description: Send OTP code for passwordless login
+      parameters:
+      - description: Email for passwordless login
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.PasswordlessLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
             type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
-        "429":
-          description: Too Many Requests
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Request passwordless login
+      tags:
+      - Authentication
+  /api/auth/passwordless/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify OTP code and complete passwordless login, returns access
+        and refresh tokens
+      parameters:
+      - description: Email and OTP code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.PasswordlessLoginVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Request password reset
+            $ref: '#/definitions/models.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Verify passwordless login
       tags:
       - Authentication
   /api/auth/profile:
@@ -5541,19 +6091,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/User'
+            $ref: '#/definitions/models.User'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get user profile
@@ -5569,31 +6119,46 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/UpdateUserRequest'
+          $ref: '#/definitions/models.UpdateUserRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/User'
+            $ref: '#/definitions/models.User'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update user profile
       tags:
       - Authentication
+  /api/auth/providers:
+    get:
+      description: List all configured OAuth providers with their enabled status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.OAuthProviderInfo'
+            type: array
+      summary: Get available OAuth providers
+      tags:
+      - OAuth
   /api/auth/refresh:
     post:
       consumes:
@@ -5605,26 +6170,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/RefreshTokenRequest'
+          $ref: '#/definitions/models.RefreshTokenRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AuthResponse'
+            $ref: '#/definitions/models.AuthResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       summary: Refresh access token
       tags:
       - Authentication
@@ -5639,26 +6204,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/SignInRequest'
+          $ref: '#/definitions/models.SignInRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AuthResponse'
+            $ref: '#/definitions/models.AuthResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       summary: Login user
       tags:
       - Authentication
@@ -5673,26 +6238,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/CreateUserRequest'
+          $ref: '#/definitions/models.CreateUserRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/AuthResponse'
+            $ref: '#/definitions/models.AuthResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       summary: Register a new user
       tags:
       - Authentication
@@ -5703,33 +6268,31 @@ paths:
       description: Start two-step registration without password. Sends OTP to email
         or phone.
       parameters:
-      - description: Registration data
+      - description: Registration data (email or phone)
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/InitPasswordlessRegistrationRequest'
+          $ref: '#/definitions/models.InitPasswordlessRegistrationRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       summary: Initiate passwordless registration
       tags:
       - Authentication
@@ -5745,39 +6308,157 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/CompletePasswordlessRegistrationRequest'
+          $ref: '#/definitions/models.CompletePasswordlessRegistrationRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/AuthResponse'
+            $ref: '#/definitions/models.AuthResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       summary: Complete passwordless registration
       tags:
       - Authentication
+  /api/auth/telegram/callback:
+    post:
+      consumes:
+      - application/json
+      description: Process Telegram widget authentication data and return tokens
+      parameters:
+      - description: Telegram widget auth data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.TelegramAuthData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.OAuthLoginResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Invalid authentication data
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Handle Telegram auth callback
+      tags:
+      - OAuth
   /api/auth/verify/email:
     post:
       consumes:
       - application/json
       description: Verify the user's email address using OTP code
       parameters:
-      - description: Email and Code
+      - description: Email and verification code
         in: body
         name: request
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/models.VerifyEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.VerifyEmailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Verify email address
+      tags:
+      - Authentication
+  /api/auth/verify/resend:
+    post:
+      consumes:
+      - application/json
+      description: Resend the email verification code to the user's email
+      parameters:
+      - description: Email address
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.ResendVerificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Resend verification email
+      tags:
+      - Authentication
+  /api/branding:
+    get:
+      description: Get public branding settings (logo, colors, company info)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PublicBrandingResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get branding settings
+      tags:
+      - Branding
+  /api/otp/send:
+    post:
+      consumes:
+      - application/json
+      description: Send an OTP code to email for verification, password reset, or
+        login
+      parameters:
+      - description: Send OTP request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.SendOTPRequest'
       produces:
       - application/json
       responses:
@@ -5789,48 +6470,52 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
+            $ref: '#/definitions/models.ErrorResponse'
+        "429":
+          description: Too Many Requests
           schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Verify email address
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Send OTP code
       tags:
-      - Authentication
-  /api/auth/verify/resend:
+      - OTP
+  /api/otp/verify:
     post:
       consumes:
       - application/json
-      description: Resend the email verification code to the user's email
+      description: Verify an OTP code for email verification, password reset, or login
       parameters:
-      - description: Email
+      - description: Verify OTP request
         in: body
         name: request
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/models.VerifyOTPRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.VerifyOTPResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
-        "429":
-          description: Too Many Requests
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Resend verification email
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Verify OTP code
       tags:
-      - Authentication
+      - OTP
   /api/sessions:
     get:
       description: Get a list of all active sessions for the authenticated user
@@ -5851,15 +6536,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SessionListResponse'
+            $ref: '#/definitions/models.SessionListResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all sessions for the current user
@@ -5869,26 +6554,26 @@ paths:
     delete:
       description: Terminate a specific session for the authenticated user
       parameters:
-      - description: Session ID
+      - description: Session ID (UUID)
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: No Content
+          description: Session revoked successfully
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Revoke a specific session
@@ -5899,349 +6584,68 @@ paths:
       description: Terminate all active sessions except the current one
       responses:
         "204":
-          description: No Content
+          description: All sessions revoked successfully
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Revoke all sessions except current
       tags:
       - Sessions
-  /auth/{provider}:
+  /api/system/maintenance:
     get:
-      description: Redirect to OAuth provider for authentication
-      parameters:
-      - description: OAuth provider
-        enum:
-        - google
-        - yandex
-        - github
-        - instagram
-        - telegram
-        in: path
-        name: provider
-        required: true
-        type: string
-      responses:
-        "302":
-          description: Found
-      summary: Initiate OAuth login
-      tags:
-      - OAuth
-  /auth/{provider}/callback:
-    get:
-      description: Process OAuth callback and create/login user
-      parameters:
-      - description: OAuth provider
-        in: path
-        name: provider
-        required: true
-        type: string
-      - description: Authorization code
-        in: query
-        name: code
-        required: true
-        type: string
-      - description: CSRF state
-        in: query
-        name: state
-        required: true
-        type: string
-      responses:
-        "302":
-          description: Found
-      summary: Handle OAuth callback
-      tags:
-      - OAuth
-  /auth/2fa/backup-codes/regenerate:
-    post:
-      consumes:
-      - application/json
-      description: Generate new backup codes
-      parameters:
-      - description: Password
-        in: body
-        name: request
-        required: true
-        schema:
-          additionalProperties:
-            type: string
-          type: object
+      description: Check if the system is in maintenance mode
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Regenerate backup codes
-      tags:
-      - 2FA
-  /auth/2fa/disable:
-    post:
-      consumes:
-      - application/json
-      description: Disable TOTP 2FA
-      parameters:
-      - description: Password and TOTP code
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/TwoFactorDisableRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Disable 2FA
-      tags:
-      - 2FA
-  /auth/2fa/setup:
-    post:
-      consumes:
-      - application/json
-      description: Generate TOTP secret and backup codes
-      parameters:
-      - description: Password for verification
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/TwoFactorSetupRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/TwoFactorSetupResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.MaintenanceModeResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Setup 2FA
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get maintenance mode status
       tags:
-      - 2FA
-  /auth/2fa/status:
-    get:
-      description: Get current 2FA status for the authenticated user
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/TwoFactorStatusResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get 2FA status
-      tags:
-      - 2FA
-  /auth/2fa/verify:
-    post:
-      consumes:
-      - application/json
-      description: Verify initial TOTP code and enable 2FA
-      parameters:
-      - description: TOTP code
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/TwoFactorVerifyRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Verify 2FA setup
-      tags:
-      - 2FA
-  /auth/passwordless/request:
-    post:
-      consumes:
-      - application/json
-      description: Send OTP code for passwordless login
-      parameters:
-      - description: Email
-        in: body
-        name: request
-        required: true
-        schema:
-          additionalProperties:
-            type: string
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Request passwordless login
-      tags:
-      - OTP
-  /auth/passwordless/verify:
-    post:
-      consumes:
-      - application/json
-      description: Verify OTP code and login
-      parameters:
-      - description: Email and Code
-        in: body
-        name: request
-        required: true
-        schema:
-          additionalProperties:
-            type: string
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/VerifyOTPResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Verify passwordless login
-      tags:
-      - OTP
-  /auth/providers:
-    get:
-      description: List all configured OAuth providers
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/OAuthProviderInfo'
-            type: array
-      summary: Get available OAuth providers
-      tags:
-      - OAuth
-  /auth/telegram/callback:
-    post:
-      consumes:
-      - application/json
-      description: Process Telegram widget authentication
-      parameters:
-      - description: Telegram auth data
-        in: body
-        name: data
-        required: true
-        schema:
-          additionalProperties: true
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/OAuthLoginResponse'
-      summary: Handle Telegram auth callback
-      tags:
-      - OAuth
-  /branding:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/PublicBrandingResponse'
-      summary: Get branding settings
-      tags:
-      - Branding
+      - System
   /health:
     get:
+      description: Check the health of the service and its dependencies (database,
+        redis)
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Service is healthy
           schema:
-            $ref: '#/definitions/HealthResponse'
+            $ref: '#/definitions/handler.HealthResponse'
         "503":
-          description: Service Unavailable
+          description: Service is unhealthy
           schema:
-            $ref: '#/definitions/HealthResponse'
+            $ref: '#/definitions/handler.HealthResponse'
       summary: Health check
       tags:
-      - health
+      - Health
   /live:
     get:
+      description: Check if the service is alive (used by Kubernetes liveness probes)
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Service is alive
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.MessageResponse'
       summary: Liveness check
       tags:
-      - health
+      - Health
   /oauth/authorize:
     get:
       consumes:
@@ -6477,7 +6881,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/DeviceAuthResponse'
+            $ref: '#/definitions/models.DeviceAuthResponse'
         "400":
           description: error and error_description
           schema:
@@ -6514,7 +6918,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/TokenResponse'
+            $ref: '#/definitions/models.TokenResponse'
         "400":
           description: authorization_pending, slow_down, or expired_token
           schema:
@@ -6555,7 +6959,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/IntrospectionResponse'
+            $ref: '#/definitions/models.IntrospectionResponse'
         "401":
           description: invalid_client
           schema:
@@ -6657,7 +7061,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/TokenResponse'
+            $ref: '#/definitions/models.TokenResponse'
         "400":
           description: error and error_description
           schema:
@@ -6682,7 +7086,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/UserInfoResponse'
+            $ref: '#/definitions/models.UserInfoResponse'
         "401":
           description: invalid_token
           schema:
@@ -6694,84 +7098,23 @@ paths:
       summary: OIDC UserInfo
       tags:
       - OAuth Provider
-  /otp/send:
-    post:
-      consumes:
-      - application/json
-      description: Send an OTP code to email for verification, password reset, or
-        login
-      parameters:
-      - description: Send OTP request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/SendOTPRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Send OTP code
-      tags:
-      - OTP
-  /otp/verify:
-    post:
-      consumes:
-      - application/json
-      description: Verify an OTP code for email verification, password reset, or login
-      parameters:
-      - description: Verify OTP request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/VerifyOTPRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/VerifyOTPResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Verify OTP code
-      tags:
-      - OTP
   /ready:
     get:
+      description: Check if the service is ready to handle incoming requests
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Service is ready
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.MessageResponse'
         "503":
-          description: Service Unavailable
+          description: Service is not ready
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.MessageResponse'
       summary: Readiness check
       tags:
-      - health
+      - Health
   /sms/send:
     post:
       consumes:
@@ -6783,22 +7126,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/SendSMSRequest'
+          $ref: '#/definitions/models.SendSMSRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendSMSResponse'
+            $ref: '#/definitions/models.SendSMSResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "429":
           description: Too Many Requests
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       summary: Send SMS OTP code
       tags:
       - SMS
@@ -6811,15 +7154,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SMSStatsResponse'
+            $ref: '#/definitions/models.SMSStatsResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get SMS statistics
@@ -6837,34 +7180,33 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/VerifySMSOTPRequest'
+          $ref: '#/definitions/models.VerifySMSOTPRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/VerifySMSOTPResponse'
+            $ref: '#/definitions/models.VerifySMSOTPResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/models.ErrorResponse'
       summary: Verify SMS OTP code
       tags:
       - SMS
-  /system/maintenance:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/MaintenanceModeResponse'
-      summary: Get maintenance mode status
-      tags:
-      - System
 schemes:
 - http
 - https
+securityDefinitions:
+  ApiKeyAuth:
+    description: 'API Key for service-to-service authentication. Format: "agw_{key}"'
+    in: header
+    name: X-API-Key
+    type: apiKey
+  BearerAuth:
+    description: 'JWT Bearer token for user authentication. Format: "Bearer {access_token}"'
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

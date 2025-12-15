@@ -1,6 +1,24 @@
 // @title Auth Gateway API
 // @version 1.0
-// @description Centralized authentication and authorization system for microservices
+// @description Centralized authentication and authorization system for microservices ecosystem.
+// @description
+// @description ## Overview
+// @description Auth Gateway provides a complete authentication and authorization solution including:
+// @description - User registration and authentication (email/password, OAuth, passwordless)
+// @description - Two-factor authentication (TOTP)
+// @description - API key management for service-to-service communication
+// @description - Role-based access control (RBAC)
+// @description - Session management
+// @description - Webhooks for event notifications
+// @description
+// @description ## Authentication
+// @description Most endpoints require authentication via JWT Bearer token or API key.
+// @description
+// @description ### JWT Authentication
+// @description Include the access token in the Authorization header: `Authorization: Bearer {token}`
+// @description
+// @description ### API Key Authentication
+// @description Include the API key in the X-API-Key header: `X-API-Key: agw_{key}`
 
 // @contact.name API Support
 // @contact.email maksbalashov@gmail.com
@@ -9,25 +27,15 @@
 // @BasePath /
 // @schemes http https
 
-// Consumes:
-//   - application/json
-//
-// Produces:
-//   - application/json
-//
-// SecurityDefinitions:
-//
-//	BearerAuth:
-//	  type: apiKey
-//	  name: Authorization
-//	  in: header
-//	  description: JWT Bearer token. Format: "Bearer {token}"
-//	ApiKeyAuth:
-//	  type: apiKey
-//	  name: X-API-Key
-//	  in: header
-//	  description: API Key for service-to-service authentication. Format: "agw_{key}"
-//
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description JWT Bearer token for user authentication. Format: "Bearer {access_token}"
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name X-API-Key
+// @description API Key for service-to-service authentication. Format: "agw_{key}"
 
 package cmd
 
@@ -185,22 +193,24 @@ func runServer() {
 	}
 	auditService := service.NewAuditService(auditRepo, geoService)
 
-	// Initialize session creation service (universal session management)
-	sessionCreationService := service.NewSessionCreationService(sessionRepo, log)
+	// Initialize blacklist service (unified Redis + PostgreSQL blacklist management)
+	blacklistService := service.NewBlacklistService(redis, tokenRepo, jwtService, log, auditService)
+
+	// Initialize session service (handles all session management including creation, refresh, revocation)
+	sessionService := service.NewSessionService(sessionRepo, blacklistService, log)
 
 	// Initialize services
-	authService := service.NewAuthService(userRepo, tokenRepo, rbacRepo, auditService, jwtService, redis, sessionCreationService, cfg.Security.BcryptCost)
+	authService := service.NewAuthService(userRepo, tokenRepo, rbacRepo, auditService, jwtService, blacklistService, redis, sessionService, cfg.Security.BcryptCost)
 	userService := service.NewUserService(userRepo, auditService)
 	apiKeyService := service.NewAPIKeyService(apiKeyRepo, userRepo, auditService)
 	emailService := service.NewEmailService(&cfg.SMTP)
 	otpService := service.NewOTPService(otpRepo, userRepo, emailService, auditService)
-	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, rbacRepo, jwtService, sessionCreationService, &http.Client{Timeout: 10 * time.Second})
+	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, rbacRepo, jwtService, sessionService, &http.Client{Timeout: 10 * time.Second})
 	twoFAService := service.NewTwoFactorService(userRepo, backupCodeRepo, "Auth Gateway")
 	adminService := service.NewAdminService(userRepo, apiKeyRepo, auditRepo, oauthRepo, rbacRepo, cfg.Security.BcryptCost)
 
 	// Advanced feature services
 	rbacService := service.NewRBACService(rbacRepo, auditService)
-	sessionService := service.NewSessionService(sessionRepo)
 	ipFilterService := service.NewIPFilterService(ipFilterRepo)
 	webhookService := service.NewWebhookService(webhookRepo, auditService)
 	templateService := service.NewTemplateService(templateRepo, auditService)
@@ -216,7 +226,7 @@ func runServer() {
 			oauthProviderRepo,
 			userRepo,
 			auditRepo,
-			sessionCreationService,
+			sessionService,
 			oidcJWTService,
 			keyManager,
 			log,
@@ -233,7 +243,7 @@ func runServer() {
 	oauthHandler := handler.NewOAuthHandler(oauthService, log)
 	twoFAHandler := handler.NewTwoFactorHandler(twoFAService, userService, log)
 	adminHandler := handler.NewAdminHandler(adminService, log)
-	advancedAdminHandler := handler.NewAdvancedAdminHandler(rbacService, sessionService, ipFilterService, brandingRepo, systemRepo, geoRepo)
+	advancedAdminHandler := handler.NewAdvancedAdminHandler(rbacService, sessionService, ipFilterService, brandingRepo, systemRepo, geoRepo, log)
 	webhookHandler := handler.NewWebhookHandler(webhookService, log)
 	templateHandler := handler.NewTemplateHandler(templateService, log)
 
@@ -249,8 +259,12 @@ func runServer() {
 		oauthAdminHandler = handler.NewOAuthAdminHandler(minimalOAuthProviderService, log)
 	}
 
+	// Initialize Login handler for OAuth flows
+	secureCookie := cfg.Server.Env == "production"
+	loginHandler := handler.NewLoginHandler(authService, otpService, jwtService, log, secureCookie)
+
 	// Initialize middleware
-	authMiddleware := middleware.NewAuthMiddleware(jwtService, redis, tokenRepo)
+	authMiddleware := middleware.NewAuthMiddleware(jwtService, blacklistService)
 	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(apiKeyService, rbacRepo)
 	rateLimitMiddleware := middleware.NewRateLimitMiddleware(redis, &cfg.RateLimit)
 
@@ -307,6 +321,18 @@ func runServer() {
 	// Public system status endpoint
 	router.GET("/system/maintenance", advancedAdminHandler.GetMaintenanceMode)
 
+	// Login endpoints for OAuth flows (with session middleware)
+	// These endpoints use cookie-based session auth, not Bearer tokens
+	loginGroup := router.Group("")
+	loginGroup.Use(loginHandler.SessionMiddleware())
+	{
+		loginGroup.GET("/login", loginHandler.LoginPage)
+		loginGroup.POST("/login", loginHandler.LoginSubmit)
+		loginGroup.GET("/login/otp", loginHandler.OTPVerifyPage)
+		loginGroup.POST("/login/otp", loginHandler.OTPVerifySubmit)
+		loginGroup.GET("/logout", loginHandler.Logout)
+	}
+
 	// OIDC Discovery endpoints (public, no auth required)
 	if oauthProviderHandler != nil {
 		router.GET("/.well-known/openid-configuration", oauthProviderHandler.Discovery)
@@ -335,12 +361,12 @@ func runServer() {
 			oauth.POST("/device/token", oauthProviderHandler.DeviceToken)
 			oauth.GET("/device", oauthProviderHandler.DeviceVerification)
 
-			// Device approval requires authentication
-			oauth.POST("/device/approve", authMiddleware.Authenticate(), oauthProviderHandler.DeviceApprove)
+			// Device approval requires authentication (supports both Bearer token and session cookie)
+			oauth.POST("/device/approve", loginHandler.SessionMiddleware(), oauthProviderHandler.DeviceApprove)
 
-			// Consent endpoints require authentication
-			oauth.GET("/consent", authMiddleware.Authenticate(), oauthProviderHandler.ConsentPage)
-			oauth.POST("/consent", authMiddleware.Authenticate(), oauthProviderHandler.ConsentSubmit)
+			// Consent endpoints require authentication (supports both Bearer token and session cookie)
+			oauth.GET("/consent", loginHandler.SessionMiddleware(), oauthProviderHandler.ConsentPage)
+			oauth.POST("/consent", loginHandler.SessionMiddleware(), oauthProviderHandler.ConsentSubmit)
 		}
 	}
 
@@ -470,6 +496,7 @@ func runServer() {
 			// Session Management (Admin view)
 			adminGroup.GET("/sessions", advancedAdminHandler.ListAllSessions)
 			adminGroup.GET("/sessions/stats", advancedAdminHandler.GetSessionStats)
+			adminGroup.DELETE("/sessions/:id", advancedAdminHandler.AdminRevokeSession)
 
 			// IP Filter Management
 			ipFilterGroup := adminGroup.Group("/ip-filters")

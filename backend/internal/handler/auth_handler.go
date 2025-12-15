@@ -161,7 +161,8 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 // @Description Invalidate the current access token
 // @Tags Authentication
 // @Security BearerAuth
-// @Success 200 {object} map[string]string
+// @Produce json
+// @Success 200 {object} models.MessageResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/logout [post]
@@ -279,7 +280,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body models.ChangePasswordRequest true "Password change data"
-// @Success 200 {object} map[string]string
+// @Success 200 {object} models.MessageResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -320,10 +321,11 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body map[string]string true "Email"
-// @Success 200 {object} map[string]string
+// @Param request body models.ResendVerificationRequest true "Email address"
+// @Success 200 {object} models.MessageResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 429 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/verify/resend [post]
 func (h *AuthHandler) ResendVerificationEmail(c *gin.Context) {
 	var req struct {
@@ -367,10 +369,11 @@ func (h *AuthHandler) ResendVerificationEmail(c *gin.Context) {
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body map[string]string true "Email and Code"
-// @Success 200 {object} map[string]interface{}
+// @Param request body models.VerifyEmailRequest true "Email and verification code"
+// @Success 200 {object} models.VerifyEmailResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/verify/email [post]
 func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 	var req struct {
@@ -425,11 +428,11 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body map[string]string true "Email"
-// @Success 200 {object} map[string]string
+// @Param request body models.ForgotPasswordRequest true "Email address"
+// @Success 200 {object} models.MessageResponse
 // @Failure 400 {object} models.ErrorResponse
-// @Failure 404 {object} models.ErrorResponse
 // @Failure 429 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/password/reset/request [post]
 func (h *AuthHandler) RequestPasswordReset(c *gin.Context) {
 	var req struct {
@@ -485,10 +488,12 @@ func (h *AuthHandler) RequestPasswordReset(c *gin.Context) {
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body models.ResetPasswordRequest true "Password reset data"
-// @Success 200 {object} map[string]string
+// @Param request body models.ResetPasswordRequest true "Password reset data with OTP code"
+// @Success 200 {object} models.MessageResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/password/reset/complete [post]
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	var req models.ResetPasswordRequest
@@ -560,14 +565,15 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 
 // Verify2FA verifies 2FA code during login
 // @Summary Verify 2FA during login
-// @Description Complete two-factor authentication during login
+// @Description Complete two-factor authentication during login using TOTP code
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body models.TwoFactorLoginVerifyRequest true "2FA verification"
+// @Param request body models.TwoFactorLoginVerifyRequest true "2FA token and TOTP code"
 // @Success 200 {object} models.AuthResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/2fa/login/verify [post]
 func (h *AuthHandler) Verify2FA(c *gin.Context) {
 	var req models.TwoFactorLoginVerifyRequest
@@ -601,8 +607,8 @@ func (h *AuthHandler) Verify2FA(c *gin.Context) {
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body models.InitPasswordlessRegistrationRequest true "Registration data"
-// @Success 200 {object} map[string]string
+// @Param request body models.InitPasswordlessRegistrationRequest true "Registration data (email or phone)"
+// @Success 200 {object} models.MessageResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 409 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse

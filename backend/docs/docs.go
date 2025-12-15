@@ -32,7 +32,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/JWKSDocument"
+                            "$ref": "#/definitions/models.JWKSDocument"
                         }
                     }
                 }
@@ -52,7 +52,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/OIDCDiscoveryDocument"
+                            "$ref": "#/definitions/models.OIDCDiscoveryDocument"
                         }
                     }
                 }
@@ -79,20 +79,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/SMSSettings"
+                                "$ref": "#/definitions/models.SMSSettings"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -121,7 +121,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateSMSSettingsRequest"
+                            "$ref": "#/definitions/models.CreateSMSSettingsRequest"
                         }
                     }
                 ],
@@ -129,25 +129,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/SMSSettings"
+                            "$ref": "#/definitions/models.SMSSettings"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -172,25 +172,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SMSSettings"
+                            "$ref": "#/definitions/models.SMSSettings"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -224,25 +224,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SMSSettings"
+                            "$ref": "#/definitions/models.SMSSettings"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -278,7 +278,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateSMSSettingsRequest"
+                            "$ref": "#/definitions/models.UpdateSMSSettingsRequest"
                         }
                     }
                 ],
@@ -286,31 +286,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SMSSettings"
+                            "$ref": "#/definitions/models.SMSSettings"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -342,19 +342,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -388,25 +388,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GeoDistributionResponse"
+                            "$ref": "#/definitions/models.GeoDistributionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -424,7 +424,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin - Management"
+                    "Admin - API Keys"
                 ],
                 "summary": "List all API keys",
                 "parameters": [
@@ -449,26 +449,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/AdminAPIKeyResponse"
+                                "$ref": "#/definitions/models.AdminAPIKeyResponse"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -482,14 +482,17 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Revoke an API key (admin only)",
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
-                    "Admin - Management"
+                    "Admin - API Keys"
                 ],
                 "summary": "Revoke API key",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "API Key ID",
+                        "description": "API Key ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -499,40 +502,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -550,7 +550,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin - Management"
+                    "Admin - Audit Logs"
                 ],
                 "summary": "List audit logs",
                 "parameters": [
@@ -570,7 +570,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Filter by user ID",
+                        "description": "Filter by user ID (UUID)",
                         "name": "user_id",
                         "in": "query"
                     }
@@ -581,32 +581,32 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/AdminAuditLogResponse"
+                                "$ref": "#/definitions/models.AdminAuditLogResponse"
                             }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -637,7 +637,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateBrandingRequest"
+                            "$ref": "#/definitions/models.UpdateBrandingRequest"
                         }
                     }
                 ],
@@ -645,31 +645,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/BrandingSettings"
+                            "$ref": "#/definitions/models.BrandingSettings"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -716,25 +716,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/IPFilterListResponse"
+                            "$ref": "#/definitions/models.IPFilterListResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -763,7 +763,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateIPFilterRequest"
+                            "$ref": "#/definitions/models.CreateIPFilterRequest"
                         }
                     }
                 ],
@@ -771,25 +771,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/IPFilter"
+                            "$ref": "#/definitions/models.IPFilter"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -810,7 +810,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter ID",
+                        "description": "Filter ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -818,30 +818,30 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": "IP filter deleted successfully"
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -895,19 +895,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -936,7 +936,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateOAuthClientRequest"
+                            "$ref": "#/definitions/models.CreateOAuthClientRequest"
                         }
                     }
                 ],
@@ -944,37 +944,37 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CreateOAuthClientResponse"
+                            "$ref": "#/definitions/models.CreateOAuthClientResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1008,37 +1008,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/OAuthClient"
+                            "$ref": "#/definitions/models.OAuthClient"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1074,7 +1074,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateOAuthClientRequest"
+                            "$ref": "#/definitions/models.UpdateOAuthClientRequest"
                         }
                     }
                 ],
@@ -1082,37 +1082,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/OAuthClient"
+                            "$ref": "#/definitions/models.OAuthClient"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1144,31 +1144,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1209,31 +1209,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1274,31 +1274,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1341,31 +1341,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1397,19 +1397,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1449,37 +1449,37 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/OAuthScope"
+                            "$ref": "#/definitions/models.OAuthScope"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1513,31 +1513,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1562,25 +1562,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PermissionMatrix"
+                            "$ref": "#/definitions/models.PermissionMatrix"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1607,26 +1607,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/Permission"
+                                "$ref": "#/definitions/models.Permission"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1655,7 +1655,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreatePermissionRequest"
+                            "$ref": "#/definitions/models.CreatePermissionRequest"
                         }
                     }
                 ],
@@ -1663,25 +1663,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/Permission"
+                            "$ref": "#/definitions/models.Permission"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1715,25 +1715,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1760,26 +1760,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/Role"
+                                "$ref": "#/definitions/models.Role"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1808,7 +1808,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateRoleRequest"
+                            "$ref": "#/definitions/models.CreateRoleRequest"
                         }
                     }
                 ],
@@ -1816,25 +1816,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/Role"
+                            "$ref": "#/definitions/models.Role"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1858,7 +1858,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role ID",
+                        "description": "Role ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1868,31 +1868,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/Role"
+                            "$ref": "#/definitions/models.Role"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1917,7 +1917,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role ID",
+                        "description": "Role ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1928,7 +1928,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateRoleRequest"
+                            "$ref": "#/definitions/models.UpdateRoleRequest"
                         }
                     }
                 ],
@@ -1936,31 +1936,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/Role"
+                            "$ref": "#/definitions/models.Role"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1979,7 +1979,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role ID",
+                        "description": "Role ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1987,30 +1987,30 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": "Role deleted successfully"
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2053,26 +2053,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/ActiveSessionResponse"
+                                "$ref": "#/definitions/models.ActiveSessionResponse"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2097,25 +2097,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SessionStats"
+                            "$ref": "#/definitions/models.SessionStats"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2128,37 +2128,37 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get system-wide statistics (admin only)",
+                "description": "Get system-wide statistics including user counts, sessions, and API keys (admin only)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Admin - Management"
+                    "Admin - Dashboard"
                 ],
                 "summary": "Get system statistics",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AdminStatsResponse"
+                            "$ref": "#/definitions/models.AdminStatsResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2183,19 +2183,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SystemHealthResponse"
+                            "$ref": "#/definitions/models.SystemHealthResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2226,7 +2226,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/MaintenanceModeRequest"
+                            "$ref": "#/definitions/models.MaintenanceModeRequest"
                         }
                     }
                 ],
@@ -2234,31 +2234,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MaintenanceModeResponse"
+                            "$ref": "#/definitions/models.MaintenanceModeResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2271,7 +2271,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a list of all email templates",
+                "description": "Get a list of all email templates (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2279,40 +2279,32 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Email Templates"
+                    "Admin - Email Templates"
                 ],
                 "summary": "List all email templates",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "templates": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/definitions/EmailTemplate"
-                                    }
-                                }
-                            }
+                            "$ref": "#/definitions/models.EmailTemplateListResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2323,7 +2315,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new email template for customized emails",
+                "description": "Create a new email template for customized emails (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2331,7 +2323,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Email Templates"
+                    "Admin - Email Templates"
                 ],
                 "summary": "Create a new email template",
                 "parameters": [
@@ -2341,7 +2333,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateEmailTemplateRequest"
+                            "$ref": "#/definitions/models.CreateEmailTemplateRequest"
                         }
                     }
                 ],
@@ -2349,31 +2341,31 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/EmailTemplate"
+                            "$ref": "#/definitions/models.EmailTemplate"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2386,7 +2378,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Render a template with sample data for preview",
+                "description": "Render a template with sample data for preview (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2394,7 +2386,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Email Templates"
+                    "Admin - Email Templates"
                 ],
                 "summary": "Preview an email template",
                 "parameters": [
@@ -2404,7 +2396,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/PreviewEmailTemplateRequest"
+                            "$ref": "#/definitions/models.PreviewEmailTemplateRequest"
                         }
                     }
                 ],
@@ -2412,25 +2404,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PreviewEmailTemplateResponse"
+                            "$ref": "#/definitions/models.PreviewEmailTemplateResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2443,7 +2435,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a list of all available email template types",
+                "description": "Get a list of all available email template types (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2451,28 +2443,26 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Email Templates"
+                    "Admin - Email Templates"
                 ],
                 "summary": "Get available template types",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "types": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "string"
-                                    }
-                                }
-                            }
+                            "$ref": "#/definitions/models.TemplateTypesResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2485,7 +2475,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the list of default variables available for a specific template type",
+                "description": "Get the list of default variables available for a specific template type (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2493,13 +2483,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Email Templates"
+                    "Admin - Email Templates"
                 ],
                 "summary": "Get default variables for a template type",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Template type",
+                        "description": "Template type (e.g., welcome, password_reset, verification)",
                         "name": "type",
                         "in": "path",
                         "required": true
@@ -2509,21 +2499,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "variables": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "string"
-                                    }
-                                }
-                            }
+                            "$ref": "#/definitions/models.TemplateVariablesResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2536,7 +2524,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a specific email template by its ID",
+                "description": "Get a specific email template by its ID (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2544,13 +2532,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Email Templates"
+                    "Admin - Email Templates"
                 ],
                 "summary": "Get email template by ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Template ID",
+                        "description": "Template ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2560,25 +2548,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/EmailTemplate"
+                            "$ref": "#/definitions/models.EmailTemplate"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2589,7 +2583,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update an existing email template",
+                "description": "Update an existing email template (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2597,13 +2591,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Email Templates"
+                    "Admin - Email Templates"
                 ],
                 "summary": "Update an email template",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Template ID",
+                        "description": "Template ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2614,7 +2608,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateEmailTemplateRequest"
+                            "$ref": "#/definitions/models.UpdateEmailTemplateRequest"
                         }
                     }
                 ],
@@ -2622,31 +2616,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2657,7 +2651,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete an email template by ID",
+                "description": "Delete an email template by ID (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2665,13 +2659,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Email Templates"
+                    "Admin - Email Templates"
                 ],
                 "summary": "Delete an email template",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Template ID",
+                        "description": "Template ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2681,25 +2675,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2717,7 +2717,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin - Management"
+                    "Admin - Users"
                 ],
                 "summary": "List all users",
                 "parameters": [
@@ -2740,25 +2740,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AdminUserListResponse"
+                            "$ref": "#/definitions/models.AdminUserListResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2777,7 +2777,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin - Management"
+                    "Admin - Users"
                 ],
                 "summary": "Create user",
                 "parameters": [
@@ -2787,7 +2787,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AdminCreateUserRequest"
+                            "$ref": "#/definitions/models.AdminCreateUserRequest"
                         }
                     }
                 ],
@@ -2795,37 +2795,37 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/AdminUserResponse"
+                            "$ref": "#/definitions/models.AdminUserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2843,13 +2843,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin - Management"
+                    "Admin - Users"
                 ],
                 "summary": "Get user details",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "User ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2859,37 +2859,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AdminUserResponse"
+                            "$ref": "#/definitions/models.AdminUserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2908,13 +2908,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin - Management"
+                    "Admin - Users"
                 ],
                 "summary": "Update user",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "User ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2925,7 +2925,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AdminUpdateUserRequest"
+                            "$ref": "#/definitions/models.AdminUpdateUserRequest"
                         }
                     }
                 ],
@@ -2933,37 +2933,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AdminUserResponse"
+                            "$ref": "#/definitions/models.AdminUserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -2975,14 +2975,17 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Soft delete a user (admin only)",
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
-                    "Admin - Management"
+                    "Admin - Users"
                 ],
                 "summary": "Delete user",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "User ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2992,40 +2995,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3046,13 +3046,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin - Management"
+                    "Admin - Users"
                 ],
                 "summary": "Assign role to user",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "User ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3063,7 +3063,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AssignRoleRequest"
+                            "$ref": "#/definitions/models.AssignRoleRequest"
                         }
                     }
                 ],
@@ -3071,37 +3071,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AdminUserResponse"
+                            "$ref": "#/definitions/models.AdminUserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3115,21 +3115,24 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Remove a role from a user (admin only)",
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
-                    "Admin - Management"
+                    "Admin - Users"
                 ],
                 "summary": "Remove role from user",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "User ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Role ID",
+                        "description": "Role ID (UUID)",
                         "name": "roleId",
                         "in": "path",
                         "required": true
@@ -3139,37 +3142,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AdminUserResponse"
+                            "$ref": "#/definitions/models.AdminUserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3182,7 +3185,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a paginated list of all webhooks",
+                "description": "Get a paginated list of all webhooks (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3190,7 +3193,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Webhooks"
+                    "Admin - Webhooks"
                 ],
                 "summary": "List all webhooks",
                 "parameters": [
@@ -3213,25 +3216,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/WebhookListResponse"
+                            "$ref": "#/definitions/models.WebhookListResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3242,7 +3245,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new webhook for receiving event notifications",
+                "description": "Create a new webhook for receiving event notifications (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3250,7 +3253,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Webhooks"
+                    "Admin - Webhooks"
                 ],
                 "summary": "Create a new webhook",
                 "parameters": [
@@ -3260,7 +3263,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateWebhookRequest"
+                            "$ref": "#/definitions/models.CreateWebhookRequest"
                         }
                     }
                 ],
@@ -3268,39 +3271,31 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "secret_key": {
-                                    "type": "string"
-                                },
-                                "webhook": {
-                                    "$ref": "#/definitions/Webhook"
-                                }
-                            }
+                            "$ref": "#/definitions/models.CreateWebhookResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3313,7 +3308,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a list of all available webhook event types",
+                "description": "Get a list of all available webhook event types (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3321,28 +3316,26 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Webhooks"
+                    "Admin - Webhooks"
                 ],
                 "summary": "Get available webhook events",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "events": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "string"
-                                    }
-                                }
-                            }
+                            "$ref": "#/definitions/models.WebhookEventsResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3355,7 +3348,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a specific webhook by its ID",
+                "description": "Get a specific webhook by its ID (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3363,13 +3356,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Webhooks"
+                    "Admin - Webhooks"
                 ],
                 "summary": "Get webhook by ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Webhook ID",
+                        "description": "Webhook ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3379,25 +3372,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/Webhook"
+                            "$ref": "#/definitions/models.Webhook"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3408,7 +3407,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update an existing webhook configuration",
+                "description": "Update an existing webhook configuration (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3416,13 +3415,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Webhooks"
+                    "Admin - Webhooks"
                 ],
                 "summary": "Update a webhook",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Webhook ID",
+                        "description": "Webhook ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3433,7 +3432,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateWebhookRequest"
+                            "$ref": "#/definitions/models.UpdateWebhookRequest"
                         }
                     }
                 ],
@@ -3441,31 +3440,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3476,7 +3475,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete a webhook by ID",
+                "description": "Delete a webhook by ID (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3484,13 +3483,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Webhooks"
+                    "Admin - Webhooks"
                 ],
                 "summary": "Delete a webhook",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Webhook ID",
+                        "description": "Webhook ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3500,25 +3499,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3531,7 +3536,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a paginated list of webhook delivery attempts",
+                "description": "Get a paginated list of webhook delivery attempts (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3539,13 +3544,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Webhooks"
+                    "Admin - Webhooks"
                 ],
                 "summary": "List webhook deliveries",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Webhook ID",
+                        "description": "Webhook ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3569,25 +3574,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/WebhookDeliveryListResponse"
+                            "$ref": "#/definitions/models.WebhookDeliveryListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3600,7 +3611,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Send a test event to a webhook",
+                "description": "Send a test event to a webhook (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3608,13 +3619,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Webhooks"
+                    "Admin - Webhooks"
                 ],
                 "summary": "Test a webhook",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Webhook ID",
+                        "description": "Webhook ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3625,7 +3636,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TestWebhookRequest"
+                            "$ref": "#/definitions/models.TestWebhookRequest"
                         }
                     }
                 ],
@@ -3633,31 +3644,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3682,19 +3693,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ListAPIKeysResponse"
+                            "$ref": "#/definitions/models.ListAPIKeysResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3723,7 +3734,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateAPIKeyRequest"
+                            "$ref": "#/definitions/models.CreateAPIKeyRequest"
                         }
                     }
                 ],
@@ -3731,25 +3742,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CreateAPIKeyResponse"
+                            "$ref": "#/definitions/models.CreateAPIKeyResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3762,7 +3773,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get details of a specific API key",
+                "description": "Get details of a specific API key owned by the authenticated user",
                 "produces": [
                     "application/json"
                 ],
@@ -3773,7 +3784,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "API Key ID",
+                        "description": "API Key ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3783,31 +3794,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIKey"
+                            "$ref": "#/definitions/models.APIKey"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3832,7 +3843,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "API Key ID",
+                        "description": "API Key ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3843,7 +3854,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateAPIKeyRequest"
+                            "$ref": "#/definitions/models.UpdateAPIKeyRequest"
                         }
                     }
                 ],
@@ -3851,31 +3862,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIKey"
+                            "$ref": "#/definitions/models.APIKey"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3887,6 +3898,9 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Permanently delete an API key",
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "API Keys"
                 ],
@@ -3894,7 +3908,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "API Key ID",
+                        "description": "API Key ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3904,34 +3918,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3945,6 +3956,9 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Revoke an API key to prevent further use",
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "API Keys"
                 ],
@@ -3952,7 +3966,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "API Key ID",
+                        "description": "API Key ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3962,34 +3976,145 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/2fa/backup-codes/regenerate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generate new backup codes for 2FA recovery (invalidates previous codes)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "2FA"
+                ],
+                "summary": "Regenerate backup codes",
+                "parameters": [
+                    {
+                        "description": "Password for verification",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RegenerateBackupCodesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.BackupCodesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/2fa/disable": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Disable TOTP two-factor authentication for the user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "2FA"
+                ],
+                "summary": "Disable 2FA",
+                "parameters": [
+                    {
+                        "description": "Password and TOTP code for verification",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TwoFactorDisableRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -3997,7 +4122,7 @@ const docTemplate = `{
         },
         "/api/auth/2fa/login/verify": {
             "post": {
-                "description": "Complete two-factor authentication during login",
+                "description": "Complete two-factor authentication during login using TOTP code",
                 "consumes": [
                     "application/json"
                 ],
@@ -4010,12 +4135,12 @@ const docTemplate = `{
                 "summary": "Verify 2FA during login",
                 "parameters": [
                     {
-                        "description": "2FA verification",
+                        "description": "2FA token and TOTP code",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TwoFactorLoginVerifyRequest"
+                            "$ref": "#/definitions/models.TwoFactorLoginVerifyRequest"
                         }
                     }
                 ],
@@ -4023,19 +4148,176 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AuthResponse"
+                            "$ref": "#/definitions/models.AuthResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/2fa/setup": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generate TOTP secret and backup codes for two-factor authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "2FA"
+                ],
+                "summary": "Setup 2FA",
+                "parameters": [
+                    {
+                        "description": "Password for verification",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TwoFactorSetupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TwoFactorSetupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/2fa/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get current 2FA status for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "2FA"
+                ],
+                "summary": "Get 2FA status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TwoFactorStatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/2fa/verify": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Verify initial TOTP code and enable 2FA for the user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "2FA"
+                ],
+                "summary": "Verify 2FA setup",
+                "parameters": [
+                    {
+                        "description": "TOTP code",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TwoFactorVerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4066,7 +4348,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ChangePasswordRequest"
+                            "$ref": "#/definitions/models.ChangePasswordRequest"
                         }
                     }
                 ],
@@ -4074,28 +4356,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4109,6 +4388,9 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Invalidate the current access token",
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Authentication"
                 ],
@@ -4117,22 +4399,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4153,12 +4432,12 @@ const docTemplate = `{
                 "summary": "Reset password with OTP",
                 "parameters": [
                     {
-                        "description": "Password reset data",
+                        "description": "Password reset data with OTP code",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ResetPasswordRequest"
+                            "$ref": "#/definitions/models.ResetPasswordRequest"
                         }
                     }
                 ],
@@ -4166,22 +4445,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4202,15 +4490,64 @@ const docTemplate = `{
                 "summary": "Request password reset",
                 "parameters": [
                     {
-                        "description": "Email",
+                        "description": "Email address",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.ForgotPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/passwordless/request": {
+            "post": {
+                "description": "Send OTP code for passwordless login",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Request passwordless login",
+                "parameters": [
+                    {
+                        "description": "Email for passwordless login",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PasswordlessLoginRequest"
                         }
                     }
                 ],
@@ -4219,27 +4556,71 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/passwordless/verify": {
+            "post": {
+                "description": "Verify OTP code and complete passwordless login, returns access and refresh tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Verify passwordless login",
+                "parameters": [
+                    {
+                        "description": "Email and OTP code",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PasswordlessLoginVerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AuthResponse"
                         }
                     },
-                    "429": {
-                        "description": "Too Many Requests",
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4264,25 +4645,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/models.User"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4311,7 +4692,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateUserRequest"
+                            "$ref": "#/definitions/models.UpdateUserRequest"
                         }
                     }
                 ],
@@ -4319,25 +4700,48 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/models.User"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/providers": {
+            "get": {
+                "description": "List all configured OAuth providers with their enabled status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OAuth"
+                ],
+                "summary": "Get available OAuth providers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.OAuthProviderInfo"
+                            }
                         }
                     }
                 }
@@ -4363,7 +4767,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/RefreshTokenRequest"
+                            "$ref": "#/definitions/models.RefreshTokenRequest"
                         }
                     }
                 ],
@@ -4371,25 +4775,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AuthResponse"
+                            "$ref": "#/definitions/models.AuthResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4415,7 +4819,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SignInRequest"
+                            "$ref": "#/definitions/models.SignInRequest"
                         }
                     }
                 ],
@@ -4423,25 +4827,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AuthResponse"
+                            "$ref": "#/definitions/models.AuthResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4467,7 +4871,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateUserRequest"
+                            "$ref": "#/definitions/models.CreateUserRequest"
                         }
                     }
                 ],
@@ -4475,25 +4879,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/AuthResponse"
+                            "$ref": "#/definitions/models.AuthResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4514,12 +4918,12 @@ const docTemplate = `{
                 "summary": "Initiate passwordless registration",
                 "parameters": [
                     {
-                        "description": "Registration data",
+                        "description": "Registration data (email or phone)",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/InitPasswordlessRegistrationRequest"
+                            "$ref": "#/definitions/models.InitPasswordlessRegistrationRequest"
                         }
                     }
                 ],
@@ -4527,28 +4931,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4574,7 +4975,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CompletePasswordlessRegistrationRequest"
+                            "$ref": "#/definitions/models.CompletePasswordlessRegistrationRequest"
                         }
                     }
                 ],
@@ -4582,19 +4983,71 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/AuthResponse"
+                            "$ref": "#/definitions/models.AuthResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/telegram/callback": {
+            "post": {
+                "description": "Process Telegram widget authentication data and return tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OAuth"
+                ],
+                "summary": "Handle Telegram auth callback",
+                "parameters": [
+                    {
+                        "description": "Telegram widget auth data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TelegramAuthData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.OAuthLoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid authentication data",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4615,15 +5068,12 @@ const docTemplate = `{
                 "summary": "Verify email address",
                 "parameters": [
                     {
-                        "description": "Email and Code",
+                        "description": "Email and verification code",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.VerifyEmailRequest"
                         }
                     }
                 ],
@@ -4631,20 +5081,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/models.VerifyEmailResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4665,15 +5120,211 @@ const docTemplate = `{
                 "summary": "Resend verification email",
                 "parameters": [
                     {
-                        "description": "Email",
+                        "description": "Email address",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.ResendVerificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/{provider}": {
+            "get": {
+                "description": "Redirect to OAuth provider for authentication (Google, Yandex, GitHub, Instagram, Telegram)",
+                "tags": [
+                    "OAuth"
+                ],
+                "summary": "Initiate OAuth login",
+                "parameters": [
+                    {
+                        "enum": [
+                            "google",
+                            "yandex",
+                            "github",
+                            "instagram",
+                            "telegram"
+                        ],
+                        "type": "string",
+                        "description": "OAuth provider",
+                        "name": "provider",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to OAuth provider",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid provider",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/{provider}/callback": {
+            "get": {
+                "description": "Process OAuth callback from provider, create or login user, and redirect with tokens",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OAuth"
+                ],
+                "summary": "Handle OAuth callback",
+                "parameters": [
+                    {
+                        "enum": [
+                            "google",
+                            "yandex",
+                            "github",
+                            "instagram"
+                        ],
+                        "type": "string",
+                        "description": "OAuth provider",
+                        "name": "provider",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization code from OAuth provider",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "CSRF state parameter",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "json"
+                        ],
+                        "type": "string",
+                        "description": "Response type: 'json' for JSON response, otherwise redirect",
+                        "name": "response_type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "JSON response when response_type=json",
+                        "schema": {
+                            "$ref": "#/definitions/models.OAuthLoginResponse"
+                        }
+                    },
+                    "302": {
+                        "description": "Redirect to frontend with tokens",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/branding": {
+            "get": {
+                "description": "Get public branding settings (logo, colors, company info)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Branding"
+                ],
+                "summary": "Get branding settings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.PublicBrandingResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/otp/send": {
+            "post": {
+                "description": "Send an OTP code to email for verification, password reset, or login",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OTP"
+                ],
+                "summary": "Send OTP code",
+                "parameters": [
+                    {
+                        "description": "Send OTP request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SendOTPRequest"
                         }
                     }
                 ],
@@ -4682,21 +5333,77 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/otp/verify": {
+            "post": {
+                "description": "Verify an OTP code for email verification, password reset, or login",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OTP"
+                ],
+                "summary": "Verify OTP code",
+                "parameters": [
+                    {
+                        "description": "Verify OTP request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VerifyOTPRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.VerifyOTPResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4737,19 +5444,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SessionListResponse"
+                            "$ref": "#/definitions/models.SessionListResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4769,18 +5476,18 @@ const docTemplate = `{
                 "summary": "Revoke all sessions except current",
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": "All sessions revoked successfully"
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -4801,7 +5508,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session ID",
+                        "description": "Session ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -4809,488 +5516,50 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": "Session revoked successfully"
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/auth/2fa/backup-codes/regenerate": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Generate new backup codes",
-                "consumes": [
-                    "application/json"
-                ],
+        "/api/system/maintenance": {
+            "get": {
+                "description": "Check if the system is in maintenance mode",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "2FA"
+                    "System"
                 ],
-                "summary": "Regenerate backup codes",
-                "parameters": [
-                    {
-                        "description": "Password",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
+                "summary": "Get maintenance mode status",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/2fa/disable": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Disable TOTP 2FA",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "2FA"
-                ],
-                "summary": "Disable 2FA",
-                "parameters": [
-                    {
-                        "description": "Password and TOTP code",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/TwoFactorDisableRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/2fa/setup": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Generate TOTP secret and backup codes",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "2FA"
-                ],
-                "summary": "Setup 2FA",
-                "parameters": [
-                    {
-                        "description": "Password for verification",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/TwoFactorSetupRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/TwoFactorSetupResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.MaintenanceModeResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/2fa/status": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get current 2FA status for the authenticated user",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "2FA"
-                ],
-                "summary": "Get 2FA status",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/TwoFactorStatusResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/2fa/verify": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Verify initial TOTP code and enable 2FA",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "2FA"
-                ],
-                "summary": "Verify 2FA setup",
-                "parameters": [
-                    {
-                        "description": "TOTP code",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/TwoFactorVerifyRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/passwordless/request": {
-            "post": {
-                "description": "Send OTP code for passwordless login",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "OTP"
-                ],
-                "summary": "Request passwordless login",
-                "parameters": [
-                    {
-                        "description": "Email",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/passwordless/verify": {
-            "post": {
-                "description": "Verify OTP code and login",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "OTP"
-                ],
-                "summary": "Verify passwordless login",
-                "parameters": [
-                    {
-                        "description": "Email and Code",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/VerifyOTPResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/providers": {
-            "get": {
-                "description": "List all configured OAuth providers",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "OAuth"
-                ],
-                "summary": "Get available OAuth providers",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/OAuthProviderInfo"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/telegram/callback": {
-            "post": {
-                "description": "Process Telegram widget authentication",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "OAuth"
-                ],
-                "summary": "Handle Telegram auth callback",
-                "parameters": [
-                    {
-                        "description": "Telegram auth data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/OAuthLoginResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/{provider}": {
-            "get": {
-                "description": "Redirect to OAuth provider for authentication",
-                "tags": [
-                    "OAuth"
-                ],
-                "summary": "Initiate OAuth login",
-                "parameters": [
-                    {
-                        "enum": [
-                            "google",
-                            "yandex",
-                            "github",
-                            "instagram",
-                            "telegram"
-                        ],
-                        "type": "string",
-                        "description": "OAuth provider",
-                        "name": "provider",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "302": {
-                        "description": "Found"
-                    }
-                }
-            }
-        },
-        "/auth/{provider}/callback": {
-            "get": {
-                "description": "Process OAuth callback and create/login user",
-                "tags": [
-                    "OAuth"
-                ],
-                "summary": "Handle OAuth callback",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "OAuth provider",
-                        "name": "provider",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authorization code",
-                        "name": "code",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "CSRF state",
-                        "name": "state",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "302": {
-                        "description": "Found"
-                    }
-                }
-            }
-        },
-        "/branding": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Branding"
-                ],
-                "summary": "Get branding settings",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/PublicBrandingResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -5298,24 +5567,25 @@ const docTemplate = `{
         },
         "/health": {
             "get": {
+                "description": "Check the health of the service and its dependencies (database, redis)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "health"
+                    "Health"
                 ],
                 "summary": "Health check",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Service is healthy",
                         "schema": {
-                            "$ref": "#/definitions/HealthResponse"
+                            "$ref": "#/definitions/handler.HealthResponse"
                         }
                     },
                     "503": {
-                        "description": "Service Unavailable",
+                        "description": "Service is unhealthy",
                         "schema": {
-                            "$ref": "#/definitions/HealthResponse"
+                            "$ref": "#/definitions/handler.HealthResponse"
                         }
                     }
                 }
@@ -5323,21 +5593,19 @@ const docTemplate = `{
         },
         "/live": {
             "get": {
+                "description": "Check if the service is alive (used by Kubernetes liveness probes)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "health"
+                    "Health"
                 ],
                 "summary": "Liveness check",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Service is alive",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     }
                 }
@@ -5697,7 +5965,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/DeviceAuthResponse"
+                            "$ref": "#/definitions/models.DeviceAuthResponse"
                         }
                     },
                     "400": {
@@ -5752,7 +6020,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/TokenResponse"
+                            "$ref": "#/definitions/models.TokenResponse"
                         }
                     },
                     "400": {
@@ -5812,7 +6080,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/IntrospectionResponse"
+                            "$ref": "#/definitions/models.IntrospectionResponse"
                         }
                     },
                     "401": {
@@ -5962,7 +6230,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/TokenResponse"
+                            "$ref": "#/definitions/models.TokenResponse"
                         }
                     },
                     "400": {
@@ -6005,7 +6273,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/UserInfoResponse"
+                            "$ref": "#/definitions/models.UserInfoResponse"
                         }
                     },
                     "401": {
@@ -6020,119 +6288,27 @@ const docTemplate = `{
                 }
             }
         },
-        "/otp/send": {
-            "post": {
-                "description": "Send an OTP code to email for verification, password reset, or login",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "OTP"
-                ],
-                "summary": "Send OTP code",
-                "parameters": [
-                    {
-                        "description": "Send OTP request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/SendOTPRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/otp/verify": {
-            "post": {
-                "description": "Verify an OTP code for email verification, password reset, or login",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "OTP"
-                ],
-                "summary": "Verify OTP code",
-                "parameters": [
-                    {
-                        "description": "Verify OTP request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/VerifyOTPRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/VerifyOTPResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/ready": {
             "get": {
+                "description": "Check if the service is ready to handle incoming requests",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "health"
+                    "Health"
                 ],
                 "summary": "Readiness check",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Service is ready",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     },
                     "503": {
-                        "description": "Service Unavailable",
+                        "description": "Service is not ready",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.MessageResponse"
                         }
                     }
                 }
@@ -6158,7 +6334,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendSMSRequest"
+                            "$ref": "#/definitions/models.SendSMSRequest"
                         }
                     }
                 ],
@@ -6166,19 +6342,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendSMSResponse"
+                            "$ref": "#/definitions/models.SendSMSResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -6203,19 +6379,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SMSStatsResponse"
+                            "$ref": "#/definitions/models.SMSStatsResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -6241,7 +6417,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/VerifySMSOTPRequest"
+                            "$ref": "#/definitions/models.VerifySMSOTPRequest"
                         }
                     }
                 ],
@@ -6249,32 +6425,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/VerifySMSOTPResponse"
+                            "$ref": "#/definitions/models.VerifySMSOTPResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/system/maintenance": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "System"
-                ],
-                "summary": "Get maintenance mode status",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/MaintenanceModeResponse"
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -6282,7 +6439,21 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "APIKey": {
+        "handler.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "services": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.APIKey": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -6326,7 +6497,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ActiveSessionResponse": {
+        "models.ActiveSessionResponse": {
             "type": "object",
             "properties": {
                 "browser": {
@@ -6381,7 +6552,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AdminAPIKeyResponse": {
+        "models.AdminAPIKeyResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -6447,7 +6618,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AdminAuditLogResponse": {
+        "models.AdminAuditLogResponse": {
             "type": "object",
             "properties": {
                 "action": {
@@ -6492,7 +6663,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AdminCreateUserRequest": {
+        "models.AdminCreateUserRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -6541,7 +6712,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AdminStatsResponse": {
+        "models.AdminStatsResponse": {
             "type": "object",
             "properties": {
                 "active_api_keys": {
@@ -6608,7 +6779,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AdminUpdateUserRequest": {
+        "models.AdminUpdateUserRequest": {
             "type": "object",
             "properties": {
                 "is_active": {
@@ -6629,7 +6800,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AdminUserListResponse": {
+        "models.AdminUserListResponse": {
             "type": "object",
             "properties": {
                 "page": {
@@ -6656,12 +6827,12 @@ const docTemplate = `{
                     "description": "List of users",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/AdminUserResponse"
+                        "$ref": "#/definitions/models.AdminUserResponse"
                     }
                 }
             }
         },
-        "AdminUserResponse": {
+        "models.AdminUserResponse": {
             "type": "object",
             "properties": {
                 "account_type": {
@@ -6733,7 +6904,7 @@ const docTemplate = `{
                     "description": "User's assigned roles",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/RoleInfo"
+                        "$ref": "#/definitions/models.RoleInfo"
                     }
                 },
                 "totp_enabled": {
@@ -6758,7 +6929,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AssignRoleRequest": {
+        "models.AssignRoleRequest": {
             "type": "object",
             "required": [
                 "role_id"
@@ -6771,7 +6942,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AuthResponse": {
+        "models.AuthResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -6803,13 +6974,37 @@ const docTemplate = `{
                     "description": "Authenticated user information",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/models.User"
                         }
                     ]
                 }
             }
         },
-        "BrandingSettings": {
+        "models.BackupCodesResponse": {
+            "type": "object",
+            "properties": {
+                "backup_codes": {
+                    "description": "List of new backup codes",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "ABC123",
+                        "DEF456",
+                        "GHI789",
+                        "JKL012",
+                        "MNO345"
+                    ]
+                },
+                "message": {
+                    "description": "Response message",
+                    "type": "string",
+                    "example": "Backup codes regenerated successfully. Save them in a secure location."
+                }
+            }
+        },
+        "models.BrandingSettings": {
             "type": "object",
             "properties": {
                 "background_color": {
@@ -6856,7 +7051,7 @@ const docTemplate = `{
                 }
             }
         },
-        "BrandingTheme": {
+        "models.BrandingTheme": {
             "type": "object",
             "properties": {
                 "background_color": {
@@ -6876,7 +7071,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ChangePasswordRequest": {
+        "models.ChangePasswordRequest": {
             "type": "object",
             "required": [
                 "new_password",
@@ -6896,7 +7091,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CompletePasswordlessRegistrationRequest": {
+        "models.CompletePasswordlessRegistrationRequest": {
             "type": "object",
             "required": [
                 "code"
@@ -6919,7 +7114,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateAPIKeyRequest": {
+        "models.CreateAPIKeyRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -6957,14 +7152,14 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateAPIKeyResponse": {
+        "models.CreateAPIKeyResponse": {
             "type": "object",
             "properties": {
                 "api_key": {
                     "description": "Created API key metadata",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/APIKey"
+                            "$ref": "#/definitions/models.APIKey"
                         }
                     ]
                 },
@@ -6975,7 +7170,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateEmailTemplateRequest": {
+        "models.CreateEmailTemplateRequest": {
             "type": "object",
             "required": [
                 "html_body",
@@ -7033,7 +7228,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateIPFilterRequest": {
+        "models.CreateIPFilterRequest": {
             "type": "object",
             "required": [
                 "filter_type",
@@ -7066,7 +7261,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateOAuthClientRequest": {
+        "models.CreateOAuthClientRequest": {
             "type": "object",
             "required": [
                 "allowed_grant_types",
@@ -7165,11 +7360,11 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateOAuthClientResponse": {
+        "models.CreateOAuthClientResponse": {
             "type": "object",
             "properties": {
                 "client": {
-                    "$ref": "#/definitions/OAuthClient"
+                    "$ref": "#/definitions/models.OAuthClient"
                 },
                 "client_secret": {
                     "type": "string",
@@ -7177,7 +7372,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreatePermissionRequest": {
+        "models.CreatePermissionRequest": {
             "type": "object",
             "required": [
                 "action",
@@ -7213,7 +7408,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateRoleRequest": {
+        "models.CreateRoleRequest": {
             "type": "object",
             "required": [
                 "display_name",
@@ -7252,7 +7447,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateSMSSettingsRequest": {
+        "models.CreateSMSSettingsRequest": {
             "type": "object",
             "required": [
                 "provider"
@@ -7302,7 +7497,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateUserRequest": {
+        "models.CreateUserRequest": {
             "type": "object",
             "required": [
                 "password",
@@ -7344,7 +7539,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateWebhookRequest": {
+        "models.CreateWebhookRequest": {
             "type": "object",
             "required": [
                 "events",
@@ -7386,7 +7581,7 @@ const docTemplate = `{
                     "description": "Retry configuration for failed deliveries",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/RetryConfig"
+                            "$ref": "#/definitions/models.RetryConfig"
                         }
                     ]
                 },
@@ -7398,7 +7593,25 @@ const docTemplate = `{
                 }
             }
         },
-        "DatabaseConnectionInfo": {
+        "models.CreateWebhookResponse": {
+            "type": "object",
+            "properties": {
+                "secret_key": {
+                    "description": "Secret key for webhook signature verification (only shown once)",
+                    "type": "string",
+                    "example": "whsec_abc123xyz456..."
+                },
+                "webhook": {
+                    "description": "Created webhook",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.Webhook"
+                        }
+                    ]
+                }
+            }
+        },
+        "models.DatabaseConnectionInfo": {
             "type": "object",
             "properties": {
                 "idle": {
@@ -7421,7 +7634,7 @@ const docTemplate = `{
                 }
             }
         },
-        "DeviceAuthResponse": {
+        "models.DeviceAuthResponse": {
             "type": "object",
             "properties": {
                 "device_code": {
@@ -7450,7 +7663,7 @@ const docTemplate = `{
                 }
             }
         },
-        "EmailTemplate": {
+        "models.EmailTemplate": {
             "type": "object",
             "required": [
                 "html_body",
@@ -7503,7 +7716,39 @@ const docTemplate = `{
                 }
             }
         },
-        "ErrorResponse": {
+        "models.EmailTemplateListResponse": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "description": "Current page number",
+                    "type": "integer",
+                    "example": 1
+                },
+                "per_page": {
+                    "description": "Number of items per page",
+                    "type": "integer",
+                    "example": 20
+                },
+                "templates": {
+                    "description": "List of email templates",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.EmailTemplate"
+                    }
+                },
+                "total": {
+                    "description": "Total number of templates",
+                    "type": "integer",
+                    "example": 10
+                },
+                "total_pages": {
+                    "description": "Total number of pages",
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "models.ErrorResponse": {
             "type": "object",
             "properties": {
                 "details": {
@@ -7523,13 +7768,26 @@ const docTemplate = `{
                 }
             }
         },
-        "GeoDistributionResponse": {
+        "models.ForgotPasswordRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "description": "Email address to send password reset code",
+                    "type": "string",
+                    "example": "user@example.com"
+                }
+            }
+        },
+        "models.GeoDistributionResponse": {
             "type": "object",
             "properties": {
                 "locations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/LoginLocation"
+                        "$ref": "#/definitions/models.LoginLocation"
                     }
                 },
                 "total_logins": {
@@ -7543,7 +7801,7 @@ const docTemplate = `{
                 }
             }
         },
-        "HealthMetric": {
+        "models.HealthMetric": {
             "type": "object",
             "properties": {
                 "id": {
@@ -7568,21 +7826,7 @@ const docTemplate = `{
                 }
             }
         },
-        "HealthResponse": {
-            "type": "object",
-            "properties": {
-                "services": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "IPFilter": {
+        "models.IPFilter": {
             "type": "object",
             "required": [
                 "filter_type",
@@ -7624,14 +7868,14 @@ const docTemplate = `{
                 }
             }
         },
-        "IPFilterListResponse": {
+        "models.IPFilterListResponse": {
             "type": "object",
             "properties": {
                 "filters": {
                     "description": "List of IP filters",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/IPFilterWithCreator"
+                        "$ref": "#/definitions/models.IPFilterWithCreator"
                     }
                 },
                 "page": {
@@ -7656,7 +7900,7 @@ const docTemplate = `{
                 }
             }
         },
-        "IPFilterWithCreator": {
+        "models.IPFilterWithCreator": {
             "type": "object",
             "required": [
                 "filter_type",
@@ -7704,7 +7948,7 @@ const docTemplate = `{
                 }
             }
         },
-        "InitPasswordlessRegistrationRequest": {
+        "models.InitPasswordlessRegistrationRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -7731,7 +7975,7 @@ const docTemplate = `{
                 }
             }
         },
-        "IntrospectionResponse": {
+        "models.IntrospectionResponse": {
             "type": "object",
             "properties": {
                 "active": {
@@ -7784,7 +8028,7 @@ const docTemplate = `{
                 }
             }
         },
-        "JWK": {
+        "models.JWK": {
             "type": "object",
             "properties": {
                 "alg": {
@@ -7874,25 +8118,25 @@ const docTemplate = `{
                 }
             }
         },
-        "JWKSDocument": {
+        "models.JWKSDocument": {
             "type": "object",
             "properties": {
                 "keys": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/JWK"
+                        "$ref": "#/definitions/models.JWK"
                     }
                 }
             }
         },
-        "ListAPIKeysResponse": {
+        "models.ListAPIKeysResponse": {
             "type": "object",
             "properties": {
                 "api_keys": {
                     "description": "List of API keys",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/APIKey"
+                        "$ref": "#/definitions/models.APIKey"
                     }
                 },
                 "total": {
@@ -7902,7 +8146,7 @@ const docTemplate = `{
                 }
             }
         },
-        "LoginLocation": {
+        "models.LoginLocation": {
             "type": "object",
             "properties": {
                 "city": {
@@ -7928,7 +8172,7 @@ const docTemplate = `{
                 }
             }
         },
-        "MaintenanceModeRequest": {
+        "models.MaintenanceModeRequest": {
             "type": "object",
             "properties": {
                 "enabled": {
@@ -7943,7 +8187,7 @@ const docTemplate = `{
                 }
             }
         },
-        "MaintenanceModeResponse": {
+        "models.MaintenanceModeResponse": {
             "type": "object",
             "properties": {
                 "enabled": {
@@ -7958,7 +8202,7 @@ const docTemplate = `{
                 }
             }
         },
-        "MessageResponse": {
+        "models.MessageResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -7968,7 +8212,7 @@ const docTemplate = `{
                 }
             }
         },
-        "OAuthClient": {
+        "models.OAuthClient": {
             "type": "object",
             "properties": {
                 "access_token_ttl": {
@@ -8047,7 +8291,7 @@ const docTemplate = `{
                     "example": "My Application"
                 },
                 "owner": {
-                    "$ref": "#/definitions/User"
+                    "$ref": "#/definitions/models.User"
                 },
                 "owner_id": {
                     "type": "string",
@@ -8080,7 +8324,7 @@ const docTemplate = `{
                 }
             }
         },
-        "OAuthLoginResponse": {
+        "models.OAuthLoginResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -8102,13 +8346,13 @@ const docTemplate = `{
                     "description": "Authenticated user information",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/models.User"
                         }
                     ]
                 }
             }
         },
-        "OAuthProviderInfo": {
+        "models.OAuthProviderInfo": {
             "type": "object",
             "properties": {
                 "display_name": {
@@ -8125,7 +8369,7 @@ const docTemplate = `{
                 }
             }
         },
-        "OAuthScope": {
+        "models.OAuthScope": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -8158,7 +8402,7 @@ const docTemplate = `{
                 }
             }
         },
-        "OIDCDiscoveryDocument": {
+        "models.OIDCDiscoveryDocument": {
             "type": "object",
             "properties": {
                 "acr_values_supported": {
@@ -8426,7 +8670,7 @@ const docTemplate = `{
                 }
             }
         },
-        "OTPType": {
+        "models.OTPType": {
             "type": "string",
             "enum": [
                 "verification",
@@ -8443,7 +8687,39 @@ const docTemplate = `{
                 "OTPTypeRegistration"
             ]
         },
-        "Permission": {
+        "models.PasswordlessLoginRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "description": "Email address to receive the OTP code",
+                    "type": "string",
+                    "example": "user@example.com"
+                }
+            }
+        },
+        "models.PasswordlessLoginVerifyRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "email"
+            ],
+            "properties": {
+                "code": {
+                    "description": "6-digit OTP code",
+                    "type": "string",
+                    "example": "123456"
+                },
+                "email": {
+                    "description": "Email address that received the OTP",
+                    "type": "string",
+                    "example": "user@example.com"
+                }
+            }
+        },
+        "models.Permission": {
             "type": "object",
             "required": [
                 "action",
@@ -8483,18 +8759,18 @@ const docTemplate = `{
                 }
             }
         },
-        "PermissionMatrix": {
+        "models.PermissionMatrix": {
             "type": "object",
             "properties": {
                 "resources": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ResourcePermissions"
+                        "$ref": "#/definitions/models.ResourcePermissions"
                     }
                 }
             }
         },
-        "PermissionWithRoles": {
+        "models.PermissionWithRoles": {
             "type": "object",
             "properties": {
                 "action": {
@@ -8518,7 +8794,7 @@ const docTemplate = `{
                 }
             }
         },
-        "PreviewEmailTemplateRequest": {
+        "models.PreviewEmailTemplateRequest": {
             "type": "object",
             "required": [
                 "html_body"
@@ -8547,7 +8823,7 @@ const docTemplate = `{
                 }
             }
         },
-        "PreviewEmailTemplateResponse": {
+        "models.PreviewEmailTemplateResponse": {
             "type": "object",
             "properties": {
                 "rendered_html": {
@@ -8562,7 +8838,7 @@ const docTemplate = `{
                 }
             }
         },
-        "PublicBrandingResponse": {
+        "models.PublicBrandingResponse": {
             "type": "object",
             "properties": {
                 "company_name": {
@@ -8599,13 +8875,13 @@ const docTemplate = `{
                     "description": "Color theme",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/BrandingTheme"
+                            "$ref": "#/definitions/models.BrandingTheme"
                         }
                     ]
                 }
             }
         },
-        "RedisMemoryInfo": {
+        "models.RedisMemoryInfo": {
             "type": "object",
             "properties": {
                 "max_memory_bytes": {
@@ -8625,7 +8901,7 @@ const docTemplate = `{
                 }
             }
         },
-        "RefreshTokenRequest": {
+        "models.RefreshTokenRequest": {
             "type": "object",
             "required": [
                 "refresh_token"
@@ -8638,7 +8914,33 @@ const docTemplate = `{
                 }
             }
         },
-        "ResetPasswordRequest": {
+        "models.RegenerateBackupCodesRequest": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
+                    "description": "User's current password for verification",
+                    "type": "string",
+                    "example": "SecurePass123!"
+                }
+            }
+        },
+        "models.ResendVerificationRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "description": "Email address to resend verification to",
+                    "type": "string",
+                    "example": "user@example.com"
+                }
+            }
+        },
+        "models.ResetPasswordRequest": {
             "type": "object",
             "required": [
                 "code",
@@ -8664,13 +8966,13 @@ const docTemplate = `{
                 }
             }
         },
-        "ResourcePermissions": {
+        "models.ResourcePermissions": {
             "type": "object",
             "properties": {
                 "permissions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PermissionWithRoles"
+                        "$ref": "#/definitions/models.PermissionWithRoles"
                     }
                 },
                 "resource": {
@@ -8678,7 +8980,7 @@ const docTemplate = `{
                 }
             }
         },
-        "RetryConfig": {
+        "models.RetryConfig": {
             "type": "object",
             "properties": {
                 "backoff_seconds": {
@@ -8700,7 +9002,7 @@ const docTemplate = `{
                 }
             }
         },
-        "Role": {
+        "models.Role": {
             "type": "object",
             "required": [
                 "display_name",
@@ -8741,7 +9043,7 @@ const docTemplate = `{
                     "description": "Many-to-many relation with Permission",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Permission"
+                        "$ref": "#/definitions/models.Permission"
                     }
                 },
                 "updated_at": {
@@ -8751,7 +9053,7 @@ const docTemplate = `{
                 }
             }
         },
-        "RoleInfo": {
+        "models.RoleInfo": {
             "type": "object",
             "properties": {
                 "display_name": {
@@ -8771,7 +9073,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SMSLog": {
+        "models.SMSLog": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -8802,17 +9104,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/SMSStatus"
+                    "$ref": "#/definitions/models.SMSStatus"
                 },
                 "type": {
-                    "$ref": "#/definitions/OTPType"
+                    "$ref": "#/definitions/models.OTPType"
                 },
                 "user_id": {
                     "type": "string"
                 }
             }
         },
-        "SMSSettings": {
+        "models.SMSSettings": {
             "type": "object",
             "properties": {
                 "account_sid": {
@@ -8859,7 +9161,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SMSStatsResponse": {
+        "models.SMSStatsResponse": {
             "type": "object",
             "properties": {
                 "by_status": {
@@ -8879,7 +9181,7 @@ const docTemplate = `{
                 "recent_messages": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SMSLog"
+                        "$ref": "#/definitions/models.SMSLog"
                     }
                 },
                 "sent_this_hour": {
@@ -8896,7 +9198,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SMSStatus": {
+        "models.SMSStatus": {
             "type": "string",
             "enum": [
                 "pending",
@@ -8920,7 +9222,7 @@ const docTemplate = `{
                 "SMSStatusDelivered"
             ]
         },
-        "SendOTPRequest": {
+        "models.SendOTPRequest": {
             "type": "object",
             "required": [
                 "type"
@@ -8940,14 +9242,14 @@ const docTemplate = `{
                     "description": "OTP type (verification, password_reset, 2fa, login)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/OTPType"
+                            "$ref": "#/definitions/models.OTPType"
                         }
                     ],
                     "example": "verification"
                 }
             }
         },
-        "SendSMSRequest": {
+        "models.SendSMSRequest": {
             "type": "object",
             "required": [
                 "phone",
@@ -8969,14 +9271,14 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/OTPType"
+                            "$ref": "#/definitions/models.OTPType"
                         }
                     ],
                     "example": "verification"
                 }
             }
         },
-        "SendSMSResponse": {
+        "models.SendSMSResponse": {
             "type": "object",
             "properties": {
                 "expires_at": {
@@ -8996,7 +9298,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SessionListResponse": {
+        "models.SessionListResponse": {
             "type": "object",
             "properties": {
                 "page": {
@@ -9013,7 +9315,7 @@ const docTemplate = `{
                     "description": "List of active sessions",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ActiveSessionResponse"
+                        "$ref": "#/definitions/models.ActiveSessionResponse"
                     }
                 },
                 "total": {
@@ -9028,7 +9330,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SessionStats": {
+        "models.SessionStats": {
             "type": "object",
             "properties": {
                 "sessions_by_browser": {
@@ -9057,7 +9359,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SignInRequest": {
+        "models.SignInRequest": {
             "type": "object",
             "required": [
                 "password"
@@ -9080,11 +9382,11 @@ const docTemplate = `{
                 }
             }
         },
-        "SystemHealthResponse": {
+        "models.SystemHealthResponse": {
             "type": "object",
             "properties": {
                 "database_connections": {
-                    "$ref": "#/definitions/DatabaseConnectionInfo"
+                    "$ref": "#/definitions/models.DatabaseConnectionInfo"
                 },
                 "database_status": {
                     "type": "string"
@@ -9092,11 +9394,11 @@ const docTemplate = `{
                 "metrics": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/HealthMetric"
+                        "$ref": "#/definitions/models.HealthMetric"
                     }
                 },
                 "redis_memory": {
-                    "$ref": "#/definitions/RedisMemoryInfo"
+                    "$ref": "#/definitions/models.RedisMemoryInfo"
                 },
                 "redis_status": {
                     "type": "string"
@@ -9110,7 +9412,84 @@ const docTemplate = `{
                 }
             }
         },
-        "TestWebhookRequest": {
+        "models.TelegramAuthData": {
+            "type": "object",
+            "properties": {
+                "auth_date": {
+                    "description": "Authentication timestamp",
+                    "type": "integer",
+                    "example": 1234567890
+                },
+                "first_name": {
+                    "description": "User's first name",
+                    "type": "string",
+                    "example": "John"
+                },
+                "hash": {
+                    "description": "Hash for verification",
+                    "type": "string",
+                    "example": "abc123def456..."
+                },
+                "id": {
+                    "description": "Telegram user ID",
+                    "type": "integer",
+                    "example": 123456789
+                },
+                "last_name": {
+                    "description": "User's last name (optional)",
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "photo_url": {
+                    "description": "Profile photo URL (optional)",
+                    "type": "string",
+                    "example": "https://t.me/i/userpic/123.jpg"
+                },
+                "username": {
+                    "description": "Username without @ (optional)",
+                    "type": "string",
+                    "example": "johndoe"
+                }
+            }
+        },
+        "models.TemplateTypesResponse": {
+            "type": "object",
+            "properties": {
+                "types": {
+                    "description": "List of available template types",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "verification",
+                        "password_reset",
+                        "welcome",
+                        "2fa",
+                        "custom"
+                    ]
+                }
+            }
+        },
+        "models.TemplateVariablesResponse": {
+            "type": "object",
+            "properties": {
+                "variables": {
+                    "description": "List of available variables for the template type",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "username",
+                        "email",
+                        "code",
+                        "expiry_minutes"
+                    ]
+                }
+            }
+        },
+        "models.TestWebhookRequest": {
             "type": "object",
             "required": [
                 "event_type"
@@ -9134,7 +9513,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TokenResponse": {
+        "models.TokenResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -9163,7 +9542,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TwoFactorDisableRequest": {
+        "models.TwoFactorDisableRequest": {
             "type": "object",
             "required": [
                 "code",
@@ -9182,7 +9561,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TwoFactorLoginVerifyRequest": {
+        "models.TwoFactorLoginVerifyRequest": {
             "type": "object",
             "required": [
                 "code",
@@ -9201,7 +9580,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TwoFactorSetupRequest": {
+        "models.TwoFactorSetupRequest": {
             "type": "object",
             "required": [
                 "password"
@@ -9214,7 +9593,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TwoFactorSetupResponse": {
+        "models.TwoFactorSetupResponse": {
             "type": "object",
             "properties": {
                 "backup_codes": {
@@ -9243,7 +9622,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TwoFactorStatusResponse": {
+        "models.TwoFactorStatusResponse": {
             "type": "object",
             "properties": {
                 "backup_codes_remaining": {
@@ -9263,7 +9642,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TwoFactorVerifyRequest": {
+        "models.TwoFactorVerifyRequest": {
             "type": "object",
             "required": [
                 "code"
@@ -9276,7 +9655,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateAPIKeyRequest": {
+        "models.UpdateAPIKeyRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -9307,7 +9686,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateBrandingRequest": {
+        "models.UpdateBrandingRequest": {
             "type": "object",
             "properties": {
                 "background_color": {
@@ -9367,7 +9746,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateEmailTemplateRequest": {
+        "models.UpdateEmailTemplateRequest": {
             "type": "object",
             "properties": {
                 "html_body": {
@@ -9410,7 +9789,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateOAuthClientRequest": {
+        "models.UpdateOAuthClientRequest": {
             "type": "object",
             "properties": {
                 "access_token_ttl": {
@@ -9495,7 +9874,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateRoleRequest": {
+        "models.UpdateRoleRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -9522,7 +9901,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateSMSSettingsRequest": {
+        "models.UpdateSMSSettingsRequest": {
             "type": "object",
             "properties": {
                 "account_sid": {
@@ -9569,7 +9948,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateUserRequest": {
+        "models.UpdateUserRequest": {
             "type": "object",
             "properties": {
                 "full_name": {
@@ -9584,7 +9963,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateWebhookRequest": {
+        "models.UpdateWebhookRequest": {
             "type": "object",
             "properties": {
                 "events": {
@@ -9624,7 +10003,7 @@ const docTemplate = `{
                     "description": "Retry configuration for failed deliveries",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/RetryConfig"
+                            "$ref": "#/definitions/models.RetryConfig"
                         }
                     ]
                 },
@@ -9636,7 +10015,7 @@ const docTemplate = `{
                 }
             }
         },
-        "User": {
+        "models.User": {
             "type": "object",
             "properties": {
                 "account_type": {
@@ -9698,7 +10077,7 @@ const docTemplate = `{
                     "description": "Relations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Role"
+                        "$ref": "#/definitions/models.Role"
                     }
                 },
                 "totp_enabled": {
@@ -9723,7 +10102,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UserInfoResponse": {
+        "models.UserInfoResponse": {
             "type": "object",
             "properties": {
                 "birthdate": {
@@ -9804,7 +10183,41 @@ const docTemplate = `{
                 }
             }
         },
-        "VerifyOTPRequest": {
+        "models.VerifyEmailRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "email"
+            ],
+            "properties": {
+                "code": {
+                    "description": "6-digit verification code",
+                    "type": "string",
+                    "example": "123456"
+                },
+                "email": {
+                    "description": "Email address to verify",
+                    "type": "string",
+                    "example": "user@example.com"
+                }
+            }
+        },
+        "models.VerifyEmailResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "Human-readable message",
+                    "type": "string",
+                    "example": "Email verified successfully"
+                },
+                "valid": {
+                    "description": "Whether verification was successful",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "models.VerifyOTPRequest": {
             "type": "object",
             "required": [
                 "code",
@@ -9830,14 +10243,14 @@ const docTemplate = `{
                     "description": "OTP type (verification, password_reset, 2fa, login)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/OTPType"
+                            "$ref": "#/definitions/models.OTPType"
                         }
                     ],
                     "example": "verification"
                 }
             }
         },
-        "VerifyOTPResponse": {
+        "models.VerifyOTPResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -9854,7 +10267,7 @@ const docTemplate = `{
                     "description": "User information (if OTP is for login)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/models.User"
                         }
                     ]
                 },
@@ -9865,7 +10278,7 @@ const docTemplate = `{
                 }
             }
         },
-        "VerifySMSOTPRequest": {
+        "models.VerifySMSOTPRequest": {
             "type": "object",
             "required": [
                 "code",
@@ -9893,14 +10306,14 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/OTPType"
+                            "$ref": "#/definitions/models.OTPType"
                         }
                     ],
                     "example": "verification"
                 }
             }
         },
-        "VerifySMSOTPResponse": {
+        "models.VerifySMSOTPResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -9912,7 +10325,7 @@ const docTemplate = `{
                     "description": "User information (if verification was for login)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/models.User"
                         }
                     ]
                 },
@@ -9923,7 +10336,7 @@ const docTemplate = `{
                 }
             }
         },
-        "Webhook": {
+        "models.Webhook": {
             "type": "object",
             "required": [
                 "name",
@@ -9982,7 +10395,7 @@ const docTemplate = `{
                 }
             }
         },
-        "WebhookDelivery": {
+        "models.WebhookDelivery": {
             "type": "object",
             "properties": {
                 "attempts": {
@@ -10024,14 +10437,14 @@ const docTemplate = `{
                 }
             }
         },
-        "WebhookDeliveryListResponse": {
+        "models.WebhookDeliveryListResponse": {
             "type": "object",
             "properties": {
                 "deliveries": {
                     "description": "List of webhook deliveries",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/WebhookDelivery"
+                        "$ref": "#/definitions/models.WebhookDelivery"
                     }
                 },
                 "page": {
@@ -10056,7 +10469,24 @@ const docTemplate = `{
                 }
             }
         },
-        "WebhookListResponse": {
+        "models.WebhookEventsResponse": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "description": "List of available event types",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "user.created",
+                        "user.updated",
+                        "user.login"
+                    ]
+                }
+            }
+        },
+        "models.WebhookListResponse": {
             "type": "object",
             "properties": {
                 "page": {
@@ -10083,12 +10513,12 @@ const docTemplate = `{
                     "description": "List of webhooks",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/WebhookWithCreator"
+                        "$ref": "#/definitions/models.WebhookWithCreator"
                     }
                 }
             }
         },
-        "WebhookWithCreator": {
+        "models.WebhookWithCreator": {
             "type": "object",
             "required": [
                 "name",
@@ -10153,6 +10583,20 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "API Key for service-to-service authentication. Format: \"agw_{key}\"",
+            "type": "apiKey",
+            "name": "X-API-Key",
+            "in": "header"
+        },
+        "BearerAuth": {
+            "description": "JWT Bearer token for user authentication. Format: \"Bearer {access_token}\"",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
     }
 }`
 
@@ -10163,7 +10607,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{"http", "https"},
 	Title:            "Auth Gateway API",
-	Description:      "Centralized authentication and authorization system for microservices",
+	Description:      "Centralized authentication and authorization system for microservices ecosystem.\n\n## Overview\nAuth Gateway provides a complete authentication and authorization solution including:\n- User registration and authentication (email/password, OAuth, passwordless)\n- Two-factor authentication (TOTP)\n- API key management for service-to-service communication\n- Role-based access control (RBAC)\n- Session management\n- Webhooks for event notifications\n\n## Authentication\nMost endpoints require authentication via JWT Bearer token or API key.\n\n### JWT Authentication\nInclude the access token in the Authorization header: `Authorization: Bearer {token}`\n\n### API Key Authentication\nInclude the API key in the X-API-Key header: `X-API-Key: agw_{key}`",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

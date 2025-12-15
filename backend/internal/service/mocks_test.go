@@ -164,6 +164,7 @@ type mockTokenStore struct {
 	RevokeRefreshTokenFunc  func(ctx context.Context, tokenHash string) error
 	RevokeAllUserTokensFunc func(ctx context.Context, userID uuid.UUID) error
 	AddToBlacklistFunc      func(ctx context.Context, token *models.TokenBlacklist) error
+	IsBlacklistedFunc       func(ctx context.Context, tokenHash string) (bool, error)
 }
 
 func (m *mockTokenStore) CreateRefreshToken(ctx context.Context, token *models.RefreshToken) error {
@@ -195,6 +196,12 @@ func (m *mockTokenStore) AddToBlacklist(ctx context.Context, token *models.Token
 		return m.AddToBlacklistFunc(ctx, token)
 	}
 	return nil
+}
+func (m *mockTokenStore) IsBlacklisted(ctx context.Context, tokenHash string) (bool, error) {
+	if m.IsBlacklistedFunc != nil {
+		return m.IsBlacklistedFunc(ctx, tokenHash)
+	}
+	return false, nil
 }
 
 type mockRBACStore struct {
@@ -992,16 +999,20 @@ func (m *mockAPIKeyStore) ListAll(ctx context.Context) ([]*models.APIKey, error)
 }
 
 type mockSessionStore struct {
-	CreateSessionFunc            func(ctx context.Context, session *models.Session) error
-	GetSessionByTokenHashFunc    func(ctx context.Context, tokenHash string) (*models.Session, error)
-	GetUserSessionsPaginatedFunc func(ctx context.Context, userID uuid.UUID, page, perPage int) ([]models.Session, int, error)
-	GetAllSessionsPaginatedFunc  func(ctx context.Context, page, perPage int) ([]models.Session, int, error)
-	RevokeSessionFunc            func(ctx context.Context, id uuid.UUID) error
-	RevokeUserSessionFunc        func(ctx context.Context, userID, sessionID uuid.UUID) error
-	RevokeAllUserSessionsFunc    func(ctx context.Context, userID uuid.UUID, exceptSessionID *uuid.UUID) error
-	UpdateSessionNameFunc        func(ctx context.Context, sessionID uuid.UUID, name string) error
-	GetSessionStatsFunc          func(ctx context.Context) (*models.SessionStats, error)
-	DeleteExpiredSessionsFunc    func(ctx context.Context, olderThan time.Duration) error
+	CreateSessionFunc                func(ctx context.Context, session *models.Session) error
+	GetSessionByIDFunc               func(ctx context.Context, id uuid.UUID) (*models.Session, error)
+	GetSessionByTokenHashFunc        func(ctx context.Context, tokenHash string) (*models.Session, error)
+	GetUserSessionsFunc              func(ctx context.Context, userID uuid.UUID) ([]models.Session, error)
+	GetUserSessionsPaginatedFunc     func(ctx context.Context, userID uuid.UUID, page, perPage int) ([]models.Session, int, error)
+	GetAllSessionsPaginatedFunc      func(ctx context.Context, page, perPage int) ([]models.Session, int, error)
+	RevokeSessionFunc                func(ctx context.Context, id uuid.UUID) error
+	RevokeUserSessionFunc            func(ctx context.Context, userID, sessionID uuid.UUID) error
+	RevokeAllUserSessionsFunc        func(ctx context.Context, userID uuid.UUID, exceptSessionID *uuid.UUID) error
+	UpdateSessionNameFunc            func(ctx context.Context, sessionID uuid.UUID, name string) error
+	UpdateSessionAccessTokenHashFunc func(ctx context.Context, sessionID uuid.UUID, accessTokenHash string) error
+	RefreshSessionTokensFunc         func(ctx context.Context, oldTokenHash, newTokenHash, newAccessTokenHash string, newExpiresAt time.Time) error
+	GetSessionStatsFunc              func(ctx context.Context) (*models.SessionStats, error)
+	DeleteExpiredSessionsFunc        func(ctx context.Context, olderThan time.Duration) error
 }
 
 func (m *mockSessionStore) CreateSession(ctx context.Context, session *models.Session) error {
@@ -1010,9 +1021,21 @@ func (m *mockSessionStore) CreateSession(ctx context.Context, session *models.Se
 	}
 	return nil
 }
+func (m *mockSessionStore) GetSessionByID(ctx context.Context, id uuid.UUID) (*models.Session, error) {
+	if m.GetSessionByIDFunc != nil {
+		return m.GetSessionByIDFunc(ctx, id)
+	}
+	return nil, nil
+}
 func (m *mockSessionStore) GetSessionByTokenHash(ctx context.Context, tokenHash string) (*models.Session, error) {
 	if m.GetSessionByTokenHashFunc != nil {
 		return m.GetSessionByTokenHashFunc(ctx, tokenHash)
+	}
+	return nil, nil
+}
+func (m *mockSessionStore) GetUserSessions(ctx context.Context, userID uuid.UUID) ([]models.Session, error) {
+	if m.GetUserSessionsFunc != nil {
+		return m.GetUserSessionsFunc(ctx, userID)
 	}
 	return nil, nil
 }
@@ -1049,6 +1072,18 @@ func (m *mockSessionStore) RevokeAllUserSessions(ctx context.Context, userID uui
 func (m *mockSessionStore) UpdateSessionName(ctx context.Context, sessionID uuid.UUID, name string) error {
 	if m.UpdateSessionNameFunc != nil {
 		return m.UpdateSessionNameFunc(ctx, sessionID, name)
+	}
+	return nil
+}
+func (m *mockSessionStore) UpdateSessionAccessTokenHash(ctx context.Context, sessionID uuid.UUID, accessTokenHash string) error {
+	if m.UpdateSessionAccessTokenHashFunc != nil {
+		return m.UpdateSessionAccessTokenHashFunc(ctx, sessionID, accessTokenHash)
+	}
+	return nil
+}
+func (m *mockSessionStore) RefreshSessionTokens(ctx context.Context, oldTokenHash, newTokenHash, newAccessTokenHash string, newExpiresAt time.Time) error {
+	if m.RefreshSessionTokensFunc != nil {
+		return m.RefreshSessionTokensFunc(ctx, oldTokenHash, newTokenHash, newAccessTokenHash, newExpiresAt)
 	}
 	return nil
 }

@@ -8,19 +8,20 @@ import (
 
 // Session represents an enhanced refresh token with device tracking
 type Session struct {
-	ID           uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
-	UserID       uuid.UUID  `json:"user_id" bun:"user_id,type:uuid,notnull"`
-	TokenHash    string     `json:"-" bun:"token_hash,notnull"`              // Never expose hash
-	DeviceType   string     `json:"device_type,omitempty" bun:"device_type"` // "mobile", "desktop", "tablet"
-	OS           string     `json:"os,omitempty" bun:"os"`                   // "iOS 17.2", "Windows 11", "Ubuntu 22.04"
-	Browser      string     `json:"browser,omitempty" bun:"browser"`         // "Chrome 120", "Safari 17"
-	IPAddress    string     `json:"ip_address,omitempty" bun:"ip_address"`
-	UserAgent    string     `json:"user_agent,omitempty" bun:"user_agent"`
-	SessionName  string     `json:"session_name,omitempty" bun:"session_name"`
-	LastActiveAt time.Time  `json:"last_active_at" bun:"last_active_at,nullzero,notnull"`
-	ExpiresAt    time.Time  `json:"expires_at" bun:"expires_at,nullzero,notnull"`
-	CreatedAt    time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
-	RevokedAt    *time.Time `json:"revoked_at,omitempty" bun:"revoked_at"`
+	ID              uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	UserID          uuid.UUID  `json:"user_id" bun:"user_id,type:uuid,notnull"`
+	TokenHash       string     `json:"-" bun:"token_hash,notnull"`              // Hash of refresh token - never expose
+	AccessTokenHash string     `json:"-" bun:"access_token_hash"`               // Hash of current access token for revocation
+	DeviceType      string     `json:"device_type,omitempty" bun:"device_type"` // "mobile", "desktop", "tablet"
+	OS              string     `json:"os,omitempty" bun:"os"`                   // "iOS 17.2", "Windows 11", "Ubuntu 22.04"
+	Browser         string     `json:"browser,omitempty" bun:"browser"`         // "Chrome 120", "Safari 17"
+	IPAddress       string     `json:"ip_address,omitempty" bun:"ip_address"`
+	UserAgent       string     `json:"user_agent,omitempty" bun:"user_agent"`
+	SessionName     string     `json:"session_name,omitempty" bun:"session_name"`
+	LastActiveAt    time.Time  `json:"last_active_at" bun:"last_active_at,nullzero,notnull"`
+	ExpiresAt       time.Time  `json:"expires_at" bun:"expires_at,nullzero,notnull"`
+	CreatedAt       time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	RevokedAt       *time.Time `json:"revoked_at,omitempty" bun:"revoked_at"`
 
 	// Relation to User
 	User *User `json:"user,omitempty" bun:"rel:belongs-to,join:user_id=id"`
@@ -30,12 +31,16 @@ type Session struct {
 type ActiveSessionResponse struct {
 	// Session unique identifier
 	ID uuid.UUID `json:"id" example:"123e4567-e89b-12d3-a456-426614174000"`
+	// User unique identifier
+	UserID uuid.UUID `json:"user_id" example:"123e4567-e89b-12d3-a456-426614174000"`
 	// Device type (mobile, desktop, tablet)
 	DeviceType string `json:"device_type,omitempty" example:"desktop"`
 	// Operating system with version
 	OS string `json:"os,omitempty" example:"Windows 11"`
 	// Browser name with version
 	Browser string `json:"browser,omitempty" example:"Chrome 120"`
+	// UserAgent specifies the user agent string of the device used for the session, providing details about the client application.
+	UserAgent string `json:"user_agent" example:"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)"`
 	// IP address of the session
 	IPAddress string `json:"ip_address,omitempty" example:"192.168.1.1"`
 	// Custom session name set by user

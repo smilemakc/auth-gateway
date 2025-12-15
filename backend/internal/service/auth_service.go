@@ -14,14 +14,15 @@ import (
 
 // AuthService provides authentication operations
 type AuthService struct {
-	userRepo       UserStore
-	tokenRepo      TokenStore
-	rbacRepo       RBACStore
-	auditService   AuditLogger
-	jwtService     TokenService
-	redis          CacheService
-	sessionService *SessionCreationService
-	bcryptCost     int
+	userRepo         UserStore
+	tokenRepo        TokenStore
+	rbacRepo         RBACStore
+	auditService     AuditLogger
+	jwtService       TokenService
+	blacklistService *BlacklistService
+	redis            CacheService
+	sessionService   *SessionService
+	bcryptCost       int
 }
 
 // NewAuthService creates a new auth service
@@ -31,19 +32,21 @@ func NewAuthService(
 	rbacRepo RBACStore,
 	auditService AuditLogger,
 	jwtService TokenService,
+	blacklistService *BlacklistService,
 	redis CacheService,
-	sessionService *SessionCreationService,
+	sessionService *SessionService,
 	bcryptCost int,
 ) *AuthService {
 	return &AuthService{
-		userRepo:       userRepo,
-		tokenRepo:      tokenRepo,
-		rbacRepo:       rbacRepo,
-		auditService:   auditService,
-		jwtService:     jwtService,
-		redis:          redis,
-		sessionService: sessionService,
-		bcryptCost:     bcryptCost,
+		userRepo:         userRepo,
+		tokenRepo:        tokenRepo,
+		rbacRepo:         rbacRepo,
+		auditService:     auditService,
+		jwtService:       jwtService,
+		blacklistService: blacklistService,
+		redis:            redis,
+		sessionService:   sessionService,
+		bcryptCost:       bcryptCost,
 	}
 }
 
@@ -313,9 +316,9 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 		return nil, models.ErrInvalidToken
 	}
 
-	// Check if token is blacklisted in Redis
-	tokenHash := utils.HashToken(refreshToken)
-	if blacklisted, err := s.redis.IsBlacklisted(ctx, tokenHash); err == nil && blacklisted {
+	// Check if token is blacklisted using unified blacklist service
+	oldTokenHash := utils.HashToken(refreshToken)
+	if s.blacklistService.IsBlacklisted(ctx, oldTokenHash) {
 		s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "token_blacklisted",
 		})
@@ -323,7 +326,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	}
 
 	// Check if token exists and is not revoked in database
-	dbToken, err := s.tokenRepo.GetRefreshToken(ctx, tokenHash)
+	dbToken, err := s.tokenRepo.GetRefreshToken(ctx, oldTokenHash)
 	if err != nil {
 		s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "token_not_found",
@@ -352,20 +355,60 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	}
 
 	// Revoke old refresh token
-	if err := s.tokenRepo.RevokeRefreshToken(ctx, tokenHash); err != nil {
+	if err := s.tokenRepo.RevokeRefreshToken(ctx, oldTokenHash); err != nil {
 		return nil, err
 	}
 
-	// Generate new tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo)
+	// Generate new access token
+	newAccessToken, err := s.jwtService.GenerateAccessToken(user)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	// Generate new refresh token
+	newRefreshToken, err := s.jwtService.GenerateRefreshToken(user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
+	// Save new refresh token to database
+	newTokenHash := utils.HashToken(newRefreshToken)
+	refreshExpiration := s.jwtService.GetRefreshTokenExpiration()
+	newDBToken := &models.RefreshToken{
+		ID:          uuid.New(),
+		UserID:      user.ID,
+		TokenHash:   newTokenHash,
+		ExpiresAt:   time.Now().Add(refreshExpiration),
+		DeviceType:  deviceInfo.DeviceType,
+		OS:          deviceInfo.OS,
+		Browser:     deviceInfo.Browser,
+		SessionName: dbToken.SessionName, // Keep original session name
+		IPAddress:   ip,
+	}
+
+	if err := s.tokenRepo.CreateRefreshToken(ctx, newDBToken); err != nil {
+		return nil, fmt.Errorf("failed to save refresh token: %w", err)
+	}
+
+	// Update existing session with new token hashes instead of creating a new one
+	if s.sessionService != nil {
+		s.sessionService.RefreshSessionNonFatal(ctx, SessionRefreshParams{
+			OldRefreshTokenHash: oldTokenHash,
+			NewRefreshTokenHash: newTokenHash,
+			NewAccessTokenHash:  utils.HashToken(newAccessToken),
+			NewExpiresAt:        time.Now().Add(refreshExpiration),
+		})
 	}
 
 	// Log successful refresh
 	s.logAudit(&user.ID, models.ActionRefreshToken, models.StatusSuccess, ip, userAgent, nil)
 
-	return authResp, nil
+	return &models.AuthResponse{
+		AccessToken:  newAccessToken,
+		RefreshToken: newRefreshToken,
+		User:         user.PublicUser(),
+		ExpiresIn:    int64(s.jwtService.GetAccessTokenExpiration().Seconds()),
+	}, nil
 }
 
 // Logout logs out a user by revoking their tokens
@@ -376,24 +419,10 @@ func (s *AuthService) Logout(ctx context.Context, accessToken, ip, userAgent str
 		return models.ErrInvalidToken
 	}
 
-	// Add access token to blacklist in Redis
+	// Add access token to blacklist using unified service
 	tokenHash := utils.HashToken(accessToken)
-	expiration := s.jwtService.GetAccessTokenExpiration()
-	if err := s.redis.AddToBlacklist(ctx, tokenHash, expiration); err != nil {
+	if err := s.blacklistService.AddAccessToken(ctx, tokenHash, &claims.UserID); err != nil {
 		return fmt.Errorf("failed to blacklist token: %w", err)
-	}
-
-	// Also add to database for persistence
-	blacklistEntry := &models.TokenBlacklist{
-		ID:        uuid.New(),
-		TokenHash: tokenHash,
-		UserID:    &claims.UserID,
-		ExpiresAt: time.Now().Add(expiration),
-	}
-
-	if err := s.tokenRepo.AddToBlacklist(ctx, blacklistEntry); err != nil {
-		// Log but don't fail - Redis blacklist is primary
-		fmt.Printf("Failed to add token to DB blacklist: %v\n", err)
 	}
 
 	// Revoke all refresh tokens for this user
@@ -719,15 +748,16 @@ func (s *AuthService) generateAuthResponse(ctx context.Context, user *models.Use
 		return nil, fmt.Errorf("failed to save refresh token: %w", err)
 	}
 
-	// Create session using universal SessionCreationService (non-fatal to not block auth)
+	// Create session using SessionService (non-fatal to not block auth)
 	if s.sessionService != nil {
 		s.sessionService.CreateSessionNonFatal(ctx, SessionCreationParams{
-			UserID:      user.ID,
-			TokenHash:   tokenHash,
-			IPAddress:   ip,
-			UserAgent:   userAgent,
-			ExpiresAt:   time.Now().Add(refreshExpiration),
-			SessionName: sessionName,
+			UserID:          user.ID,
+			TokenHash:       tokenHash,
+			AccessTokenHash: utils.HashToken(accessToken),
+			IPAddress:       ip,
+			UserAgent:       userAgent,
+			ExpiresAt:       time.Now().Add(refreshExpiration),
+			SessionName:     sessionName,
 		})
 	}
 

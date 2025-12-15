@@ -46,6 +46,7 @@ const (
 	ActionCreate         AuditAction = "create"
 	ActionUpdate         AuditAction = "update"
 	ActionDelete         AuditAction = "delete"
+	ActionSessionRevoked AuditAction = "session_revoked"
 )
 
 // AuditResource represents the type of resource being audited

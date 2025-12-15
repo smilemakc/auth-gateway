@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/smilemakc/auth-gateway/internal/models" // Used for Swagger documentation
 	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
 )
@@ -32,10 +33,11 @@ type HealthResponse struct {
 
 // Health checks the health of the service and its dependencies
 // @Summary Health check
-// @Tags health
+// @Description Check the health of the service and its dependencies (database, redis)
+// @Tags Health
 // @Produce json
-// @Success 200 {object} HealthResponse
-// @Failure 503 {object} HealthResponse
+// @Success 200 {object} HealthResponse "Service is healthy"
+// @Failure 503 {object} HealthResponse "Service is unhealthy"
 // @Router /health [get]
 func (h *HealthHandler) Health(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
@@ -72,10 +74,11 @@ func (h *HealthHandler) Health(c *gin.Context) {
 
 // Readiness checks if the service is ready to handle requests
 // @Summary Readiness check
-// @Tags health
+// @Description Check if the service is ready to handle incoming requests
+// @Tags Health
 // @Produce json
-// @Success 200 {object} map[string]string
-// @Failure 503 {object} map[string]string
+// @Success 200 {object} models.MessageResponse "Service is ready"
+// @Failure 503 {object} models.MessageResponse "Service is not ready"
 // @Router /ready [get]
 func (h *HealthHandler) Readiness(c *gin.Context) {
 	// Simple readiness check
@@ -84,9 +87,10 @@ func (h *HealthHandler) Readiness(c *gin.Context) {
 
 // Liveness checks if the service is alive
 // @Summary Liveness check
-// @Tags health
+// @Description Check if the service is alive (used by Kubernetes liveness probes)
+// @Tags Health
 // @Produce json
-// @Success 200 {object} map[string]string
+// @Success 200 {object} models.MessageResponse "Service is alive"
 // @Router /live [get]
 func (h *HealthHandler) Liveness(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "alive"})

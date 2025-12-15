@@ -28,8 +28,8 @@ func NewAdminHandler(adminService *service.AdminService, logger *logger.Logger) 
 
 // GetStats returns system statistics
 // @Summary Get system statistics
-// @Description Get system-wide statistics (admin only)
-// @Tags Admin - Management
+// @Description Get system-wide statistics including user counts, sessions, and API keys (admin only)
+// @Tags Admin - Dashboard
 // @Security BearerAuth
 // @Produce json
 // @Success 200 {object} models.AdminStatsResponse
@@ -53,7 +53,7 @@ func (h *AdminHandler) GetStats(c *gin.Context) {
 // ListUsers returns paginated list of users
 // @Summary List all users
 // @Description Get paginated list of all users (admin only)
-// @Tags Admin - Management
+// @Tags Admin - Users
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
@@ -82,10 +82,10 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 // GetUser returns detailed user information
 // @Summary Get user details
 // @Description Get detailed information about a specific user (admin only)
-// @Tags Admin - Management
+// @Tags Admin - Users
 // @Security BearerAuth
 // @Produce json
-// @Param id path string true "User ID"
+// @Param id path string true "User ID (UUID)"
 // @Success 200 {object} models.AdminUserResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
@@ -118,11 +118,11 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 // UpdateUser updates user information
 // @Summary Update user
 // @Description Update user information (admin only)
-// @Tags Admin - Management
+// @Tags Admin - Users
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param id path string true "User ID"
+// @Param id path string true "User ID (UUID)"
 // @Param request body models.AdminUpdateUserRequest true "User update data"
 // @Success 200 {object} models.AdminUserResponse
 // @Failure 400 {object} models.ErrorResponse
@@ -171,7 +171,7 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 // CreateUser creates a new user
 // @Summary Create user
 // @Description Create a new user (admin only)
-// @Tags Admin - Management
+// @Tags Admin - Users
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -215,10 +215,11 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 // DeleteUser deletes a user
 // @Summary Delete user
 // @Description Soft delete a user (admin only)
-// @Tags Admin - Management
+// @Tags Admin - Users
 // @Security BearerAuth
-// @Param id path string true "User ID"
-// @Success 200 {object} map[string]string
+// @Produce json
+// @Param id path string true "User ID (UUID)"
+// @Success 200 {object} models.MessageResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -249,7 +250,7 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 // ListAPIKeys returns all API keys
 // @Summary List all API keys
 // @Description Get list of all API keys (admin only)
-// @Tags Admin - Management
+// @Tags Admin - API Keys
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
@@ -278,10 +279,11 @@ func (h *AdminHandler) ListAPIKeys(c *gin.Context) {
 // RevokeAPIKey revokes an API key
 // @Summary Revoke API key
 // @Description Revoke an API key (admin only)
-// @Tags Admin - Management
+// @Tags Admin - API Keys
 // @Security BearerAuth
-// @Param id path string true "API Key ID"
-// @Success 200 {object} map[string]string
+// @Produce json
+// @Param id path string true "API Key ID (UUID)"
+// @Success 200 {object} models.MessageResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -312,12 +314,12 @@ func (h *AdminHandler) RevokeAPIKey(c *gin.Context) {
 // ListAuditLogs returns audit logs
 // @Summary List audit logs
 // @Description Get paginated audit logs (admin only)
-// @Tags Admin - Management
+// @Tags Admin - Audit Logs
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Page size" default(50)
-// @Param user_id query string false "Filter by user ID"
+// @Param user_id query string false "Filter by user ID (UUID)"
 // @Success 200 {array} models.AdminAuditLogResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
@@ -355,11 +357,11 @@ func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
 // AssignRole assigns a role to a user
 // @Summary Assign role to user
 // @Description Assign a role to a user (admin only)
-// @Tags Admin - Management
+// @Tags Admin - Users
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param id path string true "User ID"
+// @Param id path string true "User ID (UUID)"
 // @Param request body models.AssignRoleRequest true "Role assignment data"
 // @Success 200 {object} models.AdminUserResponse
 // @Failure 400 {object} models.ErrorResponse
@@ -407,10 +409,11 @@ func (h *AdminHandler) AssignRole(c *gin.Context) {
 // RemoveRole removes a role from a user
 // @Summary Remove role from user
 // @Description Remove a role from a user (admin only)
-// @Tags Admin - Management
+// @Tags Admin - Users
 // @Security BearerAuth
-// @Param id path string true "User ID"
-// @Param roleId path string true "Role ID"
+// @Produce json
+// @Param id path string true "User ID (UUID)"
+// @Param roleId path string true "Role ID (UUID)"
 // @Success 200 {object} models.AdminUserResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse

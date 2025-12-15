@@ -42,6 +42,7 @@ type TokenStore interface {
 	RevokeRefreshToken(ctx context.Context, tokenHash string) error
 	RevokeAllUserTokens(ctx context.Context, userID uuid.UUID) error
 	AddToBlacklist(ctx context.Context, token *models.TokenBlacklist) error
+	IsBlacklisted(ctx context.Context, tokenHash string) (bool, error)
 }
 
 // BackupCodeStore defines the interface for backup code storage
@@ -215,13 +216,17 @@ type APIKeyStore interface {
 // SessionStore defines the interface for session storage
 type SessionStore interface {
 	CreateSession(ctx context.Context, session *models.Session) error
+	GetSessionByID(ctx context.Context, id uuid.UUID) (*models.Session, error)
 	GetSessionByTokenHash(ctx context.Context, tokenHash string) (*models.Session, error)
+	GetUserSessions(ctx context.Context, userID uuid.UUID) ([]models.Session, error)
 	GetUserSessionsPaginated(ctx context.Context, userID uuid.UUID, page, perPage int) ([]models.Session, int, error)
 	GetAllSessionsPaginated(ctx context.Context, page, perPage int) ([]models.Session, int, error)
 	RevokeSession(ctx context.Context, id uuid.UUID) error
 	RevokeUserSession(ctx context.Context, userID, sessionID uuid.UUID) error
 	RevokeAllUserSessions(ctx context.Context, userID uuid.UUID, exceptSessionID *uuid.UUID) error
 	UpdateSessionName(ctx context.Context, sessionID uuid.UUID, name string) error
+	UpdateSessionAccessTokenHash(ctx context.Context, sessionID uuid.UUID, accessTokenHash string) error
+	RefreshSessionTokens(ctx context.Context, oldTokenHash, newTokenHash, newAccessTokenHash string, newExpiresAt time.Time) error
 	GetSessionStats(ctx context.Context) (*models.SessionStats, error)
 	DeleteExpiredSessions(ctx context.Context, olderThan time.Duration) error
 }
@@ -281,4 +286,12 @@ type OAuthProviderStore interface {
 	ListScopes(ctx context.Context) ([]*models.OAuthScope, error)
 	ListSystemScopes(ctx context.Context) ([]*models.OAuthScope, error)
 	DeleteScope(ctx context.Context, id uuid.UUID) error
+}
+
+type BlackListStore interface {
+	IsBlacklisted(ctx context.Context, tokenHash string) bool
+	AddToBlacklist(ctx context.Context, tokenHash string, userID *uuid.UUID, ttl time.Duration) error
+	AddAccessToken(ctx context.Context, tokenHash string, userID *uuid.UUID) error
+	AddRefreshToken(ctx context.Context, tokenHash string, userID *uuid.UUID) error
+	BlacklistSessionTokens(ctx context.Context, session *models.Session) error
 }

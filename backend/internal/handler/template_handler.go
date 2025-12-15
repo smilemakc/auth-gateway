@@ -27,12 +27,12 @@ func NewTemplateHandler(templateService *service.TemplateService, log *logger.Lo
 
 // ListEmailTemplates godoc
 // @Summary List all email templates
-// @Description Get a list of all email templates
-// @Tags Email Templates
+// @Description Get a list of all email templates (admin only)
+// @Tags Admin - Email Templates
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} object{templates=[]models.EmailTemplate}
+// @Success 200 {object} models.EmailTemplateListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -50,13 +50,14 @@ func (h *TemplateHandler) ListEmailTemplates(c *gin.Context) {
 
 // GetEmailTemplate godoc
 // @Summary Get email template by ID
-// @Description Get a specific email template by its ID
-// @Tags Email Templates
+// @Description Get a specific email template by its ID (admin only)
+// @Tags Admin - Email Templates
 // @Accept json
 // @Produce json
-// @Param id path string true "Template ID"
+// @Param id path string true "Template ID (UUID)"
 // @Security BearerAuth
 // @Success 200 {object} models.EmailTemplate
+// @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
@@ -79,8 +80,8 @@ func (h *TemplateHandler) GetEmailTemplate(c *gin.Context) {
 
 // CreateEmailTemplate godoc
 // @Summary Create a new email template
-// @Description Create a new email template for customized emails
-// @Tags Email Templates
+// @Description Create a new email template for customized emails (admin only)
+// @Tags Admin - Email Templates
 // @Accept json
 // @Produce json
 // @Param request body models.CreateEmailTemplateRequest true "Template data"
@@ -116,11 +117,11 @@ func (h *TemplateHandler) CreateEmailTemplate(c *gin.Context) {
 
 // UpdateEmailTemplate godoc
 // @Summary Update an email template
-// @Description Update an existing email template
-// @Tags Email Templates
+// @Description Update an existing email template (admin only)
+// @Tags Admin - Email Templates
 // @Accept json
 // @Produce json
-// @Param id path string true "Template ID"
+// @Param id path string true "Template ID (UUID)"
 // @Param request body models.UpdateEmailTemplateRequest true "Template update data"
 // @Security BearerAuth
 // @Success 200 {object} models.MessageResponse
@@ -159,13 +160,14 @@ func (h *TemplateHandler) UpdateEmailTemplate(c *gin.Context) {
 
 // DeleteEmailTemplate godoc
 // @Summary Delete an email template
-// @Description Delete an email template by ID
-// @Tags Email Templates
+// @Description Delete an email template by ID (admin only)
+// @Tags Admin - Email Templates
 // @Accept json
 // @Produce json
-// @Param id path string true "Template ID"
+// @Param id path string true "Template ID (UUID)"
 // @Security BearerAuth
 // @Success 200 {object} models.MessageResponse
+// @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
@@ -194,8 +196,8 @@ func (h *TemplateHandler) DeleteEmailTemplate(c *gin.Context) {
 
 // PreviewEmailTemplate godoc
 // @Summary Preview an email template
-// @Description Render a template with sample data for preview
-// @Tags Email Templates
+// @Description Render a template with sample data for preview (admin only)
+// @Tags Admin - Email Templates
 // @Accept json
 // @Produce json
 // @Param request body models.PreviewEmailTemplateRequest true "Preview data"
@@ -224,13 +226,14 @@ func (h *TemplateHandler) PreviewEmailTemplate(c *gin.Context) {
 
 // GetAvailableTemplateTypes godoc
 // @Summary Get available template types
-// @Description Get a list of all available email template types
-// @Tags Email Templates
+// @Description Get a list of all available email template types (admin only)
+// @Tags Admin - Email Templates
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} object{types=[]string}
+// @Success 200 {object} models.TemplateTypesResponse
 // @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
 // @Router /api/admin/templates/types [get]
 func (h *TemplateHandler) GetAvailableTemplateTypes(c *gin.Context) {
 	types := h.templateService.GetAvailableTemplateTypes()
@@ -239,14 +242,15 @@ func (h *TemplateHandler) GetAvailableTemplateTypes(c *gin.Context) {
 
 // GetDefaultVariables godoc
 // @Summary Get default variables for a template type
-// @Description Get the list of default variables available for a specific template type
-// @Tags Email Templates
+// @Description Get the list of default variables available for a specific template type (admin only)
+// @Tags Admin - Email Templates
 // @Accept json
 // @Produce json
-// @Param type path string true "Template type"
+// @Param type path string true "Template type (e.g., welcome, password_reset, verification)"
 // @Security BearerAuth
-// @Success 200 {object} object{variables=[]string}
+// @Success 200 {object} models.TemplateVariablesResponse
 // @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
 // @Router /api/admin/templates/variables/{type} [get]
 func (h *TemplateHandler) GetDefaultVariables(c *gin.Context) {
 	templateType := c.Param("type")

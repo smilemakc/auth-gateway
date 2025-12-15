@@ -87,3 +87,71 @@ type MessageResponse struct {
 	// Response message
 	Message string `json:"message" example:"Operation completed successfully"`
 }
+
+// PasswordlessLoginRequest represents a passwordless login request
+type PasswordlessLoginRequest struct {
+	// Email address to receive the OTP code
+	Email string `json:"email" binding:"required,email" example:"user@example.com"`
+}
+
+// PasswordlessLoginVerifyRequest represents passwordless login verification
+type PasswordlessLoginVerifyRequest struct {
+	// Email address that received the OTP
+	Email string `json:"email" binding:"required,email" example:"user@example.com"`
+	// 6-digit OTP code
+	Code string `json:"code" binding:"required,len=6" example:"123456"`
+}
+
+// RegenerateBackupCodesRequest represents a request to regenerate 2FA backup codes
+type RegenerateBackupCodesRequest struct {
+	// User's current password for verification
+	Password string `json:"password" binding:"required" example:"SecurePass123!"`
+}
+
+// BackupCodesResponse represents the response containing backup codes
+type BackupCodesResponse struct {
+	// List of new backup codes
+	BackupCodes []string `json:"backup_codes" example:"ABC123,DEF456,GHI789,JKL012,MNO345"`
+	// Response message
+	Message string `json:"message" example:"Backup codes regenerated successfully. Save them in a secure location."`
+}
+
+// TelegramAuthData represents Telegram widget authentication data
+type TelegramAuthData struct {
+	// Telegram user ID
+	ID int64 `json:"id" example:"123456789"`
+	// User's first name
+	FirstName string `json:"first_name" example:"John"`
+	// User's last name (optional)
+	LastName string `json:"last_name,omitempty" example:"Doe"`
+	// Username without @ (optional)
+	Username string `json:"username,omitempty" example:"johndoe"`
+	// Profile photo URL (optional)
+	PhotoURL string `json:"photo_url,omitempty" example:"https://t.me/i/userpic/123.jpg"`
+	// Authentication timestamp
+	AuthDate int64 `json:"auth_date" example:"1234567890"`
+	// Hash for verification
+	Hash string `json:"hash" example:"abc123def456..."`
+}
+
+// ResendVerificationRequest represents request to resend verification email
+type ResendVerificationRequest struct {
+	// Email address to resend verification to
+	Email string `json:"email" binding:"required,email" example:"user@example.com"`
+}
+
+// VerifyEmailRequest represents email verification request
+type VerifyEmailRequest struct {
+	// Email address to verify
+	Email string `json:"email" binding:"required,email" example:"user@example.com"`
+	// 6-digit verification code
+	Code string `json:"code" binding:"required,len=6" example:"123456"`
+}
+
+// VerifyEmailResponse represents email verification response
+type VerifyEmailResponse struct {
+	// Whether verification was successful
+	Valid bool `json:"valid" example:"true"`
+	// Human-readable message
+	Message string `json:"message" example:"Email verified successfully"`
+}

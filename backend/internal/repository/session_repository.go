@@ -93,23 +93,10 @@ func (r *SessionRepository) GetUserSessions(ctx context.Context, userID uuid.UUI
 // GetUserSessionsPaginated retrieves paginated active sessions for a user
 func (r *SessionRepository) GetUserSessionsPaginated(ctx context.Context, userID uuid.UUID, page, perPage int) ([]models.Session, int, error) {
 	offset := (page - 1) * perPage
-
-	// Get total count
-	total, err := r.db.NewSelect().
-		Model((*models.Session)(nil)).
-		Where("user_id = ?", userID).
-		Where("revoked_at IS NULL").
-		Where("expires_at > ?", bun.Safe("NOW()")).
-		Count(ctx)
-
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to count user sessions: %w", err)
-	}
-
 	// Get paginated sessions
 	sessions := make([]models.Session, 0)
 
-	err = r.db.NewSelect().
+	total, err := r.db.NewSelect().
 		Model(&sessions).
 		Where("user_id = ?", userID).
 		Where("revoked_at IS NULL").
@@ -117,7 +104,7 @@ func (r *SessionRepository) GetUserSessionsPaginated(ctx context.Context, userID
 		Order("last_active_at DESC").
 		Limit(perPage).
 		Offset(offset).
-		Scan(ctx)
+		ScanAndCount(ctx)
 
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get paginated user sessions: %w", err)
@@ -129,29 +116,17 @@ func (r *SessionRepository) GetUserSessionsPaginated(ctx context.Context, userID
 // GetAllActiveSessionsPaginated retrieves all active sessions with pagination (admin)
 func (r *SessionRepository) GetAllActiveSessionsPaginated(ctx context.Context, page, perPage int) ([]models.Session, int, error) {
 	offset := (page - 1) * perPage
-
-	// Get total count
-	total, err := r.db.NewSelect().
-		Model((*models.Session)(nil)).
-		Where("revoked_at IS NULL").
-		Where("expires_at > ?", bun.Safe("NOW()")).
-		Count(ctx)
-
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to count all sessions: %w", err)
-	}
-
 	// Get paginated sessions
 	sessions := make([]models.Session, 0)
 
-	err = r.db.NewSelect().
+	total, err := r.db.NewSelect().
 		Model(&sessions).
 		Where("revoked_at IS NULL").
 		Where("expires_at > ?", bun.Safe("NOW()")).
 		Order("last_active_at DESC").
 		Limit(perPage).
 		Offset(offset).
-		Scan(ctx)
+		ScanAndCount(ctx)
 
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get paginated sessions: %w", err)
@@ -199,6 +174,61 @@ func (r *SessionRepository) UpdateSessionName(ctx context.Context, id uuid.UUID,
 
 	if rows == 0 {
 		return fmt.Errorf("session not found")
+	}
+
+	return nil
+}
+
+// UpdateSessionAccessTokenHash updates the access token hash for a session
+// Used when a token is refreshed so the new access token can be revoked
+func (r *SessionRepository) UpdateSessionAccessTokenHash(ctx context.Context, id uuid.UUID, accessTokenHash string) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.Session)(nil)).
+		Set("access_token_hash = ?", accessTokenHash).
+		Where("id = ?", id).
+		Where("revoked_at IS NULL").
+		Exec(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to update session access token hash: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("session not found or already revoked")
+	}
+
+	return nil
+}
+
+// RefreshSessionTokens updates both token hashes and extends expiration when refreshing tokens.
+// This updates the existing session instead of creating a new one.
+func (r *SessionRepository) RefreshSessionTokens(ctx context.Context, oldTokenHash, newTokenHash, newAccessTokenHash string, newExpiresAt time.Time) error {
+	result, err := r.db.NewUpdate().
+		Model((*models.Session)(nil)).
+		Set("token_hash = ?", newTokenHash).
+		Set("access_token_hash = ?", newAccessTokenHash).
+		Set("expires_at = ?", newExpiresAt).
+		Set("last_active_at = ?", bun.Safe("NOW()")).
+		Where("token_hash = ?", oldTokenHash).
+		Where("revoked_at IS NULL").
+		Exec(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to refresh session tokens: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("session not found or already revoked")
 	}
 
 	return nil

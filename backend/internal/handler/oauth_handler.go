@@ -32,11 +32,13 @@ func NewOAuthHandler(
 
 // Login initiates OAuth login flow
 // @Summary Initiate OAuth login
-// @Description Redirect to OAuth provider for authentication
+// @Description Redirect to OAuth provider for authentication (Google, Yandex, GitHub, Instagram, Telegram)
 // @Tags OAuth
 // @Param provider path string true "OAuth provider" Enums(google, yandex, github, instagram, telegram)
-// @Success 302
-// @Router /auth/{provider} [get]
+// @Success 302 {string} string "Redirect to OAuth provider"
+// @Failure 400 {object} models.ErrorResponse "Invalid provider"
+// @Failure 500 {object} models.ErrorResponse "Server error"
+// @Router /api/auth/{provider} [get]
 func (h *OAuthHandler) Login(c *gin.Context) {
 	provider := c.Param("provider")
 
@@ -80,13 +82,18 @@ func (h *OAuthHandler) Login(c *gin.Context) {
 
 // Callback handles OAuth callback
 // @Summary Handle OAuth callback
-// @Description Process OAuth callback and create/login user
+// @Description Process OAuth callback from provider, create or login user, and redirect with tokens
 // @Tags OAuth
-// @Param provider path string true "OAuth provider"
-// @Param code query string true "Authorization code"
-// @Param state query string true "CSRF state"
-// @Success 302
-// @Router /auth/{provider}/callback [get]
+// @Produce json
+// @Param provider path string true "OAuth provider" Enums(google, yandex, github, instagram)
+// @Param code query string true "Authorization code from OAuth provider"
+// @Param state query string true "CSRF state parameter"
+// @Param response_type query string false "Response type: 'json' for JSON response, otherwise redirect" Enums(json)
+// @Success 200 {object} models.OAuthLoginResponse "JSON response when response_type=json"
+// @Success 302 {string} string "Redirect to frontend with tokens"
+// @Failure 400 {object} models.ErrorResponse "Invalid request"
+// @Failure 500 {object} models.ErrorResponse "Server error"
+// @Router /api/auth/{provider}/callback [get]
 func (h *OAuthHandler) Callback(c *gin.Context) {
 	provider := c.Param("provider")
 	code := c.Query("code")
@@ -160,13 +167,16 @@ func (h *OAuthHandler) Callback(c *gin.Context) {
 
 // TelegramCallback handles Telegram widget callback
 // @Summary Handle Telegram auth callback
-// @Description Process Telegram widget authentication
+// @Description Process Telegram widget authentication data and return tokens
 // @Tags OAuth
 // @Accept json
 // @Produce json
-// @Param data body map[string]interface{} true "Telegram auth data"
+// @Param data body models.TelegramAuthData true "Telegram widget auth data"
 // @Success 200 {object} models.OAuthLoginResponse
-// @Router /auth/telegram/callback [post]
+// @Failure 400 {object} models.ErrorResponse "Invalid request"
+// @Failure 401 {object} models.ErrorResponse "Invalid authentication data"
+// @Failure 500 {object} models.ErrorResponse "Server error"
+// @Router /api/auth/telegram/callback [post]
 func (h *OAuthHandler) TelegramCallback(c *gin.Context) {
 	var data map[string]interface{}
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -229,11 +239,11 @@ func (h *OAuthHandler) verifyTelegramAuth(data map[string]interface{}) bool {
 
 // GetProviders returns available OAuth providers
 // @Summary Get available OAuth providers
-// @Description List all configured OAuth providers
+// @Description List all configured OAuth providers with their enabled status
 // @Tags OAuth
 // @Produce json
 // @Success 200 {array} models.OAuthProviderInfo
-// @Router /auth/providers [get]
+// @Router /api/auth/providers [get]
 func (h *OAuthHandler) GetProviders(c *gin.Context) {
 	providers := []models.OAuthProviderInfo{
 		{

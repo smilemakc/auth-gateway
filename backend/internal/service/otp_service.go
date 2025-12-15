@@ -42,8 +42,8 @@ func NewOTPService(
 // GenerateOTPCode generates a random 6-digit OTP code
 func (s *OTPService) GenerateOTPCode() (string, error) {
 	// Generate 6-digit code (000000-999999)
-	max := big.NewInt(1000000)
-	n, err := rand.Int(rand.Reader, max)
+	m := big.NewInt(1000000)
+	n, err := rand.Int(rand.Reader, m)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate random number: %w", err)
 	}

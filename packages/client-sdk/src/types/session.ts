@@ -5,10 +5,15 @@
 /** Session entity */
 export interface Session {
   id: string;
+  user_id: string;
+  device_type: string;
+  os: string;
+  browser: string;
+  session_name: string;
   ip_address: string;
   user_agent: string;
   created_at: string;
-  last_activity: string;
+  last_active_at: string;
   is_current?: boolean;
 }
 

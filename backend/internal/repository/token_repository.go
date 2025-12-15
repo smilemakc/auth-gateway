@@ -112,16 +112,15 @@ func (r *TokenRepository) DeleteExpiredRefreshTokens(ctx context.Context) error 
 
 // AddToBlacklist adds a token to the blacklist
 func (r *TokenRepository) AddToBlacklist(ctx context.Context, token *models.TokenBlacklist) error {
+	// Use INSERT ... ON CONFLICT DO UPDATE to ensure the row is inserted or updated
+	// This avoids issues with DO NOTHING not returning anything
 	_, err := r.db.NewInsert().
 		Model(token).
-		On("CONFLICT (token_hash) DO NOTHING").
-		Returning("*").
+		On("CONFLICT (token_hash) DO UPDATE").
+		Set("expires_at = EXCLUDED.expires_at").
+		Set("user_id = EXCLUDED.user_id").
 		Exec(ctx)
 
-	// ON CONFLICT DO NOTHING may return sql.ErrNoRows if conflict occurred
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil
-	}
 	if err != nil {
 		return fmt.Errorf("failed to add token to blacklist: %w", err)
 	}

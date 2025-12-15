@@ -40,7 +40,8 @@ func NewOTPHandler(
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 429 {object} models.ErrorResponse
-// @Router /otp/send [post]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/otp/send [post]
 func (h *OTPHandler) SendOTP(c *gin.Context) {
 	var req models.SendOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -76,7 +77,9 @@ func (h *OTPHandler) SendOTP(c *gin.Context) {
 // @Param request body models.VerifyOTPRequest true "Verify OTP request"
 // @Success 200 {object} models.VerifyOTPResponse
 // @Failure 400 {object} models.ErrorResponse
-// @Router /otp/verify [post]
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/otp/verify [post]
 func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 	var req models.VerifyOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -133,13 +136,14 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 // RequestPasswordlessLogin handles passwordless login request
 // @Summary Request passwordless login
 // @Description Send OTP code for passwordless login
-// @Tags OTP
+// @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body map[string]string true "Email"
+// @Param request body models.PasswordlessLoginRequest true "Email for passwordless login"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} models.ErrorResponse
-// @Router /auth/passwordless/request [post]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/auth/passwordless/request [post]
 func (h *OTPHandler) RequestPasswordlessLogin(c *gin.Context) {
 	var req struct {
 		Email string `json:"email" binding:"required,email"`
@@ -172,14 +176,16 @@ func (h *OTPHandler) RequestPasswordlessLogin(c *gin.Context) {
 
 // VerifyPasswordlessLogin handles passwordless login verification
 // @Summary Verify passwordless login
-// @Description Verify OTP code and login
-// @Tags OTP
+// @Description Verify OTP code and complete passwordless login, returns access and refresh tokens
+// @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body map[string]string true "Email and Code"
-// @Success 200 {object} models.VerifyOTPResponse
+// @Param request body models.PasswordlessLoginVerifyRequest true "Email and OTP code"
+// @Success 200 {object} models.AuthResponse
 // @Failure 400 {object} models.ErrorResponse
-// @Router /auth/passwordless/verify [post]
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/auth/passwordless/verify [post]
 func (h *OTPHandler) VerifyPasswordlessLogin(c *gin.Context) {
 	var req struct {
 		Email string `json:"email" binding:"required,email"`

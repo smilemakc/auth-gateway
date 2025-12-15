@@ -1,12 +1,15 @@
 package handler
 
 import (
+	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
+	"github.com/smilemakc/auth-gateway/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -20,6 +23,7 @@ type AdvancedAdminHandler struct {
 	brandingRepo    *repository.BrandingRepository
 	systemRepo      *repository.SystemRepository
 	geoRepo         *repository.GeoRepository
+	log             *logger.Logger
 }
 
 // NewAdvancedAdminHandler creates a new advanced admin handler
@@ -30,6 +34,7 @@ func NewAdvancedAdminHandler(
 	brandingRepo *repository.BrandingRepository,
 	systemRepo *repository.SystemRepository,
 	geoRepo *repository.GeoRepository,
+	log *logger.Logger,
 ) *AdvancedAdminHandler {
 	return &AdvancedAdminHandler{
 		rbacService:     rbacService,
@@ -38,6 +43,7 @@ func NewAdvancedAdminHandler(
 		brandingRepo:    brandingRepo,
 		systemRepo:      systemRepo,
 		geoRepo:         geoRepo,
+		log:             log,
 	}
 }
 
@@ -179,7 +185,7 @@ func (h *AdvancedAdminHandler) CreateRole(c *gin.Context) {
 // @Tags Admin - RBAC
 // @Security BearerAuth
 // @Produce json
-// @Param id path string true "Role ID"
+// @Param id path string true "Role ID (UUID)"
 // @Success 200 {object} models.Role
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
@@ -209,7 +215,7 @@ func (h *AdvancedAdminHandler) GetRole(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param id path string true "Role ID"
+// @Param id path string true "Role ID (UUID)"
 // @Param role body models.UpdateRoleRequest true "Role data"
 // @Success 200 {object} models.Role
 // @Failure 400 {object} models.ErrorResponse
@@ -244,8 +250,8 @@ func (h *AdvancedAdminHandler) UpdateRole(c *gin.Context) {
 // @Description Delete a role from the RBAC system
 // @Tags Admin - RBAC
 // @Security BearerAuth
-// @Param id path string true "Role ID"
-// @Success 204
+// @Param id path string true "Role ID (UUID)"
+// @Success 204 "Role deleted successfully"
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -331,8 +337,8 @@ func (h *AdvancedAdminHandler) ListUserSessions(c *gin.Context) {
 // @Description Terminate a specific session for the authenticated user
 // @Tags Sessions
 // @Security BearerAuth
-// @Param id path string true "Session ID"
-// @Success 204
+// @Param id path string true "Session ID (UUID)"
+// @Success 204 "Session revoked successfully"
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
@@ -354,22 +360,76 @@ func (h *AdvancedAdminHandler) RevokeSession(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// AdminRevokeSession godoc
+// @Summary Revoke any session (admin only)
+// @Description Terminate any session by ID, regardless of owner
+// @Tags Admin - Sessions
+// @Security BearerAuth
+// @Param id path string true "Session ID (UUID)"
+// @Success 204 "Session revoked successfully"
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/sessions/{id} [delete]
+func (h *AdvancedAdminHandler) AdminRevokeSession(c *gin.Context) {
+	sessionID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid session ID"})
+		return
+	}
+
+	err = h.sessionService.AdminRevokeSession(c.Request.Context(), sessionID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 // RevokeAllSessions godoc
 // @Summary Revoke all sessions except current
 // @Description Terminate all active sessions except the current one
 // @Tags Sessions
 // @Security BearerAuth
-// @Success 204
+// @Success 204 "All sessions revoked successfully"
+// @Param user_id query string false "User ID (UUID)"
+// @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/sessions/revoke-all [post]
 func (h *AdvancedAdminHandler) RevokeAllSessions(c *gin.Context) {
-	userID, _ := c.Get("userID")
-
-	err := h.sessionService.RevokeAllUserSessions(c.Request.Context(), userID.(uuid.UUID), nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
-		return
+	if userIDStr := c.Query("user_id"); userIDStr != "" {
+		userID, err := uuid.Parse(userIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid user ID"})
+			return
+		}
+		err = h.sessionService.RevokeAllUserSessions(c.Request.Context(), userID, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+			return
+		}
+	}
+	currentPage := 1
+	perPage := 100
+	for {
+		resp, err := h.sessionService.GetAllSessions(c.Request.Context(), currentPage, perPage)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+			break
+		}
+		for _, session := range resp.Sessions {
+			if err := h.sessionService.RevokeSession(c.Request.Context(), session.UserID, session.ID); err != nil {
+				h.log.Error(err.Error())
+				continue
+			}
+		}
+		currentPage++
+		if resp.Total > currentPage*perPage {
+			break
+		}
 	}
 
 	c.Status(http.StatusNoContent)
@@ -504,8 +564,8 @@ func (h *AdvancedAdminHandler) CreateIPFilter(c *gin.Context) {
 // @Description Delete an existing IP filter rule
 // @Tags Admin - IP Filters
 // @Security BearerAuth
-// @Param id path string true "Filter ID"
-// @Success 204
+// @Param id path string true "Filter ID (UUID)"
+// @Success 204 "IP filter deleted successfully"
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -533,10 +593,12 @@ func (h *AdvancedAdminHandler) DeleteIPFilter(c *gin.Context) {
 
 // GetBranding godoc
 // @Summary Get branding settings
+// @Description Get public branding settings (logo, colors, company info)
 // @Tags Branding
 // @Produce json
 // @Success 200 {object} models.PublicBrandingResponse
-// @Router /branding [get]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/branding [get]
 func (h *AdvancedAdminHandler) GetBranding(c *gin.Context) {
 	settings, err := h.brandingRepo.GetBrandingSettings(c.Request.Context())
 	if err != nil {
@@ -639,10 +701,12 @@ func (h *AdvancedAdminHandler) UpdateBranding(c *gin.Context) {
 
 // GetMaintenanceMode godoc
 // @Summary Get maintenance mode status
+// @Description Check if the system is in maintenance mode
 // @Tags System
 // @Produce json
 // @Success 200 {object} models.MaintenanceModeResponse
-// @Router /system/maintenance [get]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/system/maintenance [get]
 func (h *AdvancedAdminHandler) GetMaintenanceMode(c *gin.Context) {
 	setting, err := h.systemRepo.GetSetting(c.Request.Context(), models.SettingMaintenanceMode)
 	if err != nil {

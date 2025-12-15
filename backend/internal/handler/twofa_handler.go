@@ -32,16 +32,17 @@ func NewTwoFactorHandler(
 
 // Setup initiates 2FA setup
 // @Summary Setup 2FA
-// @Description Generate TOTP secret and backup codes
+// @Description Generate TOTP secret and backup codes for two-factor authentication
 // @Tags 2FA
 // @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param request body models.TwoFactorSetupRequest true "Password for verification"
 // @Success 200 {object} models.TwoFactorSetupResponse
+// @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /auth/2fa/setup [post]
+// @Router /api/auth/2fa/setup [post]
 func (h *TwoFactorHandler) Setup(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {
@@ -77,16 +78,17 @@ func (h *TwoFactorHandler) Setup(c *gin.Context) {
 
 // Verify verifies 2FA setup with initial code
 // @Summary Verify 2FA setup
-// @Description Verify initial TOTP code and enable 2FA
+// @Description Verify initial TOTP code and enable 2FA for the user account
 // @Tags 2FA
 // @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param request body models.TwoFactorVerifyRequest true "TOTP code"
-// @Success 200 {object} map[string]string
+// @Success 200 {object} models.MessageResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
-// @Router /auth/2fa/verify [post]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/auth/2fa/verify [post]
 func (h *TwoFactorHandler) Verify(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {
@@ -118,15 +120,17 @@ func (h *TwoFactorHandler) Verify(c *gin.Context) {
 
 // Disable disables 2FA
 // @Summary Disable 2FA
-// @Description Disable TOTP 2FA
+// @Description Disable TOTP two-factor authentication for the user account
 // @Tags 2FA
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param request body models.TwoFactorDisableRequest true "Password and TOTP code"
-// @Success 200 {object} map[string]string
+// @Param request body models.TwoFactorDisableRequest true "Password and TOTP code for verification"
+// @Success 200 {object} models.MessageResponse
+// @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
-// @Router /auth/2fa/disable [post]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/auth/2fa/disable [post]
 func (h *TwoFactorHandler) Disable(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {
@@ -164,7 +168,8 @@ func (h *TwoFactorHandler) Disable(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} models.TwoFactorStatusResponse
 // @Failure 401 {object} models.ErrorResponse
-// @Router /auth/2fa/status [get]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/auth/2fa/status [get]
 func (h *TwoFactorHandler) GetStatus(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {
@@ -183,15 +188,17 @@ func (h *TwoFactorHandler) GetStatus(c *gin.Context) {
 
 // RegenerateBackupCodes generates new backup codes
 // @Summary Regenerate backup codes
-// @Description Generate new backup codes
+// @Description Generate new backup codes for 2FA recovery (invalidates previous codes)
 // @Tags 2FA
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param request body map[string]string true "Password"
-// @Success 200 {object} map[string]interface{}
+// @Param request body models.RegenerateBackupCodesRequest true "Password for verification"
+// @Success 200 {object} models.BackupCodesResponse
+// @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
-// @Router /auth/2fa/backup-codes/regenerate [post]
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/auth/2fa/backup-codes/regenerate [post]
 func (h *TwoFactorHandler) RegenerateBackupCodes(c *gin.Context) {
 	userID, exists := utils.GetUserIDFromContext(c)
 	if !exists {

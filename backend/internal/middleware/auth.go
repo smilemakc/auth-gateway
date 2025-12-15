@@ -1,12 +1,12 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
@@ -14,17 +14,15 @@ import (
 
 // AuthMiddleware validates JWT tokens and sets user context
 type AuthMiddleware struct {
-	jwtService *jwt.Service
-	redis      *service.RedisService
-	tokenRepo  *repository.TokenRepository
+	jwtService       *jwt.Service
+	blacklistService *service.BlacklistService
 }
 
 // NewAuthMiddleware creates a new auth middleware
-func NewAuthMiddleware(jwtService *jwt.Service, redis *service.RedisService, tokenRepo *repository.TokenRepository) *AuthMiddleware {
+func NewAuthMiddleware(jwtService *jwt.Service, blacklistService *service.BlacklistService) *AuthMiddleware {
 	return &AuthMiddleware{
-		jwtService: jwtService,
-		redis:      redis,
-		tokenRepo:  tokenRepo,
+		jwtService:       jwtService,
+		blacklistService: blacklistService,
 	}
 }
 
@@ -52,7 +50,7 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 		// Validate token
 		claims, err := m.jwtService.ValidateAccessToken(token)
 		if err != nil {
-			if err == jwt.ErrExpiredToken {
+			if errors.Is(err, jwt.ErrExpiredToken) {
 				c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrTokenExpired))
 			} else {
 				c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrInvalidToken))
@@ -61,15 +59,9 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 			return
 		}
 
-		// Check if token is blacklisted in Redis
+		// Check if token is blacklisted using unified blacklist service
 		tokenHash := utils.HashToken(token)
-		blacklisted, err := m.redis.IsBlacklisted(c.Request.Context(), tokenHash)
-		if err != nil {
-			// Log error but don't fail - check database as fallback
-			blacklisted, _ = m.tokenRepo.IsBlacklisted(c.Request.Context(), tokenHash)
-		}
-
-		if blacklisted {
+		if m.blacklistService.IsBlacklisted(c.Request.Context(), tokenHash) {
 			c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrTokenRevoked))
 			c.Abort()
 			return

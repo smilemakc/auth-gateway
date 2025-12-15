@@ -10,10 +10,11 @@ import (
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
+	"github.com/smilemakc/auth-gateway/pkg/logger"
 	"github.com/stretchr/testify/assert"
 )
 
-func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBACStore, *mockAuditLogger, *mockTokenService, *mockCacheService) {
+func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBACStore, *mockAuditLogger, *mockTokenService, *mockCacheService, *BlacklistService) {
 	mUser := &mockUserStore{}
 	mToken := &mockTokenStore{}
 	mRBAC := &mockRBACStore{}
@@ -21,13 +22,19 @@ func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBA
 	mJWT := &mockTokenService{}
 	mCache := &mockCacheService{}
 
-	// SessionCreationService is nil for tests (non-fatal session creation)
-	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, mCache, nil, 10)
-	return svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache
+	// Create logger for tests
+	log := logger.New("auth-test", logger.DebugLevel, false)
+
+	// Create blacklist service with mocks
+	blacklistSvc := NewBlacklistService(mCache, mToken, mJWT, log, mAudit)
+
+	// SessionService is nil for tests (non-fatal session creation)
+	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, blacklistSvc, mCache, nil, 10)
+	return svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache, blacklistSvc
 }
 
 func TestAuthService_SignUp(t *testing.T) {
-	svc, mUser, mToken, mRBAC, mAudit, mJWT, _ := setupAuthService()
+	svc, mUser, mToken, mRBAC, mAudit, mJWT, _, _ := setupAuthService()
 	ctx := context.Background()
 
 	validReq := &models.CreateUserRequest{
@@ -94,7 +101,7 @@ func TestAuthService_SignUp(t *testing.T) {
 }
 
 func TestAuthService_SignIn(t *testing.T) {
-	svc, mUser, mToken, _, mAudit, mJWT, _ := setupAuthService()
+	svc, mUser, mToken, _, mAudit, mJWT, _, _ := setupAuthService()
 	ctx := context.Background()
 
 	password := "password123"
@@ -186,7 +193,7 @@ func TestAuthService_SignIn(t *testing.T) {
 }
 
 func TestAuthService_RefreshToken(t *testing.T) {
-	svc, mUser, mToken, _, mAudit, mJWT, mCache := setupAuthService()
+	svc, mUser, mToken, _, mAudit, mJWT, mCache, _ := setupAuthService()
 	ctx := context.Background()
 	refreshToken := "valid_refresh_token"
 	userID := uuid.New()
@@ -248,7 +255,7 @@ func TestAuthService_RefreshToken(t *testing.T) {
 }
 
 func TestAuthService_Logout(t *testing.T) {
-	svc, _, mToken, _, mAudit, mJWT, mCache := setupAuthService()
+	svc, _, mToken, _, mAudit, mJWT, mCache, _ := setupAuthService()
 	ctx := context.Background()
 	accessToken := "access_token"
 	userID := uuid.New()
@@ -271,7 +278,7 @@ func TestAuthService_Logout(t *testing.T) {
 }
 
 func TestAuthService_ChangePassword(t *testing.T) {
-	svc, mUser, mToken, _, mAudit, _, _ := setupAuthService()
+	svc, mUser, mToken, _, mAudit, _, _, _ := setupAuthService()
 	ctx := context.Background()
 	userID := uuid.New()
 	oldPwd := "oldpassword"
@@ -309,7 +316,7 @@ func TestAuthService_ChangePassword(t *testing.T) {
 }
 
 func TestAuthService_InitPasswordlessRegistration(t *testing.T) {
-	svc, mUser, _, _, mAudit, _, mCache := setupAuthService()
+	svc, mUser, _, _, mAudit, _, mCache, _ := setupAuthService()
 	ctx := context.Background()
 
 	t.Run("Success_Email", func(t *testing.T) {
@@ -402,7 +409,7 @@ func TestAuthService_InitPasswordlessRegistration(t *testing.T) {
 }
 
 func TestAuthService_CompletePasswordlessRegistration(t *testing.T) {
-	svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache := setupAuthService()
+	svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache, _ := setupAuthService()
 	ctx := context.Background()
 
 	t.Run("Success_Email", func(t *testing.T) {
