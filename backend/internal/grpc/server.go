@@ -30,6 +30,7 @@ func NewServer(
 	rbacRepo *repository.RBACRepository,
 	apiKeyService *service.APIKeyService,
 	authService *service.AuthService,
+	oauthProviderService *service.OAuthProviderService,
 	redis *service.RedisService,
 	log *logger.Logger,
 ) (*Server, error) {
@@ -47,7 +48,7 @@ func NewServer(
 	)
 
 	// Register auth service handler
-	handler := NewAuthHandlerV2(jwtService, userRepo, tokenRepo, rbacRepo, apiKeyService, authService, redis, log)
+	handler := NewAuthHandlerV2(jwtService, userRepo, tokenRepo, rbacRepo, apiKeyService, authService, oauthProviderService, redis, log)
 	pb.RegisterAuthServiceServer(grpcServer, handler)
 
 	// Register reflection service for debugging

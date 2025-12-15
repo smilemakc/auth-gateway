@@ -160,37 +160,22 @@ const Settings: React.FC = () => {
 
       {/* Access Control Section */}
       <section className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-             <Shield size={20} />
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+               <Shield size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">{t('settings.roles_desc')}</h2>
+              <p className="text-sm text-gray-500">Manage roles and permissions in one place.</p>
+            </div>
           </div>
-          <h2 className="text-lg font-semibold text-gray-900">{t('settings.roles_desc')}</h2>
-        </div>
-        <div className="divide-y divide-gray-100">
-           <div className="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              <div>
-                <h3 className="text-md font-medium text-gray-900">{t('roles.title')}</h3>
-                <p className="text-sm text-gray-500">Define user roles and assign permission sets.</p>
-              </div>
-              <Link 
-                to="/settings/roles" 
-                className="text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
-              >
-                {t('common.edit')} <ChevronRight size={16} />
-              </Link>
-           </div>
-           <div className="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              <div>
-                <h3 className="text-md font-medium text-gray-900">{t('perms.title')}</h3>
-                <p className="text-sm text-gray-500">Create granular permissions for system resources.</p>
-              </div>
-              <Link 
-                to="/settings/permissions" 
-                className="text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
-              >
-                {t('common.edit')} <ChevronRight size={16} />
-              </Link>
-           </div>
+          <Link
+            to="/settings/access-control"
+            className="text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
+          >
+            {t('oauth.configure')} <ChevronRight size={16} />
+          </Link>
         </div>
       </section>
 

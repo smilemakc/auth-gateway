@@ -26,6 +26,9 @@ const (
 	AuthService_CreateUser_FullMethodName                       = "/auth.AuthService/CreateUser"
 	AuthService_InitPasswordlessRegistration_FullMethodName     = "/auth.AuthService/InitPasswordlessRegistration"
 	AuthService_CompletePasswordlessRegistration_FullMethodName = "/auth.AuthService/CompletePasswordlessRegistration"
+	AuthService_IntrospectOAuthToken_FullMethodName             = "/auth.AuthService/IntrospectOAuthToken"
+	AuthService_ValidateOAuthClient_FullMethodName              = "/auth.AuthService/ValidateOAuthClient"
+	AuthService_GetOAuthClient_FullMethodName                   = "/auth.AuthService/GetOAuthClient"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -48,6 +51,12 @@ type AuthServiceClient interface {
 	InitPasswordlessRegistration(ctx context.Context, in *InitPasswordlessRegistrationRequest, opts ...grpc.CallOption) (*InitPasswordlessRegistrationResponse, error)
 	// CompletePasswordlessRegistration completes registration after OTP verification
 	CompletePasswordlessRegistration(ctx context.Context, in *CompletePasswordlessRegistrationRequest, opts ...grpc.CallOption) (*CompletePasswordlessRegistrationResponse, error)
+	// IntrospectOAuthToken validates OAuth access token (RFC 7662)
+	IntrospectOAuthToken(ctx context.Context, in *IntrospectOAuthTokenRequest, opts ...grpc.CallOption) (*IntrospectOAuthTokenResponse, error)
+	// ValidateOAuthClient validates OAuth client credentials
+	ValidateOAuthClient(ctx context.Context, in *ValidateOAuthClientRequest, opts ...grpc.CallOption) (*ValidateOAuthClientResponse, error)
+	// GetOAuthClient retrieves OAuth client information by client_id
+	GetOAuthClient(ctx context.Context, in *GetOAuthClientRequest, opts ...grpc.CallOption) (*GetOAuthClientResponse, error)
 }
 
 type authServiceClient struct {
@@ -128,6 +137,36 @@ func (c *authServiceClient) CompletePasswordlessRegistration(ctx context.Context
 	return out, nil
 }
 
+func (c *authServiceClient) IntrospectOAuthToken(ctx context.Context, in *IntrospectOAuthTokenRequest, opts ...grpc.CallOption) (*IntrospectOAuthTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntrospectOAuthTokenResponse)
+	err := c.cc.Invoke(ctx, AuthService_IntrospectOAuthToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) ValidateOAuthClient(ctx context.Context, in *ValidateOAuthClientRequest, opts ...grpc.CallOption) (*ValidateOAuthClientResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ValidateOAuthClientResponse)
+	err := c.cc.Invoke(ctx, AuthService_ValidateOAuthClient_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) GetOAuthClient(ctx context.Context, in *GetOAuthClientRequest, opts ...grpc.CallOption) (*GetOAuthClientResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetOAuthClientResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetOAuthClient_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -148,6 +187,12 @@ type AuthServiceServer interface {
 	InitPasswordlessRegistration(context.Context, *InitPasswordlessRegistrationRequest) (*InitPasswordlessRegistrationResponse, error)
 	// CompletePasswordlessRegistration completes registration after OTP verification
 	CompletePasswordlessRegistration(context.Context, *CompletePasswordlessRegistrationRequest) (*CompletePasswordlessRegistrationResponse, error)
+	// IntrospectOAuthToken validates OAuth access token (RFC 7662)
+	IntrospectOAuthToken(context.Context, *IntrospectOAuthTokenRequest) (*IntrospectOAuthTokenResponse, error)
+	// ValidateOAuthClient validates OAuth client credentials
+	ValidateOAuthClient(context.Context, *ValidateOAuthClientRequest) (*ValidateOAuthClientResponse, error)
+	// GetOAuthClient retrieves OAuth client information by client_id
+	GetOAuthClient(context.Context, *GetOAuthClientRequest) (*GetOAuthClientResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -178,6 +223,15 @@ func (UnimplementedAuthServiceServer) InitPasswordlessRegistration(context.Conte
 }
 func (UnimplementedAuthServiceServer) CompletePasswordlessRegistration(context.Context, *CompletePasswordlessRegistrationRequest) (*CompletePasswordlessRegistrationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CompletePasswordlessRegistration not implemented")
+}
+func (UnimplementedAuthServiceServer) IntrospectOAuthToken(context.Context, *IntrospectOAuthTokenRequest) (*IntrospectOAuthTokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method IntrospectOAuthToken not implemented")
+}
+func (UnimplementedAuthServiceServer) ValidateOAuthClient(context.Context, *ValidateOAuthClientRequest) (*ValidateOAuthClientResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ValidateOAuthClient not implemented")
+}
+func (UnimplementedAuthServiceServer) GetOAuthClient(context.Context, *GetOAuthClientRequest) (*GetOAuthClientResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetOAuthClient not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -326,6 +380,60 @@ func _AuthService_CompletePasswordlessRegistration_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_IntrospectOAuthToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IntrospectOAuthTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).IntrospectOAuthToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_IntrospectOAuthToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).IntrospectOAuthToken(ctx, req.(*IntrospectOAuthTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_ValidateOAuthClient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ValidateOAuthClientRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ValidateOAuthClient(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_ValidateOAuthClient_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ValidateOAuthClient(ctx, req.(*ValidateOAuthClientRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_GetOAuthClient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOAuthClientRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetOAuthClient(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GetOAuthClient_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetOAuthClient(ctx, req.(*GetOAuthClientRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -360,6 +468,18 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CompletePasswordlessRegistration",
 			Handler:    _AuthService_CompletePasswordlessRegistration_Handler,
+		},
+		{
+			MethodName: "IntrospectOAuthToken",
+			Handler:    _AuthService_IntrospectOAuthToken_Handler,
+		},
+		{
+			MethodName: "ValidateOAuthClient",
+			Handler:    _AuthService_ValidateOAuthClient_Handler,
+		},
+		{
+			MethodName: "GetOAuthClient",
+			Handler:    _AuthService_GetOAuthClient_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

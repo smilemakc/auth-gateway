@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
-	"github.com/smilemakc/auth-gateway/pkg/jwt"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
@@ -14,7 +14,6 @@ import (
 type OTPHandler struct {
 	otpService  *service.OTPService
 	authService *service.AuthService
-	jwtService  *jwt.Service
 	logger      *logger.Logger
 }
 
@@ -22,13 +21,11 @@ type OTPHandler struct {
 func NewOTPHandler(
 	otpService *service.OTPService,
 	authService *service.AuthService,
-	jwtService *jwt.Service,
 	logger *logger.Logger,
 ) *OTPHandler {
 	return &OTPHandler{
 		otpService:  otpService,
 		authService: authService,
-		jwtService:  jwtService,
 		logger:      logger,
 	}
 }
@@ -109,28 +106,25 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 		return
 	}
 
-	// For login type, generate JWT tokens
+	// For login type, generate JWT tokens with proper session tracking
 	if req.Type == models.OTPTypeLogin && response.User != nil {
-		accessToken, err := h.jwtService.GenerateAccessToken(response.User)
+		authResp, err := h.authService.GenerateTokensForUser(
+			c.Request.Context(),
+			response.User,
+			utils.GetClientIP(c),
+			c.Request.UserAgent(),
+		)
 		if err != nil {
-			h.logger.Error("Failed to generate access token", map[string]interface{}{
-				"error": err.Error(),
+			h.logger.Error("Failed to generate tokens for OTP login", map[string]interface{}{
+				"error":   err.Error(),
+				"user_id": response.User.ID,
 			})
 			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
 			return
 		}
 
-		refreshToken, err := h.jwtService.GenerateRefreshToken(response.User)
-		if err != nil {
-			h.logger.Error("Failed to generate refresh token", map[string]interface{}{
-				"error": err.Error(),
-			})
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
-			return
-		}
-
-		response.AccessToken = accessToken
-		response.RefreshToken = refreshToken
+		response.AccessToken = authResp.AccessToken
+		response.RefreshToken = authResp.RefreshToken
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -221,23 +215,26 @@ func (h *OTPHandler) VerifyPasswordlessLogin(c *gin.Context) {
 		return
 	}
 
-	// Generate tokens
+	// Generate tokens with proper session tracking
 	if response.User != nil {
-		accessToken, err := h.jwtService.GenerateAccessToken(response.User)
+		authResp, err := h.authService.GenerateTokensForUser(
+			c.Request.Context(),
+			response.User,
+			utils.GetClientIP(c),
+			c.Request.UserAgent(),
+		)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
-			return
-		}
-
-		refreshToken, err := h.jwtService.GenerateRefreshToken(response.User)
-		if err != nil {
+			h.logger.Error("Failed to generate tokens for passwordless login", map[string]interface{}{
+				"error":   err.Error(),
+				"user_id": response.User.ID,
+			})
 			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
 			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"access_token":  accessToken,
-			"refresh_token": refreshToken,
+			"access_token":  authResp.AccessToken,
+			"refresh_token": authResp.RefreshToken,
 			"user":          response.User,
 		})
 		return

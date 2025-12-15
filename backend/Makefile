@@ -1,4 +1,4 @@
-.PHONY: help build run test clean docker-build docker-up docker-down migrate-up migrate-down lint
+.PHONY: help build run test clean docker-build docker-up docker-down migrate-up migrate-down lint swagger-install swagger-gen
 
 # Variables
 APP_NAME=auth-gateway
@@ -99,10 +99,22 @@ grpc-example: ## Run gRPC client example
 	@echo "Running gRPC client example..."
 	cd examples/grpc-client && go run main.go
 
+keys-generate: ## Generate OIDC signing keys (usage: make keys-generate [DIR=./keys] [ID=key-$(date)])
+	@echo "Generating OIDC signing keys..."
+	@chmod +x scripts/generate-keys.sh
+	@./scripts/generate-keys.sh $(DIR) $(ID)
+
+keys-example: ## Run keys manager example
+	@echo "Running keys manager example..."
+	go run examples/keys-example/main.go
+
 swagger-gen: ## Generate Swagger documentation
 	@echo "Generating Swagger documentation..."
 	@which swag > /dev/null || (echo "swag not installed. Install: go install github.com/swaggo/swag/cmd/swag@latest" && exit 1)
-	swag init --pd --st -g cmd/server/main.go -o docs --parseInternal
+	swag init --pd --st -g cmd/server/main.go -o docs
+
+swagger-install: ## Install swag CLI tool
+	go install github.com/swaggo/swag/cmd/swag@latest
 
 all: clean deps build test ## Clean, download deps, build and test
 

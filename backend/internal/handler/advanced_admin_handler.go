@@ -95,6 +95,34 @@ func (h *AdvancedAdminHandler) CreatePermission(c *gin.Context) {
 	c.JSON(http.StatusCreated, permission)
 }
 
+// DeletePermission godoc
+// @Summary Delete a permission
+// @Description Delete a permission by ID
+// @Tags Admin - RBAC
+// @Security BearerAuth
+// @Param id path string true "Permission ID (UUID)"
+// @Success 204
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/rbac/permissions/{id} [delete]
+func (h *AdvancedAdminHandler) DeletePermission(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid permission ID"})
+		return
+	}
+
+	err = h.rbacService.DeletePermission(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 // ListRoles godoc
 // @Summary List all roles
 // @Description Get a list of all roles in the RBAC system

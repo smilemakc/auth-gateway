@@ -35,6 +35,15 @@ import type {
   EmailTemplateType,
   OAuthProviderConfig,
   OAuthProviderType,
+  // OAuth Client (OIDC Provider) types
+  OAuthClient,
+  CreateOAuthClientRequest,
+  CreateOAuthClientResponse,
+  UpdateOAuthClientRequest,
+  OAuthScope,
+  UserConsent,
+  GrantType,
+  ClientType,
 } from '@auth-gateway/client-sdk';
 
 // Re-export common SDK types for convenience
@@ -62,6 +71,14 @@ export type {
   EmailTemplateType,
   OAuthProviderConfig,
   OAuthProviderType,
+  OAuthClient,
+  CreateOAuthClientRequest,
+  CreateOAuthClientResponse,
+  UpdateOAuthClientRequest,
+  OAuthScope,
+  UserConsent,
+  GrantType,
+  ClientType,
 } from '@auth-gateway/client-sdk';
 
 // ============================================

@@ -21,7 +21,8 @@ func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBA
 	mJWT := &mockTokenService{}
 	mCache := &mockCacheService{}
 
-	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, mCache, 10)
+	// SessionCreationService is nil for tests (non-fatal session creation)
+	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, mCache, nil, 10)
 	return svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache
 }
 

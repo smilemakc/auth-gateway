@@ -215,11 +215,70 @@ type APIKeyStore interface {
 // SessionStore defines the interface for session storage
 type SessionStore interface {
 	CreateSession(ctx context.Context, session *models.Session) error
+	GetSessionByTokenHash(ctx context.Context, tokenHash string) (*models.Session, error)
 	GetUserSessionsPaginated(ctx context.Context, userID uuid.UUID, page, perPage int) ([]models.Session, int, error)
 	GetAllSessionsPaginated(ctx context.Context, page, perPage int) ([]models.Session, int, error)
+	RevokeSession(ctx context.Context, id uuid.UUID) error
 	RevokeUserSession(ctx context.Context, userID, sessionID uuid.UUID) error
 	RevokeAllUserSessions(ctx context.Context, userID uuid.UUID, exceptSessionID *uuid.UUID) error
 	UpdateSessionName(ctx context.Context, sessionID uuid.UUID, name string) error
 	GetSessionStats(ctx context.Context) (*models.SessionStats, error)
 	DeleteExpiredSessions(ctx context.Context, olderThan time.Duration) error
+}
+
+// OAuthProviderStore defines the interface for OAuth provider operations
+type OAuthProviderStore interface {
+	// Client operations
+	CreateClient(ctx context.Context, client *models.OAuthClient) error
+	GetClientByID(ctx context.Context, id uuid.UUID) (*models.OAuthClient, error)
+	GetClientByClientID(ctx context.Context, clientID string) (*models.OAuthClient, error)
+	UpdateClient(ctx context.Context, client *models.OAuthClient) error
+	DeleteClient(ctx context.Context, id uuid.UUID) error
+	HardDeleteClient(ctx context.Context, id uuid.UUID) error
+	ListClients(ctx context.Context, ownerID *uuid.UUID, page, perPage int) ([]*models.OAuthClient, int, error)
+	ListActiveClients(ctx context.Context) ([]*models.OAuthClient, error)
+
+	// Authorization code operations
+	CreateAuthorizationCode(ctx context.Context, code *models.AuthorizationCode) error
+	GetAuthorizationCode(ctx context.Context, codeHash string) (*models.AuthorizationCode, error)
+	MarkAuthorizationCodeUsed(ctx context.Context, id uuid.UUID) error
+	DeleteExpiredAuthorizationCodes(ctx context.Context) (int64, error)
+
+	// Access token operations
+	CreateAccessToken(ctx context.Context, token *models.OAuthAccessToken) error
+	GetAccessToken(ctx context.Context, tokenHash string) (*models.OAuthAccessToken, error)
+	GetAccessTokenByID(ctx context.Context, id uuid.UUID) (*models.OAuthAccessToken, error)
+	RevokeAccessToken(ctx context.Context, tokenHash string) error
+	RevokeAllUserAccessTokens(ctx context.Context, userID, clientID uuid.UUID) error
+	RevokeAllClientAccessTokens(ctx context.Context, clientID uuid.UUID) error
+	DeleteExpiredAccessTokens(ctx context.Context) (int64, error)
+
+	// Refresh token operations
+	CreateRefreshToken(ctx context.Context, token *models.OAuthRefreshToken) error
+	GetRefreshToken(ctx context.Context, tokenHash string) (*models.OAuthRefreshToken, error)
+	RevokeRefreshToken(ctx context.Context, tokenHash string) error
+	RevokeAllUserRefreshTokens(ctx context.Context, userID, clientID uuid.UUID) error
+	RevokeAllClientRefreshTokens(ctx context.Context, clientID uuid.UUID) error
+	DeleteExpiredRefreshTokens(ctx context.Context) (int64, error)
+
+	// User consent operations
+	CreateOrUpdateConsent(ctx context.Context, consent *models.UserConsent) error
+	GetUserConsent(ctx context.Context, userID, clientID uuid.UUID) (*models.UserConsent, error)
+	RevokeConsent(ctx context.Context, userID, clientID uuid.UUID) error
+	ListUserConsents(ctx context.Context, userID uuid.UUID) ([]*models.UserConsent, error)
+	ListClientConsents(ctx context.Context, clientID uuid.UUID) ([]*models.UserConsent, error)
+
+	// Device code operations (RFC 8628)
+	CreateDeviceCode(ctx context.Context, code *models.DeviceCode) error
+	GetDeviceCode(ctx context.Context, deviceCodeHash string) (*models.DeviceCode, error)
+	GetDeviceCodeByUserCode(ctx context.Context, userCode string) (*models.DeviceCode, error)
+	UpdateDeviceCodeStatus(ctx context.Context, id uuid.UUID, status models.DeviceCodeStatus, userID *uuid.UUID) error
+	DeleteExpiredDeviceCodes(ctx context.Context) (int64, error)
+
+	// Scope operations
+	CreateScope(ctx context.Context, scope *models.OAuthScope) error
+	GetScopeByName(ctx context.Context, name string) (*models.OAuthScope, error)
+	ListScopes(ctx context.Context) ([]*models.OAuthScope, error)
+	ListSystemScopes(ctx context.Context) ([]*models.OAuthScope, error)
+	DeleteScope(ctx context.Context, id uuid.UUID) error
 }

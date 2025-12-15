@@ -71,7 +71,7 @@ type PreviewEmailTemplateRequest struct {
 	// Text template to preview
 	TextBody string `json:"text_body" example:"Hello {{username}}"`
 	// Sample variable values for preview
-	Variables map[string]interface{} `json:"variables" example:"username:John Doe,email:john@example.com"`
+	Variables map[string]interface{} `json:"variables" swaggertype:"object,string" example:"username:John Doe,email:john@example.com"`
 }
 
 // PreviewEmailTemplateResponse returns rendered template preview

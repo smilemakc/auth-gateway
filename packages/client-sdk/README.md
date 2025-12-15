@@ -246,6 +246,128 @@ if (params) {
 }
 ```
 
+### Using Auth Gateway as OAuth Provider
+
+If your application wants to use Auth Gateway as an OAuth/OIDC provider (instead of using it as a client), use the `OAuthProviderClient`:
+
+```typescript
+import { OAuthProviderClient } from '@auth-gateway/client-sdk';
+
+// Create OAuth provider client
+const oauth = new OAuthProviderClient({
+  issuer: 'https://auth.example.com',
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret', // Optional for public clients
+  redirectUri: 'https://yourapp.com/callback',
+  scopes: ['openid', 'profile', 'email'],
+  usePKCE: true, // Recommended, required for public clients
+});
+
+// Authorization Code Flow with PKCE
+// Step 1: Get authorization URL
+const { url, state, codeVerifier } = await oauth.getAuthorizationUrl({
+  prompt: 'consent',
+  login_hint: 'user@example.com',
+});
+
+// Redirect user to authorization URL
+window.location.href = url;
+
+// Step 2: Handle callback (after user authorizes)
+const params = new URLSearchParams(window.location.search);
+const code = params.get('code');
+const returnedState = params.get('state');
+
+// Verify state matches
+if (returnedState !== state) {
+  throw new Error('Invalid state parameter');
+}
+
+// Exchange code for tokens
+const tokens = await oauth.exchangeCode(code, codeVerifier);
+console.log('Access token:', tokens.access_token);
+console.log('ID token:', tokens.id_token);
+
+// Get user info
+const userInfo = await oauth.getUserInfo(tokens.access_token);
+console.log('User:', userInfo);
+
+// Decode ID token (basic validation)
+const claims = oauth.decodeIdToken(tokens.id_token!);
+console.log('ID token claims:', claims);
+
+// Refresh tokens when access token expires
+const newTokens = await oauth.refreshTokens(tokens.refresh_token!);
+
+// Introspect token
+const introspection = await oauth.introspectToken(tokens.access_token);
+console.log('Token active:', introspection.active);
+
+// Revoke token when done
+await oauth.revokeToken(tokens.access_token);
+```
+
+#### Client Credentials Flow (Machine-to-Machine)
+
+```typescript
+// For server-to-server communication
+const oauth = new OAuthProviderClient({
+  issuer: 'https://auth.example.com',
+  clientId: 'service-account',
+  clientSecret: 'secret',
+  redirectUri: '', // Not needed for client credentials
+});
+
+const tokens = await oauth.clientCredentialsGrant(['api:read', 'api:write']);
+console.log('Service token:', tokens.access_token);
+```
+
+#### Device Authorization Flow
+
+```typescript
+// For devices with limited input (TVs, IoT, etc.)
+const deviceAuth = await oauth.requestDeviceCode(['openid', 'profile']);
+
+console.log('User code:', deviceAuth.user_code);
+console.log('Go to:', deviceAuth.verification_uri);
+console.log('Or visit:', deviceAuth.verification_uri_complete);
+
+// Poll for authorization
+const pollInterval = deviceAuth.interval * 1000;
+let tokens;
+
+while (!tokens) {
+  try {
+    tokens = await oauth.pollDeviceToken(deviceAuth.device_code);
+  } catch (error) {
+    if (error instanceof DeviceFlowPendingError) {
+      if (error.code === 'slow_down') {
+        pollInterval *= 2; // Back off
+      }
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    } else {
+      throw error;
+    }
+  }
+}
+
+console.log('Device authorized:', tokens);
+```
+
+#### OIDC Discovery
+
+```typescript
+// Get OpenID Connect discovery document
+const discovery = await oauth.getDiscovery();
+console.log('Issuer:', discovery.issuer);
+console.log('Authorization endpoint:', discovery.authorization_endpoint);
+console.log('Supported scopes:', discovery.scopes_supported);
+
+// Get JSON Web Key Set (for token verification)
+const jwks = await oauth.getJWKS();
+console.log('Keys:', jwks.keys);
+```
+
 ### Passwordless Login
 
 ```typescript
@@ -540,6 +662,15 @@ import type {
   Session,
   ClientConfig,
   TokenStorage,
+  // OAuth Provider types
+  OAuthProviderClientConfig,
+  OIDCDiscoveryDocument,
+  TokenResponse,
+  TokenIntrospectionResponse,
+  UserInfoResponse,
+  IDTokenClaims,
+  DeviceAuthResponse,
+  PKCEParams,
 } from '@auth-gateway/client-sdk';
 ```
 

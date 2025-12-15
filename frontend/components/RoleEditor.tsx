@@ -1,10 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getRole, createRole, updateRole, getPermissions } from '../services/mockData';
-import { RoleDefinition, Permission } from '../types';
+import { Permission } from '../types';
 import { ArrowLeft, Save, Shield, Check, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useRoleDetail, useCreateRole, useUpdateRole, usePermissions } from '../hooks/useRBAC';
+
+interface RoleFormState {
+  name: string;
+  display_name: string;
+  description: string;
+  permissions: string[];
+  is_system_role: boolean;
+}
 
 const RoleEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,29 +21,35 @@ const RoleEditor: React.FC = () => {
   const isEditMode = id && id !== 'new';
   const isNewMode = id === 'new';
 
-  const [role, setRole] = useState<Partial<RoleDefinition>>({
+  const [role, setRole] = useState<RoleFormState>({
     name: '',
+    display_name: '',
     description: '',
     permissions: [],
     is_system_role: false
   });
-  
-  const [availablePermissions, setAvailablePermissions] = useState<Permission[]>([]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Fetch data from API
+  const { data: existingRole, isLoading: roleLoading } = useRoleDetail(isEditMode ? id! : '');
+  const { data: availablePermissions = [], isLoading: permissionsLoading } = usePermissions();
+  const createMutation = useCreateRole();
+  const updateMutation = useUpdateRole();
+
+  // Populate form when existing role is loaded
   useEffect(() => {
-    setAvailablePermissions(getPermissions());
-    
-    if (isEditMode) {
-      const existingRole = getRole(id);
-      if (existingRole) {
-        setRole(existingRole);
-      } else {
-        navigate('/settings/roles');
-      }
+    if (isEditMode && existingRole) {
+      setRole({
+        name: existingRole.name,
+        display_name: existingRole.display_name || existingRole.name,
+        description: existingRole.description || '',
+        permissions: existingRole.permissions?.map(p => p.id) || [],
+        is_system_role: existingRole.is_system_role
+      });
     }
-  }, [id, isEditMode, navigate]);
+  }, [existingRole, isEditMode]);
 
   const handlePermissionToggle = (permId: string) => {
     setRole(prev => {
@@ -53,37 +67,63 @@ const RoleEditor: React.FC = () => {
     setRole(prev => {
       let newPerms = prev.permissions || [];
       if (select) {
-        // Add all from resource not already present
         const toAdd = resourcePerms.filter(p => !newPerms.includes(p));
         newPerms = [...newPerms, ...toAdd];
       } else {
-        // Remove all from resource
         newPerms = newPerms.filter(p => !resourcePerms.includes(p));
       }
       return { ...prev, permissions: newPerms };
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
-    if (!role.name) {
+    const displayName = role.display_name || role.name;
+    if (!displayName) {
       setError('Role name is required');
       setLoading(false);
       return;
     }
 
-    setTimeout(() => {
+    try {
       if (isNewMode) {
-        createRole(role);
+        await createMutation.mutateAsync({
+          name: displayName.toLowerCase().replace(/\s+/g, '_'),
+          display_name: displayName,
+          description: role.description,
+          permissions: role.permissions || []
+        });
       } else if (id) {
-        updateRole(id, role);
+        await updateMutation.mutateAsync({
+          id,
+          data: {
+            display_name: displayName,
+            description: role.description,
+            permissions: role.permissions
+          }
+        });
       }
+      navigate('/settings/access-control?tab=roles');
+    } catch (err: any) {
+      setError(err.message || 'Failed to save role');
+    } finally {
       setLoading(false);
-      navigate('/settings/roles');
-    }, 800);
+    }
   };
+
+  // Loading state for page
+  const isPageLoading = (isEditMode && roleLoading) || permissionsLoading;
+
+  if (isPageLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   // Group permissions for display by RESOURCE
   const groupedPermissions = availablePermissions.reduce((acc, perm) => {
@@ -95,8 +135,8 @@ const RoleEditor: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <button 
-          onClick={() => navigate('/settings/roles')}
+        <button
+          onClick={() => navigate('/settings/access-control?tab=roles')}
           className="p-2 hover:bg-white rounded-lg transition-colors text-gray-500"
         >
           <ArrowLeft size={24} />
@@ -121,11 +161,11 @@ const RoleEditor: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('users.col_role')}</label>
               <input
                 type="text"
-                value={role.name}
-                onChange={(e) => setRole(prev => ({ ...prev, name: e.target.value }))}
+                value={role.display_name || role.name}
+                onChange={(e) => setRole(prev => ({ ...prev, display_name: e.target.value, name: e.target.value }))}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="e.g. Content Manager"
-                disabled={role.is_system_role} 
+                disabled={role.is_system_role}
               />
             </div>
             <div>
@@ -148,11 +188,11 @@ const RoleEditor: React.FC = () => {
               {t('roles.permissions')}
             </h2>
           </div>
-          
+
           <div className="divide-y divide-gray-100">
             {Object.entries(groupedPermissions).map(([resource, permissions]: [string, Permission[]]) => {
               const allSelected = permissions.every(p => role.permissions?.includes(p.id));
-              
+
               return (
                 <div key={resource} className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -160,7 +200,7 @@ const RoleEditor: React.FC = () => {
                         {resource.replace(/_/g, ' ')}
                     </h3>
                     <div className="flex items-center gap-2">
-                      <button 
+                      <button
                         type="button"
                         onClick={() => handleSelectAllResource(resource, !allSelected)}
                         className="text-xs text-blue-600 hover:text-blue-800 font-medium"
@@ -169,18 +209,18 @@ const RoleEditor: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {permissions.map(perm => {
                       const isChecked = role.permissions?.includes(perm.id);
                       return (
-                        <div 
+                        <div
                           key={perm.id}
                           onClick={() => handlePermissionToggle(perm.id)}
                           className={`
                             cursor-pointer border rounded-lg p-3 flex items-start gap-3 transition-all relative overflow-hidden
-                            ${isChecked 
-                              ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-200' 
+                            ${isChecked
+                              ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-200'
                               : 'bg-white border-gray-200 hover:border-gray-300'}
                           `}
                         >
@@ -205,7 +245,7 @@ const RoleEditor: React.FC = () => {
         <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
-            onClick={() => navigate('/settings/roles')}
+            onClick={() => navigate('/settings/access-control?tab=roles')}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
           >
             {t('common.cancel')}

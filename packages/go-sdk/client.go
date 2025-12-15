@@ -32,15 +32,15 @@ type Client struct {
 	autoRefresh bool
 
 	// Services
-	Auth        *AuthService
-	Profile     *ProfileService
-	TwoFactor   *TwoFactorService
-	APIKeys     *APIKeysService
-	Sessions    *SessionsService
-	OTP         *OTPService
-	OAuth       *OAuthService
+	Auth         *AuthService
+	Profile      *ProfileService
+	TwoFactor    *TwoFactorService
+	APIKeys      *APIKeysService
+	Sessions     *SessionsService
+	OTP          *OTPService
+	OAuth        *OAuthService
 	Passwordless *PasswordlessService
-	Admin       *AdminService
+	Admin        *AdminService
 }
 
 // Config contains client configuration options.
@@ -331,6 +331,26 @@ func buildQueryString(params interface{}) string {
 
 		if strVal != "" {
 			values.Add(name, strVal)
+		}
+	}
+
+	if len(values) == 0 {
+		return ""
+	}
+
+	return "?" + values.Encode()
+}
+
+// buildQueryStringFromMap builds a query string from a map of string parameters.
+func buildQueryStringFromMap(params map[string]string) string {
+	if len(params) == 0 {
+		return ""
+	}
+
+	values := url.Values{}
+	for key, val := range params {
+		if val != "" {
+			values.Add(key, val)
 		}
 	}
 

@@ -112,10 +112,19 @@ export {
   AdminAPIKeysService,
   AdminSMSSettingsService,
   AdminOAuthProvidersService,
+  AdminOAuthClientsService,
   AdminTemplatesService,
   AdminWebhooksService,
   type AuditLogQueryOptions,
+  type ListClientsParams,
 } from './services';
+
+// OAuth Provider Client (for apps using Auth Gateway as OAuth provider)
+export {
+  OAuthProviderClient,
+  DeviceFlowPendingError,
+  type OAuthProviderClientConfig,
+} from './oauth-provider-client';
 
 // Types
 export * from './types';

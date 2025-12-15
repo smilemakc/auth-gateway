@@ -19,14 +19,15 @@ import (
 
 // OAuthService provides OAuth operations
 type OAuthService struct {
-	userRepo   UserStore
-	oauthRepo  OAuthStore
-	tokenRepo  TokenStore
-	auditRepo  AuditStore
-	rbacRepo   RBACStore
-	jwtService JWTService
-	httpClient HTTPClient
-	providers  map[models.OAuthProvider]*OAuthProviderConfig
+	userRepo       UserStore
+	oauthRepo      OAuthStore
+	tokenRepo      TokenStore
+	auditRepo      AuditStore
+	rbacRepo       RBACStore
+	jwtService     JWTService
+	sessionService *SessionCreationService
+	httpClient     HTTPClient
+	providers      map[models.OAuthProvider]*OAuthProviderConfig
 }
 
 // OAuthProviderConfig holds OAuth provider configuration
@@ -48,6 +49,7 @@ func NewOAuthService(
 	auditRepo AuditStore,
 	rbacRepo RBACStore,
 	jwtService JWTService,
+	sessionService *SessionCreationService,
 	httpClient HTTPClient,
 ) *OAuthService {
 	// Use default HTTP client if not provided
@@ -56,14 +58,15 @@ func NewOAuthService(
 	}
 
 	service := &OAuthService{
-		userRepo:   userRepo,
-		oauthRepo:  oauthRepo,
-		tokenRepo:  tokenRepo,
-		auditRepo:  auditRepo,
-		rbacRepo:   rbacRepo,
-		jwtService: jwtService,
-		httpClient: httpClient,
-		providers:  make(map[models.OAuthProvider]*OAuthProviderConfig),
+		userRepo:       userRepo,
+		oauthRepo:      oauthRepo,
+		tokenRepo:      tokenRepo,
+		auditRepo:      auditRepo,
+		rbacRepo:       rbacRepo,
+		jwtService:     jwtService,
+		sessionService: sessionService,
+		httpClient:     httpClient,
+		providers:      make(map[models.OAuthProvider]*OAuthProviderConfig),
 	}
 
 	// Initialize providers
@@ -287,7 +290,7 @@ func (s *OAuthService) parseUserInfo(provider models.OAuthProvider, data map[str
 }
 
 // HandleCallback handles OAuth callback and creates/updates user
-func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuthProvider, code string) (*models.OAuthLoginResponse, error) {
+func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuthProvider, code, ipAddress, userAgent string) (*models.OAuthLoginResponse, error) {
 	// Exchange code for token
 	tokenResp, err := s.ExchangeCode(ctx, provider, code)
 	if err != nil {
@@ -371,17 +374,39 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuth
 		return nil, err
 	}
 
-	// Save refresh token
+	// Parse device info for RefreshToken and Session
+	deviceInfo := utils.ParseUserAgent(userAgent)
+	sessionName := utils.GenerateSessionName(deviceInfo)
+
+	// Save refresh token with device tracking
 	tokenHash := utils.HashToken(refreshToken)
+	refreshExpiration := s.jwtService.GetRefreshTokenExpiration()
 	dbToken := &models.RefreshToken{
-		ID:        uuid.New(),
-		UserID:    user.ID,
-		TokenHash: tokenHash,
-		ExpiresAt: time.Now().Add(s.jwtService.GetRefreshTokenExpiration()),
+		ID:          uuid.New(),
+		UserID:      user.ID,
+		TokenHash:   tokenHash,
+		ExpiresAt:   time.Now().Add(refreshExpiration),
+		DeviceType:  deviceInfo.DeviceType,
+		OS:          deviceInfo.OS,
+		Browser:     deviceInfo.Browser,
+		SessionName: sessionName,
+		IPAddress:   ipAddress,
 	}
 
 	if err := s.tokenRepo.CreateRefreshToken(ctx, dbToken); err != nil {
 		return nil, err
+	}
+
+	// Create session using universal SessionCreationService (non-fatal to not block auth)
+	if s.sessionService != nil {
+		s.sessionService.CreateSessionNonFatal(ctx, SessionCreationParams{
+			UserID:      user.ID,
+			TokenHash:   tokenHash,
+			IPAddress:   ipAddress,
+			UserAgent:   userAgent,
+			ExpiresAt:   time.Now().Add(refreshExpiration),
+			SessionName: sessionName,
+		})
 	}
 
 	return &models.OAuthLoginResponse{

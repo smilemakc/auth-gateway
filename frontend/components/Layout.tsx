@@ -15,7 +15,8 @@ import {
   Globe,
   Network,
   Bot,
-  Search
+  Search,
+  Shield
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -34,8 +35,8 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
     { path: '/sessions', label: 'Sessions', icon: Key },
     { path: '/api-keys', label: t('nav.api_keys'), icon: Key },
     { path: '/oauth', label: t('nav.oauth'), icon: Globe },
-    { path: '/roles', label: 'Roles', icon: ShieldAlert },
-    { path: '/permissions', label: 'Permissions', icon: ShieldAlert },
+    { path: '/oauth-clients', label: 'OAuth Clients', icon: Shield },
+    { path: '/settings/access-control', label: 'Access Control', icon: ShieldAlert },
     { path: '/ip-security', label: 'IP Security', icon: ShieldAlert },
     { path: '/audit-logs', label: t('nav.audit_logs'), icon: ShieldAlert },
     { path: '/settings', label: t('nav.settings'), icon: Settings },
@@ -82,7 +83,10 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
             {navItems.map((item) => {
               const Icon = item.icon;
               // Check for exact match or sub-route match for active state
-              const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path) && !location.pathname.startsWith('/developers'));
+              // Special case: /settings should only match exactly, not /settings/access-control
+              const isActive = item.path === '/settings'
+                ? location.pathname === '/settings'
+                : location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path) && !location.pathname.startsWith('/developers'));
               return (
                 <Link
                   key={item.path}

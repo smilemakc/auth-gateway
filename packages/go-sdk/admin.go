@@ -287,3 +287,110 @@ func (s *AdminService) GetGeoDistribution(ctx context.Context) ([]models.GeoDist
 	}
 	return resp, nil
 }
+
+// --- OAuth Client Management ---
+
+// CreateOAuthClient creates a new OAuth client.
+func (s *AdminService) CreateOAuthClient(ctx context.Context, req *models.CreateOAuthClientRequest) (*models.CreateOAuthClientResponse, error) {
+	var resp models.CreateOAuthClientResponse
+	if err := s.client.post(ctx, "/api/admin/oauth/clients", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// ListOAuthClients lists OAuth clients with pagination.
+func (s *AdminService) ListOAuthClients(ctx context.Context, page, perPage int, ownerID *string) (*models.ListOAuthClientsResponse, error) {
+	params := map[string]string{
+		"page":     fmt.Sprintf("%d", page),
+		"per_page": fmt.Sprintf("%d", perPage),
+	}
+	if ownerID != nil {
+		params["owner_id"] = *ownerID
+	}
+
+	path := "/api/admin/oauth/clients"
+	if len(params) > 0 {
+		query := buildQueryStringFromMap(params)
+		path += query
+	}
+
+	var resp models.ListOAuthClientsResponse
+	if err := s.client.get(ctx, path, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// GetOAuthClient retrieves an OAuth client by ID.
+func (s *AdminService) GetOAuthClient(ctx context.Context, id string) (*models.OAuthClient, error) {
+	var resp models.OAuthClient
+	if err := s.client.get(ctx, fmt.Sprintf("/api/admin/oauth/clients/%s", id), &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// UpdateOAuthClient updates an OAuth client.
+func (s *AdminService) UpdateOAuthClient(ctx context.Context, id string, req *models.UpdateOAuthClientRequest) (*models.OAuthClient, error) {
+	var resp models.OAuthClient
+	if err := s.client.put(ctx, fmt.Sprintf("/api/admin/oauth/clients/%s", id), req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// DeleteOAuthClient deletes an OAuth client.
+func (s *AdminService) DeleteOAuthClient(ctx context.Context, id string) error {
+	return s.client.delete(ctx, fmt.Sprintf("/api/admin/oauth/clients/%s", id), nil)
+}
+
+// RotateOAuthClientSecret rotates an OAuth client's secret.
+func (s *AdminService) RotateOAuthClientSecret(ctx context.Context, id string) (*models.RotateSecretResponse, error) {
+	var resp models.RotateSecretResponse
+	if err := s.client.post(ctx, fmt.Sprintf("/api/admin/oauth/clients/%s/rotate-secret", id), nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// --- OAuth Scope Management ---
+
+// ListOAuthScopes lists all OAuth scopes.
+func (s *AdminService) ListOAuthScopes(ctx context.Context) (*models.ListScopesResponse, error) {
+	var resp models.ListScopesResponse
+	if err := s.client.get(ctx, "/api/admin/oauth/scopes", &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// CreateOAuthScope creates a custom OAuth scope.
+func (s *AdminService) CreateOAuthScope(ctx context.Context, req *models.CreateScopeRequest) (*models.OAuthScope, error) {
+	var resp models.OAuthScope
+	if err := s.client.post(ctx, "/api/admin/oauth/scopes", req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// DeleteOAuthScope deletes a non-system OAuth scope.
+func (s *AdminService) DeleteOAuthScope(ctx context.Context, id string) error {
+	return s.client.delete(ctx, fmt.Sprintf("/api/admin/oauth/scopes/%s", id), nil)
+}
+
+// --- User Consent Management ---
+
+// ListOAuthClientConsents lists all user consents for an OAuth client.
+func (s *AdminService) ListOAuthClientConsents(ctx context.Context, clientID string) (*models.ListConsentsResponse, error) {
+	var resp models.ListConsentsResponse
+	if err := s.client.get(ctx, fmt.Sprintf("/api/admin/oauth/clients/%s/consents", clientID), &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// RevokeOAuthUserConsent revokes a user's consent for an OAuth client.
+func (s *AdminService) RevokeOAuthUserConsent(ctx context.Context, clientID, userID string) error {
+	return s.client.delete(ctx, fmt.Sprintf("/api/admin/oauth/clients/%s/consents/%s", clientID, userID), nil)
+}

@@ -124,7 +124,7 @@ type TestWebhookRequest struct {
 	// Event type to simulate
 	EventType string `json:"event_type" binding:"required" example:"user.created"`
 	// Test payload data
-	Payload map[string]interface{} `json:"payload" example:"user_id:123,action:created"`
+	Payload map[string]interface{} `json:"payload" swaggertype:"object,string" example:"user_id:123,action:created"`
 }
 
 // WebhookEvent represents a webhook event payload

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
@@ -60,7 +62,7 @@ func (h *OAuthHandler) Login(c *gin.Context) {
 	// Get authorization URL
 	authURL, err := h.oauthService.GetAuthURL(models.OAuthProvider(provider), state)
 	if err != nil {
-		if err == models.ErrInvalidProvider {
+		if errors.Is(err, models.ErrInvalidProvider) {
 			c.JSON(http.StatusBadRequest, models.NewErrorResponse(err))
 			return
 		}
@@ -123,6 +125,8 @@ func (h *OAuthHandler) Callback(c *gin.Context) {
 		c.Request.Context(),
 		models.OAuthProvider(provider),
 		code,
+		utils.GetClientIP(c),
+		c.Request.UserAgent(),
 	)
 
 	if err != nil {
@@ -199,6 +203,8 @@ func (h *OAuthHandler) TelegramCallback(c *gin.Context) {
 		c.Request.Context(),
 		models.ProviderTelegram,
 		"telegram_auth", // Telegram doesn't use OAuth code flow
+		utils.GetClientIP(c),
+		c.Request.UserAgent(),
 	)
 
 	if err != nil {

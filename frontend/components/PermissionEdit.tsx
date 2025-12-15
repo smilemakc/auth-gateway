@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getPermission, createPermission, updatePermission } from '../services/mockData';
 import { Permission } from '../types';
-import { ArrowLeft, Save, Lock } from 'lucide-react';
+import { ArrowLeft, Save, Lock, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { usePermissionDetail, useCreatePermission } from '../hooks/useRBAC';
 
 const PermissionEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,44 +19,77 @@ const PermissionEdit: React.FC = () => {
     action: '',
     description: ''
   });
-  
+
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
+  // Fetch data from API
+  const { data: existingPermission, isLoading: permissionLoading } = usePermissionDetail(isEditMode ? id! : '');
+  const createMutation = useCreatePermission();
+
+  // Populate form when existing permission is loaded
   useEffect(() => {
-    if (isEditMode) {
-      const existing = getPermission(id);
-      if (existing) {
-        setFormData(existing);
-      } else {
-        navigate('/settings/permissions');
-      }
+    if (isEditMode && existingPermission) {
+      setFormData({
+        name: existingPermission.name,
+        resource: existingPermission.resource,
+        action: existingPermission.action,
+        description: existingPermission.description || ''
+      });
     }
-  }, [id, isEditMode, navigate]);
+  }, [existingPermission, isEditMode]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    setTimeout(() => {
-      if (isNewMode) {
-        createPermission(formData);
-      } else if (id) {
-        updatePermission(id, formData);
-      }
+    setError('');
+
+    if (!formData.resource || !formData.action) {
+      setError('Resource and action are required');
       setLoading(false);
-      navigate('/settings/permissions');
-    }, 800);
+      return;
+    }
+
+    try {
+      if (isNewMode) {
+        await createMutation.mutateAsync({
+          name: formData.name || `${formData.resource}.${formData.action}`,
+          resource: formData.resource,
+          action: formData.action,
+          description: formData.description
+        });
+        navigate('/settings/access-control?tab=permissions');
+      } else {
+        // Note: Update is not fully implemented in SDK
+        setError('Permission editing is not yet supported. Please delete and recreate.');
+        setLoading(false);
+        return;
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to save permission');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const generatedId = formData.resource && formData.action 
-    ? `${formData.resource.toLowerCase()}:${formData.action.toLowerCase()}` 
+  // Loading state
+  if (isEditMode && permissionLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  const generatedId = formData.resource && formData.action
+    ? `${formData.resource.toLowerCase()}:${formData.action.toLowerCase()}`
     : '...';
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <button 
-          onClick={() => navigate('/settings/permissions')}
+        <button
+          onClick={() => navigate('/settings/access-control?tab=permissions')}
           className="p-2 hover:bg-white rounded-lg transition-colors text-gray-500"
         >
           <ArrowLeft size={24} />
@@ -68,6 +101,13 @@ const PermissionEdit: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 space-y-6">
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
           <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100 mb-6">
             <Lock size={24} className="text-gray-500 flex-shrink-0" />
             <p className="text-sm text-gray-600">
@@ -77,8 +117,8 @@ const PermissionEdit: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('perms.name')}</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               required
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
@@ -90,8 +130,8 @@ const PermissionEdit: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('perms.resource')}</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 required
                 value={formData.resource}
                 onChange={(e) => setFormData(prev => ({ ...prev, resource: e.target.value.toLowerCase().replace(/\s+/g, '_') }))}
@@ -102,8 +142,8 @@ const PermissionEdit: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('perms.action')}</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 required
                 value={formData.action}
                 onChange={(e) => setFormData(prev => ({ ...prev, action: e.target.value.toLowerCase().replace(/\s+/g, '_') }))}
@@ -113,14 +153,14 @@ const PermissionEdit: React.FC = () => {
               />
             </div>
           </div>
-          
+
           <div className="text-xs text-gray-500">
             Resulting ID: <code className="bg-gray-100 px-1 py-0.5 rounded border border-gray-200">{isEditMode ? id : generatedId}</code>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea 
+            <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
@@ -132,7 +172,7 @@ const PermissionEdit: React.FC = () => {
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
            <button
             type="button"
-            onClick={() => navigate('/settings/permissions')}
+            onClick={() => navigate('/settings/access-control?tab=permissions')}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
           >
             {t('common.cancel')}
@@ -143,12 +183,12 @@ const PermissionEdit: React.FC = () => {
             className={`flex items-center px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none
               ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {loading ? t('common.saving') : (
-              <>
-                <Save size={16} className="mr-2" />
-                {isNewMode ? t('common.create') : t('common.save')}
-              </>
+            {loading ? (
+              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+            ) : (
+              <Save size={16} className="mr-2" />
             )}
+            {isNewMode ? t('common.create') : t('common.save')}
           </button>
         </div>
       </form>

@@ -123,4 +123,13 @@ export const queryKeys = {
     all: ['serviceAccounts'] as const,
     detail: (id: string) => ['serviceAccounts', 'detail', id] as const,
   },
+
+  // OAuth Clients (OIDC Provider)
+  oauthClients: {
+    all: ['oauthClients'] as const,
+    list: (page: number, pageSize: number) => ['oauthClients', 'list', { page, pageSize }] as const,
+    detail: (id: string) => ['oauthClients', 'detail', id] as const,
+    scopes: ['oauthClients', 'scopes'] as const,
+    consents: (clientId: string) => ['oauthClients', 'consents', clientId] as const,
+  },
 };

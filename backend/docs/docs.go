@@ -9,12 +9,55 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "contact": {
+            "name": "API Support",
+            "email": "maksbalashov@gmail.com"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/.well-known/jwks.json": {
+            "get": {
+                "description": "Get JSON Web Key Set for token validation (/.well-known/jwks.json)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OAuth Provider - Discovery"
+                ],
+                "summary": "JWKS",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/JWKSDocument"
+                        }
+                    }
+                }
+            }
+        },
+        "/.well-known/openid-configuration": {
+            "get": {
+                "description": "Get OpenID Connect discovery document (/.well-known/openid-configuration)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OAuth Provider - Discovery"
+                ],
+                "summary": "OIDC Discovery",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/OIDCDiscoveryDocument"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/sms/settings": {
             "get": {
                 "security": [
@@ -804,6 +847,702 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/admin/oauth/clients": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get paginated list of OAuth 2.0 clients (admin only)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - OAuth Clients"
+                ],
+                "summary": "List OAuth clients",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Items per page",
+                        "name": "per_page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by owner ID",
+                        "name": "owner_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Response with clients, total, page, per_page",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new OAuth 2.0 client application (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - OAuth Clients"
+                ],
+                "summary": "Create OAuth client",
+                "parameters": [
+                    {
+                        "description": "Client creation data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateOAuthClientRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/CreateOAuthClientResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/oauth/clients/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get detailed information about a specific OAuth client (admin only)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - OAuth Clients"
+                ],
+                "summary": "Get OAuth client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/OAuthClient"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update OAuth 2.0 client information (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - OAuth Clients"
+                ],
+                "summary": "Update OAuth client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Client update data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateOAuthClientRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/OAuthClient"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Soft-delete an OAuth 2.0 client (admin only)",
+                "tags": [
+                    "Admin - OAuth Clients"
+                ],
+                "summary": "Delete OAuth client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/oauth/clients/{id}/consents": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all user consents for a specific OAuth client (admin only)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - OAuth Consents"
+                ],
+                "summary": "List client consents",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Response with consents array",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/oauth/clients/{id}/consents/{user_id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Revoke a user's consent for a specific OAuth client (admin action)",
+                "tags": [
+                    "Admin - OAuth Consents"
+                ],
+                "summary": "Revoke user consent",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/oauth/clients/{id}/rotate-secret": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generate a new client secret for an OAuth 2.0 client (admin only)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - OAuth Clients"
+                ],
+                "summary": "Rotate client secret",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Response with client_secret",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/oauth/scopes": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get list of all OAuth 2.0 scopes (admin only)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - OAuth Scopes"
+                ],
+                "summary": "List OAuth scopes",
+                "responses": {
+                    "200": {
+                        "description": "Response with scopes array",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a custom OAuth 2.0 scope (admin only, is_system=false)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - OAuth Scopes"
+                ],
+                "summary": "Create OAuth scope",
+                "parameters": [
+                    {
+                        "description": "Scope data with name, display_name, description",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/OAuthScope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/oauth/scopes/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a custom OAuth 2.0 scope (admin only, cannot delete system scopes)",
+                "tags": [
+                    "Admin - OAuth Scopes"
+                ],
+                "summary": "Delete OAuth scope",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Scope ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/admin/rbac/permission-matrix": {
             "get": {
                 "security": [
@@ -941,6 +1680,58 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/rbac/permissions/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a permission by ID",
+                "tags": [
+                    "Admin - RBAC"
+                ],
+                "summary": "Delete a permission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Permission ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -4552,6 +5343,683 @@ const docTemplate = `{
                 }
             }
         },
+        "/oauth/authorize": {
+            "get": {
+                "description": "Initiates OAuth 2.0 authorization flow. Redirects user to login if not authenticated, then to consent page if required",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OAuth Provider"
+                ],
+                "summary": "OAuth 2.0 Authorization",
+                "parameters": [
+                    {
+                        "enum": [
+                            "code",
+                            "token"
+                        ],
+                        "type": "string",
+                        "description": "Response type (code or token)",
+                        "name": "response_type",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "client_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Redirect URI",
+                        "name": "redirect_uri",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Requested scopes (space-separated)",
+                        "name": "scope",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "State parameter for CSRF protection",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nonce for ID token",
+                        "name": "nonce",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "PKCE code challenge",
+                        "name": "code_challenge",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "PKCE code challenge method (S256 or plain)",
+                        "name": "code_challenge_method",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Prompt behavior (none, login, consent, select_account)",
+                        "name": "prompt",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect with error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth/consent": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "HTML page for user to approve/deny OAuth authorization request",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "OAuth Provider - Consent"
+                ],
+                "summary": "OAuth Consent Page",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "client_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Requested scopes",
+                        "name": "scope",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Redirect URI",
+                        "name": "redirect_uri",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "State parameter",
+                        "name": "state",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "HTML consent page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "302": {
+                        "description": "Redirect to login",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "HTML error page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Process user consent decision and redirect with authorization code",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "tags": [
+                    "OAuth Provider - Consent"
+                ],
+                "summary": "Submit Consent Decision",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "client_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Redirect URI",
+                        "name": "redirect_uri",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Requested scopes",
+                        "name": "scope",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "State parameter",
+                        "name": "state",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Approval decision (true or false)",
+                        "name": "approve",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Response type",
+                        "name": "response_type",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nonce",
+                        "name": "nonce",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "PKCE code challenge",
+                        "name": "code_challenge",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "PKCE code challenge method",
+                        "name": "code_challenge_method",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to callback with code or error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth/device": {
+            "get": {
+                "description": "HTML page where users enter the device code to authorize",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "OAuth Provider - Device Flow"
+                ],
+                "summary": "Device Verification Page",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pre-filled user code",
+                        "name": "user_code",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "HTML verification page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth/device/approve": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Approve or deny a device code (requires authentication)",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "OAuth Provider - Device Flow"
+                ],
+                "summary": "Approve Device Code",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User code from device",
+                        "name": "user_code",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Approval decision (true or false)",
+                        "name": "approve",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "HTML success page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "302": {
+                        "description": "Redirect to login",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "HTML error page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth/device/code": {
+            "post": {
+                "description": "Initiate device authorization grant flow",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OAuth Provider - Device Flow"
+                ],
+                "summary": "Device Authorization Request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "client_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Requested scopes",
+                        "name": "scope",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/DeviceAuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "error and error_description",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth/device/token": {
+            "post": {
+                "description": "Poll for tokens after user authorization (device flow)",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OAuth Provider - Device Flow"
+                ],
+                "summary": "Device Token Polling",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Grant type (urn:ietf:params:oauth:grant-type:device_code)",
+                        "name": "grant_type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device code from authorization request",
+                        "name": "device_code",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "client_id",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "authorization_pending, slow_down, or expired_token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth/introspect": {
+            "post": {
+                "description": "Introspect an access or refresh token to determine its validity and metadata",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OAuth Provider"
+                ],
+                "summary": "Token Introspection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token to introspect",
+                        "name": "token",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token type hint (access_token or refresh_token)",
+                        "name": "token_type_hint",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "client_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client secret",
+                        "name": "client_secret",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/IntrospectionResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "invalid_client",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth/revoke": {
+            "post": {
+                "description": "Revoke an access or refresh token",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OAuth Provider"
+                ],
+                "summary": "Token Revocation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token to revoke",
+                        "name": "token",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token type hint (access_token or refresh_token)",
+                        "name": "token_type_hint",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "client_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client secret",
+                        "name": "client_secret",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Empty response on success",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth/token": {
+            "post": {
+                "description": "Exchange authorization code for tokens, refresh tokens, or obtain client credentials tokens",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OAuth Provider"
+                ],
+                "summary": "OAuth 2.0 Token",
+                "parameters": [
+                    {
+                        "enum": [
+                            "authorization_code",
+                            "refresh_token",
+                            "client_credentials",
+                            "urn:ietf:params:oauth:grant-type:device_code"
+                        ],
+                        "type": "string",
+                        "description": "Grant type",
+                        "name": "grant_type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization code (for authorization_code grant)",
+                        "name": "code",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Redirect URI (for authorization_code grant)",
+                        "name": "redirect_uri",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "client_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client secret",
+                        "name": "client_secret",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Refresh token (for refresh_token grant)",
+                        "name": "refresh_token",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Requested scopes",
+                        "name": "scope",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "PKCE code verifier",
+                        "name": "code_verifier",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device code (for device_code grant)",
+                        "name": "device_code",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "error and error_description",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "invalid_client",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth/userinfo": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get user information based on access token (OIDC UserInfo endpoint)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "OAuth Provider"
+                ],
+                "summary": "OIDC UserInfo",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UserInfoResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "invalid_token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/otp/send": {
             "post": {
                 "description": "Send an OTP code to email for verification, password reset, or login",
@@ -5598,6 +7066,117 @@ const docTemplate = `{
                 }
             }
         },
+        "CreateOAuthClientRequest": {
+            "type": "object",
+            "required": [
+                "allowed_grant_types",
+                "allowed_scopes",
+                "client_type",
+                "name"
+            ],
+            "properties": {
+                "access_token_ttl": {
+                    "type": "integer",
+                    "example": 900
+                },
+                "allowed_grant_types": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "authorization_code",
+                        "refresh_token"
+                    ]
+                },
+                "allowed_scopes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "openid",
+                        "profile",
+                        "email"
+                    ]
+                },
+                "client_type": {
+                    "type": "string",
+                    "enum": [
+                        "confidential",
+                        "public"
+                    ],
+                    "example": "confidential"
+                },
+                "default_scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "openid",
+                        "profile"
+                    ]
+                },
+                "description": {
+                    "type": "string",
+                    "example": "My OAuth client application"
+                },
+                "first_party": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "id_token_ttl": {
+                    "type": "integer",
+                    "example": 3600
+                },
+                "logo_url": {
+                    "type": "string",
+                    "example": "https://example.com/logo.png"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3,
+                    "example": "My Application"
+                },
+                "redirect_uris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "https://example.com/callback"
+                    ]
+                },
+                "refresh_token_ttl": {
+                    "type": "integer",
+                    "example": 604800
+                },
+                "require_consent": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "require_pkce": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "CreateOAuthClientResponse": {
+            "type": "object",
+            "properties": {
+                "client": {
+                    "$ref": "#/definitions/OAuthClient"
+                },
+                "client_secret": {
+                    "type": "string",
+                    "example": "client_secret_abc123xyz789"
+                }
+            }
+        },
         "CreatePermissionRequest": {
             "type": "object",
             "required": [
@@ -5839,6 +7418,35 @@ const docTemplate = `{
                 },
                 "wait_duration_ms": {
                     "type": "integer"
+                }
+            }
+        },
+        "DeviceAuthResponse": {
+            "type": "object",
+            "properties": {
+                "device_code": {
+                    "type": "string",
+                    "example": "GmRhmhcxhwAzkoEqiMEg_DnyEysNkuNhszIySk9eS"
+                },
+                "expires_in": {
+                    "type": "integer",
+                    "example": 900
+                },
+                "interval": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "user_code": {
+                    "type": "string",
+                    "example": "ABCD-EFGH"
+                },
+                "verification_uri": {
+                    "type": "string",
+                    "example": "https://auth.example.com/device"
+                },
+                "verification_uri_complete": {
+                    "type": "string",
+                    "example": "https://auth.example.com/device?user_code=ABCD-EFGH"
                 }
             }
         },
@@ -6123,6 +7731,160 @@ const docTemplate = `{
                 }
             }
         },
+        "IntrospectionResponse": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "aud": {
+                    "type": "string",
+                    "example": "my_client_app_123"
+                },
+                "client_id": {
+                    "type": "string",
+                    "example": "my_client_app_123"
+                },
+                "exp": {
+                    "type": "integer",
+                    "example": 1705319400
+                },
+                "iat": {
+                    "type": "integer",
+                    "example": 1705315800
+                },
+                "iss": {
+                    "type": "string",
+                    "example": "https://auth.example.com"
+                },
+                "jti": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "nbf": {
+                    "type": "integer",
+                    "example": 1705315800
+                },
+                "scope": {
+                    "type": "string",
+                    "example": "openid profile email"
+                },
+                "sub": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "token_type": {
+                    "type": "string",
+                    "example": "Bearer"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "johndoe"
+                }
+            }
+        },
+        "JWK": {
+            "type": "object",
+            "properties": {
+                "alg": {
+                    "type": "string",
+                    "example": "RS256"
+                },
+                "crv": {
+                    "type": "string",
+                    "example": "P-256"
+                },
+                "d": {
+                    "type": "string"
+                },
+                "dp": {
+                    "type": "string"
+                },
+                "dq": {
+                    "type": "string"
+                },
+                "e": {
+                    "type": "string",
+                    "example": "AQAB"
+                },
+                "k": {
+                    "type": "string"
+                },
+                "key_ops": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "sign",
+                        "verify"
+                    ]
+                },
+                "kid": {
+                    "type": "string",
+                    "example": "2023-01-01"
+                },
+                "kty": {
+                    "type": "string",
+                    "example": "RSA"
+                },
+                "n": {
+                    "type": "string",
+                    "example": "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw"
+                },
+                "p": {
+                    "type": "string"
+                },
+                "q": {
+                    "type": "string"
+                },
+                "qi": {
+                    "type": "string"
+                },
+                "use": {
+                    "type": "string",
+                    "example": "sig"
+                },
+                "x": {
+                    "type": "string",
+                    "example": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU"
+                },
+                "x5c": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "x5t": {
+                    "type": "string",
+                    "example": "GvnVZS_KnfEhOp7oUdKKPqPFT_8"
+                },
+                "x5t#S256": {
+                    "type": "string",
+                    "example": "YmFzZTY0dXJsIGVuY29kZWQgc2hhMjU2IGhhc2g"
+                },
+                "x5u": {
+                    "type": "string",
+                    "example": "https://example.com/keys/2023-01-01.pem"
+                },
+                "y": {
+                    "type": "string",
+                    "example": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
+                }
+            }
+        },
+        "JWKSDocument": {
+            "type": "object",
+            "properties": {
+                "keys": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/JWK"
+                    }
+                }
+            }
+        },
         "ListAPIKeysResponse": {
             "type": "object",
             "properties": {
@@ -6206,6 +7968,118 @@ const docTemplate = `{
                 }
             }
         },
+        "OAuthClient": {
+            "type": "object",
+            "properties": {
+                "access_token_ttl": {
+                    "type": "integer",
+                    "example": 900
+                },
+                "allowed_grant_types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "authorization_code",
+                        "refresh_token"
+                    ]
+                },
+                "allowed_scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "openid",
+                        "profile",
+                        "email"
+                    ]
+                },
+                "client_id": {
+                    "type": "string",
+                    "example": "my_client_app_123"
+                },
+                "client_type": {
+                    "type": "string",
+                    "example": "confidential"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "default_scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "openid",
+                        "profile"
+                    ]
+                },
+                "description": {
+                    "type": "string",
+                    "example": "My OAuth client application"
+                },
+                "first_party": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "id": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "id_token_ttl": {
+                    "type": "integer",
+                    "example": 3600
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "logo_url": {
+                    "type": "string",
+                    "example": "https://example.com/logo.png"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "My Application"
+                },
+                "owner": {
+                    "$ref": "#/definitions/User"
+                },
+                "owner_id": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "redirect_uris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "https://example.com/callback"
+                    ]
+                },
+                "refresh_token_ttl": {
+                    "type": "integer",
+                    "example": 604800
+                },
+                "require_consent": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "require_pkce": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                }
+            }
+        },
         "OAuthLoginResponse": {
             "type": "object",
             "properties": {
@@ -6248,6 +8122,307 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "OAuthScope": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Access to basic profile information"
+                },
+                "display_name": {
+                    "type": "string",
+                    "example": "Profile Information"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "is_default": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_system": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "profile"
+                }
+            }
+        },
+        "OIDCDiscoveryDocument": {
+            "type": "object",
+            "properties": {
+                "acr_values_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "urn:mace:incommon:iap:silver"
+                    ]
+                },
+                "authorization_endpoint": {
+                    "type": "string",
+                    "example": "https://auth.example.com/oauth2/authorize"
+                },
+                "claim_types_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "normal"
+                    ]
+                },
+                "claims_parameter_supported": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "claims_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "sub",
+                        "name",
+                        "email",
+                        "picture"
+                    ]
+                },
+                "code_challenge_methods_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "S256",
+                        "plain"
+                    ]
+                },
+                "device_authorization_endpoint": {
+                    "type": "string",
+                    "example": "https://auth.example.com/oauth2/device/code"
+                },
+                "display_values_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "page",
+                        "popup"
+                    ]
+                },
+                "end_session_endpoint": {
+                    "type": "string",
+                    "example": "https://auth.example.com/oauth2/logout"
+                },
+                "grant_types_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "authorization_code",
+                        "refresh_token",
+                        "client_credentials"
+                    ]
+                },
+                "id_token_encryption_alg_values_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "RSA-OAEP",
+                        "A256KW"
+                    ]
+                },
+                "id_token_encryption_enc_values_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "A128CBC-HS256",
+                        "A256GCM"
+                    ]
+                },
+                "id_token_signing_alg_values_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "RS256",
+                        "ES256"
+                    ]
+                },
+                "introspection_endpoint": {
+                    "type": "string",
+                    "example": "https://auth.example.com/oauth2/introspect"
+                },
+                "issuer": {
+                    "type": "string",
+                    "example": "https://auth.example.com"
+                },
+                "jwks_uri": {
+                    "type": "string",
+                    "example": "https://auth.example.com/.well-known/jwks.json"
+                },
+                "op_policy_uri": {
+                    "type": "string",
+                    "example": "https://example.com/policy"
+                },
+                "op_tos_uri": {
+                    "type": "string",
+                    "example": "https://example.com/tos"
+                },
+                "registration_endpoint": {
+                    "type": "string",
+                    "example": "https://auth.example.com/oauth2/register"
+                },
+                "request_parameter_supported": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "request_uri_parameter_supported": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "require_request_uri_registration": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "response_modes_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "query",
+                        "fragment",
+                        "form_post"
+                    ]
+                },
+                "response_types_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "code",
+                        "token",
+                        "id_token"
+                    ]
+                },
+                "revocation_endpoint": {
+                    "type": "string",
+                    "example": "https://auth.example.com/oauth2/revoke"
+                },
+                "scopes_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "openid",
+                        "profile",
+                        "email",
+                        "offline_access"
+                    ]
+                },
+                "service_documentation": {
+                    "type": "string",
+                    "example": "https://docs.example.com"
+                },
+                "subject_types_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "public",
+                        "pairwise"
+                    ]
+                },
+                "token_endpoint": {
+                    "type": "string",
+                    "example": "https://auth.example.com/oauth2/token"
+                },
+                "token_endpoint_auth_methods_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "client_secret_basic",
+                        "client_secret_post"
+                    ]
+                },
+                "token_endpoint_auth_signing_alg_values_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "RS256",
+                        "ES256"
+                    ]
+                },
+                "ui_locales_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "en-US",
+                        "es-ES"
+                    ]
+                },
+                "userinfo_encryption_alg_values_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "RSA-OAEP",
+                        "A256KW"
+                    ]
+                },
+                "userinfo_encryption_enc_values_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "A128CBC-HS256",
+                        "A256GCM"
+                    ]
+                },
+                "userinfo_endpoint": {
+                    "type": "string",
+                    "example": "https://auth.example.com/oauth2/userinfo"
+                },
+                "userinfo_signing_alg_values_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "RS256",
+                        "ES256"
+                    ]
                 }
             }
         },
@@ -6344,7 +8519,33 @@ const docTemplate = `{
             }
         },
         "PreviewEmailTemplateRequest": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "html_body"
+            ],
+            "properties": {
+                "html_body": {
+                    "description": "HTML template to preview",
+                    "type": "string",
+                    "example": "\u003cp\u003eHello {{username}}\u003c/p\u003e"
+                },
+                "text_body": {
+                    "description": "Text template to preview",
+                    "type": "string",
+                    "example": "Hello {{username}}"
+                },
+                "variables": {
+                    "description": "Sample variable values for preview",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "email": "john@example.com",
+                        "username": "John Doe"
+                    }
+                }
+            }
         },
         "PreviewEmailTemplateResponse": {
             "type": "object",
@@ -6910,7 +9111,57 @@ const docTemplate = `{
             }
         },
         "TestWebhookRequest": {
-            "type": "object"
+            "type": "object",
+            "required": [
+                "event_type"
+            ],
+            "properties": {
+                "event_type": {
+                    "description": "Event type to simulate",
+                    "type": "string",
+                    "example": "user.created"
+                },
+                "payload": {
+                    "description": "Test payload data",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "action": "created",
+                        "user_id": "123"
+                    }
+                }
+            }
+        },
+        "TokenResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "expires_in": {
+                    "type": "integer",
+                    "example": 900
+                },
+                "id_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "refresh_token": {
+                    "type": "string",
+                    "example": "refresh_token_xyz789"
+                },
+                "scope": {
+                    "type": "string",
+                    "example": "openid profile email"
+                },
+                "token_type": {
+                    "type": "string",
+                    "example": "Bearer"
+                }
+            }
         },
         "TwoFactorDisableRequest": {
             "type": "object",
@@ -7159,6 +9410,91 @@ const docTemplate = `{
                 }
             }
         },
+        "UpdateOAuthClientRequest": {
+            "type": "object",
+            "properties": {
+                "access_token_ttl": {
+                    "type": "integer",
+                    "example": 900
+                },
+                "allowed_grant_types": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "authorization_code",
+                        "refresh_token"
+                    ]
+                },
+                "allowed_scopes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "openid",
+                        "profile",
+                        "email"
+                    ]
+                },
+                "default_scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "openid",
+                        "profile"
+                    ]
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Updated description"
+                },
+                "id_token_ttl": {
+                    "type": "integer",
+                    "example": 3600
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "logo_url": {
+                    "type": "string",
+                    "example": "https://example.com/new-logo.png"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3,
+                    "example": "My Updated Application"
+                },
+                "redirect_uris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "https://example.com/callback"
+                    ]
+                },
+                "refresh_token_ttl": {
+                    "type": "integer",
+                    "example": 604800
+                },
+                "require_consent": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "require_pkce": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
         "UpdateRoleRequest": {
             "type": "object",
             "properties": {
@@ -7384,6 +9720,87 @@ const docTemplate = `{
                     "description": "Unique username for the user",
                     "type": "string",
                     "example": "johndoe"
+                }
+            }
+        },
+        "UserInfoResponse": {
+            "type": "object",
+            "properties": {
+                "birthdate": {
+                    "type": "string",
+                    "example": "1990-01-01"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "john.doe@example.com"
+                },
+                "email_verified": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "family_name": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "gender": {
+                    "type": "string",
+                    "example": "male"
+                },
+                "given_name": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "locale": {
+                    "type": "string",
+                    "example": "en-US"
+                },
+                "middle_name": {
+                    "type": "string",
+                    "example": "Michael"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "nickname": {
+                    "type": "string",
+                    "example": "Johnny"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "+1 (555) 123-4567"
+                },
+                "phone_number_verified": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "picture": {
+                    "type": "string",
+                    "example": "https://example.com/avatars/johndoe.jpg"
+                },
+                "preferred_username": {
+                    "type": "string",
+                    "example": "johndoe"
+                },
+                "profile": {
+                    "type": "string",
+                    "example": "https://example.com/johndoe"
+                },
+                "sub": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "updated_at": {
+                    "type": "integer",
+                    "example": 1705315800
+                },
+                "website": {
+                    "type": "string",
+                    "example": "https://johndoe.com"
+                },
+                "zoneinfo": {
+                    "type": "string",
+                    "example": "America/Los_Angeles"
                 }
             }
         },
@@ -7741,12 +10158,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
-	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Version:          "1.0",
+	Host:             "localhost:8811",
+	BasePath:         "/",
+	Schemes:          []string{"http", "https"},
+	Title:            "Auth Gateway API",
+	Description:      "Centralized authentication and authorization system for microservices",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

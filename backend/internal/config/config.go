@@ -23,14 +23,16 @@ type Config struct {
 	Security  SecurityConfig
 	Metrics   MetricsConfig
 	GeoIP     GeoIPConfig
+	OIDC      OIDCConfig
 }
 
 // ServerConfig contains server-related configuration
 type ServerConfig struct {
-	Port     string
-	GRPCPort string
-	Env      string
-	LogLevel string
+	Port        string
+	GRPCPort    string
+	Env         string
+	LogLevel    string
+	ExternalURL string // Base URL for Swagger docs (e.g., https://api.example.com)
 }
 
 // DatabaseConfig contains database-related configuration
@@ -143,6 +145,35 @@ type GeoIPConfig struct {
 	Enabled bool
 }
 
+// OIDCConfig contains OIDC provider configuration
+type OIDCConfig struct {
+	// Issuer URL (e.g., "https://auth.example.com")
+	// Used in ID tokens and discovery document
+	Issuer string
+
+	// Signing key configuration
+	SigningKeyPath   string
+	SigningKeyID     string
+	SigningAlgorithm string // RS256 or ES256
+
+	// Optional: Additional keys for rotation
+	// Format: "kid1:/path/to/key1.pem,kid2:/path/to/key2.pem"
+	AdditionalKeys string
+
+	// Token TTL defaults (can be overridden per client)
+	AccessTokenTTL  int // seconds, default 900 (15 min)
+	RefreshTokenTTL int // seconds, default 604800 (7 days)
+	IDTokenTTL      int // seconds, default 3600 (1 hour)
+	AuthCodeTTL     int // seconds, default 600 (10 min)
+	DeviceCodeTTL   int // seconds, default 1800 (30 min)
+
+	// Device flow settings
+	DeviceCodeInterval int // seconds, default 5
+
+	// Enable/disable OIDC provider
+	Enabled bool
+}
+
 // Load reads configuration from environment variables
 func Load() (*Config, error) {
 	err := godotenv.Load()
@@ -151,10 +182,11 @@ func Load() (*Config, error) {
 	}
 	cfg := &Config{
 		Server: ServerConfig{
-			Port:     getEnv("PORT", "3000"),
-			GRPCPort: getEnv("GRPC_PORT", "50051"),
-			Env:      getEnv("ENV", "development"),
-			LogLevel: getEnv("LOG_LEVEL", "info"),
+			Port:        getEnv("PORT", "8181"),
+			GRPCPort:    getEnv("GRPC_PORT", "50051"),
+			Env:         getEnv("ENV", "development"),
+			LogLevel:    getEnv("LOG_LEVEL", "info"),
+			ExternalURL: getEnv("EXTERNAL_URL", ""), // e.g., https://api.example.com
 		},
 		Database: DatabaseConfig{
 			Host:         getEnv("DB_HOST", "localhost"),
@@ -249,7 +281,23 @@ func Load() (*Config, error) {
 			APIKey:  getEnv("GEOIP_API_KEY", ""),
 			Enabled: getEnvAsBool("GEOIP_ENABLED", true),
 		},
+		OIDC: OIDCConfig{
+			Issuer:             getEnv("OIDC_ISSUER", ""),
+			SigningKeyPath:     getEnv("OIDC_SIGNING_KEY_PATH", ""),
+			SigningKeyID:       getEnv("OIDC_SIGNING_KEY_ID", ""),
+			SigningAlgorithm:   getEnv("OIDC_SIGNING_ALGORITHM", "RS256"),
+			AdditionalKeys:     getEnv("OIDC_ADDITIONAL_KEYS", ""),
+			AccessTokenTTL:     getEnvAsInt("OIDC_ACCESS_TOKEN_TTL", 900),
+			RefreshTokenTTL:    getEnvAsInt("OIDC_REFRESH_TOKEN_TTL", 604800),
+			IDTokenTTL:         getEnvAsInt("OIDC_ID_TOKEN_TTL", 3600),
+			AuthCodeTTL:        getEnvAsInt("OIDC_AUTH_CODE_TTL", 600),
+			DeviceCodeTTL:      getEnvAsInt("OIDC_DEVICE_CODE_TTL", 1800),
+			DeviceCodeInterval: getEnvAsInt("OIDC_DEVICE_CODE_INTERVAL", 5),
+			Enabled:            getEnvAsBool("OIDC_ENABLED", false),
+		},
 	}
+
+	setOIDCDefaults(cfg)
 
 	// Validate critical configuration
 	if cfg.JWT.AccessSecret == "" {
@@ -273,6 +321,71 @@ func (c *DatabaseConfig) GetDSN() string {
 // GetRedisAddr returns the Redis connection address
 func (c *RedisConfig) GetRedisAddr() string {
 	return fmt.Sprintf("%s:%s", c.Host, c.Port)
+}
+
+// setOIDCDefaults sets default values for OIDC configuration
+func setOIDCDefaults(cfg *Config) {
+	if cfg.OIDC.AccessTokenTTL == 0 {
+		cfg.OIDC.AccessTokenTTL = 900 // 15 minutes
+	}
+	if cfg.OIDC.RefreshTokenTTL == 0 {
+		cfg.OIDC.RefreshTokenTTL = 604800 // 7 days
+	}
+	if cfg.OIDC.IDTokenTTL == 0 {
+		cfg.OIDC.IDTokenTTL = 3600 // 1 hour
+	}
+	if cfg.OIDC.AuthCodeTTL == 0 {
+		cfg.OIDC.AuthCodeTTL = 600 // 10 minutes
+	}
+	if cfg.OIDC.DeviceCodeTTL == 0 {
+		cfg.OIDC.DeviceCodeTTL = 1800 // 30 minutes
+	}
+	if cfg.OIDC.DeviceCodeInterval == 0 {
+		cfg.OIDC.DeviceCodeInterval = 5 // 5 seconds
+	}
+	if cfg.OIDC.SigningAlgorithm == "" {
+		cfg.OIDC.SigningAlgorithm = "RS256"
+	}
+}
+
+// GetKeyConfigs parses key configuration and returns slice of key configs
+// Returns format: []struct{KID, KeyPath string}
+func (c *OIDCConfig) GetKeyConfigs() []struct {
+	KID     string
+	KeyPath string
+} {
+	var configs []struct {
+		KID     string
+		KeyPath string
+	}
+
+	if c.SigningKeyPath != "" {
+		configs = append(configs, struct {
+			KID     string
+			KeyPath string
+		}{
+			KID:     c.SigningKeyID,
+			KeyPath: c.SigningKeyPath,
+		})
+	}
+
+	if c.AdditionalKeys != "" {
+		entries := splitAndTrim(c.AdditionalKeys, ",")
+		for _, entry := range entries {
+			parts := splitAndTrim(entry, ":")
+			if len(parts) == 2 {
+				configs = append(configs, struct {
+					KID     string
+					KeyPath string
+				}{
+					KID:     parts[0],
+					KeyPath: parts[1],
+				})
+			}
+		}
+	}
+
+	return configs
 }
 
 // Helper functions

@@ -21,14 +21,15 @@ import (
 // AuthHandlerV2 implements the gRPC AuthService with API key support
 type AuthHandlerV2 struct {
 	pb.UnimplementedAuthServiceServer
-	jwtService    *jwt.Service
-	userRepo      *repository.UserRepository
-	tokenRepo     *repository.TokenRepository
-	rbacRepo      *repository.RBACRepository
-	apiKeyService *service.APIKeyService
-	authService   *service.AuthService
-	redis         *service.RedisService
-	logger        *logger.Logger
+	jwtService           *jwt.Service
+	userRepo             *repository.UserRepository
+	tokenRepo            *repository.TokenRepository
+	rbacRepo             *repository.RBACRepository
+	apiKeyService        *service.APIKeyService
+	authService          *service.AuthService
+	oauthProviderService *service.OAuthProviderService
+	redis                *service.RedisService
+	logger               *logger.Logger
 }
 
 // NewAuthHandlerV2 creates a new auth handler with API key support
@@ -39,18 +40,20 @@ func NewAuthHandlerV2(
 	rbacRepo *repository.RBACRepository,
 	apiKeyService *service.APIKeyService,
 	authService *service.AuthService,
+	oauthProviderService *service.OAuthProviderService,
 	redis *service.RedisService,
 	log *logger.Logger,
 ) *AuthHandlerV2 {
 	return &AuthHandlerV2{
-		jwtService:    jwtService,
-		userRepo:      userRepo,
-		tokenRepo:     tokenRepo,
-		rbacRepo:      rbacRepo,
-		apiKeyService: apiKeyService,
-		authService:   authService,
-		redis:         redis,
-		logger:        log,
+		jwtService:           jwtService,
+		userRepo:             userRepo,
+		tokenRepo:            tokenRepo,
+		rbacRepo:             rbacRepo,
+		apiKeyService:        apiKeyService,
+		authService:          authService,
+		oauthProviderService: oauthProviderService,
+		redis:                redis,
+		logger:               log,
 	}
 }
 
@@ -416,6 +419,122 @@ func extractRoleNames(roles []models.Role) []string {
 		names[i] = role.Name
 	}
 	return names
+}
+
+// ========== OAuth Provider Methods ==========
+
+// IntrospectOAuthToken validates OAuth access token (RFC 7662)
+func (h *AuthHandlerV2) IntrospectOAuthToken(ctx context.Context, req *pb.IntrospectOAuthTokenRequest) (*pb.IntrospectOAuthTokenResponse, error) {
+	if req.Token == "" {
+		return &pb.IntrospectOAuthTokenResponse{
+			Active:       false,
+			ErrorMessage: "token is required",
+		}, nil
+	}
+
+	if h.oauthProviderService == nil {
+		return &pb.IntrospectOAuthTokenResponse{
+			Active:       false,
+			ErrorMessage: "OAuth provider service not configured",
+		}, nil
+	}
+
+	result, err := h.oauthProviderService.IntrospectToken(ctx, req.Token, req.TokenTypeHint, nil)
+	if err != nil {
+		h.logger.Error("OAuth token introspection failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		return &pb.IntrospectOAuthTokenResponse{
+			Active:       false,
+			ErrorMessage: err.Error(),
+		}, nil
+	}
+
+	return &pb.IntrospectOAuthTokenResponse{
+		Active:    result.Active,
+		Scope:     result.Scope,
+		ClientId:  result.ClientID,
+		Username:  result.Username,
+		TokenType: result.TokenType,
+		Exp:       result.ExpiresAt,
+		Iat:       result.IssuedAt,
+		Nbf:       result.NotBefore,
+		Sub:       result.Subject,
+		Aud:       result.Audience,
+		Iss:       result.Issuer,
+		Jti:       result.JWTID,
+	}, nil
+}
+
+// ValidateOAuthClient validates OAuth client credentials
+func (h *AuthHandlerV2) ValidateOAuthClient(ctx context.Context, req *pb.ValidateOAuthClientRequest) (*pb.ValidateOAuthClientResponse, error) {
+	if req.ClientId == "" {
+		return nil, status.Error(codes.InvalidArgument, "client_id is required")
+	}
+
+	if h.oauthProviderService == nil {
+		return &pb.ValidateOAuthClientResponse{
+			Valid:        false,
+			ErrorMessage: "OAuth provider service not configured",
+		}, nil
+	}
+
+	client, err := h.oauthProviderService.ValidateClientCredentials(ctx, req.ClientId, req.ClientSecret)
+	if err != nil {
+		h.logger.Debug("OAuth client validation failed", map[string]interface{}{
+			"client_id": req.ClientId,
+			"error":     err.Error(),
+		})
+		return &pb.ValidateOAuthClientResponse{
+			Valid:        false,
+			ErrorMessage: err.Error(),
+		}, nil
+	}
+
+	return &pb.ValidateOAuthClientResponse{
+		Valid:        true,
+		ClientId:     client.ClientID,
+		ClientName:   client.Name,
+		ClientType:   client.ClientType,
+		Scopes:       client.AllowedScopes,
+		RedirectUris: client.RedirectURIs,
+	}, nil
+}
+
+// GetOAuthClient retrieves OAuth client information by client_id
+func (h *AuthHandlerV2) GetOAuthClient(ctx context.Context, req *pb.GetOAuthClientRequest) (*pb.GetOAuthClientResponse, error) {
+	if req.ClientId == "" {
+		return nil, status.Error(codes.InvalidArgument, "client_id is required")
+	}
+
+	if h.oauthProviderService == nil {
+		return nil, status.Error(codes.Unavailable, "OAuth provider service not configured")
+	}
+
+	client, err := h.oauthProviderService.GetClientByClientID(ctx, req.ClientId)
+	if err != nil {
+		h.logger.Debug("OAuth client not found", map[string]interface{}{
+			"client_id": req.ClientId,
+			"error":     err.Error(),
+		})
+		return nil, status.Error(codes.NotFound, "OAuth client not found")
+	}
+
+	return &pb.GetOAuthClientResponse{
+		Client: &pb.OAuthClient{
+			Id:                      client.ID.String(),
+			ClientId:                client.ClientID,
+			ClientName:              client.Name,
+			ClientType:              client.ClientType,
+			RedirectUris:            client.RedirectURIs,
+			Scopes:                  client.AllowedScopes,
+			GrantTypes:              client.AllowedGrantTypes,
+			TokenEndpointAuthMethod: "client_secret_basic",
+			IsActive:                client.IsActive,
+			CreatedAt:               client.CreatedAt.Unix(),
+			UpdatedAt:               client.UpdatedAt.Unix(),
+		},
+	}, nil
 }
 
 // CreateUser creates a new user account

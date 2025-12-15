@@ -7,6 +7,7 @@ export * from './user';
 export * from './auth';
 export * from './two-factor';
 export * from './oauth';
+export * from './oauth-provider';
 export * from './api-key';
 export * from './sms';
 export * from './rbac';

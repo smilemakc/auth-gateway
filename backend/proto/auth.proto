@@ -26,6 +26,17 @@ service AuthService {
 
   // CompletePasswordlessRegistration completes registration after OTP verification
   rpc CompletePasswordlessRegistration(CompletePasswordlessRegistrationRequest) returns (CompletePasswordlessRegistrationResponse);
+
+  // ========== OAuth Provider Methods ==========
+
+  // IntrospectOAuthToken validates OAuth access token (RFC 7662)
+  rpc IntrospectOAuthToken(IntrospectOAuthTokenRequest) returns (IntrospectOAuthTokenResponse);
+
+  // ValidateOAuthClient validates OAuth client credentials
+  rpc ValidateOAuthClient(ValidateOAuthClientRequest) returns (ValidateOAuthClientResponse);
+
+  // GetOAuthClient retrieves OAuth client information by client_id
+  rpc GetOAuthClient(GetOAuthClientRequest) returns (GetOAuthClientResponse);
 }
 
 // ValidateTokenRequest contains the token to validate
@@ -152,4 +163,72 @@ message CompletePasswordlessRegistrationResponse {
   string refresh_token = 3;
   int64 expires_in = 4;
   string error_message = 5;
+}
+
+// ========== OAuth Provider Messages ==========
+
+// IntrospectOAuthTokenRequest contains the OAuth token to introspect
+message IntrospectOAuthTokenRequest {
+  string token = 1;
+  string token_type_hint = 2; // "access_token" or "refresh_token"
+}
+
+// IntrospectOAuthTokenResponse contains RFC 7662 introspection response
+message IntrospectOAuthTokenResponse {
+  bool active = 1;
+  string scope = 2;
+  string client_id = 3;
+  string username = 4;
+  string token_type = 5;
+  int64 exp = 6;    // Expiration time (Unix timestamp)
+  int64 iat = 7;    // Issued at (Unix timestamp)
+  int64 nbf = 8;    // Not before (Unix timestamp)
+  string sub = 9;   // Subject (user ID)
+  string aud = 10;  // Audience
+  string iss = 11;  // Issuer
+  string jti = 12;  // JWT ID
+  string error_message = 13;
+}
+
+// ValidateOAuthClientRequest contains client credentials to validate
+message ValidateOAuthClientRequest {
+  string client_id = 1;
+  string client_secret = 2;
+}
+
+// ValidateOAuthClientResponse contains client validation result
+message ValidateOAuthClientResponse {
+  bool valid = 1;
+  string client_id = 2;
+  string client_name = 3;
+  string client_type = 4;   // "confidential" or "public"
+  repeated string scopes = 5;
+  repeated string redirect_uris = 6;
+  string error_message = 7;
+}
+
+// GetOAuthClientRequest contains the client_id to retrieve
+message GetOAuthClientRequest {
+  string client_id = 1;
+}
+
+// OAuthClient represents OAuth client information
+message OAuthClient {
+  string id = 1;
+  string client_id = 2;
+  string client_name = 3;
+  string client_type = 4;
+  repeated string redirect_uris = 5;
+  repeated string scopes = 6;
+  repeated string grant_types = 7;
+  string token_endpoint_auth_method = 8;
+  bool is_active = 9;
+  int64 created_at = 10;
+  int64 updated_at = 11;
+}
+
+// GetOAuthClientResponse contains OAuth client information
+message GetOAuthClientResponse {
+  OAuthClient client = 1;
+  string error_message = 2;
 }

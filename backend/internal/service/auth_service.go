@@ -14,13 +14,14 @@ import (
 
 // AuthService provides authentication operations
 type AuthService struct {
-	userRepo     UserStore
-	tokenRepo    TokenStore
-	rbacRepo     RBACStore
-	auditService AuditLogger
-	jwtService   TokenService
-	redis        CacheService
-	bcryptCost   int
+	userRepo       UserStore
+	tokenRepo      TokenStore
+	rbacRepo       RBACStore
+	auditService   AuditLogger
+	jwtService     TokenService
+	redis          CacheService
+	sessionService *SessionCreationService
+	bcryptCost     int
 }
 
 // NewAuthService creates a new auth service
@@ -31,16 +32,18 @@ func NewAuthService(
 	auditService AuditLogger,
 	jwtService TokenService,
 	redis CacheService,
+	sessionService *SessionCreationService,
 	bcryptCost int,
 ) *AuthService {
 	return &AuthService{
-		userRepo:     userRepo,
-		tokenRepo:    tokenRepo,
-		rbacRepo:     rbacRepo,
-		auditService: auditService,
-		jwtService:   jwtService,
-		redis:        redis,
-		bcryptCost:   bcryptCost,
+		userRepo:       userRepo,
+		tokenRepo:      tokenRepo,
+		rbacRepo:       rbacRepo,
+		auditService:   auditService,
+		jwtService:     jwtService,
+		redis:          redis,
+		sessionService: sessionService,
+		bcryptCost:     bcryptCost,
 	}
 }
 
@@ -163,7 +166,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 	}
 
 	// Generate tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, deviceInfo)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +239,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	}
 
 	// Generate tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, deviceInfo)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +282,7 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 	}
 
 	// Generate full auth tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, deviceInfo)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -354,7 +357,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	}
 
 	// Generate new tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, deviceInfo)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -667,7 +670,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 	}
 
 	// Generate tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, deviceInfo)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -681,7 +684,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 }
 
 // generateAuthResponse generates access and refresh tokens and saves refresh token with device info
-func (s *AuthService) generateAuthResponse(ctx context.Context, user *models.User, ip string, deviceInfo models.DeviceInfo) (*models.AuthResponse, error) {
+func (s *AuthService) generateAuthResponse(ctx context.Context, user *models.User, ip, userAgent string, deviceInfo models.DeviceInfo) (*models.AuthResponse, error) {
 	// Generate access token
 	accessToken, err := s.jwtService.GenerateAccessToken(user)
 	if err != nil {
@@ -699,11 +702,12 @@ func (s *AuthService) generateAuthResponse(ctx context.Context, user *models.Use
 
 	// Save refresh token to database with device info
 	tokenHash := utils.HashToken(refreshToken)
+	refreshExpiration := s.jwtService.GetRefreshTokenExpiration()
 	dbToken := &models.RefreshToken{
 		ID:          uuid.New(),
 		UserID:      user.ID,
 		TokenHash:   tokenHash,
-		ExpiresAt:   time.Now().Add(s.jwtService.GetRefreshTokenExpiration()),
+		ExpiresAt:   time.Now().Add(refreshExpiration),
 		DeviceType:  deviceInfo.DeviceType,
 		OS:          deviceInfo.OS,
 		Browser:     deviceInfo.Browser,
@@ -715,12 +719,34 @@ func (s *AuthService) generateAuthResponse(ctx context.Context, user *models.Use
 		return nil, fmt.Errorf("failed to save refresh token: %w", err)
 	}
 
+	// Create session using universal SessionCreationService (non-fatal to not block auth)
+	if s.sessionService != nil {
+		s.sessionService.CreateSessionNonFatal(ctx, SessionCreationParams{
+			UserID:      user.ID,
+			TokenHash:   tokenHash,
+			IPAddress:   ip,
+			UserAgent:   userAgent,
+			ExpiresAt:   time.Now().Add(refreshExpiration),
+			SessionName: sessionName,
+		})
+	}
+
 	return &models.AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		User:         user.PublicUser(),
 		ExpiresIn:    int64(s.jwtService.GetAccessTokenExpiration().Seconds()),
 	}, nil
+}
+
+// GenerateTokensForUser generates tokens for a given user (used for OTP/SMS passwordless login).
+// This method properly saves the refresh token and creates a session.
+func (s *AuthService) GenerateTokensForUser(ctx context.Context, user *models.User, ip, userAgent string) (*models.AuthResponse, error) {
+	// Parse device info from user agent
+	deviceInfo := utils.ParseUserAgent(userAgent)
+
+	// Use the centralized generateAuthResponse method
+	return s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo)
 }
 
 func (s *AuthService) logAudit(userID *uuid.UUID, action models.AuditAction, status models.AuditStatus, ip, userAgent string, details map[string]interface{}) {

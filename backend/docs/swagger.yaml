@@ -1,3 +1,4 @@
+basePath: /
 definitions:
   APIKey:
     properties:
@@ -591,6 +592,87 @@ definitions:
     - filter_type
     - ip_cidr
     type: object
+  CreateOAuthClientRequest:
+    properties:
+      access_token_ttl:
+        example: 900
+        type: integer
+      allowed_grant_types:
+        example:
+        - authorization_code
+        - refresh_token
+        items:
+          type: string
+        minItems: 1
+        type: array
+      allowed_scopes:
+        example:
+        - openid
+        - profile
+        - email
+        items:
+          type: string
+        minItems: 1
+        type: array
+      client_type:
+        enum:
+        - confidential
+        - public
+        example: confidential
+        type: string
+      default_scopes:
+        example:
+        - openid
+        - profile
+        items:
+          type: string
+        type: array
+      description:
+        example: My OAuth client application
+        type: string
+      first_party:
+        example: false
+        type: boolean
+      id_token_ttl:
+        example: 3600
+        type: integer
+      logo_url:
+        example: https://example.com/logo.png
+        type: string
+      name:
+        example: My Application
+        maxLength: 100
+        minLength: 3
+        type: string
+      redirect_uris:
+        example:
+        - https://example.com/callback
+        items:
+          type: string
+        type: array
+      refresh_token_ttl:
+        example: 604800
+        type: integer
+      require_consent:
+        example: true
+        type: boolean
+      require_pkce:
+        example: true
+        type: boolean
+    required:
+    - allowed_grant_types
+    - allowed_scopes
+    - client_type
+    - name
+    type: object
+  CreateOAuthClientResponse:
+    properties:
+      client:
+        $ref: '#/definitions/OAuthClient'
+      client_secret:
+        example: client_secret_abc123xyz789
+        type: string
+    type: object
   CreatePermissionRequest:
     properties:
       action:
@@ -770,6 +852,27 @@ definitions:
         type: integer
       wait_duration_ms:
         type: integer
+    type: object
+  DeviceAuthResponse:
+    properties:
+      device_code:
+        example: GmRhmhcxhwAzkoEqiMEg_DnyEysNkuNhszIySk9eS
+        type: string
+      expires_in:
+        example: 900
+        type: integer
+      interval:
+        example: 5
+        type: integer
+      user_code:
+        example: ABCD-EFGH
+        type: string
+      verification_uri:
+        example: https://auth.example.com/device
+        type: string
+      verification_uri_complete:
+        example: https://auth.example.com/device?user_code=ABCD-EFGH
+        type: string
     type: object
   EmailTemplate:
     properties:
@@ -970,6 +1073,116 @@ definitions:
         minLength: 3
         type: string
     type: object
+  IntrospectionResponse:
+    properties:
+      active:
+        example: true
+        type: boolean
+      aud:
+        example: my_client_app_123
+        type: string
+      client_id:
+        example: my_client_app_123
+        type: string
+      exp:
+        example: 1705319400
+        type: integer
+      iat:
+        example: 1705315800
+        type: integer
+      iss:
+        example: https://auth.example.com
+        type: string
+      jti:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      nbf:
+        example: 1705315800
+        type: integer
+      scope:
+        example: openid profile email
+        type: string
+      sub:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+      username:
+        example: johndoe
+        type: string
+    type: object
+  JWK:
+    properties:
+      alg:
+        example: RS256
+        type: string
+      crv:
+        example: P-256
+        type: string
+      d:
+        type: string
+      dp:
+        type: string
+      dq:
+        type: string
+      e:
+        example: AQAB
+        type: string
+      k:
+        type: string
+      key_ops:
+        example:
+        - sign
+        - verify
+        items:
+          type: string
+        type: array
+      kid:
+        example: "2023-01-01"
+        type: string
+      kty:
+        example: RSA
+        type: string
+      "n":
+        example: 0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw
+        type: string
+      p:
+        type: string
+      q:
+        type: string
+      qi:
+        type: string
+      use:
+        example: sig
+        type: string
+      x:
+        example: f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU
+        type: string
+      x5c:
+        items:
+          type: string
+        type: array
+      x5t:
+        example: GvnVZS_KnfEhOp7oUdKKPqPFT_8
+        type: string
+      x5t#S256:
+        example: YmFzZTY0dXJsIGVuY29kZWQgc2hhMjU2IGhhc2g
+        type: string
+      x5u:
+        example: https://example.com/keys/2023-01-01.pem
+        type: string
+      "y":
+        example: x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0
+        type: string
+    type: object
+  JWKSDocument:
+    properties:
+      keys:
+        items:
+          $ref: '#/definitions/JWK'
+        type: array
+    type: object
   ListAPIKeysResponse:
     properties:
       api_keys:
@@ -1028,6 +1241,87 @@ definitions:
         example: Operation completed successfully
         type: string
     type: object
+  OAuthClient:
+    properties:
+      access_token_ttl:
+        example: 900
+        type: integer
+      allowed_grant_types:
+        example:
+        - authorization_code
+        - refresh_token
+        items:
+          type: string
+        type: array
+      allowed_scopes:
+        example:
+        - openid
+        - profile
+        - email
+        items:
+          type: string
+        type: array
+      client_id:
+        example: my_client_app_123
+        type: string
+      client_type:
+        example: confidential
+        type: string
+      created_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      default_scopes:
+        example:
+        - openid
+        - profile
+        items:
+          type: string
+        type: array
+      description:
+        example: My OAuth client application
+        type: string
+      first_party:
+        example: false
+        type: boolean
+      id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      id_token_ttl:
+        example: 3600
+        type: integer
+      is_active:
+        example: true
+        type: boolean
+      logo_url:
+        example: https://example.com/logo.png
+        type: string
+      name:
+        example: My Application
+        type: string
+      owner:
+        $ref: '#/definitions/User'
+      owner_id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      redirect_uris:
+        example:
+        - https://example.com/callback
+        items:
+          type: string
+        type: array
+      refresh_token_ttl:
+        example: 604800
+        type: integer
+      require_consent:
+        example: true
+        type: boolean
+      require_pkce:
+        example: true
+        type: boolean
+      updated_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+    type: object
   OAuthLoginResponse:
     properties:
       access_token:
@@ -1057,6 +1351,222 @@ definitions:
         type: string
       name:
         type: string
+    type: object
+  OAuthScope:
+    properties:
+      created_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      description:
+        example: Access to basic profile information
+        type: string
+      display_name:
+        example: Profile Information
+        type: string
+      id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      is_default:
+        example: true
+        type: boolean
+      is_system:
+        example: true
+        type: boolean
+      name:
+        example: profile
+        type: string
+    type: object
+  OIDCDiscoveryDocument:
+    properties:
+      acr_values_supported:
+        example:
+        - urn:mace:incommon:iap:silver
+        items:
+          type: string
+        type: array
+      authorization_endpoint:
+        example: https://auth.example.com/oauth2/authorize
+        type: string
+      claim_types_supported:
+        example:
+        - normal
+        items:
+          type: string
+        type: array
+      claims_parameter_supported:
+        example: false
+        type: boolean
+      claims_supported:
+        example:
+        - sub
+        - name
+        - email
+        - picture
+        items:
+          type: string
+        type: array
+      code_challenge_methods_supported:
+        example:
+        - S256
+        - plain
+        items:
+          type: string
+        type: array
+      device_authorization_endpoint:
+        example: https://auth.example.com/oauth2/device/code
+        type: string
+      display_values_supported:
+        example:
+        - page
+        - popup
+        items:
+          type: string
+        type: array
+      end_session_endpoint:
+        example: https://auth.example.com/oauth2/logout
+        type: string
+      grant_types_supported:
+        example:
+        - authorization_code
+        - refresh_token
+        - client_credentials
+        items:
+          type: string
+        type: array
+      id_token_encryption_alg_values_supported:
+        example:
+        - RSA-OAEP
+        - A256KW
+        items:
+          type: string
+        type: array
+      id_token_encryption_enc_values_supported:
+        example:
+        - A128CBC-HS256
+        - A256GCM
+        items:
+          type: string
+        type: array
+      id_token_signing_alg_values_supported:
+        example:
+        - RS256
+        - ES256
+        items:
+          type: string
+        type: array
+      introspection_endpoint:
+        example: https://auth.example.com/oauth2/introspect
+        type: string
+      issuer:
+        example: https://auth.example.com
+        type: string
+      jwks_uri:
+        example: https://auth.example.com/.well-known/jwks.json
+        type: string
+      op_policy_uri:
+        example: https://example.com/policy
+        type: string
+      op_tos_uri:
+        example: https://example.com/tos
+        type: string
+      registration_endpoint:
+        example: https://auth.example.com/oauth2/register
+        type: string
+      request_parameter_supported:
+        example: false
+        type: boolean
+      request_uri_parameter_supported:
+        example: false
+        type: boolean
+      require_request_uri_registration:
+        example: false
+        type: boolean
+      response_modes_supported:
+        example:
+        - query
+        - fragment
+        - form_post
+        items:
+          type: string
+        type: array
+      response_types_supported:
+        example:
+        - code
+        - token
+        - id_token
+        items:
+          type: string
+        type: array
+      revocation_endpoint:
+        example: https://auth.example.com/oauth2/revoke
+        type: string
+      scopes_supported:
+        example:
+        - openid
+        - profile
+        - email
+        - offline_access
+        items:
+          type: string
+        type: array
+      service_documentation:
+        example: https://docs.example.com
+        type: string
+      subject_types_supported:
+        example:
+        - public
+        - pairwise
+        items:
+          type: string
+        type: array
+      token_endpoint:
+        example: https://auth.example.com/oauth2/token
+        type: string
+      token_endpoint_auth_methods_supported:
+        example:
+        - client_secret_basic
+        - client_secret_post
+        items:
+          type: string
+        type: array
+      token_endpoint_auth_signing_alg_values_supported:
+        example:
+        - RS256
+        - ES256
+        items:
+          type: string
+        type: array
+      ui_locales_supported:
+        example:
+        - en-US
+        - es-ES
+        items:
+          type: string
+        type: array
+      userinfo_encryption_alg_values_supported:
+        example:
+        - RSA-OAEP
+        - A256KW
+        items:
+          type: string
+        type: array
+      userinfo_encryption_enc_values_supported:
+        example:
+        - A128CBC-HS256
+        - A256GCM
+        items:
+          type: string
+        type: array
+      userinfo_endpoint:
+        example: https://auth.example.com/oauth2/userinfo
+        type: string
+      userinfo_signing_alg_values_supported:
+        example:
+        - RS256
+        - ES256
+        items:
+          type: string
+        type: array
     type: object
   OTPType:
     enum:
@@ -1128,6 +1638,25 @@ definitions:
         type: array
     type: object
   PreviewEmailTemplateRequest:
+    properties:
+      html_body:
+        description: HTML template to preview
+        example: <p>Hello {{username}}</p>
+        type: string
+      text_body:
+        description: Text template to preview
+        example: Hello {{username}}
+        type: string
+      variables:
+        additionalProperties:
+          type: string
+        description: Sample variable values for preview
+        example:
+          email: john@example.com
+          username: John Doe
+        type: object
+    required:
+    - html_body
     type: object
   PreviewEmailTemplateResponse:
     properties:
@@ -1529,6 +2058,42 @@ definitions:
         type: integer
     type: object
   TestWebhookRequest:
+    properties:
+      event_type:
+        description: Event type to simulate
+        example: user.created
+        type: string
+      payload:
+        additionalProperties:
+          type: string
+        description: Test payload data
+        example:
+          action: created
+          user_id: "123"
+        type: object
+    required:
+    - event_type
+    type: object
+  TokenResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      expires_in:
+        example: 900
+        type: integer
+      id_token:
+        example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      refresh_token:
+        example: refresh_token_xyz789
+        type: string
+      scope:
+        example: openid profile email
+        type: string
+      token_type:
+        example: Bearer
+        type: string
     type: object
   TwoFactorDisableRequest:
     properties:
@@ -1717,6 +2282,68 @@ definitions:
           type: string
         type: array
     type: object
+  UpdateOAuthClientRequest:
+    properties:
+      access_token_ttl:
+        example: 900
+        type: integer
+      allowed_grant_types:
+        example:
+        - authorization_code
+        - refresh_token
+        items:
+          type: string
+        minItems: 1
+        type: array
+      allowed_scopes:
+        example:
+        - openid
+        - profile
+        - email
+        items:
+          type: string
+        minItems: 1
+        type: array
+      default_scopes:
+        example:
+        - openid
+        - profile
+        items:
+          type: string
+        type: array
+      description:
+        example: Updated description
+        type: string
+      id_token_ttl:
+        example: 3600
+        type: integer
+      is_active:
+        example: true
+        type: boolean
+      logo_url:
+        example: https://example.com/new-logo.png
+        type: string
+      name:
+        example: My Updated Application
+        maxLength: 100
+        minLength: 3
+        type: string
+      redirect_uris:
+        example:
+        - https://example.com/callback
+        items:
+          type: string
+        type: array
+      refresh_token_ttl:
+        example: 604800
+        type: integer
+      require_consent:
+        example: true
+        type: boolean
+      require_pkce:
+        example: true
+        type: boolean
+    type: object
   UpdateRoleRequest:
     properties:
       description:
@@ -1883,6 +2510,66 @@ definitions:
       username:
         description: Unique username for the user
         example: johndoe
+        type: string
+    type: object
+  UserInfoResponse:
+    properties:
+      birthdate:
+        example: "1990-01-01"
+        type: string
+      email:
+        example: john.doe@example.com
+        type: string
+      email_verified:
+        example: true
+        type: boolean
+      family_name:
+        example: Doe
+        type: string
+      gender:
+        example: male
+        type: string
+      given_name:
+        example: John
+        type: string
+      locale:
+        example: en-US
+        type: string
+      middle_name:
+        example: Michael
+        type: string
+      name:
+        example: John Doe
+        type: string
+      nickname:
+        example: Johnny
+        type: string
+      phone_number:
+        example: +1 (555) 123-4567
+        type: string
+      phone_number_verified:
+        example: false
+        type: boolean
+      picture:
+        example: https://example.com/avatars/johndoe.jpg
+        type: string
+      preferred_username:
+        example: johndoe
+        type: string
+      profile:
+        example: https://example.com/johndoe
+        type: string
+      sub:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      updated_at:
+        example: 1705315800
+        type: integer
+      website:
+        example: https://johndoe.com
+        type: string
+      zoneinfo:
+        example: America/Los_Angeles
         type: string
     type: object
   VerifyOTPRequest:
@@ -2129,9 +2816,41 @@ definitions:
     - name
     - url
     type: object
+host: localhost:8811
 info:
-  contact: {}
+  contact:
+    email: maksbalashov@gmail.com
+    name: API Support
+  description: Centralized authentication and authorization system for microservices
+  title: Auth Gateway API
+  version: "1.0"
 paths:
+  /.well-known/jwks.json:
+    get:
+      description: Get JSON Web Key Set for token validation (/.well-known/jwks.json)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/JWKSDocument'
+      summary: JWKS
+      tags:
+      - OAuth Provider - Discovery
+  /.well-known/openid-configuration:
+    get:
+      description: Get OpenID Connect discovery document (/.well-known/openid-configuration)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/OIDCDiscoveryDocument'
+      summary: OIDC Discovery
+      tags:
+      - OAuth Provider - Discovery
   /admin/sms/settings:
     get:
       description: Get all SMS settings (admin only)
@@ -2636,6 +3355,455 @@ paths:
       summary: Delete an IP filter
       tags:
       - Admin - IP Filters
+  /api/admin/oauth/clients:
+    get:
+      description: Get paginated list of OAuth 2.0 clients (admin only)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Filter by owner ID
+        in: query
+        name: owner_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Response with clients, total, page, per_page
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List OAuth clients
+      tags:
+      - Admin - OAuth Clients
+    post:
+      consumes:
+      - application/json
+      description: Create a new OAuth 2.0 client application (admin only)
+      parameters:
+      - description: Client creation data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateOAuthClientRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/CreateOAuthClientResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create OAuth client
+      tags:
+      - Admin - OAuth Clients
+  /api/admin/oauth/clients/{id}:
+    delete:
+      description: Soft-delete an OAuth 2.0 client (admin only)
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete OAuth client
+      tags:
+      - Admin - OAuth Clients
+    get:
+      description: Get detailed information about a specific OAuth client (admin only)
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/OAuthClient'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get OAuth client
+      tags:
+      - Admin - OAuth Clients
+    put:
+      consumes:
+      - application/json
+      description: Update OAuth 2.0 client information (admin only)
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Client update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateOAuthClientRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/OAuthClient'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update OAuth client
+      tags:
+      - Admin - OAuth Clients
+  /api/admin/oauth/clients/{id}/consents:
+    get:
+      description: Get all user consents for a specific OAuth client (admin only)
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Response with consents array
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List client consents
+      tags:
+      - Admin - OAuth Consents
+  /api/admin/oauth/clients/{id}/consents/{user_id}:
+    delete:
+      description: Revoke a user's consent for a specific OAuth client (admin action)
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke user consent
+      tags:
+      - Admin - OAuth Consents
+  /api/admin/oauth/clients/{id}/rotate-secret:
+    post:
+      description: Generate a new client secret for an OAuth 2.0 client (admin only)
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Response with client_secret
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Rotate client secret
+      tags:
+      - Admin - OAuth Clients
+  /api/admin/oauth/scopes:
+    get:
+      description: Get list of all OAuth 2.0 scopes (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Response with scopes array
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List OAuth scopes
+      tags:
+      - Admin - OAuth Scopes
+    post:
+      consumes:
+      - application/json
+      description: Create a custom OAuth 2.0 scope (admin only, is_system=false)
+      parameters:
+      - description: Scope data with name, display_name, description
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/OAuthScope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create OAuth scope
+      tags:
+      - Admin - OAuth Scopes
+  /api/admin/oauth/scopes/{id}:
+    delete:
+      description: Delete a custom OAuth 2.0 scope (admin only, cannot delete system
+        scopes)
+      parameters:
+      - description: Scope ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete OAuth scope
+      tags:
+      - Admin - OAuth Scopes
   /api/admin/rbac/permission-matrix:
     get:
       description: Get a matrix showing which roles have which permissions
@@ -2725,6 +3893,39 @@ paths:
       security:
       - BearerAuth: []
       summary: Create a new permission
+      tags:
+      - Admin - RBAC
+  /api/admin/rbac/permissions/{id}:
+    delete:
+      description: Delete a permission by ID
+      parameters:
+      - description: Permission ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a permission
       tags:
       - Admin - RBAC
   /api/admin/rbac/roles:
@@ -5041,6 +6242,458 @@ paths:
       summary: Liveness check
       tags:
       - health
+  /oauth/authorize:
+    get:
+      consumes:
+      - application/json
+      description: Initiates OAuth 2.0 authorization flow. Redirects user to login
+        if not authenticated, then to consent page if required
+      parameters:
+      - description: Response type (code or token)
+        enum:
+        - code
+        - token
+        in: query
+        name: response_type
+        required: true
+        type: string
+      - description: Client ID
+        in: query
+        name: client_id
+        required: true
+        type: string
+      - description: Redirect URI
+        in: query
+        name: redirect_uri
+        required: true
+        type: string
+      - description: Requested scopes (space-separated)
+        in: query
+        name: scope
+        required: true
+        type: string
+      - description: State parameter for CSRF protection
+        in: query
+        name: state
+        required: true
+        type: string
+      - description: Nonce for ID token
+        in: query
+        name: nonce
+        type: string
+      - description: PKCE code challenge
+        in: query
+        name: code_challenge
+        type: string
+      - description: PKCE code challenge method (S256 or plain)
+        in: query
+        name: code_challenge_method
+        type: string
+      - description: Prompt behavior (none, login, consent, select_account)
+        in: query
+        name: prompt
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Redirect with error
+          schema:
+            type: string
+      summary: OAuth 2.0 Authorization
+      tags:
+      - OAuth Provider
+  /oauth/consent:
+    get:
+      description: HTML page for user to approve/deny OAuth authorization request
+      parameters:
+      - description: Client ID
+        in: query
+        name: client_id
+        required: true
+        type: string
+      - description: Requested scopes
+        in: query
+        name: scope
+        required: true
+        type: string
+      - description: Redirect URI
+        in: query
+        name: redirect_uri
+        required: true
+        type: string
+      - description: State parameter
+        in: query
+        name: state
+        type: string
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: HTML consent page
+          schema:
+            type: string
+        "302":
+          description: Redirect to login
+          schema:
+            type: string
+        "400":
+          description: HTML error page
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: OAuth Consent Page
+      tags:
+      - OAuth Provider - Consent
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Process user consent decision and redirect with authorization code
+      parameters:
+      - description: Client ID
+        in: formData
+        name: client_id
+        required: true
+        type: string
+      - description: Redirect URI
+        in: formData
+        name: redirect_uri
+        required: true
+        type: string
+      - description: Requested scopes
+        in: formData
+        name: scope
+        required: true
+        type: string
+      - description: State parameter
+        in: formData
+        name: state
+        required: true
+        type: string
+      - description: Approval decision (true or false)
+        in: formData
+        name: approve
+        required: true
+        type: string
+      - description: Response type
+        in: formData
+        name: response_type
+        type: string
+      - description: Nonce
+        in: formData
+        name: nonce
+        type: string
+      - description: PKCE code challenge
+        in: formData
+        name: code_challenge
+        type: string
+      - description: PKCE code challenge method
+        in: formData
+        name: code_challenge_method
+        type: string
+      responses:
+        "302":
+          description: Redirect to callback with code or error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Submit Consent Decision
+      tags:
+      - OAuth Provider - Consent
+  /oauth/device:
+    get:
+      description: HTML page where users enter the device code to authorize
+      parameters:
+      - description: Pre-filled user code
+        in: query
+        name: user_code
+        type: string
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: HTML verification page
+          schema:
+            type: string
+      summary: Device Verification Page
+      tags:
+      - OAuth Provider - Device Flow
+  /oauth/device/approve:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Approve or deny a device code (requires authentication)
+      parameters:
+      - description: User code from device
+        in: formData
+        name: user_code
+        required: true
+        type: string
+      - description: Approval decision (true or false)
+        in: formData
+        name: approve
+        required: true
+        type: string
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: HTML success page
+          schema:
+            type: string
+        "302":
+          description: Redirect to login
+          schema:
+            type: string
+        "400":
+          description: HTML error page
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Approve Device Code
+      tags:
+      - OAuth Provider - Device Flow
+  /oauth/device/code:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Initiate device authorization grant flow
+      parameters:
+      - description: Client ID
+        in: formData
+        name: client_id
+        required: true
+        type: string
+      - description: Requested scopes
+        in: formData
+        name: scope
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/DeviceAuthResponse'
+        "400":
+          description: error and error_description
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Device Authorization Request
+      tags:
+      - OAuth Provider - Device Flow
+  /oauth/device/token:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Poll for tokens after user authorization (device flow)
+      parameters:
+      - description: Grant type (urn:ietf:params:oauth:grant-type:device_code)
+        in: formData
+        name: grant_type
+        required: true
+        type: string
+      - description: Device code from authorization request
+        in: formData
+        name: device_code
+        required: true
+        type: string
+      - description: Client ID
+        in: formData
+        name: client_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/TokenResponse'
+        "400":
+          description: authorization_pending, slow_down, or expired_token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Device Token Polling
+      tags:
+      - OAuth Provider - Device Flow
+  /oauth/introspect:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Introspect an access or refresh token to determine its validity
+        and metadata
+      parameters:
+      - description: Token to introspect
+        in: formData
+        name: token
+        required: true
+        type: string
+      - description: Token type hint (access_token or refresh_token)
+        in: formData
+        name: token_type_hint
+        type: string
+      - description: Client ID
+        in: formData
+        name: client_id
+        required: true
+        type: string
+      - description: Client secret
+        in: formData
+        name: client_secret
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/IntrospectionResponse'
+        "401":
+          description: invalid_client
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Token Introspection
+      tags:
+      - OAuth Provider
+  /oauth/revoke:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Revoke an access or refresh token
+      parameters:
+      - description: Token to revoke
+        in: formData
+        name: token
+        required: true
+        type: string
+      - description: Token type hint (access_token or refresh_token)
+        in: formData
+        name: token_type_hint
+        type: string
+      - description: Client ID
+        in: formData
+        name: client_id
+        required: true
+        type: string
+      - description: Client secret
+        in: formData
+        name: client_secret
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Empty response on success
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Token Revocation
+      tags:
+      - OAuth Provider
+  /oauth/token:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Exchange authorization code for tokens, refresh tokens, or obtain
+        client credentials tokens
+      parameters:
+      - description: Grant type
+        enum:
+        - authorization_code
+        - refresh_token
+        - client_credentials
+        - urn:ietf:params:oauth:grant-type:device_code
+        in: formData
+        name: grant_type
+        required: true
+        type: string
+      - description: Authorization code (for authorization_code grant)
+        in: formData
+        name: code
+        type: string
+      - description: Redirect URI (for authorization_code grant)
+        in: formData
+        name: redirect_uri
+        type: string
+      - description: Client ID
+        in: formData
+        name: client_id
+        required: true
+        type: string
+      - description: Client secret
+        in: formData
+        name: client_secret
+        type: string
+      - description: Refresh token (for refresh_token grant)
+        in: formData
+        name: refresh_token
+        type: string
+      - description: Requested scopes
+        in: formData
+        name: scope
+        type: string
+      - description: PKCE code verifier
+        in: formData
+        name: code_verifier
+        type: string
+      - description: Device code (for device_code grant)
+        in: formData
+        name: device_code
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/TokenResponse'
+        "400":
+          description: error and error_description
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: invalid_client
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: OAuth 2.0 Token
+      tags:
+      - OAuth Provider
+  /oauth/userinfo:
+    get:
+      description: Get user information based on access token (OIDC UserInfo endpoint)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/UserInfoResponse'
+        "401":
+          description: invalid_token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: OIDC UserInfo
+      tags:
+      - OAuth Provider
   /otp/send:
     post:
       consumes:
@@ -5211,4 +6864,7 @@ paths:
       summary: Get maintenance mode status
       tags:
       - System
+schemes:
+- http
+- https
 swagger: "2.0"

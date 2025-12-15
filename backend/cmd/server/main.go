@@ -1,8 +1,40 @@
+// @title Auth Gateway API
+// @version 1.0
+// @description Centralized authentication and authorization system for microservices
+
+// @contact.name API Support
+// @contact.email maksbalashov@gmail.com
+
+// @host localhost:8811
+// @BasePath /
+// @schemes http https
+
+// Consumes:
+//   - application/json
+//
+// Produces:
+//   - application/json
+//
+// SecurityDefinitions:
+//
+//	BearerAuth:
+//	  type: apiKey
+//	  name: Authorization
+//	  in: header
+//	  description: JWT Bearer token. Format: "Bearer {token}"
+//	ApiKeyAuth:
+//	  type: apiKey
+//	  name: X-API-Key
+//	  in: header
+//	  description: API Key for service-to-service authentication. Format: "agw_{key}"
+//
+
 package main
 
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,6 +50,7 @@ import (
 	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
+	"github.com/smilemakc/auth-gateway/pkg/keys"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 
 	swaggerFiles "github.com/swaggo/files"
@@ -42,6 +75,24 @@ func main() {
 		"env":  cfg.Server.Env,
 		"port": cfg.Server.Port,
 	})
+
+	// Initialize signing key manager for OIDC
+	var keyManager *keys.Manager
+	if cfg.OIDC.Enabled {
+		keyConfigs := buildKeyConfigs(&cfg.OIDC)
+		if len(keyConfigs) > 0 {
+			keyManager, err = keys.NewManager(keyConfigs, cfg.OIDC.SigningKeyID)
+			if err != nil {
+				log.Error("Failed to initialize key manager", map[string]interface{}{
+					"error": err.Error(),
+				})
+				os.Exit(1)
+			}
+			log.Info("OIDC key manager initialized", map[string]interface{}{
+				"keys": len(keyConfigs),
+			})
+		}
+	}
 
 	// Initialize database
 	db, err := repository.NewDatabase(&cfg.Database)
@@ -71,6 +122,12 @@ func main() {
 		cfg.JWT.RefreshExpires,
 	)
 
+	// Initialize OIDC JWT service
+	var oidcJWTService *jwt.OIDCService
+	if keyManager != nil {
+		oidcJWTService = jwt.NewOIDCService(keyManager, cfg.OIDC.Issuer)
+	}
+
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	tokenRepo := repository.NewTokenRepository(db)
@@ -89,6 +146,7 @@ func main() {
 	brandingRepo := repository.NewBrandingRepository(db)
 	systemRepo := repository.NewSystemRepository(db)
 	geoRepo := repository.NewGeoRepository(db)
+	oauthProviderRepo := repository.NewOAuthProviderRepository(db)
 
 	// Initialize geo and audit services
 	var geoService *service.GeoService
@@ -98,13 +156,16 @@ func main() {
 	}
 	auditService := service.NewAuditService(auditRepo, geoService)
 
+	// Initialize session creation service (universal session management)
+	sessionCreationService := service.NewSessionCreationService(sessionRepo, log)
+
 	// Initialize services
-	authService := service.NewAuthService(userRepo, tokenRepo, rbacRepo, auditService, jwtService, redis, cfg.Security.BcryptCost)
+	authService := service.NewAuthService(userRepo, tokenRepo, rbacRepo, auditService, jwtService, redis, sessionCreationService, cfg.Security.BcryptCost)
 	userService := service.NewUserService(userRepo, auditService)
 	apiKeyService := service.NewAPIKeyService(apiKeyRepo, userRepo, auditService)
 	emailService := service.NewEmailService(&cfg.SMTP)
 	otpService := service.NewOTPService(otpRepo, userRepo, emailService, auditService)
-	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, rbacRepo, jwtService, &http.Client{Timeout: 10 * time.Second})
+	oauthService := service.NewOAuthService(userRepo, oauthRepo, tokenRepo, auditRepo, rbacRepo, jwtService, sessionCreationService, &http.Client{Timeout: 10 * time.Second})
 	twoFAService := service.NewTwoFactorService(userRepo, backupCodeRepo, "Auth Gateway")
 	adminService := service.NewAdminService(userRepo, apiKeyRepo, auditRepo, oauthRepo, rbacRepo, cfg.Security.BcryptCost)
 
@@ -115,17 +176,49 @@ func main() {
 	webhookService := service.NewWebhookService(webhookRepo, auditService)
 	templateService := service.NewTemplateService(templateRepo, auditService)
 
+	// Initialize OAuth provider service
+	var oauthProviderService *service.OAuthProviderService
+	if cfg.OIDC.Enabled && oidcJWTService != nil {
+		baseURL := cfg.OIDC.Issuer
+		if baseURL == "" {
+			baseURL = fmt.Sprintf("http://localhost:%s", cfg.Server.Port)
+		}
+		oauthProviderService = service.NewOAuthProviderService(
+			oauthProviderRepo,
+			userRepo,
+			auditRepo,
+			sessionCreationService,
+			oidcJWTService,
+			keyManager,
+			log,
+			cfg.OIDC.Issuer,
+			baseURL,
+		)
+	}
+
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService, userService, otpService, log)
 	healthHandler := handler.NewHealthHandler(db, redis)
 	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService, log)
-	otpHandler := handler.NewOTPHandler(otpService, authService, jwtService, log)
+	otpHandler := handler.NewOTPHandler(otpService, authService, log)
 	oauthHandler := handler.NewOAuthHandler(oauthService, log)
 	twoFAHandler := handler.NewTwoFactorHandler(twoFAService, userService, log)
 	adminHandler := handler.NewAdminHandler(adminService, log)
 	advancedAdminHandler := handler.NewAdvancedAdminHandler(rbacService, sessionService, ipFilterService, brandingRepo, systemRepo, geoRepo)
 	webhookHandler := handler.NewWebhookHandler(webhookService, log)
 	templateHandler := handler.NewTemplateHandler(templateService, log)
+
+	// Initialize OAuth provider handlers
+	var oauthProviderHandler *handler.OAuthProviderHandler
+	var oauthAdminHandler *handler.OAuthAdminHandler
+	if oauthProviderService != nil {
+		oauthProviderHandler = handler.NewOAuthProviderHandler(oauthProviderService, log)
+		oauthAdminHandler = handler.NewOAuthAdminHandler(oauthProviderService, log)
+	} else {
+		// Create minimal OAuth admin service for client management even when OIDC is disabled
+		minimalOAuthProviderService := service.NewOAuthProviderServiceMinimal(oauthProviderRepo, auditRepo, log)
+		oauthAdminHandler = handler.NewOAuthAdminHandler(minimalOAuthProviderService, log)
+	}
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, redis, tokenRepo)
@@ -144,6 +237,19 @@ func main() {
 
 	router := gin.New()
 
+	// Load OAuth templates
+	if cfg.OIDC.Enabled {
+		tmpl, err := template.ParseGlob("internal/templates/*.html")
+		if err != nil {
+			log.Warn("Failed to load OAuth templates", map[string]interface{}{
+				"error": err.Error(),
+			})
+		} else {
+			router.SetHTMLTemplate(tmpl)
+			log.Info("OAuth templates loaded successfully")
+		}
+	}
+
 	// Global middleware
 	router.Use(middleware.Recovery(log))
 	router.Use(middleware.Logger(log))
@@ -161,6 +267,43 @@ func main() {
 
 	// Public system status endpoint
 	router.GET("/system/maintenance", advancedAdminHandler.GetMaintenanceMode)
+
+	// OIDC Discovery endpoints (public, no auth required)
+	if oauthProviderHandler != nil {
+		router.GET("/.well-known/openid-configuration", oauthProviderHandler.Discovery)
+		router.GET("/.well-known/jwks.json", oauthProviderHandler.JWKS)
+
+		// OAuth Provider endpoints
+		oauth := router.Group("/oauth")
+		{
+			// Authorization endpoint (user-facing)
+			oauth.GET("/authorize", oauthProviderHandler.Authorize)
+
+			// Token endpoint (public, client auth in body/header)
+			oauth.POST("/token", oauthProviderHandler.Token)
+
+			// Token introspection (client auth required)
+			oauth.POST("/introspect", oauthProviderHandler.Introspect)
+
+			// Token revocation (client auth required)
+			oauth.POST("/revoke", oauthProviderHandler.Revoke)
+
+			// UserInfo endpoint (bearer token required)
+			oauth.GET("/userinfo", oauthProviderHandler.UserInfo)
+
+			// Device flow endpoints
+			oauth.POST("/device/code", oauthProviderHandler.DeviceCode)
+			oauth.POST("/device/token", oauthProviderHandler.DeviceToken)
+			oauth.GET("/device", oauthProviderHandler.DeviceVerification)
+
+			// Device approval requires authentication
+			oauth.POST("/device/approve", authMiddleware.Authenticate(), oauthProviderHandler.DeviceApprove)
+
+			// Consent endpoints require authentication
+			oauth.GET("/consent", authMiddleware.Authenticate(), oauthProviderHandler.ConsentPage)
+			oauth.POST("/consent", authMiddleware.Authenticate(), oauthProviderHandler.ConsentSubmit)
+		}
+	}
 
 	// API Group
 	apiGroup := router.Group("/api")
@@ -274,6 +417,7 @@ func main() {
 			{
 				rbacGroup.GET("/permissions", advancedAdminHandler.ListPermissions)
 				rbacGroup.POST("/permissions", advancedAdminHandler.CreatePermission)
+				rbacGroup.DELETE("/permissions/:id", advancedAdminHandler.DeletePermission)
 
 				rbacGroup.GET("/roles", advancedAdminHandler.ListRoles)
 				rbacGroup.POST("/roles", advancedAdminHandler.CreateRole)
@@ -337,6 +481,27 @@ func main() {
 				templatesGroup.PUT("/:id", templateHandler.UpdateEmailTemplate)
 				templatesGroup.DELETE("/:id", templateHandler.DeleteEmailTemplate)
 			}
+
+			// OAuth Provider Management (always available for client management)
+			adminOAuth := adminGroup.Group("/oauth")
+			{
+				// Client management
+				adminOAuth.POST("/clients", oauthAdminHandler.CreateClient)
+				adminOAuth.GET("/clients", oauthAdminHandler.ListClients)
+				adminOAuth.GET("/clients/:id", oauthAdminHandler.GetClient)
+				adminOAuth.PUT("/clients/:id", oauthAdminHandler.UpdateClient)
+				adminOAuth.DELETE("/clients/:id", oauthAdminHandler.DeleteClient)
+				adminOAuth.POST("/clients/:id/rotate-secret", oauthAdminHandler.RotateSecret)
+
+				// Scope management
+				adminOAuth.GET("/scopes", oauthAdminHandler.ListScopes)
+				adminOAuth.POST("/scopes", oauthAdminHandler.CreateScope)
+				adminOAuth.DELETE("/scopes/:id", oauthAdminHandler.DeleteScope)
+
+				// Consent management
+				adminOAuth.GET("/clients/:id/consents", oauthAdminHandler.ListClientConsents)
+				adminOAuth.DELETE("/clients/:id/consents/:user_id", oauthAdminHandler.RevokeUserConsent)
+			}
 		}
 
 		// Session Management (User endpoints)
@@ -371,6 +536,14 @@ func main() {
 	// Start token cleanup routine
 	startTokenCleanup(tokenRepo, cfg.Security.TokenBlacklistCleanupInterval, log)
 
+	// Log OIDC provider status
+	if cfg.OIDC.Enabled {
+		log.Info("OIDC Provider enabled", map[string]interface{}{
+			"issuer":    cfg.OIDC.Issuer,
+			"algorithm": cfg.OIDC.SigningAlgorithm,
+		})
+	}
+
 	// Create HTTP server
 	srv := &http.Server{
 		Addr:    ":" + cfg.Server.Port,
@@ -386,6 +559,7 @@ func main() {
 		rbacRepo,
 		apiKeyService,
 		authService,
+		oauthProviderService,
 		redis,
 		log,
 	)
@@ -459,4 +633,22 @@ func startTokenCleanup(tokenRepo *repository.TokenRepository, interval time.Dura
 			}
 		}
 	}()
+}
+
+// buildKeyConfigs converts OIDC config to key manager format
+func buildKeyConfigs(oidcCfg *config.OIDCConfig) []keys.KeyConfig {
+	var keyConfigs []keys.KeyConfig
+
+	configs := oidcCfg.GetKeyConfigs()
+	algorithm := keys.Algorithm(oidcCfg.SigningAlgorithm)
+
+	for _, cfg := range configs {
+		keyConfigs = append(keyConfigs, keys.KeyConfig{
+			ID:             cfg.KID,
+			Algorithm:      algorithm,
+			PrivateKeyPath: cfg.KeyPath,
+		})
+	}
+
+	return keyConfigs
 }

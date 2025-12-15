@@ -993,8 +993,10 @@ func (m *mockAPIKeyStore) ListAll(ctx context.Context) ([]*models.APIKey, error)
 
 type mockSessionStore struct {
 	CreateSessionFunc            func(ctx context.Context, session *models.Session) error
+	GetSessionByTokenHashFunc    func(ctx context.Context, tokenHash string) (*models.Session, error)
 	GetUserSessionsPaginatedFunc func(ctx context.Context, userID uuid.UUID, page, perPage int) ([]models.Session, int, error)
 	GetAllSessionsPaginatedFunc  func(ctx context.Context, page, perPage int) ([]models.Session, int, error)
+	RevokeSessionFunc            func(ctx context.Context, id uuid.UUID) error
 	RevokeUserSessionFunc        func(ctx context.Context, userID, sessionID uuid.UUID) error
 	RevokeAllUserSessionsFunc    func(ctx context.Context, userID uuid.UUID, exceptSessionID *uuid.UUID) error
 	UpdateSessionNameFunc        func(ctx context.Context, sessionID uuid.UUID, name string) error
@@ -1008,6 +1010,12 @@ func (m *mockSessionStore) CreateSession(ctx context.Context, session *models.Se
 	}
 	return nil
 }
+func (m *mockSessionStore) GetSessionByTokenHash(ctx context.Context, tokenHash string) (*models.Session, error) {
+	if m.GetSessionByTokenHashFunc != nil {
+		return m.GetSessionByTokenHashFunc(ctx, tokenHash)
+	}
+	return nil, nil
+}
 func (m *mockSessionStore) GetUserSessionsPaginated(ctx context.Context, userID uuid.UUID, page, perPage int) ([]models.Session, int, error) {
 	if m.GetUserSessionsPaginatedFunc != nil {
 		return m.GetUserSessionsPaginatedFunc(ctx, userID, page, perPage)
@@ -1019,6 +1027,12 @@ func (m *mockSessionStore) GetAllSessionsPaginated(ctx context.Context, page, pe
 		return m.GetAllSessionsPaginatedFunc(ctx, page, perPage)
 	}
 	return nil, 0, nil
+}
+func (m *mockSessionStore) RevokeSession(ctx context.Context, id uuid.UUID) error {
+	if m.RevokeSessionFunc != nil {
+		return m.RevokeSessionFunc(ctx, id)
+	}
+	return nil
 }
 func (m *mockSessionStore) RevokeUserSession(ctx context.Context, userID, sessionID uuid.UUID) error {
 	if m.RevokeUserSessionFunc != nil {

@@ -10,6 +10,63 @@ go get github.com/smilemakc/auth-gateway/packages/go-sdk
 
 ## Quick Start
 
+### Using Auth Gateway as Your Identity Provider (OAuth/OIDC)
+
+If you want to use Auth Gateway as an OAuth 2.0 / OpenID Connect provider for your application:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    authgateway "github.com/smilemakc/auth-gateway/packages/go-sdk"
+)
+
+func main() {
+    // Create OAuth provider client
+    client := authgateway.NewOAuthProviderClient(authgateway.OAuthProviderConfig{
+        Issuer:       "https://auth.example.com",
+        ClientID:     "your-client-id",
+        ClientSecret: "your-client-secret",
+        RedirectURI:  "https://yourapp.com/callback",
+        Scopes:       []string{"openid", "profile", "email"},
+        UsePKCE:      true, // Enabled by default, recommended
+    })
+
+    ctx := context.Background()
+
+    // Generate authorization URL
+    authURL, err := client.GetAuthorizationURL(ctx, nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Visit: %s\n", authURL.URL)
+
+    // After user authorizes, exchange code for tokens
+    code := "authorization-code-from-callback"
+    tokens, err := client.ExchangeCode(ctx, code, authURL.CodeVerifier)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Access Token: %s\n", tokens.AccessToken)
+
+    // Get user information
+    userInfo, err := client.GetUserInfo(ctx, tokens.AccessToken)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("User: %s (%s)\n", userInfo.Name, userInfo.Email)
+}
+```
+
+See [OAUTH_PROVIDER.md](./OAUTH_PROVIDER.md) for comprehensive documentation on OAuth flows.
+
 ### REST API Client
 
 ```go
@@ -94,6 +151,14 @@ client := authgateway.NewClient(authgateway.Config{
 ```
 
 ## Features
+
+### OAuth Provider Client (New!)
+- **Authorization Code Flow** with PKCE (for web/mobile apps)
+- **Device Authorization Flow** (for TVs, IoT, CLI tools)
+- **Client Credentials Flow** (for service-to-service auth)
+- **OIDC Discovery** and JWKS retrieval
+- **Token management** (refresh, introspect, revoke)
+- **UserInfo endpoint** integration
 
 ### Authentication
 - Email/password login
@@ -315,10 +380,15 @@ client.ClearTokens()
 
 See the `examples/` directory for complete examples:
 
+- `examples/oauth-provider/` - **OAuth provider client usage (all flows)**
 - `examples/basic/` - Basic authentication flow
 - `examples/apikey/` - API key authentication
 - `examples/grpc/` - gRPC client usage
 - `examples/admin/` - Admin operations
+
+## Documentation
+
+- [OAUTH_PROVIDER.md](./OAUTH_PROVIDER.md) - Complete guide for using Auth Gateway as OAuth/OIDC provider
 
 ## License
 

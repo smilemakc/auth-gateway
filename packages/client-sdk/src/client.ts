@@ -26,6 +26,7 @@ import {
   AdminAPIKeysService,
   AdminSMSSettingsService,
   AdminOAuthProvidersService,
+  AdminOAuthClientsService,
   AdminTemplatesService,
   AdminWebhooksService,
 } from './services';
@@ -52,6 +53,8 @@ export interface AdminServices {
   smsSettings: AdminSMSSettingsService;
   /** OAuth provider configurations */
   oauthProviders: AdminOAuthProvidersService;
+  /** OAuth client management */
+  oauthClients: AdminOAuthClientsService;
   /** Email templates management */
   templates: AdminTemplatesService;
   /** Webhook management */
@@ -160,6 +163,7 @@ export class AuthGatewayClient {
       apiKeys: new AdminAPIKeysService(this.http),
       smsSettings: new AdminSMSSettingsService(this.http),
       oauthProviders: new AdminOAuthProvidersService(this.http),
+      oauthClients: new AdminOAuthClientsService(this.http),
       templates: new AdminTemplatesService(this.http),
       webhooks: new AdminWebhooksService(this.http),
     };

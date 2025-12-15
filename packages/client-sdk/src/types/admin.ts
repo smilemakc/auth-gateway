@@ -330,3 +330,6 @@ export interface UpdateOAuthProviderRequest {
 export interface OAuthProviderListResponse {
   providers: OAuthProviderConfig[];
 }
+
+// Note: OAuth Client, Scope, and Consent types have been moved to oauth-provider.ts
+// for the full OAuth 2.0/OIDC provider implementation.

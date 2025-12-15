@@ -14,6 +14,8 @@ import Sessions from './components/Sessions';
 import ApiKeys from './components/ApiKeys';
 import OAuthProviders from './components/OAuthProviders';
 import OAuthProviderEdit from './components/OAuthProviderEdit';
+import OAuthClients from './components/OAuthClients';
+import OAuthClientEdit from './components/OAuthClientEdit';
 import AuditLogs from './components/AuditLogs';
 import Settings from './components/Settings';
 import EmailTemplates from './components/EmailTemplates';
@@ -22,6 +24,7 @@ import Roles from './components/Roles';
 import RoleEditor from './components/RoleEditor';
 import Permissions from './components/Permissions';
 import PermissionEdit from './components/PermissionEdit';
+import AccessControl from './components/AccessControl';
 import IpSecurity from './components/IpSecurity';
 import Branding from './components/Branding';
 import Webhooks from './components/Webhooks';
@@ -61,6 +64,9 @@ const AppRoutes: React.FC = () => {
           <Route path="/oauth" element={<OAuthProviders />} />
           <Route path="/oauth/new" element={<OAuthProviderEdit />} />
           <Route path="/oauth/:id" element={<OAuthProviderEdit />} />
+          <Route path="/oauth-clients" element={<OAuthClients />} />
+          <Route path="/oauth-clients/new" element={<OAuthClientEdit />} />
+          <Route path="/oauth-clients/:id" element={<OAuthClientEdit />} />
           <Route path="/roles" element={<Roles />} />
           <Route path="/roles/new" element={<RoleEditor />} />
           <Route path="/roles/:id" element={<RoleEditor />} />
@@ -77,6 +83,11 @@ const AppRoutes: React.FC = () => {
           <Route path="/settings/roles/:id" element={<RoleEditor />} />
           <Route path="/settings/permissions" element={<Permissions />} />
           <Route path="/settings/permissions/:id" element={<PermissionEdit />} />
+          <Route path="/settings/access-control" element={<AccessControl />} />
+          <Route path="/settings/access-control/roles/new" element={<RoleEditor />} />
+          <Route path="/settings/access-control/roles/:id" element={<RoleEditor />} />
+          <Route path="/settings/access-control/permissions/new" element={<PermissionEdit />} />
+          <Route path="/settings/access-control/permissions/:id" element={<PermissionEdit />} />
           <Route path="/settings/security/ip-rules" element={<IpSecurity />} />
           <Route path="/settings/sms" element={<SmsSettings />} />
           <Route path="/developers/webhooks" element={<Webhooks />} />

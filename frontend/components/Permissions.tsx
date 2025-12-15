@@ -1,40 +1,55 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getPermissions, deletePermission } from '../services/mockData';
 import { Permission } from '../types';
-import { ArrowLeft, Plus, Edit2, Trash2, Shield, Lock } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, Lock } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { usePermissions, useDeletePermission } from '../hooks/useRBAC';
 
 const Permissions: React.FC = () => {
-  const [permissions, setPermissions] = useState<Permission[]>([]);
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    setPermissions(getPermissions());
-  }, []);
+  const { data: permissions = [], isLoading, error } = usePermissions();
+  const deleteMutation = useDeletePermission();
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm(t('common.confirm_delete'))) {
-      if (deletePermission(id)) {
-        setPermissions(prev => prev.filter(p => p.id !== id));
+      try {
+        await deleteMutation.mutateAsync(id);
+      } catch (err) {
+        console.error('Failed to delete permission:', err);
       }
     }
   };
 
-  const filteredPermissions = permissions.filter(p => 
+  const filteredPermissions = permissions.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.resource.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.action.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+        Failed to load permissions. Please try again.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => navigate('/settings')}
             className="p-2 hover:bg-white rounded-lg transition-colors text-gray-500"
           >
@@ -44,7 +59,7 @@ const Permissions: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900">{t('perms.title')}</h1>
           </div>
         </div>
-        <Link 
+        <Link
           to="/settings/permissions/new"
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
@@ -101,13 +116,13 @@ const Permissions: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
-                      <Link 
+                      <Link
                         to={`/settings/permissions/${perm.id}`}
                         className="p-1 text-gray-400 hover:text-blue-600 rounded-md hover:bg-gray-100"
                       >
                         <Edit2 size={18} />
                       </Link>
-                      <button 
+                      <button
                         onClick={() => handleDelete(perm.id)}
                         className="p-1 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100"
                       >
