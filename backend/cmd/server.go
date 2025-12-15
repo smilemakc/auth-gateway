@@ -29,7 +29,7 @@
 //	  description: API Key for service-to-service authentication. Format: "agw_{key}"
 //
 
-package main
+package cmd
 
 import (
 	"context"
@@ -43,6 +43,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/smilemakc/auth-gateway/docs"
 	"github.com/smilemakc/auth-gateway/internal/config"
 	grpcserver "github.com/smilemakc/auth-gateway/internal/grpc"
 	"github.com/smilemakc/auth-gateway/internal/handler"
@@ -52,14 +53,42 @@ import (
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
 	"github.com/smilemakc/auth-gateway/pkg/keys"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
-
+	"github.com/spf13/cobra"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-
-	_ "github.com/smilemakc/auth-gateway/docs"
 )
 
-func main() {
+// serverCmd represents the server command
+var serverCmd = &cobra.Command{
+	Use:   "server",
+	Short: "A brief description of your command",
+	Long: `A longer description that spans multiple lines and likely contains examples
+and usage of using your command. For example:
+
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("server called")
+		runServer()
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(serverCmd)
+
+	// Here you will define your flags and configuration settings.
+
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	// serverCmd.PersistentFlags().String("foo", "", "A help for foo")
+
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// serverCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func runServer() {
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
@@ -257,8 +286,18 @@ func main() {
 	router.Use(maintenanceMiddleware.CheckMaintenance())
 	router.Use(ipFilterMiddleware.CheckIPFilter())
 
-	// Swagger documentation
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Swagger documentation - configure host dynamically based on server port
+	// docs.SwaggerInfo.Host = fmt.Sprintf("localhost:%s", cfg.Server.Port)
+	// docs.SwaggerInfo.BasePath = "/"
+	// docs.SwaggerInfo.Schemes = []string{"http", "https"}
+
+	// Serve swagger.json directly from file to avoid template parsing issues
+	router.GET("/api/swagger.json", func(c *gin.Context) {
+		c.File("docs/swagger.json")
+	})
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
+		ginSwagger.URL("/api/swagger.json"), // Point to our static file
+	))
 
 	// Health check endpoints (no auth required)
 	router.GET("/health", healthHandler.Health)

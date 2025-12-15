@@ -17,11 +17,11 @@ help: ## Show this help message
 
 build: ## Build the application
 	@echo "Building $(APP_NAME)..."
-	$(GOBUILD) -o bin/$(APP_NAME) ./cmd/server
+	$(GOBUILD) -o bin/$(APP_NAME) ./
 
 run: ## Run the application locally
 	@echo "Running $(APP_NAME)..."
-	$(GO) run ./cmd/server/main.go
+	$(GO) run ./main.go server
 
 test: ## Run tests
 	@echo "Running tests..."
@@ -111,7 +111,7 @@ keys-example: ## Run keys manager example
 swagger-gen: ## Generate Swagger documentation
 	@echo "Generating Swagger documentation..."
 	@which swag > /dev/null || (echo "swag not installed. Install: go install github.com/swaggo/swag/cmd/swag@latest" && exit 1)
-	swag init --pd --st -g cmd/server/main.go -o docs
+	swag init --pd --st -g cmd/server.go -o docs
 
 swagger-install: ## Install swag CLI tool
 	go install github.com/swaggo/swag/cmd/swag@latest
