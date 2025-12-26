@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
@@ -17,6 +19,17 @@ type BlacklistService struct {
 	jwtService  JWTService
 	logger      *logger.Logger
 	auditLogger AuditLogger
+	syncStats   SyncStats // Statistics for monitoring sync discrepancies
+}
+
+// SyncStats tracks synchronization statistics
+type SyncStats struct {
+	LastSyncTime   time.Time
+	TotalSynced    int64
+	SyncErrors     int64
+	RedisErrors    int64
+	DatabaseErrors int64
+	Discrepancies  int64
 }
 
 // NewBlacklistService creates a new blacklist service
@@ -27,7 +40,86 @@ func NewBlacklistService(redis CacheService, tokenRepo TokenStore, jwtService JW
 		jwtService:  jwtService,
 		logger:      logger,
 		auditLogger: auditLogger,
+		syncStats: SyncStats{
+			LastSyncTime: time.Time{},
+		},
 	}
+}
+
+// SyncFromDatabase synchronizes blacklist entries from PostgreSQL to Redis
+// This should be called on startup to ensure Redis cache is populated
+func (s *BlacklistService) SyncFromDatabase(ctx context.Context) error {
+	s.logger.Info("Starting blacklist synchronization from database to Redis")
+
+	// Get all active blacklist entries from database
+	tokenRepo, ok := s.tokenRepo.(*repository.TokenRepository)
+	if !ok {
+		return fmt.Errorf("token repository does not support GetAllActiveBlacklistEntries")
+	}
+
+	entries, err := tokenRepo.GetAllActiveBlacklistEntries(ctx)
+	if err != nil {
+		s.syncStats.DatabaseErrors++
+		s.logger.Error("Failed to get blacklist entries from database", map[string]interface{}{
+			"error": err.Error(),
+		})
+		return fmt.Errorf("failed to get blacklist entries: %w", err)
+	}
+
+	synced := int64(0)
+	errors := int64(0)
+
+	// Sync each entry to Redis
+	for _, entry := range entries {
+		ttl := time.Until(entry.ExpiresAt)
+		if ttl <= 0 {
+			// Skip expired entries
+			continue
+		}
+
+		// Check if already in Redis
+		exists, redisErr := s.redis.IsBlacklisted(ctx, entry.TokenHash)
+		if redisErr != nil {
+			s.syncStats.RedisErrors++
+			errors++
+			s.logger.Warn("Failed to check Redis during sync", map[string]interface{}{
+				"token_hash": entry.TokenHash,
+				"error":      redisErr.Error(),
+			})
+			continue
+		}
+
+		if !exists {
+			// Add to Redis
+			if err := s.redis.AddToBlacklist(ctx, entry.TokenHash, ttl); err != nil {
+				s.syncStats.RedisErrors++
+				errors++
+				s.logger.Warn("Failed to sync entry to Redis", map[string]interface{}{
+					"token_hash": entry.TokenHash,
+					"error":      err.Error(),
+				})
+				continue
+			}
+			synced++
+		}
+	}
+
+	s.syncStats.LastSyncTime = time.Now()
+	s.syncStats.TotalSynced += synced
+	s.syncStats.SyncErrors += errors
+
+	s.logger.Info("Blacklist synchronization completed", map[string]interface{}{
+		"total_entries": len(entries),
+		"synced":        synced,
+		"errors":        errors,
+	})
+
+	return nil
+}
+
+// GetSyncStats returns current synchronization statistics
+func (s *BlacklistService) GetSyncStats() SyncStats {
+	return s.syncStats
 }
 
 // IsBlacklisted checks if a token hash is blacklisted.

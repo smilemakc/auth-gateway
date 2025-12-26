@@ -8,7 +8,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/utils"
+	"github.com/uptrace/bun"
 )
 
 // AdminService provides admin operations
@@ -19,6 +21,7 @@ type AdminService struct {
 	oauthRepo  OAuthStore
 	rbacRepo   RBACStore
 	bcryptCost int
+	db         TransactionDB
 }
 
 // NewAdminService creates a new admin service
@@ -29,6 +32,7 @@ func NewAdminService(
 	oauthRepo OAuthStore,
 	rbacRepo RBACStore,
 	bcryptCost int,
+	db TransactionDB,
 ) *AdminService {
 	return &AdminService{
 		userRepo:   userRepo,
@@ -37,6 +41,7 @@ func NewAdminService(
 		oauthRepo:  oauthRepo,
 		rbacRepo:   rbacRepo,
 		bcryptCost: bcryptCost,
+		db:         db,
 	}
 }
 
@@ -224,12 +229,7 @@ func (s *AdminService) CreateUser(ctx context.Context, req *models.AdminCreateUs
 		// For now, assume password is required by request validation model
 	}
 
-	// 3. Create user in DB
-	if err := s.userRepo.Create(ctx, user); err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
-	}
-
-	// 4. Assign roles
+	// 3. Get roles to assign
 	var roleIDs []uuid.UUID
 	if len(req.RoleIDs) > 0 {
 		roleIDs = req.RoleIDs
@@ -241,11 +241,33 @@ func (s *AdminService) CreateUser(ctx context.Context, req *models.AdminCreateUs
 		}
 	}
 
-	if len(roleIDs) > 0 {
-		if err := s.rbacRepo.SetUserRoles(ctx, user.ID, roleIDs, adminID); err != nil {
-			// Log error but continue? Or fail? Fail is better integrity
-			return nil, fmt.Errorf("failed to assign roles: %w", err)
+	// 4. Create user and assign roles in a transaction
+	err := s.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
+		// Create user in DB
+		if userRepo, ok := s.userRepo.(*repository.UserRepository); ok {
+			if err := userRepo.CreateWithTx(ctx, tx, user); err != nil {
+				return fmt.Errorf("failed to create user: %w", err)
+			}
+		} else {
+			// Fallback to non-transactional method if type assertion fails
+			if err := s.userRepo.Create(ctx, user); err != nil {
+				return fmt.Errorf("failed to create user: %w", err)
+			}
 		}
+
+		// Assign roles
+		if len(roleIDs) > 0 {
+			if err := s.rbacRepo.SetUserRoles(ctx, user.ID, roleIDs, adminID); err != nil {
+				// SetUserRoles already uses a transaction internally, so we can call it directly
+				return fmt.Errorf("failed to assign roles: %w", err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	// 5. Return created user

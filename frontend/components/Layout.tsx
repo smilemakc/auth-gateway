@@ -16,7 +16,10 @@ import {
   Network,
   Bot,
   Search,
-  Shield
+  Shield,
+  FolderTree,
+  Server,
+  FileSpreadsheet
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -32,11 +35,15 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const navItems = [
     { path: '/', label: t('nav.dashboard'), icon: LayoutDashboard },
     { path: '/users', label: t('nav.users'), icon: Users },
+    { path: '/bulk', label: 'Bulk Operations', icon: FileSpreadsheet },
+    { path: '/groups', label: 'Groups', icon: FolderTree },
     { path: '/sessions', label: 'Sessions', icon: Key },
     { path: '/api-keys', label: t('nav.api_keys'), icon: Key },
     { path: '/oauth', label: t('nav.oauth'), icon: Globe },
     { path: '/oauth-clients', label: 'OAuth Clients', icon: Shield },
     { path: '/settings/access-control', label: 'Access Control', icon: ShieldAlert },
+    { path: '/ldap', label: 'LDAP', icon: Server },
+    { path: '/saml', label: 'SAML', icon: Shield },
     { path: '/ip-security', label: 'IP Security', icon: ShieldAlert },
     { path: '/audit-logs', label: t('nav.audit_logs'), icon: ShieldAlert },
     { path: '/settings', label: t('nav.settings'), icon: Settings },

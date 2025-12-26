@@ -28,7 +28,7 @@ func (r *BackupCodeRepository) CreateBatch(ctx context.Context, codes []*models.
 		return nil
 	}
 
-	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+	return r.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
 		_, err := tx.NewInsert().
 			Model(&codes).
 			Exec(ctx)

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -17,7 +18,9 @@ func setupOTPService() (*OTPService, *mockOTPStore, *mockUserStore, *mockEmailSe
 	mEmail := &mockEmailSender{}
 	mAudit := &mockAuditLogger{}
 
-	svc := NewOTPService(mOTP, mUser, mEmail, mAudit)
+	svc := NewOTPService(mOTP, mUser, mAudit, OTPServiceOptions{
+		EmailSender: mEmail,
+	})
 	return svc, mOTP, mUser, mEmail, mAudit
 }
 
@@ -62,6 +65,17 @@ func TestOTPService_SendOTP(t *testing.T) {
 		err := svc.SendOTP(ctx, req)
 		assert.Error(t, err)
 		assert.Equal(t, 429, err.(*models.AppError).Code)
+	})
+
+	t.Run("InvalidType", func(t *testing.T) {
+		invalidReq := &models.SendOTPRequest{
+			Email: &email,
+			Type:  "invalid_type",
+		}
+
+		err := svc.SendOTP(ctx, invalidReq)
+		assert.Error(t, err)
+		assert.Equal(t, 400, err.(*models.AppError).Code)
 	})
 }
 
@@ -140,5 +154,32 @@ func TestOTPService_VerifyOTP(t *testing.T) {
 		resp, err := svc.VerifyOTP(ctx, req)
 		assert.NoError(t, err)
 		assert.False(t, resp.Valid)
+	})
+
+	t.Run("RepositoryErrorIsReturned", func(t *testing.T) {
+		mOTP.GetByEmailAndTypeFunc = func(ctx context.Context, email string, otpType models.OTPType) (*models.OTP, error) {
+			return nil, fmt.Errorf("db unavailable")
+		}
+
+		resp, err := svc.VerifyOTP(ctx, req)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+	})
+
+	t.Run("UnsupportedType", func(t *testing.T) {
+		badReq := &models.VerifyOTPRequest{
+			Email: &email,
+			Code:  otpCode,
+			Type:  "not_supported",
+		}
+
+		resp, err := svc.VerifyOTP(ctx, badReq)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		if appErr, ok := err.(*models.AppError); ok {
+			assert.Equal(t, 400, appErr.Code)
+		} else {
+			t.Fatalf("expected AppError, got %T", err)
+		}
 	})
 }

@@ -115,6 +115,11 @@ export {
   AdminOAuthClientsService,
   AdminTemplatesService,
   AdminWebhooksService,
+  AdminGroupsService,
+  AdminLDAPService,
+  AdminSAMLService,
+  AdminBulkService,
+  AdminSCIMService,
   type AuditLogQueryOptions,
   type ListClientsParams,
 } from './services';

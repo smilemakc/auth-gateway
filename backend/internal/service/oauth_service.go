@@ -19,15 +19,16 @@ import (
 
 // OAuthService provides OAuth operations
 type OAuthService struct {
-	userRepo       UserStore
-	oauthRepo      OAuthStore
-	tokenRepo      TokenStore
-	auditRepo      AuditStore
-	rbacRepo       RBACStore
-	jwtService     JWTService
-	sessionService *SessionService
-	httpClient     HTTPClient
-	providers      map[models.OAuthProvider]*OAuthProviderConfig
+	userRepo        UserStore
+	oauthRepo       OAuthStore
+	tokenRepo       TokenStore
+	auditRepo       AuditStore
+	rbacRepo        RBACStore
+	jwtService      JWTService
+	sessionService  *SessionService
+	httpClient      HTTPClient
+	providers       map[models.OAuthProvider]*OAuthProviderConfig
+	jitProvisioning bool // Enable Just-In-Time user provisioning
 }
 
 // OAuthProviderConfig holds OAuth provider configuration
@@ -51,6 +52,7 @@ func NewOAuthService(
 	jwtService JWTService,
 	sessionService *SessionService,
 	httpClient HTTPClient,
+	jitProvisioning bool,
 ) *OAuthService {
 	// Use default HTTP client if not provided
 	if httpClient == nil {
@@ -58,15 +60,16 @@ func NewOAuthService(
 	}
 
 	service := &OAuthService{
-		userRepo:       userRepo,
-		oauthRepo:      oauthRepo,
-		tokenRepo:      tokenRepo,
-		auditRepo:      auditRepo,
-		rbacRepo:       rbacRepo,
-		jwtService:     jwtService,
-		sessionService: sessionService,
-		httpClient:     httpClient,
-		providers:      make(map[models.OAuthProvider]*OAuthProviderConfig),
+		userRepo:        userRepo,
+		oauthRepo:       oauthRepo,
+		tokenRepo:       tokenRepo,
+		auditRepo:       auditRepo,
+		rbacRepo:        rbacRepo,
+		jwtService:      jwtService,
+		sessionService:  sessionService,
+		httpClient:      httpClient,
+		providers:       make(map[models.OAuthProvider]*OAuthProviderConfig),
+		jitProvisioning: jitProvisioning,
 	}
 
 	// Initialize providers
@@ -308,7 +311,12 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuth
 	isNewUser := false
 
 	if oauthAccount == nil {
-		// OAuth account doesn't exist, create new user
+		// Check if JIT provisioning is enabled
+		if !s.jitProvisioning {
+			return nil, models.NewAppError(403, "User not found. Automatic user creation is disabled.")
+		}
+
+		// OAuth account doesn't exist, create new user (JIT provisioning)
 		user, err := s.createUserFromOAuth(ctx, userInfo)
 		if err != nil {
 			return nil, err

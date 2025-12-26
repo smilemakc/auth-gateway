@@ -29,6 +29,11 @@ import {
   AdminOAuthClientsService,
   AdminTemplatesService,
   AdminWebhooksService,
+  AdminGroupsService,
+  AdminLDAPService,
+  AdminSAMLService,
+  AdminBulkService,
+  AdminSCIMService,
 } from './services';
 
 /** Admin services container */
@@ -59,6 +64,16 @@ export interface AdminServices {
   templates: AdminTemplatesService;
   /** Webhook management */
   webhooks: AdminWebhooksService;
+  /** Groups/Departments management */
+  groups: AdminGroupsService;
+  /** LDAP/Active Directory configuration */
+  ldap: AdminLDAPService;
+  /** SAML Service Providers management */
+  saml: AdminSAMLService;
+  /** Bulk operations for users */
+  bulk: AdminBulkService;
+  /** SCIM configuration */
+  scim: AdminSCIMService;
 }
 
 /**
@@ -166,6 +181,11 @@ export class AuthGatewayClient {
       oauthClients: new AdminOAuthClientsService(this.http),
       templates: new AdminTemplatesService(this.http),
       webhooks: new AdminWebhooksService(this.http),
+      groups: new AdminGroupsService(this.http),
+      ldap: new AdminLDAPService(this.http),
+      saml: new AdminSAMLService(this.http),
+      bulk: new AdminBulkService(this.http),
+      scim: new AdminSCIMService(this.http),
     };
   }
 

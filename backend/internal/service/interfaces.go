@@ -43,6 +43,8 @@ type TokenStore interface {
 	RevokeAllUserTokens(ctx context.Context, userID uuid.UUID) error
 	AddToBlacklist(ctx context.Context, token *models.TokenBlacklist) error
 	IsBlacklisted(ctx context.Context, tokenHash string) (bool, error)
+	// GetAllActiveBlacklistEntries is optional - only implemented by concrete repository
+	// Used for synchronization, so we use type assertion instead of interface
 }
 
 // BackupCodeStore defines the interface for backup code storage

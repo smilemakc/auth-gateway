@@ -237,7 +237,12 @@ func (s *WebhookService) TriggerWebhook(ctx context.Context, eventType string, d
 	}
 
 	for _, webhook := range webhooks {
-		go s.deliverWebhook(context.Background(), webhook, event)
+		// Use context with timeout for webhook delivery
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		go func(w models.Webhook) {
+			defer cancel()
+			s.deliverWebhook(ctx, w, event)
+		}(webhook)
 	}
 
 	return nil
@@ -353,7 +358,12 @@ func (s *WebhookService) TestWebhook(ctx context.Context, id uuid.UUID, req *mod
 		Data:      req.Payload,
 	}
 
-	go s.deliverWebhook(context.Background(), *webhook, event)
+	// Use context with timeout for test webhook delivery
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	go func() {
+		defer cancel()
+		s.deliverWebhook(ctx, *webhook, event)
+	}()
 
 	return nil
 }

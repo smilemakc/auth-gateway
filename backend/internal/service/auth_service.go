@@ -9,7 +9,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/pquerna/otp/totp"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/utils"
+	"github.com/uptrace/bun"
 )
 
 // AuthService provides authentication operations
@@ -22,7 +24,15 @@ type AuthService struct {
 	blacklistService *BlacklistService
 	redis            CacheService
 	sessionService   *SessionService
+	twoFAService     *TwoFactorService
 	bcryptCost       int
+	passwordPolicy   utils.PasswordPolicy
+	db               TransactionDB
+}
+
+// TransactionDB defines the interface for database transactions
+type TransactionDB interface {
+	RunInTx(ctx context.Context, fn func(context.Context, bun.Tx) error) error
 }
 
 // NewAuthService creates a new auth service
@@ -35,7 +45,10 @@ func NewAuthService(
 	blacklistService *BlacklistService,
 	redis CacheService,
 	sessionService *SessionService,
+	twoFAService *TwoFactorService,
 	bcryptCost int,
+	passwordPolicy utils.PasswordPolicy,
+	db TransactionDB,
 ) *AuthService {
 	return &AuthService{
 		userRepo:         userRepo,
@@ -46,7 +59,10 @@ func NewAuthService(
 		blacklistService: blacklistService,
 		redis:            redis,
 		sessionService:   sessionService,
+		twoFAService:     twoFAService,
 		bcryptCost:       bcryptCost,
+		passwordPolicy:   passwordPolicy,
+		db:               db,
 	}
 }
 
@@ -67,16 +83,6 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		if !utils.IsValidEmail(email) {
 			return nil, models.NewAppError(400, "Invalid email format")
 		}
-		// Check if email exists
-		if exists, err := s.userRepo.EmailExists(ctx, email); err != nil {
-			return nil, err
-		} else if exists {
-			s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
-				"reason": "email_exists",
-				"email":  email,
-			})
-			return nil, models.ErrEmailAlreadyExists
-		}
 	}
 
 	if req.Phone != nil && *req.Phone != "" {
@@ -84,16 +90,6 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		// Validate phone
 		if !utils.IsValidPhone(phone) {
 			return nil, models.NewAppError(400, "Invalid phone format")
-		}
-		// Check if phone exists
-		if exists, err := s.userRepo.PhoneExists(ctx, phone); err != nil {
-			return nil, err
-		} else if exists {
-			s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
-				"reason": "phone_exists",
-				"phone":  phone,
-			})
-			return nil, models.ErrPhoneAlreadyExists
 		}
 	}
 
@@ -107,19 +103,8 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		return nil, models.NewAppError(400, "Invalid username format")
 	}
 
-	if !utils.IsPasswordValid(req.Password) {
-		return nil, models.NewAppError(400, "Password must be at least 8 characters")
-	}
-
-	// Check if username already exists
-	if exists, err := s.userRepo.UsernameExists(ctx, username); err != nil {
-		return nil, err
-	} else if exists {
-		s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
-			"reason":   "username_exists",
-			"username": username,
-		})
-		return nil, models.ErrUsernameAlreadyExists
+	if err := utils.ValidatePassword(req.Password, s.passwordPolicy); err != nil {
+		return nil, models.NewAppError(400, err.Error())
 	}
 
 	// Hash password
@@ -134,32 +119,69 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		return nil, fmt.Errorf("failed to get default role: %w", err)
 	}
 
-	// Create user
-	user := &models.User{
-		ID:           uuid.New(),
-		Email:        email,
-		Phone:        utils.Ptr(phone),
-		Username:     username,
-		PasswordHash: passwordHash,
-		FullName:     req.FullName,
-		IsActive:     true,
-	}
+	// Create user and assign role in a transaction
+	// Rely on database unique constraints instead of pre-checking
+	var user *models.User
+	err = s.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
+		// Create user
+		user = &models.User{
+			ID:           uuid.New(),
+			Email:        email,
+			Phone:        utils.Ptr(phone),
+			Username:     username,
+			PasswordHash: passwordHash,
+			FullName:     req.FullName,
+			IsActive:     true,
+		}
 
-	if err := s.userRepo.Create(ctx, user); err != nil {
-		s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
-			"reason": "create_failed",
-			"error":  err.Error(),
-		})
+		// Use transaction-aware repository methods
+		if userRepo, ok := s.userRepo.(*repository.UserRepository); ok {
+			if err := userRepo.CreateWithTx(ctx, tx, user); err != nil {
+				// Database will return unique_violation error if email/username/phone already exists
+				// handlePgError will convert it to appropriate error
+				s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+					"reason": "create_failed",
+					"error":  err.Error(),
+				})
+				return err
+			}
+		} else {
+			// Fallback to non-transactional method if type assertion fails
+			if err := s.userRepo.Create(ctx, user); err != nil {
+				s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+					"reason": "create_failed",
+					"error":  err.Error(),
+				})
+				return err
+			}
+		}
+
+		// Assign default "user" role to the new user
+		if rbacRepo, ok := s.rbacRepo.(*repository.RBACRepository); ok {
+			if err := rbacRepo.AssignRoleToUserWithTx(ctx, tx, user.ID, defaultRole.ID, user.ID); err != nil {
+				s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+					"reason": "role_assignment_failed",
+					"error":  err.Error(),
+				})
+				return fmt.Errorf("failed to assign default role: %w", err)
+			}
+		} else {
+			// Fallback to non-transactional method if type assertion fails
+			if err := s.rbacRepo.AssignRoleToUser(ctx, user.ID, defaultRole.ID, user.ID); err != nil {
+				s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+					"reason": "role_assignment_failed",
+					"error":  err.Error(),
+				})
+				return fmt.Errorf("failed to assign default role: %w", err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		// Check if it's a unique constraint violation (already handled by handlePgError)
 		return nil, err
-	}
-
-	// Assign default "user" role to the new user
-	if err := s.rbacRepo.AssignRoleToUser(ctx, user.ID, defaultRole.ID, user.ID); err != nil {
-		s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
-			"reason": "role_assignment_failed",
-			"error":  err.Error(),
-		})
-		return nil, fmt.Errorf("failed to assign default role: %w", err)
 	}
 
 	// Reload user with roles for token generation
@@ -181,6 +203,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 }
 
 // SignIn authenticates a user and returns tokens
+// Implements timing attack protection by always performing password check
 func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip, userAgent string, deviceInfo models.DeviceInfo) (*models.AuthResponse, error) {
 	// Require either email or phone
 	if req.Email == "" && (req.Phone == nil || *req.Phone == "") {
@@ -189,39 +212,53 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 
 	var user *models.User
 	var err error
+	var passwordHash string
 
 	// Get user by email or phone
 	if req.Email != "" {
 		email := utils.NormalizeEmail(req.Email)
 		user, err = s.userRepo.GetByEmailWithRoles(ctx, email, nil)
 		if err != nil {
-			s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
-				"reason": err,
-				"email":  email,
-			})
-			return nil, models.ErrInvalidCredentials
+			// User not found - use dummy hash to prevent timing attacks
+			passwordHash = utils.GetDummyPasswordHash()
+		} else {
+			passwordHash = user.PasswordHash
 		}
 	} else if req.Phone != nil && *req.Phone != "" {
 		phone := utils.NormalizePhone(*req.Phone)
 		user, err = s.userRepo.GetByPhone(ctx, phone, nil)
 		if err != nil {
-			s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
-				"reason": err,
-				"phone":  phone,
-			})
-			return nil, models.ErrInvalidCredentials
-		}
-		// Load roles for phone-based login
-		roles, roleErr := s.rbacRepo.GetUserRoles(ctx, user.ID)
-		if roleErr == nil {
-			user.Roles = roles
+			// User not found - use dummy hash to prevent timing attacks
+			passwordHash = utils.GetDummyPasswordHash()
+		} else {
+			passwordHash = user.PasswordHash
+			// Load roles for phone-based login
+			roles, roleErr := s.rbacRepo.GetUserRoles(ctx, user.ID)
+			if roleErr == nil {
+				user.Roles = roles
+			}
 		}
 	}
 
-	// Check password
-	if err := utils.CheckPassword(user.PasswordHash, req.Password); err != nil {
-		s.logAudit(&user.ID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
-			"reason": err.Error(),
+	// Always perform password check to prevent timing attacks
+	// This ensures consistent response time regardless of whether user exists
+	if err := utils.CheckPassword(passwordHash, req.Password); err != nil {
+		// Log failed attempt (but don't reveal if user exists)
+		var userID *uuid.UUID
+		if user != nil {
+			userID = &user.ID
+		}
+		s.logAudit(userID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			"reason": "invalid_credentials",
+		})
+		return nil, models.ErrInvalidCredentials
+	}
+
+	// If we reach here but user is nil, it means password matched dummy hash
+	// This should be extremely rare, but handle it for safety
+	if user == nil {
+		s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			"reason": "invalid_credentials",
 		})
 		return nil, models.ErrInvalidCredentials
 	}
@@ -274,9 +311,16 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 
 	// Verify TOTP code
 	if !totp.Validate(code, *user.TOTPSecret) {
-		// Try backup code
-		backupCodeValid, err := s.verifyBackupCode(user.ID, code)
-		if err != nil || !backupCodeValid {
+		// Try backup code using TwoFactorService
+		if s.twoFAService != nil {
+			valid, err := s.twoFAService.VerifyTOTP(ctx, user.ID, code)
+			if err != nil || !valid {
+				s.logAudit(&user.ID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+					"reason": "invalid_2fa_code",
+				})
+				return nil, models.NewAppError(401, "Invalid 2FA code")
+			}
+		} else {
 			s.logAudit(&user.ID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": "invalid_2fa_code",
 			})
@@ -298,14 +342,20 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 	return authResp, nil
 }
 
-// verifyBackupCode verifies a backup code (simplified version, full implementation in TwoFactorService)
+// verifyBackupCode is deprecated - use TwoFactorService.VerifyCode instead
+// This method is kept for backward compatibility but should not be used
 func (s *AuthService) verifyBackupCode(userID uuid.UUID, code string) (bool, error) {
-	// This is a simplified implementation
-	// In production, you'd want to use the TwoFactorService
+	// Use TwoFactorService if available
+	if s.twoFAService != nil {
+		// Note: This requires TOTPSecret, so we can't use it directly here
+		// The method is deprecated and should not be called
+		return false, fmt.Errorf("verifyBackupCode is deprecated, use TwoFactorService.VerifyCode")
+	}
 	return false, nil
 }
 
 // RefreshToken generates new tokens using a refresh token
+// This operation is atomic - old token is revoked and new token is created in a single transaction
 func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAgent string, deviceInfo models.DeviceInfo) (*models.AuthResponse, error) {
 	// Validate refresh token
 	claims, err := s.jwtService.ValidateRefreshToken(refreshToken)
@@ -325,70 +375,96 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 		return nil, models.ErrTokenRevoked
 	}
 
-	// Check if token exists and is not revoked in database
-	dbToken, err := s.tokenRepo.GetRefreshToken(ctx, oldTokenHash)
-	if err != nil {
-		s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
-			"reason": "token_not_found",
-		})
-		return nil, models.ErrInvalidToken
-	}
-
-	if dbToken.IsRevoked() {
-		s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
-			"reason": "token_revoked",
-		})
-		return nil, models.ErrTokenRevoked
-	}
-
-	if dbToken.IsExpired() {
-		s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
-			"reason": "token_expired",
-		})
-		return nil, models.ErrTokenExpired
-	}
-
-	// Get user with roles
+	// Get user with roles (before transaction to avoid deadlocks)
 	user, err := s.userRepo.GetByIDWithRoles(ctx, claims.UserID, utils.Ptr(true))
 	if err != nil {
 		return nil, err
 	}
 
-	// Revoke old refresh token
-	if err := s.tokenRepo.RevokeRefreshToken(ctx, oldTokenHash); err != nil {
+	// Perform atomic token refresh in a transaction
+	var dbToken *models.RefreshToken
+	var newAccessToken, newRefreshToken string
+	var newDBToken *models.RefreshToken
+	var newTokenHash string
+	var refreshExpiration time.Duration
+
+	err = s.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
+		// Get token with row lock (SELECT FOR UPDATE)
+		tokenRepo, ok := s.tokenRepo.(*repository.TokenRepository)
+		if !ok {
+			return fmt.Errorf("token repository does not support transactions")
+		}
+
+		// Check if token exists and is not revoked (with lock)
+		dbToken, err = tokenRepo.GetRefreshTokenForUpdate(ctx, tx, oldTokenHash)
+		if err != nil {
+			s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				"reason": "token_not_found",
+			})
+			return models.ErrInvalidToken
+		}
+
+		if dbToken.IsRevoked() {
+			s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				"reason": "token_revoked",
+			})
+			return models.ErrTokenRevoked
+		}
+
+		if dbToken.IsExpired() {
+			s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				"reason": "token_expired",
+			})
+			return models.ErrTokenExpired
+		}
+
+		// Revoke old refresh token
+		if err := tokenRepo.RevokeRefreshTokenWithTx(ctx, tx, oldTokenHash); err != nil {
+			return fmt.Errorf("failed to revoke old token: %w", err)
+		}
+
+		// Generate new tokens
+		newAccessToken, err = s.jwtService.GenerateAccessToken(user)
+		if err != nil {
+			return fmt.Errorf("failed to generate access token: %w", err)
+		}
+
+		newRefreshToken, err = s.jwtService.GenerateRefreshToken(user)
+		if err != nil {
+			return fmt.Errorf("failed to generate refresh token: %w", err)
+		}
+
+		// Save new refresh token to database
+		newTokenHash = utils.HashToken(newRefreshToken)
+		refreshExpiration = s.jwtService.GetRefreshTokenExpiration()
+		newDBToken = &models.RefreshToken{
+			ID:          uuid.New(),
+			UserID:      user.ID,
+			TokenHash:   newTokenHash,
+			ExpiresAt:   time.Now().Add(refreshExpiration),
+			DeviceType:  deviceInfo.DeviceType,
+			OS:          deviceInfo.OS,
+			Browser:     deviceInfo.Browser,
+			SessionName: dbToken.SessionName, // Keep original session name
+			IPAddress:   ip,
+		}
+
+		if err := tokenRepo.CreateRefreshTokenWithTx(ctx, tx, newDBToken); err != nil {
+			return fmt.Errorf("failed to create new refresh token: %w", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		// Check if it's already a models error
+		if appErr, ok := err.(*models.AppError); ok {
+			return nil, appErr
+		}
 		return nil, err
 	}
 
-	// Generate new access token
-	newAccessToken, err := s.jwtService.GenerateAccessToken(user)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate access token: %w", err)
-	}
-
-	// Generate new refresh token
-	newRefreshToken, err := s.jwtService.GenerateRefreshToken(user)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
-	}
-
-	// Save new refresh token to database
-	newTokenHash := utils.HashToken(newRefreshToken)
-	refreshExpiration := s.jwtService.GetRefreshTokenExpiration()
-	newDBToken := &models.RefreshToken{
-		ID:          uuid.New(),
-		UserID:      user.ID,
-		TokenHash:   newTokenHash,
-		ExpiresAt:   time.Now().Add(refreshExpiration),
-		DeviceType:  deviceInfo.DeviceType,
-		OS:          deviceInfo.OS,
-		Browser:     deviceInfo.Browser,
-		SessionName: dbToken.SessionName, // Keep original session name
-		IPAddress:   ip,
-	}
-
-	if err := s.tokenRepo.CreateRefreshToken(ctx, newDBToken); err != nil {
-		return nil, fmt.Errorf("failed to save refresh token: %w", err)
-	}
+	// Token was already created in transaction, no need to create again
 
 	// Update existing session with new token hashes instead of creating a new one
 	if s.sessionService != nil {
@@ -453,8 +529,8 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 	}
 
 	// Validate new password
-	if !utils.IsPasswordValid(newPassword) {
-		return models.NewAppError(400, "New password must be at least 8 characters")
+	if err := utils.ValidatePassword(newPassword, s.passwordPolicy); err != nil {
+		return models.NewAppError(400, err.Error())
 	}
 
 	// Hash new password
@@ -482,8 +558,8 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 // ResetPassword resets a user's password (used for password reset flow)
 func (s *AuthService) ResetPassword(ctx context.Context, userID uuid.UUID, newPassword, ip, userAgent string) error {
 	// Validate new password
-	if !utils.IsPasswordValid(newPassword) {
-		return models.NewAppError(400, "New password must be at least 8 characters")
+	if err := utils.ValidatePassword(newPassword, s.passwordPolicy); err != nil {
+		return models.NewAppError(400, err.Error())
 	}
 
 	// Hash new password
@@ -531,16 +607,6 @@ func (s *AuthService) InitPasswordlessRegistration(ctx context.Context, req *mod
 			return models.NewAppError(400, "Invalid email format")
 		}
 		identifier = email
-		// Check if email exists
-		if exists, err := s.userRepo.EmailExists(ctx, email); err != nil {
-			return err
-		} else if exists {
-			s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
-				"reason": "email_exists",
-				"email":  email,
-			})
-			return models.ErrEmailAlreadyExists
-		}
 	}
 
 	// Normalize and validate phone
@@ -551,16 +617,6 @@ func (s *AuthService) InitPasswordlessRegistration(ctx context.Context, req *mod
 		}
 		if identifier == "" {
 			identifier = phone
-		}
-		// Check if phone exists
-		if exists, err := s.userRepo.PhoneExists(ctx, phone); err != nil {
-			return err
-		} else if exists {
-			s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
-				"reason": "phone_exists",
-				"phone":  phone,
-			})
-			return models.ErrPhoneAlreadyExists
 		}
 	}
 
@@ -582,13 +638,9 @@ func (s *AuthService) InitPasswordlessRegistration(ctx context.Context, req *mod
 		return models.NewAppError(400, "Invalid username format")
 	}
 
-	// Check if username exists
-	if exists, err := s.userRepo.UsernameExists(ctx, username); err != nil {
-		return err
-	} else if exists {
-		// Append random suffix to make unique
-		username = fmt.Sprintf("%s_%d", username, time.Now().UnixNano()%10000)
-	}
+	// Note: We don't pre-check if username exists. If it conflicts during creation,
+	// the database unique constraint will catch it and we'll handle the error.
+	// For username conflicts, we'll append a random suffix during CompletePasswordlessRegistration if needed.
 
 	// Store pending registration in Redis
 	pending := &models.PendingRegistration{
@@ -656,34 +708,91 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 		return nil, fmt.Errorf("failed to get default role: %w", err)
 	}
 
-	// Create user without password (passwordless registration)
-	user := &models.User{
-		ID:            uuid.New(),
-		Email:         pending.Email,
-		Phone:         utils.Ptr(pending.Phone),
-		Username:      pending.Username,
-		PasswordHash:  "", // No password for passwordless registration
-		FullName:      pending.FullName,
-		IsActive:      true,
-		EmailVerified: email != "", // Mark email as verified if registering via email
-		PhoneVerified: phone != "", // Mark phone as verified if registering via phone
-	}
+	// Create user and assign role in a transaction
+	var user *models.User
+	err = s.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
+		// Create user without password (passwordless registration)
+		user = &models.User{
+			ID:            uuid.New(),
+			Email:         pending.Email,
+			Phone:         utils.Ptr(pending.Phone),
+			Username:      pending.Username,
+			PasswordHash:  "", // No password for passwordless registration
+			FullName:      pending.FullName,
+			IsActive:      true,
+			EmailVerified: email != "", // Mark email as verified if registering via email
+			PhoneVerified: phone != "", // Mark phone as verified if registering via phone
+		}
 
-	if err := s.userRepo.Create(ctx, user); err != nil {
-		s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
-			"reason": "create_failed",
-			"error":  err.Error(),
-		})
+		// Use transaction-aware repository methods
+		if userRepo, ok := s.userRepo.(*repository.UserRepository); ok {
+			if err := userRepo.CreateWithTx(ctx, tx, user); err != nil {
+				// If username conflict, try with a random suffix
+				if err == models.ErrUsernameAlreadyExists {
+					user.Username = fmt.Sprintf("%s_%d", pending.Username, time.Now().UnixNano()%10000)
+					if err := userRepo.CreateWithTx(ctx, tx, user); err != nil {
+						s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+							"reason": "create_failed",
+							"error":  err.Error(),
+						})
+						return err
+					}
+				} else {
+					s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+						"reason": "create_failed",
+						"error":  err.Error(),
+					})
+					return err
+				}
+			}
+		} else {
+			// Fallback to non-transactional method if type assertion fails
+			if err := s.userRepo.Create(ctx, user); err != nil {
+				// If username conflict, try with a random suffix
+				if err == models.ErrUsernameAlreadyExists {
+					user.Username = fmt.Sprintf("%s_%d", pending.Username, time.Now().UnixNano()%10000)
+					if err := s.userRepo.Create(ctx, user); err != nil {
+						s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+							"reason": "create_failed",
+							"error":  err.Error(),
+						})
+						return err
+					}
+				} else {
+					s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+						"reason": "create_failed",
+						"error":  err.Error(),
+					})
+					return err
+				}
+			}
+		}
+
+		// Assign default "user" role
+		if rbacRepo, ok := s.rbacRepo.(*repository.RBACRepository); ok {
+			if err := rbacRepo.AssignRoleToUserWithTx(ctx, tx, user.ID, defaultRole.ID, user.ID); err != nil {
+				s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+					"reason": "role_assignment_failed",
+					"error":  err.Error(),
+				})
+				return fmt.Errorf("failed to assign default role: %w", err)
+			}
+		} else {
+			// Fallback to non-transactional method if type assertion fails
+			if err := s.rbacRepo.AssignRoleToUser(ctx, user.ID, defaultRole.ID, user.ID); err != nil {
+				s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+					"reason": "role_assignment_failed",
+					"error":  err.Error(),
+				})
+				return fmt.Errorf("failed to assign default role: %w", err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
 		return nil, err
-	}
-
-	// Assign default "user" role
-	if err := s.rbacRepo.AssignRoleToUser(ctx, user.ID, defaultRole.ID, user.ID); err != nil {
-		s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
-			"reason": "role_assignment_failed",
-			"error":  err.Error(),
-		})
-		return nil, fmt.Errorf("failed to assign default role: %w", err)
 	}
 
 	// Reload user with roles for token generation

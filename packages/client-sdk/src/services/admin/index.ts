@@ -15,3 +15,8 @@ export { AdminOAuthProvidersService } from './oauth-providers';
 export { AdminOAuthClientsService, type ListClientsParams } from './oauth-clients';
 export { AdminTemplatesService } from './templates';
 export { AdminWebhooksService } from './webhooks';
+export { AdminGroupsService } from './groups';
+export { AdminLDAPService } from './ldap';
+export { AdminSAMLService } from './saml';
+export { AdminBulkService } from './bulk';
+export { AdminSCIMService } from './scim';

@@ -34,6 +34,21 @@ import ServiceAccountEdit from './components/ServiceAccountEdit';
 import SmsSettings from './components/SmsSettings';
 import TokenInspector from './components/TokenInspector';
 import Login from './components/Login';
+import Groups from './components/Groups';
+import GroupEdit from './components/GroupEdit';
+import GroupDetails from './components/GroupDetails';
+import LDAPConfigs from './components/LDAPConfigs';
+import LDAPConfigEdit from './components/LDAPConfigEdit';
+import LDAPSyncLogs from './components/LDAPSyncLogs';
+import SAMLSPs from './components/SAMLSPs';
+import SAMLSPEdit from './components/SAMLSPEdit';
+import SAMLMetadata from './components/SAMLMetadata';
+import BulkOperations from './components/BulkOperations';
+import BulkCreateUsers from './components/BulkCreateUsers';
+import BulkUpdateUsers from './components/BulkUpdateUsers';
+import BulkDeleteUsers from './components/BulkDeleteUsers';
+import BulkAssignRoles from './components/BulkAssignRoles';
+import SCIMSettings from './components/SCIMSettings';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, isLoading, logout } = useAuth();
@@ -95,6 +110,24 @@ const AppRoutes: React.FC = () => {
           <Route path="/developers/service-accounts" element={<ServiceAccounts />} />
           <Route path="/developers/service-accounts/:id" element={<ServiceAccountEdit />} />
           <Route path="/developers/token-inspector" element={<TokenInspector />} />
+          <Route path="/groups" element={<Groups />} />
+          <Route path="/groups/new" element={<GroupEdit />} />
+          <Route path="/groups/:id" element={<GroupDetails />} />
+          <Route path="/groups/:id/edit" element={<GroupEdit />} />
+          <Route path="/ldap" element={<LDAPConfigs />} />
+          <Route path="/ldap/new" element={<LDAPConfigEdit />} />
+          <Route path="/ldap/:id" element={<LDAPConfigEdit />} />
+          <Route path="/ldap/:id/logs" element={<LDAPSyncLogs />} />
+          <Route path="/saml" element={<SAMLSPs />} />
+          <Route path="/saml/new" element={<SAMLSPEdit />} />
+          <Route path="/saml/:id" element={<SAMLSPEdit />} />
+          <Route path="/saml/metadata" element={<SAMLMetadata />} />
+          <Route path="/bulk" element={<BulkOperations />} />
+          <Route path="/bulk/create" element={<BulkCreateUsers />} />
+          <Route path="/bulk/update" element={<BulkUpdateUsers />} />
+          <Route path="/bulk/delete" element={<BulkDeleteUsers />} />
+          <Route path="/bulk/assign-roles" element={<BulkAssignRoles />} />
+          <Route path="/settings/scim" element={<SCIMSettings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

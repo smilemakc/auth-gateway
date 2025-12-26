@@ -332,7 +332,7 @@ func (r *RBACRepository) RemovePermissionFromRole(ctx context.Context, roleID, p
 
 // SetRolePermissions sets all permissions for a role (replaces existing)
 func (r *RBACRepository) SetRolePermissions(ctx context.Context, roleID uuid.UUID, permissionIDs []uuid.UUID) error {
-	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+	return r.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
 		// Delete existing permissions
 		_, err := tx.NewDelete().
 			Model((*models.RolePermission)(nil)).
@@ -485,6 +485,22 @@ func (r *RBACRepository) AssignRoleToUser(ctx context.Context, userID, roleID, a
 	return handlePgError(err)
 }
 
+// AssignRoleToUserWithTx assigns a role to a user within a transaction
+func (r *RBACRepository) AssignRoleToUserWithTx(ctx context.Context, tx bun.Tx, userID, roleID, assignedBy uuid.UUID) error {
+	userRole := &models.UserRole{
+		UserID:     userID,
+		RoleID:     roleID,
+		AssignedBy: &assignedBy,
+	}
+
+	_, err := tx.NewInsert().
+		Model(userRole).
+		On("CONFLICT (user_id, role_id) DO NOTHING").
+		Exec(ctx)
+
+	return handlePgError(err)
+}
+
 // RemoveRoleFromUser removes a role from a user
 func (r *RBACRepository) RemoveRoleFromUser(ctx context.Context, userID, roleID uuid.UUID) error {
 	_, err := r.db.NewDelete().
@@ -497,7 +513,7 @@ func (r *RBACRepository) RemoveRoleFromUser(ctx context.Context, userID, roleID 
 
 // SetUserRoles atomically replaces all user roles (transaction)
 func (r *RBACRepository) SetUserRoles(ctx context.Context, userID uuid.UUID, roleIDs []uuid.UUID, assignedBy uuid.UUID) error {
-	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+	return r.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
 		// Delete all existing roles for this user
 		_, err := tx.NewDelete().
 			Model((*models.UserRole)(nil)).

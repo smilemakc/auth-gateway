@@ -31,6 +31,16 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 	return handlePgError(err)
 }
 
+// CreateWithTx creates a new user within a transaction
+func (r *UserRepository) CreateWithTx(ctx context.Context, tx bun.Tx, user *models.User) error {
+	_, err := tx.NewInsert().
+		Model(user).
+		Returning("*").
+		Exec(ctx)
+
+	return handlePgError(err)
+}
+
 // GetByID retrieves a user by ID
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
 	user := new(models.User)

@@ -12,6 +12,7 @@ const (
 	UserEmailKey = "user_email"
 	UserRoleKey  = "user_role"
 	UserRolesKey = "user_roles"
+	TokenKey     = "access_token"
 )
 
 // GetUserIDFromContext retrieves the user ID from the Gin context
@@ -88,6 +89,17 @@ func GetUserRolesFromContext(c *gin.Context) ([]string, bool) {
 	}
 	roleSlice, ok := roles.([]string)
 	return roleSlice, ok
+}
+
+// GetTokenFromContext retrieves raw access token set by auth middleware
+func GetTokenFromContext(c *gin.Context) (string, bool) {
+	value, exists := c.Get(TokenKey)
+	if !exists {
+		return "", false
+	}
+
+	token, ok := value.(string)
+	return token, ok && token != ""
 }
 
 // HasRole checks if user has a specific role
