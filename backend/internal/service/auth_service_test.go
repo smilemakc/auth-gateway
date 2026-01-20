@@ -21,6 +21,7 @@ func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBA
 	mAudit := &mockAuditLogger{}
 	mJWT := &mockTokenService{}
 	mCache := &mockCacheService{}
+	mDB := &mockTransactionDB{}
 
 	// Create logger for tests
 	log := logger.New("auth-test", logger.DebugLevel, false)
@@ -28,8 +29,11 @@ func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBA
 	// Create blacklist service with mocks
 	blacklistSvc := NewBlacklistService(mCache, mToken, mJWT, log, mAudit)
 
-	// SessionService is nil for tests (non-fatal session creation)
-	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, blacklistSvc, mCache, nil, 10)
+	// Create default password policy
+	passwordPolicy := utils.DefaultPasswordPolicy()
+
+	// SessionService and TwoFactorService are nil for tests (non-fatal session creation)
+	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, blacklistSvc, mCache, nil, nil, 10, passwordPolicy, mDB)
 	return svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache, blacklistSvc
 }
 

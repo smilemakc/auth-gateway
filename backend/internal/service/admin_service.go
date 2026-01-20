@@ -15,13 +15,14 @@ import (
 
 // AdminService provides admin operations
 type AdminService struct {
-	userRepo   UserStore
-	apiKeyRepo APIKeyStore
-	auditRepo  AuditStore
-	oauthRepo  OAuthStore
-	rbacRepo   RBACStore
-	bcryptCost int
-	db         TransactionDB
+	userRepo       UserStore
+	apiKeyRepo     APIKeyStore
+	auditRepo      AuditStore
+	oauthRepo      OAuthStore
+	rbacRepo       RBACStore
+	backupCodeRepo BackupCodeStore
+	bcryptCost     int
+	db             TransactionDB
 }
 
 // NewAdminService creates a new admin service
@@ -31,17 +32,19 @@ func NewAdminService(
 	auditRepo AuditStore,
 	oauthRepo OAuthStore,
 	rbacRepo RBACStore,
+	backupCodeRepo BackupCodeStore,
 	bcryptCost int,
 	db TransactionDB,
 ) *AdminService {
 	return &AdminService{
-		userRepo:   userRepo,
-		apiKeyRepo: apiKeyRepo,
-		auditRepo:  auditRepo,
-		oauthRepo:  oauthRepo,
-		rbacRepo:   rbacRepo,
-		bcryptCost: bcryptCost,
-		db:         db,
+		userRepo:       userRepo,
+		apiKeyRepo:     apiKeyRepo,
+		auditRepo:      auditRepo,
+		oauthRepo:      oauthRepo,
+		rbacRepo:       rbacRepo,
+		backupCodeRepo: backupCodeRepo,
+		bcryptCost:     bcryptCost,
+		db:             db,
 	}
 }
 
@@ -494,6 +497,49 @@ func (s *AdminService) RemoveRole(ctx context.Context, userID, roleID uuid.UUID)
 	}
 
 	return s.GetUser(ctx, userID)
+}
+
+// AdminReset2FA administratively disables 2FA for a user
+func (s *AdminService) AdminReset2FA(ctx context.Context, userID, adminID uuid.UUID) error {
+	user, err := s.userRepo.GetByID(ctx, userID, nil)
+	if err != nil {
+		return err
+	}
+
+	if !user.TOTPEnabled {
+		return models.NewAppError(400, "2FA is not enabled for this user")
+	}
+
+	err = s.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
+		if err := s.userRepo.DisableTOTP(ctx, userID); err != nil {
+			return err
+		}
+
+		if err := s.backupCodeRepo.DeleteAllByUserID(ctx, userID); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to reset 2FA: %w", err)
+	}
+
+	auditLog := &models.AuditLog{
+		ID:        uuid.New(),
+		UserID:    &adminID,
+		Action:    string(models.Action2FAReset),
+		Status:    string(models.StatusSuccess),
+		CreatedAt: time.Now(),
+		Details:   []byte(fmt.Sprintf(`{"target_user_id":"%s","admin_id":"%s"}`, userID, adminID)),
+	}
+
+	if err := s.auditRepo.Create(ctx, auditLog); err != nil {
+		return fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	return nil
 }
 
 // userToAdminResponse converts User to AdminUserResponse with roles

@@ -15,13 +15,19 @@ import (
 // AdminHandler handles admin operations
 type AdminHandler struct {
 	adminService *service.AdminService
+	userService  *service.UserService
+	otpService   *service.OTPService
+	auditService *service.AuditService
 	logger       *logger.Logger
 }
 
 // NewAdminHandler creates a new admin handler
-func NewAdminHandler(adminService *service.AdminService, logger *logger.Logger) *AdminHandler {
+func NewAdminHandler(adminService *service.AdminService, userService *service.UserService, otpService *service.OTPService, auditService *service.AuditService, logger *logger.Logger) *AdminHandler {
 	return &AdminHandler{
 		adminService: adminService,
+		userService:  userService,
+		otpService:   otpService,
+		auditService: auditService,
 		logger:       logger,
 	}
 }
@@ -449,4 +455,136 @@ func (h *AdminHandler) RemoveRole(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+// SendPasswordReset sends a password reset email to a user
+// @Summary Send password reset email
+// @Description Initiates password reset for a user by sending OTP to their email (admin only)
+// @Tags Admin - Users
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "User ID (UUID)"
+// @Success 200 {object} object{message=string,email=string} "Password reset email sent"
+// @Failure 400 {object} models.ErrorResponse "User email is not verified"
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse "User not found"
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/users/{id}/send-password-reset [post]
+func (h *AdminHandler) SendPasswordReset(c *gin.Context) {
+	userID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
+		))
+		return
+	}
+
+	user, err := h.userService.GetByID(c.Request.Context(), userID)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	if user.Email == "" {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "User does not have an email address"),
+		))
+		return
+	}
+
+	if !user.EmailVerified {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "User email is not verified"),
+		))
+		return
+	}
+
+	email := utils.NormalizeEmail(user.Email)
+	otpReq := &models.SendOTPRequest{
+		Email: &email,
+		Type:  models.OTPTypePasswordReset,
+	}
+
+	if err := h.otpService.SendOTP(c.Request.Context(), otpReq); err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+			return
+		}
+		h.logger.Error("Failed to send password reset email", map[string]interface{}{
+			"error":   err.Error(),
+			"user_id": userID,
+			"email":   email,
+		})
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	adminID, exists := utils.GetUserIDFromContext(c)
+	if exists {
+		h.auditService.Log(service.AuditLogParams{
+			UserID:    adminID,
+			Action:    models.ActionAdminPasswordResetInitiate,
+			Status:    models.StatusSuccess,
+			IP:        c.ClientIP(),
+			UserAgent: c.GetHeader("User-Agent"),
+			Details: map[string]interface{}{
+				"target_user_id": userID,
+				"email":          email,
+			},
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Password reset email has been sent",
+		"email":   user.Email,
+	})
+}
+
+// Reset2FA administratively disables 2FA for a user
+// @Summary Reset user 2FA
+// @Description Administratively disable 2FA for a user who lost access to their authenticator (admin only)
+// @Tags Admin - Users
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "User ID (UUID)"
+// @Success 200 {object} object{message=string,user_id=string}
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/users/{id}/reset-2fa [post]
+func (h *AdminHandler) Reset2FA(c *gin.Context) {
+	userID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
+		))
+		return
+	}
+
+	adminID, exists := utils.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+		return
+	}
+
+	if err := h.adminService.AdminReset2FA(c.Request.Context(), userID, *adminID); err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "2FA has been disabled for user",
+		"user_id": userID.String(),
+	})
 }

@@ -149,6 +149,7 @@ type handlerSet struct {
 	LDAP          *handler.LDAPHandler
 	Bulk          *handler.BulkHandler
 	SAML          *handler.SAMLHandler
+	Token         *handler.TokenHandler
 }
 
 type middlewareSet struct {
@@ -438,7 +439,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	}
 	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db)
 	oauthService := service.NewOAuthService(repos.User, repos.OAuth, repos.Token, repos.Audit, repos.RBAC, deps.jwtService, sessionService, &http.Client{Timeout: 10 * time.Second}, deps.cfg.Security.JITProvisioning)
-	adminService := service.NewAdminService(repos.User, repos.APIKey, repos.Audit, repos.OAuth, repos.RBAC, deps.cfg.Security.BcryptCost, deps.db)
+	adminService := service.NewAdminService(repos.User, repos.APIKey, repos.Audit, repos.OAuth, repos.RBAC, repos.BackupCode, deps.cfg.Security.BcryptCost, deps.db)
 	rbacService := service.NewRBACService(repos.RBAC, auditService)
 	ipFilterService := service.NewIPFilterService(repos.IPFilter)
 	webhookService := service.NewWebhookService(repos.Webhook, auditService)
@@ -539,7 +540,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	otpHandler := handler.NewOTPHandler(services.OTP, services.Auth, deps.log)
 	oauthHandler := handler.NewOAuthHandler(services.OAuth, deps.log)
 	twoFAHandler := handler.NewTwoFactorHandler(services.TwoFA, services.User, deps.log)
-	adminHandler := handler.NewAdminHandler(services.Admin, deps.log)
+	adminHandler := handler.NewAdminHandler(services.Admin, services.User, services.OTP, services.Audit, deps.log)
 	advancedAdminHandler := handler.NewAdvancedAdminHandler(services.RBAC, services.Session, services.IPFilter, repos.Branding, repos.System, repos.Geo, deps.log)
 	webhookHandler := handler.NewWebhookHandler(services.Webhook, deps.log)
 	templateHandler := handler.NewTemplateHandler(services.Template, deps.log)
@@ -557,6 +558,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	bulkHandler := handler.NewBulkHandler(services.Bulk, deps.log)
 	scimHandler := handler.NewSCIMHandler(services.SCIM, deps.log)
 	samlHandler := handler.NewSAMLHandler(services.SAML, deps.log)
+	tokenHandler := handler.NewTokenHandler(deps.jwtService, services.APIKey, deps.redis, deps.log)
 
 	return &handlerSet{
 		Auth:          authHandler,
@@ -577,6 +579,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 		LDAP:          ldapHandler,
 		Bulk:          bulkHandler,
 		SAML:          samlHandler,
+		Token:         tokenHandler,
 	}
 }
 
@@ -787,6 +790,8 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			adminGroup.DELETE("/users/:id", handlers.Admin.DeleteUser)
 			adminGroup.POST("/users/:id/roles", handlers.Admin.AssignRole)
 			adminGroup.DELETE("/users/:id/roles/:roleId", handlers.Admin.RemoveRole)
+			adminGroup.POST("/users/:id/send-password-reset", handlers.Admin.SendPasswordReset)
+			adminGroup.POST("/users/:id/reset-2fa", handlers.Admin.Reset2FA)
 			adminGroup.GET("/api-keys", handlers.Admin.ListAPIKeys)
 			adminGroup.POST("/api-keys/:id/revoke", handlers.Admin.RevokeAPIKey)
 			adminGroup.GET("/audit-logs", handlers.Admin.ListAuditLogs)
@@ -918,6 +923,11 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			sessionsGroup.GET("", handlers.AdvancedAdmin.ListUserSessions)
 			sessionsGroup.DELETE("/:id", handlers.AdvancedAdmin.RevokeSession)
 			sessionsGroup.POST("/revoke-all", handlers.AdvancedAdmin.RevokeAllSessions)
+		}
+
+		v1 := apiGroup.Group("/v1")
+		{
+			v1.POST("/token/validate", handlers.Token.ValidateToken)
 		}
 
 		protectedAPI := apiGroup.Group("/v1")

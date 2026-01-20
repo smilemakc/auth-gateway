@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
+	"github.com/uptrace/bun"
 )
 
 // Manual mocks
@@ -1013,6 +1014,17 @@ type mockSessionStore struct {
 	RefreshSessionTokensFunc         func(ctx context.Context, oldTokenHash, newTokenHash, newAccessTokenHash string, newExpiresAt time.Time) error
 	GetSessionStatsFunc              func(ctx context.Context) (*models.SessionStats, error)
 	DeleteExpiredSessionsFunc        func(ctx context.Context, olderThan time.Duration) error
+}
+
+type mockTransactionDB struct {
+	RunInTxFunc func(ctx context.Context, fn func(ctx context.Context, tx bun.Tx) error) error
+}
+
+func (m *mockTransactionDB) RunInTx(ctx context.Context, fn func(ctx context.Context, tx bun.Tx) error) error {
+	if m.RunInTxFunc != nil {
+		return m.RunInTxFunc(ctx, fn)
+	}
+	return fn(ctx, bun.Tx{})
 }
 
 func (m *mockSessionStore) CreateSession(ctx context.Context, session *models.Session) error {

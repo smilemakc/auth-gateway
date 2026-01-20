@@ -24,7 +24,7 @@ import {
   Send
 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
-import { useUserDetail } from '../hooks/useUsers';
+import { useUserDetail, useReset2FA, useSendPasswordReset } from '../hooks/useUsers';
 import { useUserSessions, useRevokeSession } from '../hooks/useSessions';
 import { useApiKeys } from '../hooks/useApiKeys';
 import { useUserAuditLogs } from '../hooks/useAuditLogs';
@@ -42,6 +42,8 @@ const UserDetails: React.FC = () => {
 
   // Mutations
   const revokeSessionMutation = useRevokeSession();
+  const reset2FAMutation = useReset2FA();
+  const sendPasswordResetMutation = useSendPasswordReset();
 
   // Extract data from responses
   const sessions = sessionsData?.sessions || [];
@@ -63,31 +65,27 @@ const UserDetails: React.FC = () => {
     }
   };
 
-  // TODO: Admin 2FA reset not implemented in backend
-  // const handleReset2FA = async () => {
-  //   if (!user) return;
-  //   if (window.confirm(t('user.reset_2fa_confirm'))) {
-  //     try {
-  //       await reset2FAMutation.mutateAsync(user.id);
-  //       alert('2FA has been reset.');
-  //     } catch (error) {
-  //       console.error('Failed to reset 2FA:', error);
-  //       alert('Failed to reset 2FA');
-  //     }
-  //   }
-  // };
+  const handleReset2FA = async () => {
+    if (confirm('Are you sure you want to reset 2FA for this user? They will need to set up 2FA again.')) {
+      try {
+        await reset2FAMutation.mutateAsync(id!);
+        alert('2FA has been reset successfully');
+      } catch (error) {
+        alert('Failed to reset 2FA: ' + (error as Error).message);
+      }
+    }
+  };
 
-  // TODO: Admin password reset not implemented in backend
-  // const handleResetPassword = async () => {
-  //   if (!user) return;
-  //   try {
-  //     await sendPasswordResetMutation.mutateAsync(user.id);
-  //     alert('Password reset email sent.');
-  //   } catch (error) {
-  //     console.error('Failed to send password reset:', error);
-  //     alert('Failed to send password reset email');
-  //   }
-  // };
+  const handleSendPasswordReset = async () => {
+    if (confirm('Are you sure you want to send a password reset email to this user?')) {
+      try {
+        const result = await sendPasswordResetMutation.mutateAsync(id!);
+        alert(`Password reset email sent to ${result.email}`);
+      } catch (error) {
+        alert('Failed to send password reset: ' + (error as Error).message);
+      }
+    }
+  };
 
   const getDeviceIcon = (userAgent: string) => {
     const ua = userAgent.toLowerCase();
@@ -270,23 +268,23 @@ const UserDetails: React.FC = () => {
                 {t('user.danger_zone')}
              </h3>
              <div className="space-y-3">
-               {/* TODO: Admin 2FA reset endpoint not implemented in backend */}
+               {user.totp_enabled && (
+                 <button
+                   onClick={handleReset2FA}
+                   disabled={reset2FAMutation.isPending}
+                   className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                 >
+                   <RotateCcw size={16} />
+                   {reset2FAMutation.isPending ? 'Resetting...' : t('user.reset_2fa')}
+                 </button>
+               )}
                <button
-                 disabled={true}
-                 title="Admin 2FA reset not available - users must disable via profile settings"
-                 className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg opacity-50 cursor-not-allowed"
-               >
-                 <RotateCcw size={16} />
-                 {t('user.reset_2fa')}
-               </button>
-               {/* TODO: Admin password reset endpoint not implemented in backend */}
-               <button
-                 disabled={true}
-                 title="Admin password reset not available - users can request via login page"
-                 className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg opacity-50 cursor-not-allowed"
+                 onClick={handleSendPasswordReset}
+                 disabled={sendPasswordResetMutation.isPending}
+                 className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                >
                  <Send size={16} />
-                 {t('user.reset_password_email')}
+                 {sendPasswordResetMutation.isPending ? 'Sending...' : t('user.reset_password_email')}
                </button>
              </div>
           </div>
