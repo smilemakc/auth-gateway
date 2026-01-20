@@ -324,7 +324,7 @@ const UserDetails: React.FC = () => {
                               <Globe size={12} /> {session.ip_address}
                             </span>
                             <span className="flex items-center gap-1">
-                              • Active {new Date(session.last_activity).toLocaleDateString()}
+                              • Active {new Date(session.last_active_at).toLocaleDateString()}
                             </span>
                           </div>
                         </div>
