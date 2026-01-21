@@ -66,7 +66,7 @@ const LDAPConfigs: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -74,7 +74,7 @@ const LDAPConfigs: React.FC = () => {
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-red-600">Error loading LDAP configurations: {(error as Error).message}</p>
+        <p className="text-destructive">Error loading LDAP configurations: {(error as Error).message}</p>
       </div>
     );
   }
@@ -85,36 +85,36 @@ const LDAPConfigs: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">LDAP Configurations</h1>
-          <p className="text-gray-500 mt-1">Manage LDAP/Active Directory integrations</p>
+          <h1 className="text-2xl font-bold text-foreground">LDAP Configurations</h1>
+          <p className="text-muted-foreground mt-1">Manage LDAP/Active Directory integrations</p>
         </div>
         <button
           onClick={() => navigate('/ldap/new')}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+          className="bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
         >
           <Plus size={18} />
           Create Configuration
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Name / Server
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Port
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Base DN
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Status
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Last Sync
                 </th>
                 <th scope="col" className="relative px-6 py-3">
@@ -122,39 +122,39 @@ const LDAPConfigs: React.FC = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-border">
               {configs.map((config) => (
-                <tr key={config.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={config.id} className="hover:bg-accent transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{config.server}</div>
-                    <div className="text-sm text-gray-500">{config.base_dn}</div>
+                    <div className="text-sm font-medium text-foreground">{config.server}</div>
+                    <div className="text-sm text-muted-foreground">{config.base_dn}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{config.port}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{config.port}</td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-500 max-w-xs truncate">{config.base_dn}</div>
+                    <div className="text-sm text-muted-foreground max-w-xs truncate">{config.base_dn}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       {config.is_active ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">
                           <CheckCircle size={12} />
                           Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
                           <XCircle size={12} />
                           Inactive
                         </span>
                       )}
                       {config.sync_enabled && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                           <Clock size={12} />
                           Auto-sync
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     {config.last_sync_at ? new Date(config.last_sync_at).toLocaleString() : 'Never'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -162,7 +162,7 @@ const LDAPConfigs: React.FC = () => {
                       <button
                         onClick={() => handleTestConnection(config)}
                         disabled={testingId === config.id}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                        className="p-1.5 text-muted-foreground hover:text-primary rounded-md hover:bg-accent disabled:opacity-50"
                         title="Test Connection"
                       >
                         <TestTube size={16} />
@@ -170,28 +170,28 @@ const LDAPConfigs: React.FC = () => {
                       <button
                         onClick={() => handleSync(config.id)}
                         disabled={syncingId === config.id}
-                        className="p-1.5 text-gray-400 hover:text-green-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                        className="p-1.5 text-muted-foreground hover:text-success rounded-md hover:bg-accent disabled:opacity-50"
                         title="Sync Now"
                       >
                         <RefreshCw size={16} className={syncingId === config.id ? 'animate-spin' : ''} />
                       </button>
                       <Link
                         to={`/ldap/${config.id}/logs`}
-                        className="p-1.5 text-gray-400 hover:text-purple-600 rounded-md hover:bg-gray-100"
+                        className="p-1.5 text-muted-foreground hover:text-primary rounded-md hover:bg-accent"
                         title="View Sync Logs"
                       >
                         <FileText size={16} />
                       </Link>
                       <Link
                         to={`/ldap/${config.id}`}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 rounded-md hover:bg-gray-100"
+                        className="p-1.5 text-muted-foreground hover:text-primary rounded-md hover:bg-accent"
                         title="Edit"
                       >
                         <Edit size={16} />
                       </Link>
                       <button
                         onClick={() => handleDelete(config.id, config.server)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100"
+                        className="p-1.5 text-muted-foreground hover:text-destructive rounded-md hover:bg-accent"
                         title="Delete"
                         disabled={deleteConfig.isPending}
                       >
@@ -205,7 +205,7 @@ const LDAPConfigs: React.FC = () => {
           </table>
 
           {configs.length === 0 && (
-            <div className="p-12 text-center text-gray-500">No LDAP configurations found.</div>
+            <div className="p-12 text-center text-muted-foreground">No LDAP configurations found.</div>
           )}
         </div>
       </div>

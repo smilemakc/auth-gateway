@@ -10,7 +10,7 @@ const LDAPSyncLogs: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -18,8 +18,8 @@ const LDAPSyncLogs: React.FC = () => {
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-red-600">Error loading sync logs: {(error as Error).message}</p>
-        <Link to="/ldap" className="text-blue-600 hover:underline mt-4 inline-block">
+        <p className="text-destructive">Error loading sync logs: {(error as Error).message}</p>
+        <Link to="/ldap" className="text-primary hover:underline mt-4 inline-block">
           Back to LDAP Configurations
         </Link>
       </div>
@@ -31,26 +31,26 @@ const LDAPSyncLogs: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <CheckCircle className="text-green-600" size={20} />;
+        return <CheckCircle className="text-success" size={20} />;
       case 'failed':
-        return <XCircle className="text-red-600" size={20} />;
+        return <XCircle className="text-destructive" size={20} />;
       case 'partial':
-        return <AlertCircle className="text-yellow-600" size={20} />;
+        return <AlertCircle className="text-warning" size={20} />;
       default:
-        return <Clock className="text-gray-600" size={20} />;
+        return <Clock className="text-muted-foreground" size={20} />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'success':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-success';
       case 'failed':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-destructive';
       case 'partial':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning/10 text-warning';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -59,48 +59,48 @@ const LDAPSyncLogs: React.FC = () => {
       <div className="flex items-center gap-4">
         <Link
           to="/ldap"
-          className="text-gray-500 hover:text-gray-700 flex items-center gap-2"
+          className="text-muted-foreground hover:text-foreground flex items-center gap-2"
         >
           <ArrowLeft size={20} />
           Back
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">LDAP Sync Logs</h1>
+        <h1 className="text-2xl font-bold text-foreground">LDAP Sync Logs</h1>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Date
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Status
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Users
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Groups
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Duration
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Error
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-border">
               {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={log.id} className="hover:bg-accent transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
+                    <div className="text-sm text-foreground">
                       {new Date(log.started_at).toLocaleString()}
                     </div>
                     {log.completed_at && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         Completed: {new Date(log.completed_at).toLocaleString()}
                       </div>
                     )}
@@ -118,31 +118,31 @@ const LDAPSyncLogs: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
+                    <div className="text-sm text-foreground">
                       <div>Synced: {log.users_synced}</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         Created: {log.users_created} | Updated: {log.users_updated} | Deleted: {log.users_deleted}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
+                    <div className="text-sm text-foreground">
                       <div>Synced: {log.groups_synced}</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         Created: {log.groups_created} | Updated: {log.groups_updated}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(2)}s` : '-'}
                   </td>
                   <td className="px-6 py-4">
                     {log.error_message ? (
-                      <div className="text-sm text-red-600 max-w-xs truncate" title={log.error_message}>
+                      <div className="text-sm text-destructive max-w-xs truncate" title={log.error_message}>
                         {log.error_message}
                       </div>
                     ) : (
-                      <span className="text-sm text-gray-400">-</span>
+                      <span className="text-sm text-muted-foreground">-</span>
                     )}
                   </td>
                 </tr>
@@ -151,7 +151,7 @@ const LDAPSyncLogs: React.FC = () => {
           </table>
 
           {logs.length === 0 && (
-            <div className="p-12 text-center text-gray-500">No sync logs found.</div>
+            <div className="p-12 text-center text-muted-foreground">No sync logs found.</div>
           )}
         </div>
       </div>

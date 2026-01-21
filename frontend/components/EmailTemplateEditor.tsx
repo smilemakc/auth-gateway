@@ -70,21 +70,21 @@ const EmailTemplateEditor: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => navigate('/settings/email-templates')}
-            className="p-2 hover:bg-white rounded-lg transition-colors text-gray-500"
+            className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
           >
             <ArrowLeft size={24} />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{template.name}</h1>
-            <p className="text-xs text-gray-500">Edit template content</p>
+            <h1 className="text-xl font-bold text-foreground">{template.name}</h1>
+            <p className="text-xs text-muted-foreground">Edit template content</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setActiveTab(activeTab === 'editor' ? 'preview' : 'editor')}
-            className="lg:hidden p-2 text-gray-600 bg-white border border-gray-200 rounded-lg"
+            className="lg:hidden p-2 text-muted-foreground bg-card border border-border rounded-lg"
           >
              {activeTab === 'editor' ? <Eye size={20} /> : <Code size={20} />}
           </button>
@@ -92,11 +92,11 @@ const EmailTemplateEditor: React.FC = () => {
             onClick={handleSave}
             disabled={saving}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors
-              ${saved 
-                ? 'bg-green-600 text-white' 
-                : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+              ${saved
+                ? 'bg-success text-primary-foreground'
+                : 'bg-primary text-primary-foreground hover:bg-primary-600'}`}
           >
-            {saving ? <RefreshCw size={18} className="animate-spin" /> : 
+            {saving ? <RefreshCw size={18} className="animate-spin" /> :
              saved ? <Check size={18} /> : <Save size={18} />}
             {saved ? t('common.saved') : t('common.save')}
           </button>
@@ -108,21 +108,21 @@ const EmailTemplateEditor: React.FC = () => {
         
         {/* Editor Pane */}
         <div className={`flex-1 flex flex-col gap-4 ${activeTab === 'preview' ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex-shrink-0">
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('email.subject')}</label>
+          <div className="bg-card p-4 rounded-xl shadow-sm border border-border flex-shrink-0">
+            <label className="block text-sm font-medium text-foreground mb-1">{t('email.subject')}</label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent outline-none"
             />
             <div className="mt-3 flex flex-wrap gap-2">
-              <span className="text-xs text-gray-500 py-1">{t('email.vars')}:</span>
+              <span className="text-xs text-muted-foreground py-1">{t('email.vars')}:</span>
               {template.variables.map(v => (
-                <button 
+                <button
                   key={v}
                   onClick={() => setBodyHtml(prev => prev + v)}
-                  className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded font-mono border border-gray-200 transition-colors"
+                  className="text-xs bg-muted hover:bg-accent text-foreground px-2 py-1 rounded font-mono border border-border transition-colors"
                   title="Click to insert"
                 >
                   {v}
@@ -131,9 +131,9 @@ const EmailTemplateEditor: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-            <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-500 uppercase">{t('email.body')}</span>
+          <div className="flex-1 bg-card rounded-xl shadow-sm border border-border flex flex-col overflow-hidden">
+            <div className="bg-muted px-4 py-2 border-b border-border flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground uppercase">{t('email.body')}</span>
             </div>
             <textarea
               value={bodyHtml}
@@ -146,16 +146,16 @@ const EmailTemplateEditor: React.FC = () => {
 
         {/* Preview Pane */}
         <div className={`flex-1 flex flex-col ${activeTab === 'editor' ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-            <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-500 uppercase">{t('email.preview')}</span>
-              <span className="text-xs text-gray-400">Values are mocked</span>
+          <div className="flex-1 bg-card rounded-xl shadow-sm border border-border overflow-hidden flex flex-col">
+            <div className="bg-muted px-4 py-2 border-b border-border flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground uppercase">{t('email.preview')}</span>
+              <span className="text-xs text-muted-foreground">Values are mocked</span>
             </div>
-            <div className="bg-gray-50 p-4 border-b border-gray-100">
-               <div className="text-sm font-medium text-gray-500 mb-1">{t('email.subject')}:</div>
-               <div className="text-gray-900 font-medium">{subject}</div>
+            <div className="bg-muted p-4 border-b border-border">
+               <div className="text-sm font-medium text-muted-foreground mb-1">{t('email.subject')}:</div>
+               <div className="text-foreground font-medium">{subject}</div>
             </div>
-            <div className="flex-1 bg-white relative">
+            <div className="flex-1 bg-card relative">
               <iframe
                 title="preview"
                 srcDoc={getPreviewHtml()}

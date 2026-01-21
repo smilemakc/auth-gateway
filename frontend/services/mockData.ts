@@ -136,6 +136,16 @@ export const mockOAuthProviders: OAuthProviderConfig[] = [
     is_enabled: false,
     created_at: new Date('2023-03-10').toISOString(),
     updated_at: new Date('2023-03-10').toISOString()
+  },
+  {
+    id: '4',
+    provider: 'onec',
+    client_id: '1c-oauth-client-id',
+    client_secret: '1c-oauth-client-secret',
+    redirect_uris: ['https://auth.example.com/api/v1/auth/onec/callback'],
+    is_enabled: false,
+    created_at: new Date('2024-01-20').toISOString(),
+    updated_at: new Date('2024-01-20').toISOString()
   }
 ];
 
@@ -496,7 +506,7 @@ export const getUserLogs = (userId: string): AuditLog[] => {
 };
 
 export const getUserOAuthAccounts = (userId: string): OAuthAccount[] => {
-  const providers: OAuthAccount['provider'][] = ['google', 'github', 'yandex', 'telegram'];
+  const providers: OAuthAccount['provider'][] = ['google', 'github', 'yandex', 'telegram', 'onec'];
   const count = Math.floor(Math.random() * 3);
 
   return Array.from({ length: count }).map((_, i) => {

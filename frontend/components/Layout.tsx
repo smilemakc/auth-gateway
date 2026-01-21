@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../services/i18n';
+import { useTheme } from '../lib/theme';
 import {
   LayoutDashboard,
   Users,
@@ -19,7 +20,10 @@ import {
   Shield,
   FolderTree,
   Server,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Sun,
+  Moon,
+  Monitor
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -31,6 +35,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
+  const { mode, setMode, isDark } = useTheme();
 
   const navItems = [
     { path: '/', label: t('nav.dashboard'), icon: LayoutDashboard },
@@ -58,7 +63,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div
@@ -70,20 +75,20 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 text-white transform transition-transform duration-200 ease-in-out
+          fixed inset-y-0 left-0 z-30 w-64 bg-sidebar text-sidebar-foreground transform transition-transform duration-200 ease-in-out
           lg:translate-x-0 lg:static lg:inset-0
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
-        <div className="flex items-center justify-between h-16 px-6 bg-slate-950 border-b border-slate-800">
-          <span className="text-xl font-bold tracking-wider text-blue-400">Auth Gateway</span>
-          <button onClick={toggleSidebar} className="lg:hidden text-gray-400 hover:text-white">
+        <div className="flex items-center justify-between h-16 px-6 bg-sidebar border-b border-sidebar-border">
+          <span className="text-xl font-bold tracking-wider text-sidebar-accent">Auth Gateway</span>
+          <button onClick={toggleSidebar} className="lg:hidden text-sidebar-muted hover:text-sidebar-foreground">
             <X size={24} />
           </button>
         </div>
 
         <div className="p-4 overflow-y-auto max-h-[calc(100vh-8rem)]">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
+          <div className="text-xs font-semibold text-sidebar-muted uppercase tracking-wider mb-4">
             {t('nav.menu')}
           </div>
           <nav className="space-y-1 mb-8">
@@ -102,8 +107,8 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                   className={`
                     flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors
                     ${isActive
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'}
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                      : 'text-sidebar-foreground/80 hover:bg-sidebar-muted hover:text-sidebar-foreground'}
                   `}
                 >
                   <Icon className="mr-3 h-5 w-5" />
@@ -113,7 +118,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
             })}
           </nav>
 
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
+          <div className="text-xs font-semibold text-sidebar-muted uppercase tracking-wider mb-4">
             {t('nav.developers')}
           </div>
           <nav className="space-y-1">
@@ -128,8 +133,8 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                   className={`
                     flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors
                     ${isActive
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'}
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                      : 'text-sidebar-foreground/80 hover:bg-sidebar-muted hover:text-sidebar-foreground'}
                   `}
                 >
                   <Icon className="mr-3 h-5 w-5" />
@@ -140,10 +145,10 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           </nav>
         </div>
 
-        <div className="absolute bottom-0 w-full p-4 border-t border-slate-800 bg-slate-900">
+        <div className="absolute bottom-0 w-full p-4 border-t border-sidebar-border bg-sidebar">
           <button
             onClick={onLogout}
-            className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-400 hover:bg-slate-800 hover:text-red-300 rounded-lg transition-colors"
+            className="flex items-center w-full px-4 py-3 text-sm font-medium text-destructive hover:bg-sidebar-muted hover:text-destructive/80 rounded-lg transition-colors"
           >
             <LogOut className="mr-3 h-5 w-5" />
             {t('nav.logout')}
@@ -154,8 +159,8 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10">
-          <button onClick={toggleSidebar} className="lg:hidden text-gray-500 hover:text-gray-700">
+        <header className="bg-card shadow-sm h-16 flex items-center justify-between px-6 z-10">
+          <button onClick={toggleSidebar} className="lg:hidden text-muted-foreground hover:text-foreground">
             <Menu size={24} />
           </button>
 
@@ -164,35 +169,60 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Theme Switcher */}
+            <div className="flex items-center border rounded-md overflow-hidden border-border bg-card">
+              <button
+                onClick={() => setMode('light')}
+                className={`p-1.5 transition-colors ${mode === 'light' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent'}`}
+                title="Light mode"
+              >
+                <Sun size={16} />
+              </button>
+              <button
+                onClick={() => setMode('system')}
+                className={`p-1.5 transition-colors ${mode === 'system' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent'}`}
+                title="System preference"
+              >
+                <Monitor size={16} />
+              </button>
+              <button
+                onClick={() => setMode('dark')}
+                className={`p-1.5 transition-colors ${mode === 'dark' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent'}`}
+                title="Dark mode"
+              >
+                <Moon size={16} />
+              </button>
+            </div>
+
             {/* Language Switcher */}
-            <div className="flex items-center border rounded-md overflow-hidden border-gray-200">
+            <div className="flex items-center border rounded-md overflow-hidden border-border bg-card">
               <button
                 onClick={() => setLanguage('en')}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${language === 'en' ? 'bg-blue-100 text-blue-700' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${language === 'en' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent'}`}
               >
                 EN
               </button>
               <button
                 onClick={() => setLanguage('ru')}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${language === 'ru' ? 'bg-blue-100 text-blue-700' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${language === 'ru' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent'}`}
               >
                 RU
               </button>
             </div>
 
-            <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
               <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border-2 border-card"></span>
             </button>
             <div className="flex items-center gap-3">
               <img
                 src="https://picsum.photos/id/64/100/100"
                 alt="Profile"
-                className="h-8 w-8 rounded-full border border-gray-200"
+                className="h-8 w-8 rounded-full border border-border"
               />
               <div className="hidden md:block">
-                <p className="text-sm font-medium text-gray-700">Admin User</p>
-                <p className="text-xs text-gray-500">Super Administrator</p>
+                <p className="text-sm font-medium text-foreground">Admin User</p>
+                <p className="text-xs text-muted-foreground">Super Administrator</p>
               </div>
             </div>
           </div>

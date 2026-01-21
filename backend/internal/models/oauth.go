@@ -31,12 +31,13 @@ const (
 	ProviderGitHub    OAuthProvider = "github"
 	ProviderInstagram OAuthProvider = "instagram"
 	ProviderTelegram  OAuthProvider = "telegram"
+	ProviderOneC      OAuthProvider = "onec"
 )
 
 // IsValidProvider checks if a provider is valid
 func IsValidProvider(provider string) bool {
 	switch OAuthProvider(provider) {
-	case ProviderGoogle, ProviderYandex, ProviderGitHub, ProviderInstagram, ProviderTelegram:
+	case ProviderGoogle, ProviderYandex, ProviderGitHub, ProviderInstagram, ProviderTelegram, ProviderOneC:
 		return true
 	default:
 		return false

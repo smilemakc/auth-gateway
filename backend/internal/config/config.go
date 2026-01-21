@@ -99,6 +99,7 @@ type OAuthConfig struct {
 	Yandex      OAuthProvider
 	GitHub      OAuthProvider
 	Instagram   OAuthProvider
+	OneC        CustomOAuthProvider
 	FrontendURL string
 }
 
@@ -107,6 +108,18 @@ type OAuthProvider struct {
 	ClientID     string
 	ClientSecret string
 	CallbackURL  string
+}
+
+// CustomOAuthProvider represents a custom OAuth provider with configurable URLs
+type CustomOAuthProvider struct {
+	Enabled      bool
+	ClientID     string
+	ClientSecret string
+	CallbackURL  string
+	AuthURL      string
+	TokenURL     string
+	UserInfoURL  string
+	Scopes       string
 }
 
 // SMTPConfig contains SMTP email configuration
@@ -300,6 +313,16 @@ func Load() (*Config, error) {
 				ClientID:     getEnv("INSTAGRAM_CLIENT_ID", ""),
 				ClientSecret: getEnv("INSTAGRAM_CLIENT_SECRET", ""),
 				CallbackURL:  getEnv("INSTAGRAM_CALLBACK_URL", ""),
+			},
+			OneC: CustomOAuthProvider{
+				Enabled:      getEnvAsBool("OAUTH_ONEC_ENABLED", false),
+				ClientID:     getEnv("OAUTH_ONEC_CLIENT_ID", ""),
+				ClientSecret: getEnv("OAUTH_ONEC_CLIENT_SECRET", ""),
+				CallbackURL:  getEnv("OAUTH_ONEC_REDIRECT_URI", ""),
+				AuthURL:      getEnv("OAUTH_ONEC_AUTH_URL", ""),
+				TokenURL:     getEnv("OAUTH_ONEC_TOKEN_URL", ""),
+				UserInfoURL:  getEnv("OAUTH_ONEC_USERINFO_URL", ""),
+				Scopes:       getEnv("OAUTH_ONEC_SCOPES", "openid profile email"),
 			},
 			FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3001"),
 		},

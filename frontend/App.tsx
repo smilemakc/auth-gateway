@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from './services/queryClient';
 import { AuthProvider, useAuth } from './services/authContext';
 import { LanguageProvider } from './services/i18n';
+import { ThemeProvider } from './lib/theme';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import Users from './components/Users';
@@ -55,8 +56,8 @@ const AppRoutes: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -137,14 +138,16 @@ const AppRoutes: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </LanguageProvider>
-      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-    </QueryClientProvider>
+    <ThemeProvider defaultMode="system">
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </LanguageProvider>
+        {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 

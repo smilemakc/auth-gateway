@@ -94,7 +94,7 @@ const SAMLSPEdit: React.FC = () => {
   if (isLoadingSP && !isNew) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -102,141 +102,141 @@ const SAMLSPEdit: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{isNew ? 'Create SAML Service Provider' : 'Edit SAML Service Provider'}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{isNew ? 'Create SAML Service Provider' : 'Edit SAML Service Provider'}</h1>
         <div className="flex gap-2">
           <Link
             to="/saml/metadata"
-            className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
+            className="px-3 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors flex items-center gap-2 text-sm"
           >
             <Download size={16} />
             Download Metadata
           </Link>
-          <button onClick={() => navigate('/saml')} className="text-gray-500 hover:text-gray-700 flex items-center gap-2">
+          <button onClick={() => navigate('/saml')} className="text-muted-foreground hover:text-foreground flex items-center gap-2">
             <X size={20} />
             Cancel
           </button>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-card rounded-xl shadow-sm border border-border p-6 space-y-6">
         {/* Basic Information */}
-        <div className="border-b border-gray-200 pb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
+        <div className="border-b border-border pb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Basic Information</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Name <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.name ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
+                  errors.name ? 'border-destructive' : 'border-input'
                 }`}
                 placeholder="Salesforce"
               />
-              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+              {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Entity ID <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Entity ID <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
                 value={formData.entity_id}
                 onChange={(e) => setFormData({ ...formData, entity_id: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.entity_id ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
+                  errors.entity_id ? 'border-destructive' : 'border-input'
                 }`}
                 placeholder="https://saml.salesforce.com"
               />
-              {errors.entity_id && <p className="mt-1 text-sm text-red-600">{errors.entity_id}</p>}
-              <p className="mt-1 text-xs text-gray-500">Unique identifier for this Service Provider</p>
+              {errors.entity_id && <p className="mt-1 text-sm text-destructive">{errors.entity_id}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">Unique identifier for this Service Provider</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Assertion Consumer Service (ACS) URL <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Assertion Consumer Service (ACS) URL <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
                 value={formData.acs_url}
                 onChange={(e) => setFormData({ ...formData, acs_url: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.acs_url ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
+                  errors.acs_url ? 'border-destructive' : 'border-input'
                 }`}
                 placeholder="https://saml.salesforce.com/sp/ACS"
               />
-              {errors.acs_url && <p className="mt-1 text-sm text-red-600">{errors.acs_url}</p>}
-              <p className="mt-1 text-xs text-gray-500">Where SAML assertions will be sent</p>
+              {errors.acs_url && <p className="mt-1 text-sm text-destructive">{errors.acs_url}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">Where SAML assertions will be sent</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Single Logout (SLO) URL</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Single Logout (SLO) URL</label>
               <input
                 type="text"
                 value={formData.slo_url}
                 onChange={(e) => setFormData({ ...formData, slo_url: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.slo_url ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
+                  errors.slo_url ? 'border-destructive' : 'border-input'
                 }`}
                 placeholder="https://saml.salesforce.com/sp/SLO"
               />
-              {errors.slo_url && <p className="mt-1 text-sm text-red-600">{errors.slo_url}</p>}
-              <p className="mt-1 text-xs text-gray-500">Optional: URL for single logout</p>
+              {errors.slo_url && <p className="mt-1 text-sm text-destructive">{errors.slo_url}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">Optional: URL for single logout</p>
             </div>
           </div>
         </div>
 
         {/* Certificate */}
-        <div className="border-b border-gray-200 pb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Service Provider Certificate</h2>
+        <div className="border-b border-border pb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Service Provider Certificate</h2>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">X.509 Certificate (PEM format)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">X.509 Certificate (PEM format)</label>
             <textarea
               value={formData.x509_cert}
               onChange={(e) => setFormData({ ...formData, x509_cert: e.target.value })}
               rows={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
+              className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring font-mono text-xs"
               placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
             />
-            <p className="mt-1 text-xs text-gray-500">PEM-encoded X.509 certificate from the Service Provider</p>
+            <p className="mt-1 text-xs text-muted-foreground">PEM-encoded X.509 certificate from the Service Provider</p>
           </div>
         </div>
 
         {/* Metadata */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Metadata</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Metadata</h2>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Metadata URL</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Metadata URL</label>
             <input
               type="text"
               value={formData.metadata_url}
               onChange={(e) => setFormData({ ...formData, metadata_url: e.target.value })}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.metadata_url ? 'border-red-300' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
+                errors.metadata_url ? 'border-destructive' : 'border-input'
               }`}
               placeholder="https://saml.salesforce.com/metadata"
             />
-            {errors.metadata_url && <p className="mt-1 text-sm text-red-600">{errors.metadata_url}</p>}
-            <p className="mt-1 text-xs text-gray-500">Optional: URL to fetch SP metadata from</p>
+            {errors.metadata_url && <p className="mt-1 text-sm text-destructive">{errors.metadata_url}</p>}
+            <p className="mt-1 text-xs text-muted-foreground">Optional: URL to fetch SP metadata from</p>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <button
             type="button"
             onClick={() => navigate('/saml')}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={createSP.isPending || updateSP.isPending}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {(createSP.isPending || updateSP.isPending) && <Loader size={16} className="animate-spin" />}
             <Save size={16} />

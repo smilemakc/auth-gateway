@@ -154,28 +154,28 @@ const BulkCreateUsers: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <button onClick={() => navigate('/bulk')} className="text-gray-500 hover:text-gray-700 flex items-center gap-2">
+        <button onClick={() => navigate('/bulk')} className="text-muted-foreground hover:text-foreground flex items-center gap-2">
           <ArrowLeft size={20} />
           Back
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Bulk Create Users</h1>
+        <h1 className="text-2xl font-bold text-foreground">Bulk Create Users</h1>
       </div>
 
       {!result ? (
         <>
           {/* File Upload */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Upload File</h2>
+          <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Upload File</h2>
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <label className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer flex items-center gap-2">
+                <label className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg cursor-pointer flex items-center gap-2">
                   <Upload size={16} />
                   Choose File
                   <input type="file" accept=".csv,.json" onChange={handleFileUpload} className="hidden" />
                 </label>
                 <button
                   onClick={downloadTemplate}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent flex items-center gap-2"
                 >
                   <Download size={16} />
                   Download Template
@@ -184,7 +184,7 @@ const BulkCreateUsers: React.FC = () => {
 
               {mode === 'csv' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CSV Content</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">CSV Content</label>
                   <textarea
                     value={csvText}
                     onChange={(e) => {
@@ -192,7 +192,7 @@ const BulkCreateUsers: React.FC = () => {
                       parseCSV(e.target.value);
                     }}
                     rows={10}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring font-mono text-xs"
                   />
                 </div>
               )}
@@ -200,12 +200,12 @@ const BulkCreateUsers: React.FC = () => {
           </div>
 
           {/* Manual Entry */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-card rounded-xl shadow-sm border border-border p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Users ({users.length})</h2>
+              <h2 className="text-lg font-semibold text-foreground">Users ({users.length})</h2>
               <button
                 onClick={handleAddUser}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+                className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg text-sm transition-colors"
               >
                 + Add User
               </button>
@@ -213,54 +213,54 @@ const BulkCreateUsers: React.FC = () => {
 
             <div className="space-y-4">
               {users.map((user, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div key={index} className="border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700">User #{index + 1}</span>
+                    <span className="text-sm font-medium text-foreground">User #{index + 1}</span>
                     <button
                       onClick={() => handleRemoveUser(index)}
-                      className="text-red-600 hover:text-red-800 text-sm"
+                      className="text-destructive hover:text-destructive/80 text-sm"
                     >
                       Remove
                     </button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Email *</label>
+                      <label className="block text-xs font-medium text-foreground mb-1">Email *</label>
                       <input
                         type="email"
                         value={user.email}
                         onChange={(e) => handleUserChange(index, 'email', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         placeholder="user@example.com"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Username *</label>
+                      <label className="block text-xs font-medium text-foreground mb-1">Username *</label>
                       <input
                         type="text"
                         value={user.username}
                         onChange={(e) => handleUserChange(index, 'username', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         placeholder="username"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Password *</label>
+                      <label className="block text-xs font-medium text-foreground mb-1">Password *</label>
                       <input
                         type="password"
                         value={user.password}
                         onChange={(e) => handleUserChange(index, 'password', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         placeholder="password"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Full Name</label>
+                      <label className="block text-xs font-medium text-foreground mb-1">Full Name</label>
                       <input
                         type="text"
                         value={user.full_name}
                         onChange={(e) => handleUserChange(index, 'full_name', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         placeholder="Full Name"
                       />
                     </div>
@@ -270,18 +270,18 @@ const BulkCreateUsers: React.FC = () => {
                           type="checkbox"
                           checked={user.is_active}
                           onChange={(e) => handleUserChange(index, 'is_active', e.target.checked)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-input text-primary focus:ring-ring"
                         />
-                        <span className="text-xs text-gray-700">Active</span>
+                        <span className="text-xs text-foreground">Active</span>
                       </label>
                       <label className="flex items-center gap-2">
                         <input
                           type="checkbox"
                           checked={user.email_verified}
                           onChange={(e) => handleUserChange(index, 'email_verified', e.target.checked)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-input text-primary focus:ring-ring"
                         />
-                        <span className="text-xs text-gray-700">Email Verified</span>
+                        <span className="text-xs text-foreground">Email Verified</span>
                       </label>
                     </div>
                   </div>
@@ -289,8 +289,8 @@ const BulkCreateUsers: React.FC = () => {
               ))}
 
               {users.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <FileText size={48} className="mx-auto mb-2 text-gray-400" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText size={48} className="mx-auto mb-2 text-muted-foreground" />
                   <p>No users added. Click "Add User" or upload a file.</p>
                 </div>
               )}
@@ -300,14 +300,14 @@ const BulkCreateUsers: React.FC = () => {
           <div className="flex justify-end gap-3">
             <button
               onClick={() => navigate('/bulk')}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={bulkCreate.isPending || users.length === 0}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {bulkCreate.isPending && <Loader size={16} className="animate-spin" />}
               Create {users.length > 0 && `(${users.length})`}
@@ -315,33 +315,33 @@ const BulkCreateUsers: React.FC = () => {
           </div>
         </>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Operation Results</h2>
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Operation Results</h2>
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="text-sm text-gray-500">Total</div>
-                <div className="text-2xl font-bold text-gray-900">{result.total}</div>
+              <div className="bg-muted rounded-lg p-4">
+                <div className="text-sm text-muted-foreground">Total</div>
+                <div className="text-2xl font-bold text-foreground">{result.total}</div>
               </div>
-              <div className="bg-green-50 rounded-lg p-4">
-                <div className="text-sm text-green-600">Success</div>
-                <div className="text-2xl font-bold text-green-700">{result.success}</div>
+              <div className="bg-success/10 rounded-lg p-4">
+                <div className="text-sm text-success">Success</div>
+                <div className="text-2xl font-bold text-success">{result.success}</div>
               </div>
-              <div className="bg-red-50 rounded-lg p-4">
-                <div className="text-sm text-red-600">Failed</div>
-                <div className="text-2xl font-bold text-red-700">{result.failed}</div>
+              <div className="bg-destructive/10 rounded-lg p-4">
+                <div className="text-sm text-destructive">Failed</div>
+                <div className="text-2xl font-bold text-destructive">{result.failed}</div>
               </div>
             </div>
 
             {result.errors && result.errors.length > 0 && (
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Errors</h3>
+                <h3 className="font-semibold text-foreground mb-2">Errors</h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {result.errors.map((error, index) => (
-                    <div key={index} className="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <div className="text-sm text-red-800">
+                    <div key={index} className="bg-destructive/10 border border-border rounded-lg p-3">
+                      <div className="text-sm text-destructive">
                         <span className="font-medium">Row {error.index + 1}:</span> {error.message}
-                        {error.email && <span className="text-red-600"> ({error.email})</span>}
+                        {error.email && <span className="text-destructive"> ({error.email})</span>}
                       </div>
                     </div>
                   ))}
@@ -351,20 +351,20 @@ const BulkCreateUsers: React.FC = () => {
 
             {result.results && result.results.length > 0 && (
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Results</h3>
+                <h3 className="font-semibold text-foreground mb-2">Results</h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {result.results.map((item, index) => (
                     <div
                       key={index}
                       className={`border rounded-lg p-3 ${
-                        item.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                        item.success ? 'bg-success/10 border-border' : 'bg-destructive/10 border-border'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         {item.success ? (
-                          <CheckCircle className="text-green-600" size={16} />
+                          <CheckCircle className="text-success" size={16} />
                         ) : (
-                          <XCircle className="text-red-600" size={16} />
+                          <XCircle className="text-destructive" size={16} />
                         )}
                         <span className="text-sm">
                           {item.email}: {item.message || (item.success ? 'Created' : 'Failed')}
@@ -376,20 +376,20 @@ const BulkCreateUsers: React.FC = () => {
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+            <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <button
                 onClick={() => {
                   setResult(null);
                   setUsers([]);
                   setCsvText('');
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
               >
                 Create More
               </button>
               <button
                 onClick={() => navigate('/bulk')}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg transition-colors"
               >
                 Done
               </button>

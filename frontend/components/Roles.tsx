@@ -25,7 +25,7 @@ const Roles: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -44,72 +44,72 @@ const Roles: React.FC = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/settings')}
-            className="p-2 hover:bg-white rounded-lg transition-colors text-gray-500"
+            className="p-2 hover:bg-card rounded-lg transition-colors text-muted-foreground"
           >
             <ArrowLeft size={24} />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('roles.title')}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('roles.title')}</h1>
           </div>
         </div>
         <Link
           to="/settings/roles/new"
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          className="flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
           <Plus size={18} />
           {t('common.create')}
         </Link>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('users.col_role')}</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('roles.permissions')}</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.created')}</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('users.col_role')}</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('roles.permissions')}</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('common.created')}</th>
                 <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-border">
               {roles.map((role) => (
-                <tr key={role.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={role.id} className="hover:bg-accent transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${role.is_system_role ? 'bg-purple-50 text-purple-600' : 'bg-gray-100 text-gray-600'}`}>
+                      <div className={`p-2 rounded-lg ${role.is_system_role ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'}`}>
                         <Shield size={18} />
                       </div>
-                      <span className="font-medium text-gray-900">{role.display_name || role.name}</span>
+                      <span className="font-medium text-foreground">{role.display_name || role.name}</span>
                       {role.is_system_role && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-500 uppercase">{t('roles.system_role')}</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-muted text-muted-foreground uppercase">{t('roles.system_role')}</span>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-gray-500">{role.description}</span>
+                    <span className="text-sm text-muted-foreground">{role.description}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                       {role.permissions?.length || 0}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     {role.created_at ? new Date(role.created_at).toLocaleDateString() : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
                       <Link
                         to={`/settings/roles/${role.id}`}
-                        className="p-1 text-gray-400 hover:text-blue-600 rounded-md hover:bg-gray-100"
+                        className="p-1 text-muted-foreground hover:text-primary rounded-md hover:bg-muted"
                       >
                         <Edit2 size={18} />
                       </Link>
                       {!role.is_system_role && (
                         <button
                           onClick={() => handleDelete(role.id)}
-                          className="p-1 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100"
+                          className="p-1 text-muted-foreground hover:text-red-600 rounded-md hover:bg-muted"
                         >
                           <Trash2 size={18} />
                         </button>

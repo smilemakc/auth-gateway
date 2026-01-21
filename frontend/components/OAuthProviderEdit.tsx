@@ -87,20 +87,20 @@ const OAuthProviderEdit: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <button 
+        <button
           onClick={() => navigate('/oauth')}
-          className="p-2 hover:bg-white rounded-lg transition-colors text-gray-500"
+          className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
         >
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">{isEditMode ? t('oauth.configure') : t('oauth.add')}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{isEditMode ? t('oauth.configure') : t('oauth.add')}</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 bg-gray-50 flex items-start gap-3">
-          <HelpCircle className="text-blue-500 mt-0.5" size={20} />
-          <div className="text-sm text-gray-600">
-            <p className="font-medium text-gray-900 mb-1">Getting Started</p>
+      <form onSubmit={handleSubmit} className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+        <div className="p-6 border-b border-border bg-muted flex items-start gap-3">
+          <HelpCircle className="text-primary mt-0.5" size={20} />
+          <div className="text-sm text-muted-foreground">
+            <p className="font-medium text-foreground mb-1">Getting Started</p>
             <p>To configure this provider, you need to create an OAuth application in the provider's developer console.</p>
           </div>
         </div>
@@ -108,23 +108,23 @@ const OAuthProviderEdit: React.FC = () => {
         <div className="p-6 space-y-8">
           {/* Provider Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Provider</label>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {['google', 'github', 'yandex', 'telegram', 'instagram'].map(p => (
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Provider</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              {['google', 'github', 'yandex', 'telegram', 'instagram', 'onec'].map(p => (
                 <label key={p} className={`
-                  cursor-pointer border rounded-lg p-3 text-center transition-all hover:bg-gray-50
-                  ${formData.provider === p ? 'ring-2 ring-blue-500 border-transparent bg-blue-50' : 'border-gray-200'}
+                  cursor-pointer border rounded-lg p-3 text-center transition-all hover:bg-accent
+                  ${formData.provider === p ? 'ring-2 ring-ring border-transparent bg-primary/10' : 'border-border'}
                 `}>
-                  <input 
-                    type="radio" 
-                    name="provider" 
-                    value={p} 
+                  <input
+                    type="radio"
+                    name="provider"
+                    value={p}
                     checked={formData.provider === p}
                     onChange={handleChange}
-                    className="sr-only" 
+                    className="sr-only"
                     disabled={isEditMode}
                   />
-                  <span className="capitalize font-medium block text-gray-900">{p}</span>
+                  <span className="capitalize font-medium block text-foreground">{p}</span>
                 </label>
               ))}
             </div>
@@ -133,7 +133,7 @@ const OAuthProviderEdit: React.FC = () => {
           {/* Credentials */}
           <div className="grid grid-cols-1 gap-6">
             <div>
-              <label htmlFor="client_id" className="block text-sm font-medium text-gray-700 mb-1">{t('oauth.client_id')}</label>
+              <label htmlFor="client_id" className="block text-sm font-medium text-muted-foreground mb-1">{t('oauth.client_id')}</label>
               <input
                 type="text"
                 id="client_id"
@@ -141,12 +141,12 @@ const OAuthProviderEdit: React.FC = () => {
                 value={formData.client_id}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono text-sm"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all font-mono text-sm"
                 placeholder="e.g. 1234567890-abc..."
               />
             </div>
             <div>
-              <label htmlFor="client_secret" className="block text-sm font-medium text-gray-700 mb-1">{t('oauth.client_secret')}</label>
+              <label htmlFor="client_secret" className="block text-sm font-medium text-muted-foreground mb-1">{t('oauth.client_secret')}</label>
               <div className="relative">
                 <input
                   type={showSecret ? "text" : "password"}
@@ -155,13 +155,13 @@ const OAuthProviderEdit: React.FC = () => {
                   value={formData.client_secret}
                   onChange={handleChange}
                   required
-                  className="w-full pl-4 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono text-sm"
+                  className="w-full pl-4 pr-12 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all font-mono text-sm"
                   placeholder="e.g. GOCSPX-..."
                 />
                 <button
                   type="button"
                   onClick={() => setShowSecret(!showSecret)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showSecret ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -171,7 +171,7 @@ const OAuthProviderEdit: React.FC = () => {
 
           {/* Redirect URIs */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('oauth.redirect_uris')}</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">{t('oauth.redirect_uris')}</label>
             <div className="space-y-3">
               {formData.redirect_uris?.map((uri, index) => (
                 <div key={index} className="flex gap-2">
@@ -179,24 +179,24 @@ const OAuthProviderEdit: React.FC = () => {
                     type="url"
                     value={uri}
                     onChange={(e) => handleArrayChange(index, e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-mono text-sm"
+                    className="flex-1 px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent outline-none font-mono text-sm"
                     placeholder="https://your-app.com/auth/callback"
                   />
                   {formData.redirect_uris!.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeUri(index)}
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
+                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
                     >
                       <Trash2 size={18} />
                     </button>
                   )}
                 </div>
               ))}
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={addUri}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                className="text-sm text-primary hover:text-primary font-medium hover:underline"
               >
                 + URI
               </button>
@@ -204,7 +204,7 @@ const OAuthProviderEdit: React.FC = () => {
           </div>
 
           {/* Status */}
-          <div className="pt-6 border-t border-gray-100">
+          <div className="pt-6 border-t border-border">
              <div className="flex items-center gap-3">
                <input
                   type="checkbox"
@@ -212,22 +212,22 @@ const OAuthProviderEdit: React.FC = () => {
                   name="is_enabled"
                   checked={formData.is_enabled}
                   onChange={handleChange}
-                  className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                  className="w-5 h-5 text-primary rounded focus:ring-ring border-input"
                />
                <div>
-                 <label htmlFor="is_enabled" className="font-medium text-gray-900 block">{t('oauth.enable')}</label>
+                 <label htmlFor="is_enabled" className="font-medium text-foreground block">{t('oauth.enable')}</label>
                </div>
              </div>
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+        <div className="px-6 py-4 bg-muted border-t border-border flex items-center justify-between">
           <div>
             {isEditMode && (
-              <button 
+              <button
                 type="button"
                 onClick={handleDelete}
-                className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                className="text-destructive hover:text-destructive text-sm font-medium px-2 py-1 rounded hover:bg-destructive/10 transition-colors"
               >
                 {t('common.delete')}
               </button>
@@ -237,18 +237,18 @@ const OAuthProviderEdit: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/oauth')}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="px-4 py-2 text-sm font-medium text-muted-foreground bg-card border border-input rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
             >
               {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className={`flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+              className={`flex items-center px-4 py-2 text-sm font-medium text-primary-foreground bg-primary border border-transparent rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring
                 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {loading ? (
-                 <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+                 <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></span>
               ) : (
                 <Save size={16} className="mr-2" />
               )}

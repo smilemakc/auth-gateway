@@ -157,7 +157,7 @@ const LDAPConfigEdit: React.FC = () => {
   if (isLoadingConfig && !isNew) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -165,31 +165,31 @@ const LDAPConfigEdit: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{isNew ? 'Create LDAP Configuration' : 'Edit LDAP Configuration'}</h1>
-        <button onClick={() => navigate('/ldap')} className="text-gray-500 hover:text-gray-700 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-foreground">{isNew ? 'Create LDAP Configuration' : 'Edit LDAP Configuration'}</h1>
+        <button onClick={() => navigate('/ldap')} className="text-muted-foreground hover:text-foreground flex items-center gap-2">
           <X size={20} />
           Cancel
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-card rounded-xl shadow-sm border border-border p-6 space-y-6">
         {/* Test Result */}
         {testResult && (
           <div
             className={`p-4 rounded-lg flex items-start gap-3 ${
-              testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+              testResult.success ? 'bg-success/10 border border-success/20' : 'bg-destructive/10 border border-destructive/20'
             }`}
           >
             {testResult.success ? (
-              <CheckCircle className="text-green-600 mt-0.5" size={20} />
+              <CheckCircle className="text-success mt-0.5" size={20} />
             ) : (
-              <AlertCircle className="text-red-600 mt-0.5" size={20} />
+              <AlertCircle className="text-destructive mt-0.5" size={20} />
             )}
             <div className="flex-1">
-              <p className={`font-medium ${testResult.success ? 'text-green-800' : 'text-red-800'}`}>
+              <p className={`font-medium ${testResult.success ? 'text-success' : 'text-destructive'}`}>
                 {testResult.success ? 'Connection Successful' : 'Connection Failed'}
               </p>
-              <p className={`text-sm mt-1 ${testResult.success ? 'text-green-700' : 'text-red-700'}`}>
+              <p className={`text-sm mt-1 ${testResult.success ? 'text-success' : 'text-destructive'}`}>
                 {testResult.message}
               </p>
             </div>
@@ -197,97 +197,97 @@ const LDAPConfigEdit: React.FC = () => {
         )}
 
         {/* Basic Settings */}
-        <div className="border-b border-gray-200 pb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Connection Settings</h2>
+        <div className="border-b border-border pb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Connection Settings</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Server <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Server <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
                 value={formData.server}
                 onChange={(e) => setFormData({ ...formData, server: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.server ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
+                  errors.server ? 'border-destructive' : 'border-input'
                 }`}
                 placeholder="ldap.example.com"
               />
-              {errors.server && <p className="mt-1 text-sm text-red-600">{errors.server}</p>}
+              {errors.server && <p className="mt-1 text-sm text-destructive">{errors.server}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Port <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Port <span className="text-destructive">*</span>
               </label>
               <input
                 type="number"
                 value={formData.port}
                 onChange={(e) => setFormData({ ...formData, port: parseInt(e.target.value) || 389 })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.port ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
+                  errors.port ? 'border-destructive' : 'border-input'
                 }`}
                 min="1"
                 max="65535"
               />
-              {errors.port && <p className="mt-1 text-sm text-red-600">{errors.port}</p>}
+              {errors.port && <p className="mt-1 text-sm text-destructive">{errors.port}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Bind DN <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Bind DN <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
                 value={formData.bind_dn}
                 onChange={(e) => setFormData({ ...formData, bind_dn: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.bind_dn ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
+                  errors.bind_dn ? 'border-destructive' : 'border-input'
                 }`}
                 placeholder="cn=admin,dc=example,dc=com"
               />
-              {errors.bind_dn && <p className="mt-1 text-sm text-red-600">{errors.bind_dn}</p>}
+              {errors.bind_dn && <p className="mt-1 text-sm text-destructive">{errors.bind_dn}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Bind Password {isNew && <span className="text-red-500">*</span>}
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Bind Password {isNew && <span className="text-destructive">*</span>}
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={formData.bind_password}
                   onChange={(e) => setFormData({ ...formData, bind_password: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.bind_password ? 'border-red-300' : 'border-gray-300'
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
+                    errors.bind_password ? 'border-destructive' : 'border-input'
                   }`}
                   placeholder={isNew ? 'Enter password' : 'Leave empty to keep current'}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
               </div>
-              {errors.bind_password && <p className="mt-1 text-sm text-red-600">{errors.bind_password}</p>}
+              {errors.bind_password && <p className="mt-1 text-sm text-destructive">{errors.bind_password}</p>}
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Base DN <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Base DN <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
                 value={formData.base_dn}
                 onChange={(e) => setFormData({ ...formData, base_dn: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.base_dn ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
+                  errors.base_dn ? 'border-destructive' : 'border-input'
                 }`}
                 placeholder="dc=example,dc=com"
               />
-              {errors.base_dn && <p className="mt-1 text-sm text-red-600">{errors.base_dn}</p>}
+              {errors.base_dn && <p className="mt-1 text-sm text-destructive">{errors.base_dn}</p>}
             </div>
 
             <div className="flex items-center gap-4">
@@ -296,27 +296,27 @@ const LDAPConfigEdit: React.FC = () => {
                   type="checkbox"
                   checked={formData.use_tls}
                   onChange={(e) => setFormData({ ...formData, use_tls: e.target.checked })}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-input text-primary focus:ring-ring"
                 />
-                <span className="text-sm text-gray-700">Use TLS</span>
+                <span className="text-sm text-foreground">Use TLS</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={formData.use_ssl}
                   onChange={(e) => setFormData({ ...formData, use_ssl: e.target.checked })}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-input text-primary focus:ring-ring"
                 />
-                <span className="text-sm text-gray-700">Use SSL</span>
+                <span className="text-sm text-foreground">Use SSL</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={formData.insecure}
                   onChange={(e) => setFormData({ ...formData, insecure: e.target.checked })}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-input text-primary focus:ring-ring"
                 />
-                <span className="text-sm text-gray-700">Skip certificate verification</span>
+                <span className="text-sm text-foreground">Skip certificate verification</span>
               </label>
             </div>
           </div>
@@ -326,7 +326,7 @@ const LDAPConfigEdit: React.FC = () => {
               type="button"
               onClick={handleTest}
               disabled={testConnection.isPending}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-4 py-2 bg-muted hover:bg-accent text-foreground rounded-lg text-sm transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               {testConnection.isPending ? <Loader size={16} className="animate-spin" /> : <TestTube size={16} />}
               Test Connection
@@ -335,60 +335,60 @@ const LDAPConfigEdit: React.FC = () => {
         </div>
 
         {/* User Search Settings */}
-        <div className="border-b border-gray-200 pb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">User Search Settings</h2>
+        <div className="border-b border-border pb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">User Search Settings</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">User Search Base</label>
+              <label className="block text-sm font-medium text-foreground mb-1">User Search Base</label>
               <input
                 type="text"
                 value={formData.user_search_base}
                 onChange={(e) => setFormData({ ...formData, user_search_base: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="ou=users,dc=example,dc=com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">User Search Filter</label>
+              <label className="block text-sm font-medium text-foreground mb-1">User Search Filter</label>
               <input
                 type="text"
                 value={formData.user_search_filter}
                 onChange={(e) => setFormData({ ...formData, user_search_filter: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="(objectClass=person)"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">User ID Attribute</label>
+              <label className="block text-sm font-medium text-foreground mb-1">User ID Attribute</label>
               <input
                 type="text"
                 value={formData.user_id_attribute}
                 onChange={(e) => setFormData({ ...formData, user_id_attribute: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="uid"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">User Email Attribute</label>
+              <label className="block text-sm font-medium text-foreground mb-1">User Email Attribute</label>
               <input
                 type="text"
                 value={formData.user_email_attribute}
                 onChange={(e) => setFormData({ ...formData, user_email_attribute: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="mail"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">User Name Attribute</label>
+              <label className="block text-sm font-medium text-foreground mb-1">User Name Attribute</label>
               <input
                 type="text"
                 value={formData.user_name_attribute}
                 onChange={(e) => setFormData({ ...formData, user_name_attribute: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="cn"
               />
             </div>
@@ -396,60 +396,60 @@ const LDAPConfigEdit: React.FC = () => {
         </div>
 
         {/* Group Search Settings */}
-        <div className="border-b border-gray-200 pb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Group Search Settings</h2>
+        <div className="border-b border-border pb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Group Search Settings</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Group Search Base</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Group Search Base</label>
               <input
                 type="text"
                 value={formData.group_search_base}
                 onChange={(e) => setFormData({ ...formData, group_search_base: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="ou=groups,dc=example,dc=com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Group Search Filter</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Group Search Filter</label>
               <input
                 type="text"
                 value={formData.group_search_filter}
                 onChange={(e) => setFormData({ ...formData, group_search_filter: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="(objectClass=group)"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Group ID Attribute</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Group ID Attribute</label>
               <input
                 type="text"
                 value={formData.group_id_attribute}
                 onChange={(e) => setFormData({ ...formData, group_id_attribute: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="cn"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Group Name Attribute</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Group Name Attribute</label>
               <input
                 type="text"
                 value={formData.group_name_attribute}
                 onChange={(e) => setFormData({ ...formData, group_name_attribute: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="cn"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Group Member Attribute</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Group Member Attribute</label>
               <input
                 type="text"
                 value={formData.group_member_attribute}
                 onChange={(e) => setFormData({ ...formData, group_member_attribute: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="member"
               />
             </div>
@@ -458,44 +458,44 @@ const LDAPConfigEdit: React.FC = () => {
 
         {/* Sync Settings */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Synchronization Settings</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Synchronization Settings</h2>
           <div className="space-y-4">
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={formData.sync_enabled}
                 onChange={(e) => setFormData({ ...formData, sync_enabled: e.target.checked })}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-input text-primary focus:ring-ring"
               />
-              <span className="text-sm text-gray-700">Enable automatic synchronization</span>
+              <span className="text-sm text-foreground">Enable automatic synchronization</span>
             </label>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sync Interval (seconds)</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Sync Interval (seconds)</label>
               <input
                 type="number"
                 value={formData.sync_interval}
                 onChange={(e) => setFormData({ ...formData, sync_interval: parseInt(e.target.value) || 3600 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 min="60"
               />
-              <p className="mt-1 text-xs text-gray-500">Minimum: 60 seconds (1 minute)</p>
+              <p className="mt-1 text-xs text-muted-foreground">Minimum: 60 seconds (1 minute)</p>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <button
             type="button"
             onClick={() => navigate('/ldap')}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={createConfig.isPending || updateConfig.isPending}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {(createConfig.isPending || updateConfig.isPending) && <Loader size={16} className="animate-spin" />}
             <Save size={16} />

@@ -26,7 +26,7 @@ const SAMLSPs: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -34,7 +34,7 @@ const SAMLSPs: React.FC = () => {
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-red-600">Error loading SAML Service Providers: {(error as Error).message}</p>
+        <p className="text-destructive">Error loading SAML Service Providers: {(error as Error).message}</p>
       </div>
     );
   }
@@ -45,20 +45,20 @@ const SAMLSPs: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">SAML Service Providers</h1>
-          <p className="text-gray-500 mt-1">Manage SAML 2.0 Service Provider configurations</p>
+          <h1 className="text-2xl font-bold text-foreground">SAML Service Providers</h1>
+          <p className="text-muted-foreground mt-1">Manage SAML 2.0 Service Provider configurations</p>
         </div>
         <div className="flex gap-2">
           <Link
             to="/saml/metadata"
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+            className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors flex items-center gap-2"
           >
             <FileText size={18} />
             View Metadata
           </Link>
           <button
             onClick={() => navigate('/saml/new')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            className="bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
           >
             <Plus size={18} />
             Create SP
@@ -66,24 +66,24 @@ const SAMLSPs: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Name
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Entity ID
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   ACS URL
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Status
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Created
                 </th>
                 <th scope="col" className="relative px-6 py-3">
@@ -91,46 +91,46 @@ const SAMLSPs: React.FC = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-border">
               {sps.map((sp) => (
-                <tr key={sp.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={sp.id} className="hover:bg-accent transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{sp.name}</div>
+                    <div className="text-sm font-medium text-foreground">{sp.name}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-500 max-w-xs truncate">{sp.entity_id}</div>
+                    <div className="text-sm text-muted-foreground max-w-xs truncate">{sp.entity_id}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-500 max-w-xs truncate">{sp.acs_url}</div>
+                    <div className="text-sm text-muted-foreground max-w-xs truncate">{sp.acs_url}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {sp.is_active ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">
                         <CheckCircle size={12} />
                         Active
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
                         <XCircle size={12} />
                         Inactive
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     {new Date(sp.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
                       <Link
                         to={`/saml/${sp.id}`}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 rounded-md hover:bg-gray-100"
+                        className="p-1.5 text-muted-foreground hover:text-primary rounded-md hover:bg-accent"
                         title="Edit"
                       >
                         <Edit size={16} />
                       </Link>
                       <button
                         onClick={() => handleDelete(sp.id, sp.name)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100"
+                        className="p-1.5 text-muted-foreground hover:text-destructive rounded-md hover:bg-accent"
                         title="Delete"
                         disabled={deleteSP.isPending}
                       >
@@ -144,27 +144,27 @@ const SAMLSPs: React.FC = () => {
           </table>
 
           {sps.length === 0 && (
-            <div className="p-12 text-center text-gray-500">No SAML Service Providers found.</div>
+            <div className="p-12 text-center text-muted-foreground">No SAML Service Providers found.</div>
           )}
         </div>
 
         {data && data.total > pageSize && (
-          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-            <div className="text-sm text-gray-500">
+          <div className="px-6 py-4 border-t border-border flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
               Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, data.total)} of {data.total} SPs
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="px-3 py-1 border border-input rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page * pageSize >= data.total}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="px-3 py-1 border border-input rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
               >
                 Next
               </button>
