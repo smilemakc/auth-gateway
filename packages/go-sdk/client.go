@@ -31,6 +31,10 @@ type Client struct {
 	// Auto-refresh configuration
 	autoRefresh bool
 
+	// Custom headers to include in every request
+	headers   map[string]string
+	headersMu sync.RWMutex
+
 	// Services
 	Auth         *AuthService
 	Profile      *ProfileService
@@ -59,6 +63,10 @@ type Config struct {
 
 	// AutoRefresh enables automatic token refresh (default: true)
 	AutoRefresh bool
+
+	// Headers contains custom headers to include in every request.
+	// Common headers: X-Application-ID, X-Client-Name, X-Request-ID, etc.
+	Headers map[string]string
 }
 
 // NewClient creates a new Auth Gateway client.
@@ -86,6 +94,7 @@ func NewClient(config Config) *Client {
 		httpClient:  httpClient,
 		apiKey:      config.APIKey,
 		autoRefresh: config.AutoRefresh,
+		headers:     config.Headers,
 	}
 
 	// Initialize services
@@ -157,6 +166,76 @@ func (c *Client) IsTokenExpired() bool {
 	return time.Now().Add(30 * time.Second).After(c.expiresAt)
 }
 
+// SetHeader sets a custom header to be included in all requests.
+func (c *Client) SetHeader(key, value string) {
+	c.headersMu.Lock()
+	defer c.headersMu.Unlock()
+
+	if c.headers == nil {
+		c.headers = make(map[string]string)
+	}
+	c.headers[key] = value
+}
+
+// SetHeaders sets multiple custom headers to be included in all requests.
+func (c *Client) SetHeaders(headers map[string]string) {
+	c.headersMu.Lock()
+	defer c.headersMu.Unlock()
+
+	if c.headers == nil {
+		c.headers = make(map[string]string)
+	}
+	for k, v := range headers {
+		c.headers[k] = v
+	}
+}
+
+// RemoveHeader removes a custom header.
+func (c *Client) RemoveHeader(key string) {
+	c.headersMu.Lock()
+	defer c.headersMu.Unlock()
+
+	delete(c.headers, key)
+}
+
+// GetHeaders returns a copy of the current custom headers.
+func (c *Client) GetHeaders() map[string]string {
+	c.headersMu.RLock()
+	defer c.headersMu.RUnlock()
+
+	result := make(map[string]string)
+	for k, v := range c.headers {
+		result[k] = v
+	}
+	return result
+}
+
+// SetApplicationID sets the X-Application-ID header for multi-tenant support.
+func (c *Client) SetApplicationID(appID string) {
+	c.SetHeader("X-Application-ID", appID)
+}
+
+// SetClientName sets the X-Client-Name header for client identification.
+func (c *Client) SetClientName(name string) {
+	c.SetHeader("X-Client-Name", name)
+}
+
+// contextKey is a custom type for context keys to avoid collisions.
+type contextKey string
+
+const headersContextKey contextKey = "auth-gateway-headers"
+
+// WithHeaders returns a context with custom headers for a single request.
+// These headers will be merged with (and override) the client's default headers.
+func WithHeaders(ctx context.Context, headers map[string]string) context.Context {
+	return context.WithValue(ctx, headersContextKey, headers)
+}
+
+// WithRequestID returns a context with a request ID header for tracing.
+func WithRequestID(ctx context.Context, requestID string) context.Context {
+	return WithHeaders(ctx, map[string]string{"X-Request-ID": requestID})
+}
+
 // request performs an HTTP request with authentication and JSON handling.
 func (c *Client) request(ctx context.Context, method, path string, body, result interface{}) error {
 	// Check if we need to refresh the token
@@ -182,9 +261,23 @@ func (c *Client) request(ctx context.Context, method, path string, body, result 
 		return &NetworkError{Err: err}
 	}
 
-	// Set headers
+	// Set default headers
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+
+	// Set custom headers from client configuration
+	c.headersMu.RLock()
+	for key, value := range c.headers {
+		req.Header.Set(key, value)
+	}
+	c.headersMu.RUnlock()
+
+	// Set custom headers from context (these override client headers)
+	if ctxHeaders, ok := ctx.Value(headersContextKey).(map[string]string); ok {
+		for key, value := range ctxHeaders {
+			req.Header.Set(key, value)
+		}
+	}
 
 	// Set authentication
 	if c.apiKey != "" {
