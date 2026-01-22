@@ -102,6 +102,8 @@ type repoSet struct {
 	Group         *repository.GroupRepository
 	LDAP          *repository.LDAPRepository
 	SAML          *repository.SAMLRepository
+	EmailProvider *repository.EmailProviderRepository
+	EmailProfile  *repository.EmailProfileRepository
 }
 
 type serviceSet struct {
@@ -128,6 +130,7 @@ type serviceSet struct {
 	Bulk            *service.BulkService
 	SCIM            *service.SCIMService
 	SAML            *service.SAMLService
+	EmailProfile    *service.EmailProfileService
 }
 
 type handlerSet struct {
@@ -150,6 +153,7 @@ type handlerSet struct {
 	Bulk          *handler.BulkHandler
 	SAML          *handler.SAMLHandler
 	Token         *handler.TokenHandler
+	EmailProfile  *handler.EmailProfileHandler
 }
 
 type middlewareSet struct {
@@ -386,6 +390,8 @@ func buildRepositories(deps *infra) *repoSet {
 		Group:         repository.NewGroupRepository(deps.db),
 		LDAP:          repository.NewLDAPRepository(deps.db),
 		SAML:          repository.NewSAMLRepository(deps.db),
+		EmailProvider: repository.NewEmailProviderRepository(deps.db),
+		EmailProfile:  repository.NewEmailProfileRepository(deps.db),
 	}
 }
 
@@ -415,18 +421,6 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	userService := service.NewUserService(repos.User, auditService)
 	apiKeyService := service.NewAPIKeyService(repos.APIKey, repos.User, auditService)
 	emailService := service.NewEmailService(&deps.cfg.SMTP)
-	otpService := service.NewOTPService(
-		repos.OTP,
-		repos.User,
-		auditService,
-		service.OTPServiceOptions{
-			EmailSender: emailService,
-			SMSProvider: deps.smsProvider,
-			SMSLogRepo:  repos.SMSLog,
-			Cache:       deps.redis,
-			Config:      deps.cfg,
-		},
-	)
 	twoFAService := service.NewTwoFactorService(repos.User, repos.BackupCode, "Auth Gateway")
 	// Convert password policy config to utils PasswordPolicy
 	passwordPolicy := utils.PasswordPolicy{
@@ -444,6 +438,31 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	ipFilterService := service.NewIPFilterService(repos.IPFilter)
 	webhookService := service.NewWebhookService(repos.Webhook, auditService)
 	templateService := service.NewTemplateService(repos.Template, auditService)
+
+	// Email Profile Service for multi-provider email support
+	emailProfileService := service.NewEmailProfileService(
+		repos.EmailProvider,
+		repos.EmailProfile,
+		templateService,
+		auditService,
+		deps.cfg,
+		emailService,
+	)
+
+	// OTP Service
+	otpService := service.NewOTPService(
+		repos.OTP,
+		repos.User,
+		auditService,
+		service.OTPServiceOptions{
+			EmailSender:         emailService,
+			SMSProvider:         deps.smsProvider,
+			SMSLogRepo:          repos.SMSLog,
+			Cache:               deps.redis,
+			Config:              deps.cfg,
+			EmailProfileService: emailProfileService,
+		},
+	)
 
 	var oauthProviderService *service.OAuthProviderService
 	if deps.cfg.OIDC.Enabled && deps.oidcJWTService != nil {
@@ -530,6 +549,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 		Bulk:            bulkService,
 		SCIM:            scimService,
 		SAML:            samlService,
+		EmailProfile:    emailProfileService,
 	}
 }
 
@@ -559,6 +579,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	scimHandler := handler.NewSCIMHandler(services.SCIM, deps.log)
 	samlHandler := handler.NewSAMLHandler(services.SAML, deps.log)
 	tokenHandler := handler.NewTokenHandler(deps.jwtService, services.APIKey, deps.redis, deps.log)
+	emailProfileHandler := handler.NewEmailProfileHandler(services.EmailProfile, deps.log)
 
 	return &handlerSet{
 		Auth:          authHandler,
@@ -580,6 +601,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 		Bulk:          bulkHandler,
 		SAML:          samlHandler,
 		Token:         tokenHandler,
+		EmailProfile:  emailProfileHandler,
 	}
 }
 
@@ -914,6 +936,33 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 				samlGroup.GET("/sp/:id", handlers.SAML.GetSP)
 				samlGroup.PUT("/sp/:id", handlers.SAML.UpdateSP)
 				samlGroup.DELETE("/sp/:id", handlers.SAML.DeleteSP)
+			}
+
+			// Email Provider Management
+			emailProvidersGroup := adminGroup.Group("/email-providers")
+			{
+				emailProvidersGroup.GET("", handlers.EmailProfile.ListProviders)
+				emailProvidersGroup.POST("", handlers.EmailProfile.CreateProvider)
+				emailProvidersGroup.GET("/:id", handlers.EmailProfile.GetProvider)
+				emailProvidersGroup.PUT("/:id", handlers.EmailProfile.UpdateProvider)
+				emailProvidersGroup.DELETE("/:id", handlers.EmailProfile.DeleteProvider)
+				emailProvidersGroup.POST("/:id/test", handlers.EmailProfile.TestProvider)
+			}
+
+			// Email Profile Management
+			emailProfilesGroup := adminGroup.Group("/email-profiles")
+			{
+				emailProfilesGroup.GET("", handlers.EmailProfile.ListProfiles)
+				emailProfilesGroup.POST("", handlers.EmailProfile.CreateProfile)
+				emailProfilesGroup.GET("/:id", handlers.EmailProfile.GetProfile)
+				emailProfilesGroup.PUT("/:id", handlers.EmailProfile.UpdateProfile)
+				emailProfilesGroup.DELETE("/:id", handlers.EmailProfile.DeleteProfile)
+				emailProfilesGroup.POST("/:id/set-default", handlers.EmailProfile.SetDefaultProfile)
+				emailProfilesGroup.GET("/:id/templates", handlers.EmailProfile.GetProfileTemplates)
+				emailProfilesGroup.POST("/:id/templates", handlers.EmailProfile.SetProfileTemplate)
+				emailProfilesGroup.DELETE("/:id/templates/:otp_type", handlers.EmailProfile.RemoveProfileTemplate)
+				emailProfilesGroup.GET("/:id/stats", handlers.EmailProfile.GetProfileStats)
+				emailProfilesGroup.POST("/:id/test", handlers.EmailProfile.TestProfile)
 			}
 		}
 

@@ -49,14 +49,21 @@ const (
 	ActionSessionRevoked             AuditAction = "session_revoked"
 	Action2FAReset                   AuditAction = "2fa_reset"
 	ActionAdminPasswordResetInitiate AuditAction = "admin_password_reset_initiated"
+	ActionTest                       AuditAction = "test"
+	ActionSend                       AuditAction = "send"
 )
 
 // AuditResource represents the type of resource being audited
 type AuditResource string
 
 const (
-	ResourceWebhook       AuditResource = "webhook"
-	ResourceEmailTemplate AuditResource = "email_template"
+	ResourceWebhook              AuditResource = "webhook"
+	ResourceEmailTemplate        AuditResource = "email_template"
+	ResourceEmailProvider        AuditResource = "email_provider"
+	ResourceEmailProfile         AuditResource = "email_profile"
+	ResourceEmailProfileTemplate AuditResource = "email_profile_template"
+	ResourceEmail                AuditResource = "email"
+	ResourceEmailLog             AuditResource = "email_log"
 )
 
 // AuditStatus represents the status of an audited action
@@ -65,6 +72,7 @@ type AuditStatus string
 const (
 	StatusSuccess AuditStatus = "success"
 	StatusFailed  AuditStatus = "failed"
+	StatusFailure AuditStatus = "failure"
 	StatusBlocked AuditStatus = "blocked"
 )
 

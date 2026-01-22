@@ -24,6 +24,7 @@ const (
 	AuthService_CheckPermission_FullMethodName                  = "/auth.AuthService/CheckPermission"
 	AuthService_IntrospectToken_FullMethodName                  = "/auth.AuthService/IntrospectToken"
 	AuthService_CreateUser_FullMethodName                       = "/auth.AuthService/CreateUser"
+	AuthService_Login_FullMethodName                            = "/auth.AuthService/Login"
 	AuthService_InitPasswordlessRegistration_FullMethodName     = "/auth.AuthService/InitPasswordlessRegistration"
 	AuthService_CompletePasswordlessRegistration_FullMethodName = "/auth.AuthService/CompletePasswordlessRegistration"
 	AuthService_IntrospectOAuthToken_FullMethodName             = "/auth.AuthService/IntrospectOAuthToken"
@@ -47,6 +48,8 @@ type AuthServiceClient interface {
 	IntrospectToken(ctx context.Context, in *IntrospectTokenRequest, opts ...grpc.CallOption) (*IntrospectTokenResponse, error)
 	// CreateUser creates a new user account
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
+	// Login authenticates a user with email/phone and password
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	// InitPasswordlessRegistration initiates passwordless two-step registration
 	InitPasswordlessRegistration(ctx context.Context, in *InitPasswordlessRegistrationRequest, opts ...grpc.CallOption) (*InitPasswordlessRegistrationResponse, error)
 	// CompletePasswordlessRegistration completes registration after OTP verification
@@ -111,6 +114,16 @@ func (c *authServiceClient) CreateUser(ctx context.Context, in *CreateUserReques
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateUserResponse)
 	err := c.cc.Invoke(ctx, AuthService_CreateUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoginResponse)
+	err := c.cc.Invoke(ctx, AuthService_Login_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -183,6 +196,8 @@ type AuthServiceServer interface {
 	IntrospectToken(context.Context, *IntrospectTokenRequest) (*IntrospectTokenResponse, error)
 	// CreateUser creates a new user account
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
+	// Login authenticates a user with email/phone and password
+	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	// InitPasswordlessRegistration initiates passwordless two-step registration
 	InitPasswordlessRegistration(context.Context, *InitPasswordlessRegistrationRequest) (*InitPasswordlessRegistrationResponse, error)
 	// CompletePasswordlessRegistration completes registration after OTP verification
@@ -217,6 +232,9 @@ func (UnimplementedAuthServiceServer) IntrospectToken(context.Context, *Introspe
 }
 func (UnimplementedAuthServiceServer) CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateUser not implemented")
+}
+func (UnimplementedAuthServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Login not implemented")
 }
 func (UnimplementedAuthServiceServer) InitPasswordlessRegistration(context.Context, *InitPasswordlessRegistrationRequest) (*InitPasswordlessRegistrationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InitPasswordlessRegistration not implemented")
@@ -344,6 +362,24 @@ func _AuthService_CreateUser_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).Login(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_Login_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).Login(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthService_InitPasswordlessRegistration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(InitPasswordlessRegistrationRequest)
 	if err := dec(in); err != nil {
@@ -460,6 +496,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateUser",
 			Handler:    _AuthService_CreateUser_Handler,
+		},
+		{
+			MethodName: "Login",
+			Handler:    _AuthService_Login_Handler,
 		},
 		{
 			MethodName: "InitPasswordlessRegistration",

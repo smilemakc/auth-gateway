@@ -624,3 +624,87 @@ func (h *AuthHandlerV2) CreateUser(ctx context.Context, req *pb.CreateUserReques
 		ExpiresIn:    authResp.ExpiresIn,
 	}, nil
 }
+
+// Login authenticates a user with email/phone and password
+func (h *AuthHandlerV2) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+	// Validate required fields
+	if req.Password == "" {
+		return nil, status.Error(codes.InvalidArgument, "password is required")
+	}
+	if req.Email == "" && req.Phone == "" {
+		return nil, status.Error(codes.InvalidArgument, "either email or phone is required")
+	}
+
+	// Create sign-in request for AuthService
+	var phone *string
+	if req.Phone != "" {
+		phone = &req.Phone
+	}
+
+	signInReq := &models.SignInRequest{
+		Email:    utils.NormalizeEmail(req.Email),
+		Phone:    phone,
+		Password: req.Password,
+	}
+
+	// Create device info for token generation (gRPC doesn't have browser/device info)
+	deviceInfo := models.DeviceInfo{
+		DeviceType: "grpc_client",
+		OS:         "unknown",
+		Browser:    "grpc",
+	}
+
+	// Call AuthService.SignIn
+	authResp, err := h.authService.SignIn(ctx, signInReq, "", "", deviceInfo)
+	if err != nil {
+		h.logger.Debug("Login via gRPC failed", map[string]interface{}{
+			"error": err.Error(),
+			"email": req.Email,
+		})
+
+		// Convert error to appropriate gRPC status
+		if appErr, ok := err.(*models.AppError); ok {
+			switch appErr.Code {
+			case 400:
+				return nil, status.Error(codes.InvalidArgument, appErr.Message)
+			case 401:
+				return nil, status.Error(codes.Unauthenticated, appErr.Message)
+			default:
+				return nil, status.Error(codes.Internal, appErr.Message)
+			}
+		}
+
+		// Check for known error types
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			return nil, status.Error(codes.Unauthenticated, "invalid credentials")
+		}
+		return nil, status.Error(codes.Internal, "login failed")
+	}
+
+	// Handle 2FA requirement
+	if authResp.Requires2FA {
+		return &pb.LoginResponse{
+			ErrorMessage: "2FA required - use TwoFactorToken to verify",
+		}, nil
+	}
+
+	// Convert response
+	user := authResp.User
+	return &pb.LoginResponse{
+		User: &pb.User{
+			Id:                user.ID.String(),
+			Email:             user.Email,
+			Username:          user.Username,
+			FullName:          user.FullName,
+			ProfilePictureUrl: user.ProfilePictureURL,
+			Roles:             extractRoleNames(user.Roles),
+			EmailVerified:     user.EmailVerified,
+			IsActive:          user.IsActive,
+			CreatedAt:         user.CreatedAt.Unix(),
+			UpdatedAt:         user.UpdatedAt.Unix(),
+		},
+		AccessToken:  authResp.AccessToken,
+		RefreshToken: authResp.RefreshToken,
+		ExpiresIn:    authResp.ExpiresIn,
+	}, nil
+}

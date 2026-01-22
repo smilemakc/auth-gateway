@@ -30,22 +30,29 @@ const (
 
 // OTPServiceOptions contains optional dependencies for OTP delivery.
 type OTPServiceOptions struct {
-	EmailSender EmailSender
-	SMSProvider sms.SMSProvider
-	SMSLogRepo  SMSLogStore
-	Cache       CacheService
-	Config      *config.Config
+	EmailSender         EmailSender
+	EmailProfileService EmailProfileSender
+	SMSProvider         sms.SMSProvider
+	SMSLogRepo          SMSLogStore
+	Cache               CacheService
+	Config              *config.Config
+}
+
+// EmailProfileSender defines the interface for profile-based email sending
+type EmailProfileSender interface {
+	SendOTPEmail(ctx context.Context, profileID *uuid.UUID, toEmail string, otpType models.OTPType, code string) error
 }
 
 type OTPService struct {
-	otpRepo      OTPStore
-	userRepo     UserStore
-	emailService EmailSender
-	smsProvider  sms.SMSProvider
-	smsLogRepo   SMSLogStore
-	auditService AuditLogger
-	cache        CacheService
-	cfg          *config.Config
+	otpRepo             OTPStore
+	userRepo            UserStore
+	emailService        EmailSender
+	emailProfileService EmailProfileSender
+	smsProvider         sms.SMSProvider
+	smsLogRepo          SMSLogStore
+	auditService        AuditLogger
+	cache               CacheService
+	cfg                 *config.Config
 }
 
 func NewOTPService(
@@ -55,14 +62,15 @@ func NewOTPService(
 	opts OTPServiceOptions,
 ) *OTPService {
 	return &OTPService{
-		otpRepo:      otpRepo,
-		userRepo:     userRepo,
-		emailService: opts.EmailSender,
-		smsProvider:  opts.SMSProvider,
-		smsLogRepo:   opts.SMSLogRepo,
-		auditService: auditService,
-		cache:        opts.Cache,
-		cfg:          opts.Config,
+		otpRepo:             otpRepo,
+		userRepo:            userRepo,
+		emailService:        opts.EmailSender,
+		emailProfileService: opts.EmailProfileService,
+		smsProvider:         opts.SMSProvider,
+		smsLogRepo:          opts.SMSLogRepo,
+		auditService:        auditService,
+		cache:               opts.Cache,
+		cfg:                 opts.Config,
 	}
 }
 
@@ -135,7 +143,7 @@ func (s *OTPService) SendOTP(ctx context.Context, req *models.SendOTPRequest) er
 		return err
 	}
 
-	if err := s.dispatchOTP(ctx, channel, destination, plainCode, req.Type); err != nil {
+	if err := s.dispatchOTP(ctx, channel, destination, plainCode, req.Type, req.ProfileID); err != nil {
 		return err
 	}
 
@@ -309,9 +317,17 @@ func (s *OTPService) checkRateLimit(ctx context.Context, channel OTPSendChannel,
 	return nil
 }
 
-func (s *OTPService) dispatchOTP(ctx context.Context, channel OTPSendChannel, destination, code string, otpType models.OTPType) error {
+func (s *OTPService) dispatchOTP(ctx context.Context, channel OTPSendChannel, destination, code string, otpType models.OTPType, profileID *uuid.UUID) error {
 	switch channel {
 	case OTPChannelEmail:
+		// Try email profile service first if available
+		if s.emailProfileService != nil {
+			if err := s.emailProfileService.SendOTPEmail(ctx, profileID, destination, otpType, code); err != nil {
+				return fmt.Errorf("failed to send OTP email via profile: %w", err)
+			}
+			return nil
+		}
+		// Fallback to legacy email service
 		if s.emailService == nil {
 			return models.NewAppError(503, "Email provider is not configured")
 		}

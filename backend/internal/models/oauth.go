@@ -103,6 +103,8 @@ type SendOTPRequest struct {
 	Phone *string `json:"phone,omitempty" example:"+1234567890"`
 	// OTP type (verification, password_reset, 2fa, login)
 	Type OTPType `json:"type" binding:"required" example:"verification"`
+	// Email profile ID (optional, uses default if not specified)
+	ProfileID *uuid.UUID `json:"profile_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174000"`
 }
 
 // VerifyOTPRequest represents OTP verification request
