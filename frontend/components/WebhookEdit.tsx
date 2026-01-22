@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getWebhook, createWebhook, updateWebhook } from '../services/mockData';
-import { WebhookEndpoint } from '../types';
-import { ArrowLeft, Save, Activity } from 'lucide-react';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useWebhookDetail, useCreateWebhook, useUpdateWebhook } from '../hooks/useWebhooks';
 
 const AVAILABLE_EVENTS = [
   'user.created',
@@ -24,24 +23,27 @@ const WebhookEdit: React.FC = () => {
   const isEditMode = id && id !== 'new';
   const isNewMode = id === 'new';
 
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<WebhookEndpoint>>({
+  const [formData, setFormData] = useState({
     url: '',
     description: '',
-    events: [],
+    events: [] as string[],
     is_active: true
   });
 
+  const { data: existingWebhook, isLoading: loadingWebhook } = useWebhookDetail(isEditMode ? id! : '');
+  const createWebhookMutation = useCreateWebhook();
+  const updateWebhookMutation = useUpdateWebhook();
+
   useEffect(() => {
-    if (isEditMode) {
-      const existing = getWebhook(id);
-      if (existing) {
-        setFormData(existing);
-      } else {
-        navigate('/developers/webhooks');
-      }
+    if (isEditMode && existingWebhook) {
+      setFormData({
+        url: existingWebhook.url || '',
+        description: existingWebhook.description || '',
+        events: existingWebhook.events || [],
+        is_active: existingWebhook.is_active ?? true
+      });
     }
-  }, [id, isEditMode, navigate]);
+  }, [existingWebhook, isEditMode]);
 
   const toggleEvent = (event: string) => {
     setFormData(prev => {
@@ -54,19 +56,43 @@ const WebhookEdit: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
+
+    try {
       if (isNewMode) {
-        createWebhook(formData);
+        await createWebhookMutation.mutateAsync({
+          url: formData.url,
+          description: formData.description,
+          events: formData.events,
+          is_active: formData.is_active
+        });
       } else if (id) {
-        updateWebhook(id, formData);
+        await updateWebhookMutation.mutateAsync({
+          id,
+          data: {
+            url: formData.url,
+            description: formData.description,
+            events: formData.events,
+            is_active: formData.is_active
+          }
+        });
       }
-      setLoading(false);
       navigate('/developers/webhooks');
-    }, 800);
+    } catch (err) {
+      console.error('Failed to save webhook:', err);
+    }
   };
+
+  const isLoading = createWebhookMutation.isPending || updateWebhookMutation.isPending;
+
+  if (isEditMode && loadingWebhook) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -163,16 +189,16 @@ const WebhookEdit: React.FC = () => {
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className={`flex items-center px-6 py-2 text-sm font-medium text-primary-foreground bg-primary border border-transparent rounded-lg hover:bg-primary-600 focus:outline-none
-              ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {loading ? t('common.saving') : (
-              <>
-                <Save size={16} className="mr-2" />
-                {isNewMode ? t('common.create') : t('common.save')}
-              </>
+            {isLoading ? (
+              <Loader2 size={16} className="mr-2 animate-spin" />
+            ) : (
+              <Save size={16} className="mr-2" />
             )}
+            {isNewMode ? t('common.create') : t('common.save')}
           </button>
         </div>
       </form>

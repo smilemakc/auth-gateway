@@ -233,7 +233,7 @@ export interface CreateWebhookResponse {
 // ============================================
 
 /** Email template type */
-export type EmailTemplateType = 'verification' | 'password_reset' | 'welcome' | '2fa' | 'custom';
+export type EmailTemplateType = 'verification' | 'password_reset' | 'welcome' | '2fa' | 'otp_login' | 'otp_registration' | 'custom';
 
 /** Email template entity */
 export interface EmailTemplate extends TimestampedEntity {
@@ -244,6 +244,7 @@ export interface EmailTemplate extends TimestampedEntity {
   text_body?: string;
   variables: string[];
   is_active: boolean;
+  application_id?: string;
 }
 
 /** Create email template request */

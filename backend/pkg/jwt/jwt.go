@@ -25,11 +25,12 @@ type Service struct {
 
 // Claims represents the custom JWT claims
 type Claims struct {
-	UserID   uuid.UUID `json:"user_id"`
-	Email    string    `json:"email"`
-	Username string    `json:"username"`
-	Roles    []string  `json:"roles"`
-	IsActive bool      `json:"is_active"`
+	UserID        uuid.UUID  `json:"user_id"`
+	Email         string     `json:"email"`
+	Username      string     `json:"username"`
+	Roles         []string   `json:"roles"`
+	IsActive      bool       `json:"is_active"`
+	ApplicationID *uuid.UUID `json:"application_id,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -44,7 +45,8 @@ func NewService(accessSecret, refreshSecret string, accessExpires, refreshExpire
 }
 
 // GenerateAccessToken generates a new access token for the user
-func (s *Service) GenerateAccessToken(user *models.User) (string, error) {
+// Optional applicationID can be passed to bind token to a specific application
+func (s *Service) GenerateAccessToken(user *models.User, applicationID ...*uuid.UUID) (string, error) {
 	now := time.Now()
 
 	roleNames := make([]string, len(user.Roles))
@@ -69,12 +71,17 @@ func (s *Service) GenerateAccessToken(user *models.User) (string, error) {
 		},
 	}
 
+	if len(applicationID) > 0 && applicationID[0] != nil {
+		claims.ApplicationID = applicationID[0]
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(s.accessSecret))
 }
 
 // GenerateRefreshToken generates a new refresh token for the user
-func (s *Service) GenerateRefreshToken(user *models.User) (string, error) {
+// Optional applicationID can be passed to bind token to a specific application
+func (s *Service) GenerateRefreshToken(user *models.User, applicationID ...*uuid.UUID) (string, error) {
 	now := time.Now()
 
 	roleNames := make([]string, len(user.Roles))
@@ -99,12 +106,17 @@ func (s *Service) GenerateRefreshToken(user *models.User) (string, error) {
 		},
 	}
 
+	if len(applicationID) > 0 && applicationID[0] != nil {
+		claims.ApplicationID = applicationID[0]
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(s.refreshSecret))
 }
 
 // GenerateTwoFactorToken generates a short-lived token for 2FA verification
-func (s *Service) GenerateTwoFactorToken(user *models.User) (string, error) {
+// Optional applicationID can be passed to bind token to a specific application
+func (s *Service) GenerateTwoFactorToken(user *models.User, applicationID ...*uuid.UUID) (string, error) {
 	now := time.Now()
 
 	roleNames := make([]string, len(user.Roles))
@@ -127,6 +139,10 @@ func (s *Service) GenerateTwoFactorToken(user *models.User) (string, error) {
 			NotBefore: jwt.NewNumericDate(now),
 			Subject:   user.ID.String(),
 		},
+	}
+
+	if len(applicationID) > 0 && applicationID[0] != nil {
+		claims.ApplicationID = applicationID[0]
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -192,4 +208,22 @@ func (s *Service) ExtractClaims(tokenString string) (*Claims, error) {
 	}
 
 	return claims, nil
+}
+
+// GenerateAccessTokenWithApp generates an access token with application binding
+func (s *Service) GenerateAccessTokenWithApp(user *models.User, applicationID uuid.UUID) (string, error) {
+	return s.GenerateAccessToken(user, &applicationID)
+}
+
+// GenerateRefreshTokenWithApp generates a refresh token with application binding
+func (s *Service) GenerateRefreshTokenWithApp(user *models.User, applicationID uuid.UUID) (string, error) {
+	return s.GenerateRefreshToken(user, &applicationID)
+}
+
+// GetApplicationIDFromClaims extracts application_id from claims
+func GetApplicationIDFromClaims(claims *Claims) *uuid.UUID {
+	if claims == nil {
+		return nil
+	}
+	return claims.ApplicationID
 }

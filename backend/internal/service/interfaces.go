@@ -111,9 +111,9 @@ type SMSLogStore interface {
 
 // TokenService defines the interface for JWT operations
 type TokenService interface {
-	GenerateAccessToken(user *models.User) (string, error)
-	GenerateRefreshToken(user *models.User) (string, error)
-	GenerateTwoFactorToken(user *models.User) (string, error)
+	GenerateAccessToken(user *models.User, applicationID ...*uuid.UUID) (string, error)
+	GenerateRefreshToken(user *models.User, applicationID ...*uuid.UUID) (string, error)
+	GenerateTwoFactorToken(user *models.User, applicationID ...*uuid.UUID) (string, error)
 	ValidateAccessToken(tokenString string) (*jwt.Claims, error)
 	ValidateRefreshToken(tokenString string) (*jwt.Claims, error)
 	ExtractClaims(tokenString string) (*jwt.Claims, error)
@@ -185,8 +185,8 @@ type AuditStore interface {
 
 // JWTService defines the interface for JWT token operations
 type JWTService interface {
-	GenerateAccessToken(user *models.User) (string, error)
-	GenerateRefreshToken(user *models.User) (string, error)
+	GenerateAccessToken(user *models.User, applicationID ...*uuid.UUID) (string, error)
+	GenerateRefreshToken(user *models.User, applicationID ...*uuid.UUID) (string, error)
 	GetAccessTokenExpiration() time.Duration
 	GetRefreshTokenExpiration() time.Duration
 	ValidateAccessToken(tokenString string) (*jwt.Claims, error)
@@ -296,4 +296,32 @@ type BlackListStore interface {
 	AddAccessToken(ctx context.Context, tokenHash string, userID *uuid.UUID) error
 	AddRefreshToken(ctx context.Context, tokenHash string, userID *uuid.UUID) error
 	BlacklistSessionTokens(ctx context.Context, session *models.Session) error
+}
+
+// ApplicationStore defines the interface for application storage operations
+type ApplicationStore interface {
+	// Application CRUD
+	CreateApplication(ctx context.Context, app *models.Application) error
+	GetApplicationByID(ctx context.Context, id uuid.UUID) (*models.Application, error)
+	GetApplicationByName(ctx context.Context, name string) (*models.Application, error)
+	UpdateApplication(ctx context.Context, app *models.Application) error
+	DeleteApplication(ctx context.Context, id uuid.UUID) error
+	ListApplications(ctx context.Context, page, perPage int, isActive *bool) ([]*models.Application, int, error)
+
+	// Application Branding
+	GetBranding(ctx context.Context, applicationID uuid.UUID) (*models.ApplicationBranding, error)
+	CreateOrUpdateBranding(ctx context.Context, branding *models.ApplicationBranding) error
+
+	// User Application Profile
+	CreateUserProfile(ctx context.Context, profile *models.UserApplicationProfile) error
+	GetUserProfile(ctx context.Context, userID, applicationID uuid.UUID) (*models.UserApplicationProfile, error)
+	UpdateUserProfile(ctx context.Context, profile *models.UserApplicationProfile) error
+	DeleteUserProfile(ctx context.Context, userID, applicationID uuid.UUID) error
+	ListUserProfiles(ctx context.Context, userID uuid.UUID) ([]*models.UserApplicationProfile, error)
+	ListApplicationUsers(ctx context.Context, applicationID uuid.UUID, page, perPage int) ([]*models.UserApplicationProfile, int, error)
+	UpdateLastAccess(ctx context.Context, userID, applicationID uuid.UUID) error
+
+	// User banning
+	BanUserFromApplication(ctx context.Context, userID, applicationID, bannedBy uuid.UUID, reason string) error
+	UnbanUserFromApplication(ctx context.Context, userID, applicationID uuid.UUID) error
 }

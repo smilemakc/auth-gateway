@@ -1,20 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Trash2, HelpCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { getOAuthProvider, updateOAuthProvider, createOAuthProvider, deleteOAuthProvider } from '../services/mockData';
-import { OAuthProviderConfig } from '../types';
+import { ArrowLeft, Save, Trash2, HelpCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useOAuthProviderDetail, useCreateOAuthProvider, useUpdateOAuthProvider, useDeleteOAuthProvider } from '../hooks/useOAuth';
 
 const OAuthProviderEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const isEditMode = !!id;
+  const isEditMode = id && id !== 'new';
+  const isNewMode = !id || id === 'new';
 
-  const [loading, setLoading] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
-  const [formData, setFormData] = useState<Partial<OAuthProviderConfig>>({
+  const [formData, setFormData] = useState({
     provider: 'google',
     client_id: '',
     client_secret: '',
@@ -22,16 +21,22 @@ const OAuthProviderEdit: React.FC = () => {
     is_enabled: true
   });
 
+  const { data: existingProvider, isLoading: loadingProvider } = useOAuthProviderDetail(isEditMode ? id! : '');
+  const createMutation = useCreateOAuthProvider();
+  const updateMutation = useUpdateOAuthProvider();
+  const deleteMutation = useDeleteOAuthProvider();
+
   useEffect(() => {
-    if (isEditMode) {
-      const provider = getOAuthProvider(id);
-      if (provider) {
-        setFormData(provider);
-      } else {
-        navigate('/oauth');
-      }
+    if (isEditMode && existingProvider) {
+      setFormData({
+        provider: existingProvider.provider || 'google',
+        client_id: existingProvider.client_id || '',
+        client_secret: existingProvider.client_secret || '',
+        redirect_uris: existingProvider.redirect_uris || [''],
+        is_enabled: existingProvider.is_enabled ?? true
+      });
     }
-  }, [id, isEditMode, navigate]);
+  }, [existingProvider, isEditMode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -61,28 +66,55 @@ const OAuthProviderEdit: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
-    // Simulate API
-    setTimeout(() => {
-      if (isEditMode && id) {
-        updateOAuthProvider(id, formData);
-      } else {
-        createOAuthProvider(formData as Omit<OAuthProviderConfig, 'id' | 'created_at' | 'updated_at'>);
+    try {
+      if (isNewMode) {
+        await createMutation.mutateAsync({
+          provider: formData.provider,
+          client_id: formData.client_id,
+          client_secret: formData.client_secret,
+          redirect_uris: formData.redirect_uris.filter(u => u.trim()),
+          is_enabled: formData.is_enabled
+        });
+      } else if (id) {
+        await updateMutation.mutateAsync({
+          id,
+          data: {
+            client_id: formData.client_id,
+            client_secret: formData.client_secret,
+            redirect_uris: formData.redirect_uris.filter(u => u.trim()),
+            is_enabled: formData.is_enabled
+          }
+        });
       }
-      setLoading(false);
       navigate('/oauth');
-    }, 800);
-  };
-
-  const handleDelete = () => {
-    if (isEditMode && id && window.confirm(t('common.confirm_delete'))) {
-      deleteOAuthProvider(id);
-      navigate('/oauth');
+    } catch (err) {
+      console.error('Failed to save provider:', err);
     }
   };
+
+  const handleDelete = async () => {
+    if (isEditMode && id && window.confirm(t('common.confirm_delete'))) {
+      try {
+        await deleteMutation.mutateAsync(id);
+        navigate('/oauth');
+      } catch (err) {
+        console.error('Failed to delete provider:', err);
+      }
+    }
+  };
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  if (isEditMode && loadingProvider) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -154,9 +186,9 @@ const OAuthProviderEdit: React.FC = () => {
                   name="client_secret"
                   value={formData.client_secret}
                   onChange={handleChange}
-                  required
+                  required={isNewMode}
                   className="w-full pl-4 pr-12 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all font-mono text-sm"
-                  placeholder="e.g. GOCSPX-..."
+                  placeholder={isEditMode ? '(unchanged)' : 'e.g. GOCSPX-...'}
                 />
                 <button
                   type="button"
@@ -198,7 +230,7 @@ const OAuthProviderEdit: React.FC = () => {
                 onClick={addUri}
                 className="text-sm text-primary hover:text-primary font-medium hover:underline"
               >
-                + URI
+                + Add URI
               </button>
             </div>
           </div>
@@ -227,7 +259,8 @@ const OAuthProviderEdit: React.FC = () => {
               <button
                 type="button"
                 onClick={handleDelete}
-                className="text-destructive hover:text-destructive text-sm font-medium px-2 py-1 rounded hover:bg-destructive/10 transition-colors"
+                disabled={deleteMutation.isPending}
+                className="text-destructive hover:text-destructive text-sm font-medium px-2 py-1 rounded hover:bg-destructive/10 transition-colors disabled:opacity-50"
               >
                 {t('common.delete')}
               </button>
@@ -243,12 +276,12 @@ const OAuthProviderEdit: React.FC = () => {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading}
               className={`flex items-center px-4 py-2 text-sm font-medium text-primary-foreground bg-primary border border-transparent rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring
-                ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {loading ? (
-                 <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></span>
+              {isLoading ? (
+                <Loader2 size={16} className="mr-2 animate-spin" />
               ) : (
                 <Save size={16} className="mr-2" />
               )}

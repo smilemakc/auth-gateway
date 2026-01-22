@@ -1,24 +1,25 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getWebhooks, deleteWebhook } from '../services/mockData';
-import { WebhookEndpoint } from '../types';
-import { Plus, Trash2, Edit2, Activity, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react';
+import { Plus, Trash2, Edit2, Activity, CheckCircle, XCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useWebhooks, useDeleteWebhook } from '../hooks/useWebhooks';
 
 const Webhooks: React.FC = () => {
-  const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
   const [revealedSecrets, setRevealedSecrets] = useState<string[]>([]);
   const { t } = useLanguage();
 
-  useEffect(() => {
-    setWebhooks(getWebhooks());
-  }, []);
+  const { data: webhooksResponse, isLoading, error } = useWebhooks();
+  const deleteWebhookMutation = useDeleteWebhook();
 
-  const handleDelete = (id: string) => {
+  const webhooks = webhooksResponse?.webhooks || [];
+
+  const handleDelete = async (id: string) => {
     if (window.confirm(t('common.confirm_delete'))) {
-      if (deleteWebhook(id)) {
-        setWebhooks(prev => prev.filter(w => w.id !== id));
+      try {
+        await deleteWebhookMutation.mutateAsync(id);
+      } catch (err) {
+        console.error('Failed to delete webhook:', err);
       }
     }
   };
@@ -30,6 +31,22 @@ const Webhooks: React.FC = () => {
       setRevealedSecrets(prev => [...prev, id]);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
+        Failed to load webhooks. Please try again.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -70,14 +87,14 @@ const Webhooks: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1 max-w-xs">
-                       {webhook.events.slice(0, 2).map(e => (
+                       {webhook.events?.slice(0, 2).map(e => (
                          <span key={e} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                            {e}
                          </span>
                        ))}
-                       {webhook.events.length > 2 && (
+                       {(webhook.events?.length || 0) > 2 && (
                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground">
-                           +{webhook.events.length - 2}
+                           +{(webhook.events?.length || 0) - 2}
                          </span>
                        )}
                     </div>
@@ -85,7 +102,7 @@ const Webhooks: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <code className="text-xs font-mono bg-muted px-2 py-1 rounded border border-border text-muted-foreground w-24 truncate">
-                        {revealedSecrets.includes(webhook.id) ? webhook.secret_key : 'whsec_••••••••'}
+                        {revealedSecrets.includes(webhook.id) ? (webhook.secret || 'N/A') : 'whsec_••••••••'}
                       </code>
                       <button
                         onClick={() => toggleSecret(webhook.id)}
@@ -101,7 +118,7 @@ const Webhooks: React.FC = () => {
                         ? <span className="flex items-center text-success text-xs font-medium bg-success/10 px-2 py-1 rounded-full"><CheckCircle size={12} className="mr-1"/> {t('users.active')}</span>
                         : <span className="flex items-center text-muted-foreground text-xs font-medium bg-muted px-2 py-1 rounded-full"><XCircle size={12} className="mr-1"/> Disabled</span>
                        }
-                       {webhook.failure_count > 0 && (
+                       {(webhook.failure_count || 0) > 0 && (
                          <span className="flex items-center text-destructive text-xs font-medium bg-destructive/10 px-2 py-1 rounded-full" title={`${webhook.failure_count} recent failures`}>
                             <Activity size={12} className="mr-1"/> {webhook.failure_count} failed
                          </span>
@@ -113,15 +130,16 @@ const Webhooks: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
-                      <Link 
+                      <Link
                         to={`/developers/webhooks/${webhook.id}`}
                         className="p-1 text-muted-foreground hover:text-primary rounded-md hover:bg-accent"
                       >
                         <Edit2 size={18} />
                       </Link>
-                      <button 
+                      <button
                         onClick={() => handleDelete(webhook.id)}
-                        className="p-1 text-muted-foreground hover:text-destructive rounded-md hover:bg-accent"
+                        disabled={deleteWebhookMutation.isPending}
+                        className="p-1 text-muted-foreground hover:text-destructive rounded-md hover:bg-accent disabled:opacity-50"
                       >
                         <Trash2 size={18} />
                       </button>

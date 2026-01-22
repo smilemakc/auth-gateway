@@ -187,10 +187,12 @@ client := authgateway.NewClient(authgateway.Config{
 - Session management
 
 ### gRPC API
-- Token validation
-- User lookup
-- Permission checking
-- Token introspection
+- **Authentication**: Login, CreateUser, ValidateToken
+- **OTP Operations**: SendOTP, VerifyOTP, LoginWithOTP, VerifyLoginOTP, RegisterWithOTP, VerifyRegistrationOTP
+- **Passwordless**: InitPasswordlessRegistration, CompletePasswordlessRegistration
+- **Authorization**: CheckPermission, HasPermission, IntrospectToken
+- **User Management**: GetUser
+- **OAuth Provider**: IntrospectOAuthToken, ValidateOAuthClient, GetOAuthClient
 
 ## Services
 
@@ -260,6 +262,46 @@ client.Passwordless.VerifyWithPhone(ctx, phone, code)
 ```go
 client.OAuth.GetProviders(ctx)
 client.OAuth.GetAuthURL(provider)
+```
+
+### gRPC Client
+```go
+// Authentication
+grpcClient.Login(ctx, &proto.LoginRequest{...})
+grpcClient.LoginWithEmail(ctx, email, password)
+grpcClient.LoginWithPhone(ctx, phone, password)
+grpcClient.CreateUser(ctx, &proto.CreateUserRequest{...})
+
+// Token Operations
+grpcClient.ValidateToken(ctx, accessToken)
+grpcClient.IntrospectToken(ctx, accessToken)
+
+// User Operations
+grpcClient.GetUser(ctx, userID)
+
+// Permission Checking
+grpcClient.CheckPermission(ctx, userID, resource, action)
+grpcClient.HasPermission(ctx, userID, resource, action)
+
+// OTP Operations
+grpcClient.SendOTP(ctx, &proto.SendOTPRequest{...})
+grpcClient.VerifyOTP(ctx, &proto.VerifyOTPRequest{...})
+grpcClient.LoginWithOTP(ctx, &proto.LoginWithOTPRequest{...})
+grpcClient.VerifyLoginOTP(ctx, &proto.VerifyLoginOTPRequest{...})
+grpcClient.RegisterWithOTP(ctx, &proto.RegisterWithOTPRequest{...})
+grpcClient.VerifyRegistrationOTP(ctx, &proto.VerifyRegistrationOTPRequest{...})
+
+// Passwordless Registration
+grpcClient.InitPasswordlessRegistration(ctx, &proto.InitPasswordlessRegistrationRequest{...})
+grpcClient.CompletePasswordlessRegistration(ctx, &proto.CompletePasswordlessRegistrationRequest{...})
+
+// OAuth Provider Operations (for validating client apps)
+grpcClient.IntrospectOAuthToken(ctx, token, tokenTypeHint)
+grpcClient.ValidateOAuthClient(ctx, clientID, clientSecret)
+grpcClient.GetOAuthClient(ctx, clientID)
+
+// Raw access to underlying proto client
+grpcClient.Raw()
 ```
 
 ### Admin Service

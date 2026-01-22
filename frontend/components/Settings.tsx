@@ -343,19 +343,17 @@ const Settings: React.FC = () => {
             {t('settings.manage_templates')}
           </Link>
         </div>
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">{t('settings.smtp_host')}</label>
-              <input type="text" defaultValue="smtp.example.com" className="w-full border-input border rounded-lg p-2.5 focus:ring-ring focus:border-ring" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">{t('settings.smtp_port')}</label>
-              <input type="number" defaultValue={587} className="w-full border-input border rounded-lg p-2.5 focus:ring-ring focus:border-ring" />
-            </div>
-             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">{t('settings.from_addr')}</label>
-              <input type="email" defaultValue="noreply@authgateway.com" className="w-full border-input border rounded-lg p-2.5 focus:ring-ring focus:border-ring" />
-            </div>
+        <div className="p-6">
+          <p className="text-sm text-muted-foreground mb-4">
+            {t('email.providers_desc') || 'Configure SMTP servers and email service providers for sending system emails.'}
+          </p>
+          <Link
+            to="/settings/email-providers"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg text-sm font-medium transition-colors"
+          >
+            <Server size={16} />
+            {t('email.manage_providers') || 'Manage Email Providers'}
+          </Link>
         </div>
 
         {/* SMS Settings Link */}

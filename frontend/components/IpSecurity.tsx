@@ -1,16 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getIpRules, createIpRule, deleteIpRule } from '../services/mockData';
-import { IpRule } from '../types';
-import { ArrowLeft, ShieldAlert, ShieldCheck, Plus, Trash2, Search, Info } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, ShieldCheck, Plus, Trash2, Search, Info, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useWhitelistFilters, useBlacklistFilters, useCreateIpFilter, useDeleteIpFilter } from '../hooks/useIpFilters';
 
 const IpSecurity: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'blacklist' | 'whitelist'>('blacklist');
-  const [rules, setRules] = useState<IpRule[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -18,30 +16,43 @@ const IpSecurity: React.FC = () => {
   const [newIp, setNewIp] = useState('');
   const [newDescription, setNewDescription] = useState('');
 
-  useEffect(() => {
-    setRules(getIpRules(activeTab));
-  }, [activeTab]);
+  // Fetch data based on active tab
+  const { data: blacklistResponse, isLoading: blacklistLoading } = useBlacklistFilters();
+  const { data: whitelistResponse, isLoading: whitelistLoading } = useWhitelistFilters();
+  const createFilterMutation = useCreateIpFilter();
+  const deleteFilterMutation = useDeleteIpFilter();
 
-  const handleAdd = (e: React.FormEvent) => {
+  const rules = activeTab === 'blacklist'
+    ? (blacklistResponse?.filters || [])
+    : (whitelistResponse?.filters || []);
+
+  const isLoading = activeTab === 'blacklist' ? blacklistLoading : whitelistLoading;
+
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newIp) return;
 
-    createIpRule({
-      type: activeTab,
-      ip_address: newIp,
-      description: newDescription
-    });
-
-    setRules(getIpRules(activeTab));
-    setShowAddModal(false);
-    setNewIp('');
-    setNewDescription('');
+    try {
+      await createFilterMutation.mutateAsync({
+        type: activeTab,
+        ip_address: newIp,
+        description: newDescription
+      });
+      setShowAddModal(false);
+      setNewIp('');
+      setNewDescription('');
+    } catch (err) {
+      console.error('Failed to add IP rule:', err);
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm(t('common.confirm_delete'))) {
-      deleteIpRule(id);
-      setRules(getIpRules(activeTab));
+      try {
+        await deleteFilterMutation.mutateAsync(id);
+      } catch (err) {
+        console.error('Failed to delete IP rule:', err);
+      }
     }
   };
 
@@ -117,56 +128,63 @@ const IpSecurity: React.FC = () => {
         </div>
 
         {/* List */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('ip.address')}</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('ip.added_by')}</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('common.created')}</th>
-                <th className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody className="bg-card divide-y divide-border">
-              {filteredRules.length > 0 ? (
-                filteredRules.map((rule) => (
-                  <tr key={rule.id} className="hover:bg-accent">
-                    <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-foreground">
-                      {rule.ip_address}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                      {rule.description || <span className="text-muted-foreground italic">No description</span>}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                      {rule.created_by}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                      {new Date(rule.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleDelete(rule.id)}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-muted">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('ip.address')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('ip.added_by')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('common.created')}</th>
+                  <th className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody className="bg-card divide-y divide-border">
+                {filteredRules.length > 0 ? (
+                  filteredRules.map((rule) => (
+                    <tr key={rule.id} className="hover:bg-accent">
+                      <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-foreground">
+                        {rule.ip_address}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                        {rule.description || <span className="text-muted-foreground italic">No description</span>}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                        {rule.created_by || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                        {rule.created_at ? new Date(rule.created_at).toLocaleDateString() : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => handleDelete(rule.id)}
+                          disabled={deleteFilterMutation.isPending}
+                          className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                         {activeTab === 'blacklist' ? <ShieldAlert size={32} className="text-muted-foreground" /> : <ShieldCheck size={32} className="text-muted-foreground" />}
+                         <p>No rules found</p>
+                      </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                       {activeTab === 'blacklist' ? <ShieldAlert size={32} className="text-muted-foreground" /> : <ShieldCheck size={32} className="text-muted-foreground" />}
-                       <p>No rules found</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Info Card */}
@@ -226,10 +244,15 @@ const IpSecurity: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className={`flex-1 px-4 py-2 text-primary-foreground rounded-lg font-medium
+                  disabled={createFilterMutation.isPending}
+                  className={`flex-1 px-4 py-2 text-primary-foreground rounded-lg font-medium disabled:opacity-50
                     ${activeTab === 'blacklist' ? 'bg-destructive hover:bg-destructive/90' : 'bg-success hover:bg-success/90'}`}
                 >
-                  {t('common.create')}
+                  {createFilterMutation.isPending ? (
+                    <Loader2 size={16} className="mx-auto animate-spin" />
+                  ) : (
+                    t('common.create')
+                  )}
                 </button>
               </div>
             </form>

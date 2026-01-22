@@ -542,6 +542,22 @@ func (s *AdminService) AdminReset2FA(ctx context.Context, userID, adminID uuid.U
 	return nil
 }
 
+// GetUserOAuthAccounts returns OAuth accounts linked to a user
+func (s *AdminService) GetUserOAuthAccounts(ctx context.Context, userID uuid.UUID) ([]*models.OAuthAccount, error) {
+	// Verify user exists
+	_, err := s.userRepo.GetByID(ctx, userID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	accounts, err := s.oauthRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get OAuth accounts: %w", err)
+	}
+
+	return accounts, nil
+}
+
 // userToAdminResponse converts User to AdminUserResponse with roles
 func (s *AdminService) userToAdminResponse(user *models.User) *models.AdminUserResponse {
 	roles := make([]models.RoleInfo, 0, len(user.Roles))

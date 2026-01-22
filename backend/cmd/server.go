@@ -104,6 +104,7 @@ type repoSet struct {
 	SAML          *repository.SAMLRepository
 	EmailProvider *repository.EmailProviderRepository
 	EmailProfile  *repository.EmailProfileRepository
+	Application   *repository.ApplicationRepository
 }
 
 type serviceSet struct {
@@ -131,6 +132,7 @@ type serviceSet struct {
 	SCIM            *service.SCIMService
 	SAML            *service.SAMLService
 	EmailProfile    *service.EmailProfileService
+	Application     *service.ApplicationService
 }
 
 type handlerSet struct {
@@ -154,6 +156,7 @@ type handlerSet struct {
 	SAML          *handler.SAMLHandler
 	Token         *handler.TokenHandler
 	EmailProfile  *handler.EmailProfileHandler
+	Application   *handler.ApplicationHandler
 }
 
 type middlewareSet struct {
@@ -162,6 +165,7 @@ type middlewareSet struct {
 	RateLimit   *middleware.RateLimitMiddleware
 	IPFilter    *middleware.IPFilterMiddleware
 	Maintenance *middleware.MaintenanceMiddleware
+	Application *middleware.ApplicationMiddleware
 }
 
 // serverCmd represents the server command
@@ -243,6 +247,7 @@ func runServer() {
 		services.APIKey,
 		services.Auth,
 		services.OAuthProvider,
+		services.OTP,
 		deps.redis,
 		deps.log,
 	)
@@ -392,6 +397,7 @@ func buildRepositories(deps *infra) *repoSet {
 		SAML:          repository.NewSAMLRepository(deps.db),
 		EmailProvider: repository.NewEmailProviderRepository(deps.db),
 		EmailProfile:  repository.NewEmailProfileRepository(deps.db),
+		Application:   repository.NewApplicationRepository(deps.db),
 	}
 }
 
@@ -525,6 +531,9 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 		deps.cfg.Security.BcryptCost,
 	)
 
+	// Application Service
+	applicationService := service.NewApplicationService(repos.Application, deps.log)
+
 	return &serviceSet{
 		Geo:             geoService,
 		Audit:           auditService,
@@ -550,6 +559,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 		SCIM:            scimService,
 		SAML:            samlService,
 		EmailProfile:    emailProfileService,
+		Application:     applicationService,
 	}
 }
 
@@ -580,6 +590,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	samlHandler := handler.NewSAMLHandler(services.SAML, deps.log)
 	tokenHandler := handler.NewTokenHandler(deps.jwtService, services.APIKey, deps.redis, deps.log)
 	emailProfileHandler := handler.NewEmailProfileHandler(services.EmailProfile, deps.log)
+	applicationHandler := handler.NewApplicationHandler(services.Application, deps.log)
 
 	return &handlerSet{
 		Auth:          authHandler,
@@ -602,6 +613,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 		SAML:          samlHandler,
 		Token:         tokenHandler,
 		EmailProfile:  emailProfileHandler,
+		Application:   applicationHandler,
 	}
 }
 
@@ -611,6 +623,7 @@ func buildMiddlewares(deps *infra, repos *repoSet, services *serviceSet) *middle
 	rateLimitMiddleware := middleware.NewRateLimitMiddleware(deps.redis, &deps.cfg.RateLimit)
 	ipFilterMiddleware := middleware.NewIPFilterMiddleware(services.IPFilter)
 	maintenanceMiddleware := middleware.NewMaintenanceMiddleware(repos.System)
+	applicationMiddleware := middleware.NewApplicationMiddleware(services.Application, deps.log)
 
 	return &middlewareSet{
 		Auth:        authMiddleware,
@@ -618,6 +631,7 @@ func buildMiddlewares(deps *infra, repos *repoSet, services *serviceSet) *middle
 		RateLimit:   rateLimitMiddleware,
 		IPFilter:    ipFilterMiddleware,
 		Maintenance: maintenanceMiddleware,
+		Application: applicationMiddleware,
 	}
 }
 
@@ -645,6 +659,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 	router.Use(middleware.SetupCORS(&deps.cfg.CORS))
 	router.Use(middlewares.Maintenance.CheckMaintenance())
 	router.Use(middlewares.IPFilter.CheckIPFilter())
+	router.Use(middlewares.Application.ExtractApplicationID())
 
 	// Metrics middleware (if enabled)
 	if deps.cfg.Metrics.Enabled {
@@ -737,6 +752,12 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 
 	apiGroup := router.Group("/api")
 	{
+		// Public Application endpoints
+		publicAppsGroup := apiGroup.Group("/applications")
+		{
+			publicAppsGroup.GET("/:id/branding", handlers.Application.GetPublicBranding)
+		}
+
 		authGroup := apiGroup.Group("/auth")
 		{
 			authGroup.POST("/signup", middlewares.RateLimit.LimitSignup(), handlers.Auth.SignUp)
@@ -800,6 +821,14 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			apiKeysGroup.DELETE("/:id", handlers.APIKey.Delete)
 		}
 
+		// User Application Profile (requires auth)
+		userAppsGroup := apiGroup.Group("/applications")
+		userAppsGroup.Use(middlewares.Auth.Authenticate())
+		{
+			userAppsGroup.GET("/:id/profile", handlers.Application.GetMyProfile)
+			userAppsGroup.PUT("/:id/profile", handlers.Application.UpdateMyProfile)
+		}
+
 		adminGroup := apiGroup.Group("/admin")
 		adminGroup.Use(middlewares.Auth.Authenticate())
 		adminGroup.Use(middleware.RequireAdmin())
@@ -813,6 +842,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			adminGroup.POST("/users/:id/roles", handlers.Admin.AssignRole)
 			adminGroup.DELETE("/users/:id/roles/:roleId", handlers.Admin.RemoveRole)
 			adminGroup.POST("/users/:id/send-password-reset", handlers.Admin.SendPasswordReset)
+			adminGroup.GET("/users/:id/oauth-accounts", handlers.Admin.GetUserOAuthAccounts)
 			adminGroup.POST("/users/:id/reset-2fa", handlers.Admin.Reset2FA)
 			adminGroup.GET("/api-keys", handlers.Admin.ListAPIKeys)
 			adminGroup.POST("/api-keys/:id/revoke", handlers.Admin.RevokeAPIKey)
@@ -822,6 +852,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			{
 				rbacGroup.GET("/permissions", handlers.AdvancedAdmin.ListPermissions)
 				rbacGroup.POST("/permissions", handlers.AdvancedAdmin.CreatePermission)
+				rbacGroup.PUT("/permissions/:id", handlers.AdvancedAdmin.UpdatePermission)
 				rbacGroup.DELETE("/permissions/:id", handlers.AdvancedAdmin.DeletePermission)
 				rbacGroup.GET("/roles", handlers.AdvancedAdmin.ListRoles)
 				rbacGroup.POST("/roles", handlers.AdvancedAdmin.CreateRole)
@@ -963,6 +994,33 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 				emailProfilesGroup.DELETE("/:id/templates/:otp_type", handlers.EmailProfile.RemoveProfileTemplate)
 				emailProfilesGroup.GET("/:id/stats", handlers.EmailProfile.GetProfileStats)
 				emailProfilesGroup.POST("/:id/test", handlers.EmailProfile.TestProfile)
+			}
+
+			// Application Management
+			applicationsGroup := adminGroup.Group("/applications")
+			{
+				applicationsGroup.POST("", handlers.Application.CreateApplication)
+				applicationsGroup.GET("", handlers.Application.ListApplications)
+				applicationsGroup.GET("/:id", handlers.Application.GetApplication)
+				applicationsGroup.PUT("/:id", handlers.Application.UpdateApplication)
+				applicationsGroup.DELETE("/:id", handlers.Application.DeleteApplication)
+
+				// Branding
+				applicationsGroup.GET("/:id/branding", handlers.Application.GetBranding)
+				applicationsGroup.PUT("/:id/branding", handlers.Application.UpdateBranding)
+
+				// Users
+				applicationsGroup.GET("/:id/users", handlers.Application.ListApplicationUsers)
+				applicationsGroup.POST("/:id/users/:user_id/ban", handlers.Application.BanUser)
+				applicationsGroup.POST("/:id/users/:user_id/unban", handlers.Application.UnbanUser)
+
+				// Application Email Templates
+				applicationsGroup.GET("/:id/email-templates", handlers.Template.ListApplicationEmailTemplates)
+				applicationsGroup.POST("/:id/email-templates", handlers.Template.CreateApplicationEmailTemplate)
+				applicationsGroup.POST("/:id/email-templates/initialize", handlers.Template.InitializeApplicationTemplates)
+				applicationsGroup.GET("/:id/email-templates/:templateId", handlers.Template.GetApplicationEmailTemplate)
+				applicationsGroup.PUT("/:id/email-templates/:templateId", handlers.Template.UpdateApplicationEmailTemplate)
+				applicationsGroup.DELETE("/:id/email-templates/:templateId", handlers.Template.DeleteApplicationEmailTemplate)
 			}
 		}
 

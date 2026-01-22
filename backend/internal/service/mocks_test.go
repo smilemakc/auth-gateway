@@ -463,9 +463,9 @@ func (m *mockSMSLogStore) DeleteOlderThan(ctx context.Context, duration time.Dur
 }
 
 type mockTokenService struct {
-	GenerateAccessTokenFunc       func(user *models.User) (string, error)
-	GenerateRefreshTokenFunc      func(user *models.User) (string, error)
-	GenerateTwoFactorTokenFunc    func(user *models.User) (string, error)
+	GenerateAccessTokenFunc       func(user *models.User, applicationID ...*uuid.UUID) (string, error)
+	GenerateRefreshTokenFunc      func(user *models.User, applicationID ...*uuid.UUID) (string, error)
+	GenerateTwoFactorTokenFunc    func(user *models.User, applicationID ...*uuid.UUID) (string, error)
 	ValidateAccessTokenFunc       func(tokenString string) (*jwt.Claims, error)
 	ValidateRefreshTokenFunc      func(tokenString string) (*jwt.Claims, error)
 	ExtractClaimsFunc             func(tokenString string) (*jwt.Claims, error)
@@ -473,21 +473,21 @@ type mockTokenService struct {
 	GetRefreshTokenExpirationFunc func() time.Duration
 }
 
-func (m *mockTokenService) GenerateAccessToken(user *models.User) (string, error) {
+func (m *mockTokenService) GenerateAccessToken(user *models.User, applicationID ...*uuid.UUID) (string, error) {
 	if m.GenerateAccessTokenFunc != nil {
-		return m.GenerateAccessTokenFunc(user)
+		return m.GenerateAccessTokenFunc(user, applicationID...)
 	}
 	return "", nil
 }
-func (m *mockTokenService) GenerateRefreshToken(user *models.User) (string, error) {
+func (m *mockTokenService) GenerateRefreshToken(user *models.User, applicationID ...*uuid.UUID) (string, error) {
 	if m.GenerateRefreshTokenFunc != nil {
-		return m.GenerateRefreshTokenFunc(user)
+		return m.GenerateRefreshTokenFunc(user, applicationID...)
 	}
 	return "", nil
 }
-func (m *mockTokenService) GenerateTwoFactorToken(user *models.User) (string, error) {
+func (m *mockTokenService) GenerateTwoFactorToken(user *models.User, applicationID ...*uuid.UUID) (string, error) {
 	if m.GenerateTwoFactorTokenFunc != nil {
-		return m.GenerateTwoFactorTokenFunc(user)
+		return m.GenerateTwoFactorTokenFunc(user, applicationID...)
 	}
 	return "", nil
 }
@@ -809,23 +809,23 @@ func (m *mockAuditStore) CountByActionSince(ctx context.Context, action models.A
 }
 
 type mockJWTService struct {
-	GenerateAccessTokenFunc       func(user *models.User) (string, error)
-	GenerateRefreshTokenFunc      func(user *models.User) (string, error)
+	GenerateAccessTokenFunc       func(user *models.User, applicationID ...*uuid.UUID) (string, error)
+	GenerateRefreshTokenFunc      func(user *models.User, applicationID ...*uuid.UUID) (string, error)
 	GetAccessTokenExpirationFunc  func() time.Duration
 	GetRefreshTokenExpirationFunc func() time.Duration
 	ValidateAccessTokenFunc       func(tokenString string) (*jwt.Claims, error)
 	ValidateRefreshTokenFunc      func(tokenString string) (*jwt.Claims, error)
 }
 
-func (m *mockJWTService) GenerateAccessToken(user *models.User) (string, error) {
+func (m *mockJWTService) GenerateAccessToken(user *models.User, applicationID ...*uuid.UUID) (string, error) {
 	if m.GenerateAccessTokenFunc != nil {
-		return m.GenerateAccessTokenFunc(user)
+		return m.GenerateAccessTokenFunc(user, applicationID...)
 	}
 	return "", nil
 }
-func (m *mockJWTService) GenerateRefreshToken(user *models.User) (string, error) {
+func (m *mockJWTService) GenerateRefreshToken(user *models.User, applicationID ...*uuid.UUID) (string, error) {
 	if m.GenerateRefreshTokenFunc != nil {
-		return m.GenerateRefreshTokenFunc(user)
+		return m.GenerateRefreshTokenFunc(user, applicationID...)
 	}
 	return "", nil
 }

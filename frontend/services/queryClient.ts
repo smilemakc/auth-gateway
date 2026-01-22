@@ -164,4 +164,15 @@ export const queryKeys = {
     config: ['scim', 'config'] as const,
     metadata: ['scim', 'metadata'] as const,
   },
+
+  // Applications (Multi-tenant)
+  applications: {
+    all: ['applications'] as const,
+    list: (page: number, pageSize: number) => ['applications', 'list', { page, pageSize }] as const,
+    detail: (id: string) => ['applications', 'detail', id] as const,
+    branding: (id: string) => ['applications', 'branding', id] as const,
+    users: (id: string, page: number, pageSize: number) => ['applications', 'users', id, { page, pageSize }] as const,
+    templates: (id: string) => ['applications', 'templates', id] as const,
+    templateDetail: (appId: string, templateId: string) => ['applications', 'templates', appId, templateId] as const,
+  },
 };

@@ -201,9 +201,9 @@ func (r *GroupRepository) GetGroupMembers(ctx context.Context, groupID uuid.UUID
 	offset := (page - 1) * pageSize
 	err = r.db.NewSelect().
 		Model(&users).
-		Join("JOIN user_groups ON users.id = user_groups.user_id").
+		Join("JOIN user_groups ON \"user\".id = user_groups.user_id").
 		Where("user_groups.group_id = ?", groupID).
-		Order("users.created_at DESC").
+		Order("\"user\".created_at DESC").
 		Limit(pageSize).
 		Offset(offset).
 		Scan(ctx)
@@ -221,10 +221,10 @@ func (r *GroupRepository) GetUserGroups(ctx context.Context, userID uuid.UUID) (
 
 	err := r.db.NewSelect().
 		Model(&groups).
-		Join("JOIN user_groups ON groups.id = user_groups.group_id").
+		Join("JOIN user_groups ON \"group\".id = user_groups.group_id").
 		Where("user_groups.user_id = ?", userID).
 		Relation("ParentGroup").
-		Order("groups.name ASC").
+		Order("\"group\".name ASC").
 		Scan(ctx)
 
 	if err != nil {

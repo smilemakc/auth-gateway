@@ -152,3 +152,118 @@ export interface ServiceAccount {
   created_at: string;
   last_used_at?: string;
 }
+
+// ============================================
+// Application types (Multi-tenant)
+// ============================================
+
+/** Application entity for multi-tenant support */
+export interface Application {
+  id: string;
+  name: string;
+  display_name: string;
+  description?: string;
+  homepage_url?: string;
+  callback_urls: string[];
+  is_active: boolean;
+  is_system: boolean;
+  owner_id?: string;
+  owner?: User;
+  branding?: ApplicationBranding;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Application branding settings */
+export interface ApplicationBranding {
+  id: string;
+  application_id: string;
+  logo_url?: string;
+  favicon_url?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  background_color?: string;
+  custom_css?: string;
+  company_name?: string;
+  support_email?: string;
+  terms_url?: string;
+  privacy_url?: string;
+  updated_at: string;
+}
+
+/** User profile within an application */
+export interface UserApplicationProfile {
+  id: string;
+  user_id: string;
+  application_id: string;
+  display_name?: string;
+  avatar_url?: string;
+  nickname?: string;
+  metadata?: Record<string, unknown>;
+  app_roles: string[];
+  is_active: boolean;
+  is_banned: boolean;
+  ban_reason?: string;
+  banned_at?: string;
+  banned_by?: string;
+  last_access_at?: string;
+  created_at: string;
+  updated_at: string;
+  user?: User;
+  application?: Application;
+}
+
+/** Request to create an application */
+export interface CreateApplicationRequest {
+  name: string;
+  display_name: string;
+  description?: string;
+  homepage_url?: string;
+  callback_urls?: string[];
+  owner_id?: string;
+}
+
+/** Request to update an application */
+export interface UpdateApplicationRequest {
+  display_name?: string;
+  description?: string;
+  homepage_url?: string;
+  callback_urls?: string[];
+  is_active?: boolean;
+  owner_id?: string;
+}
+
+/** Request to update application branding */
+export interface UpdateApplicationBrandingRequest {
+  logo_url?: string;
+  favicon_url?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  background_color?: string;
+  custom_css?: string;
+  company_name?: string;
+  support_email?: string;
+  terms_url?: string;
+  privacy_url?: string;
+}
+
+/** Request to ban a user from application */
+export interface BanUserFromApplicationRequest {
+  reason: string;
+}
+
+/** Response for listing applications */
+export interface ListApplicationsResponse {
+  applications: Application[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+/** Response for listing application users */
+export interface ListApplicationUsersResponse {
+  profiles: UserApplicationProfile[];
+  total: number;
+  page: number;
+  per_page: number;
+}

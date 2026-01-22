@@ -50,6 +50,14 @@ import BulkUpdateUsers from './components/BulkUpdateUsers';
 import BulkDeleteUsers from './components/BulkDeleteUsers';
 import BulkAssignRoles from './components/BulkAssignRoles';
 import SCIMSettings from './components/SCIMSettings';
+import Applications from './components/Applications';
+import ApplicationEdit from './components/ApplicationEdit';
+import ApplicationDetails from './components/ApplicationDetails';
+import ApplicationBrandingTab from './components/ApplicationBrandingTab';
+import ApplicationUsersTab from './components/ApplicationUsersTab';
+import ApplicationTemplateEditor from './components/ApplicationTemplateEditor';
+import EmailProviders from './components/EmailProviders';
+import EmailProviderEdit from './components/EmailProviderEdit';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, isLoading, logout } = useAuth();
@@ -106,6 +114,8 @@ const AppRoutes: React.FC = () => {
           <Route path="/settings/access-control/permissions/:id" element={<PermissionEdit />} />
           <Route path="/settings/security/ip-rules" element={<IpSecurity />} />
           <Route path="/settings/sms" element={<SmsSettings />} />
+          <Route path="/settings/email-providers" element={<EmailProviders />} />
+          <Route path="/settings/email-providers/:id" element={<EmailProviderEdit />} />
           <Route path="/developers/webhooks" element={<Webhooks />} />
           <Route path="/developers/webhooks/:id" element={<WebhookEdit />} />
           <Route path="/developers/service-accounts" element={<ServiceAccounts />} />
@@ -129,6 +139,11 @@ const AppRoutes: React.FC = () => {
           <Route path="/bulk/delete" element={<BulkDeleteUsers />} />
           <Route path="/bulk/assign-roles" element={<BulkAssignRoles />} />
           <Route path="/settings/scim" element={<SCIMSettings />} />
+          <Route path="/applications" element={<Applications />} />
+          <Route path="/applications/new" element={<ApplicationEdit />} />
+          <Route path="/applications/:id" element={<ApplicationDetails />} />
+          <Route path="/applications/:id/edit" element={<ApplicationEdit />} />
+          <Route path="/applications/:appId/email-templates/:templateId" element={<ApplicationTemplateEditor />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

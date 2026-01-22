@@ -1,10 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { getOAuthProviders, updateOAuthProvider, deleteOAuthProvider } from '../services/mockData';
-import { OAuthProviderConfig } from '../types';
-import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Globe, Github, Send, Instagram } from 'lucide-react';
+import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Globe, Github, Send, Instagram, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useOAuthProviders, useDeleteOAuthProvider, useToggleOAuthProvider } from '../hooks/useOAuth';
 
 // Icon mapper
 const getProviderIcon = (provider: string) => {
@@ -20,27 +19,46 @@ const getProviderIcon = (provider: string) => {
 };
 
 const OAuthProviders: React.FC = () => {
-  const [providers, setProviders] = useState<OAuthProviderConfig[]>([]);
   const { t } = useLanguage();
+  const { data: providersResponse, isLoading, error } = useOAuthProviders();
+  const deleteProviderMutation = useDeleteOAuthProvider();
+  const toggleProviderMutation = useToggleOAuthProvider();
 
-  useEffect(() => {
-    setProviders(getOAuthProviders());
-  }, []);
+  const providers = providersResponse?.providers || [];
 
-  const handleToggle = (id: string, currentStatus: boolean) => {
-    const updated = updateOAuthProvider(id, { is_enabled: !currentStatus });
-    if (updated) {
-      setProviders(prev => prev.map(p => p.id === id ? updated : p));
+  const handleToggle = async (id: string, currentStatus: boolean) => {
+    try {
+      await toggleProviderMutation.mutateAsync({ id, enabled: !currentStatus });
+    } catch (err) {
+      console.error('Failed to toggle provider:', err);
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm(t('common.confirm_delete'))) {
-      if (deleteOAuthProvider(id)) {
-        setProviders(prev => prev.filter(p => p.id !== id));
+      try {
+        await deleteProviderMutation.mutateAsync(id);
+      } catch (err) {
+        console.error('Failed to delete provider:', err);
       }
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
+        Failed to load OAuth providers. Please try again.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -79,7 +97,8 @@ const OAuthProviders: React.FC = () => {
                 </div>
                 <button
                   onClick={() => handleToggle(provider.id, provider.is_enabled)}
-                  className={`transition-colors ${provider.is_enabled ? 'text-success hover:text-success' : 'text-muted-foreground hover:text-muted-foreground'}`}
+                  disabled={toggleProviderMutation.isPending}
+                  className={`transition-colors ${provider.is_enabled ? 'text-success hover:text-success' : 'text-muted-foreground hover:text-muted-foreground'} disabled:opacity-50`}
                 >
                   {provider.is_enabled ? <ToggleRight size={36} /> : <ToggleLeft size={36} />}
                 </button>
@@ -94,8 +113,8 @@ const OAuthProviders: React.FC = () => {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Callback URL</label>
-                  <div className="text-xs text-muted-foreground truncate" title={provider.redirect_uris[0]}>
-                    {provider.redirect_uris[0] || <span className="italic text-muted-foreground">Not configured</span>}
+                  <div className="text-xs text-muted-foreground truncate" title={provider.redirect_uris?.[0]}>
+                    {provider.redirect_uris?.[0] || <span className="italic text-muted-foreground">Not configured</span>}
                   </div>
                 </div>
               </div>
@@ -103,7 +122,7 @@ const OAuthProviders: React.FC = () => {
 
             <div className="bg-muted px-6 py-4 border-t border-border flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
-                {new Date(provider.created_at).toLocaleDateString()}
+                {provider.created_at ? new Date(provider.created_at).toLocaleDateString() : '-'}
               </span>
               <div className="flex items-center gap-2">
                 <Link
@@ -114,7 +133,8 @@ const OAuthProviders: React.FC = () => {
                 </Link>
                 <button
                   onClick={() => handleDelete(provider.id)}
-                  className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                  disabled={deleteProviderMutation.isPending}
+                  className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50"
                 >
                   <Trash2 size={18} />
                 </button>
@@ -122,6 +142,19 @@ const OAuthProviders: React.FC = () => {
             </div>
           </div>
         ))}
+
+        {providers.length === 0 && (
+          <div className="col-span-full text-center py-12 bg-card rounded-xl border border-border">
+            <Globe size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
+            <p className="text-muted-foreground">No OAuth providers configured.</p>
+            <Link
+              to="/oauth/new"
+              className="mt-4 inline-block text-primary hover:underline text-sm font-medium"
+            >
+              Add your first provider
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -146,7 +146,8 @@ func (r *OAuthProviderRepository) ListClients(ctx context.Context, ownerID *uuid
 	clients := make([]*models.OAuthClient, 0)
 
 	query := r.db.NewSelect().
-		Model(&clients)
+		Model(&clients).
+		Where("o_auth_client.is_active = ?", true)
 
 	if ownerID != nil {
 		query = query.Where("owner_id = ?", *ownerID)

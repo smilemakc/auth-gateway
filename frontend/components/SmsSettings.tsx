@@ -1,45 +1,92 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, MessageSquare, AlertTriangle, Send } from 'lucide-react';
+import { ArrowLeft, Save, AlertTriangle, Send, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
-import { getSmsConfig, updateSmsConfig } from '../services/mockData';
-import { SmsConfig, SmsProviderType } from '../types';
+import { useSmsSettingsActive, useUpdateSmsSettings, useCreateSmsSettings } from '../hooks/useSettings';
 
 const SmsSettings: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [config, setConfig] = useState<SmsConfig>({ provider: 'mock' });
-  const [loading, setLoading] = useState(false);
+
+  const { data: activeSettings, isLoading: loadingSettings } = useSmsSettingsActive();
+  const updateMutation = useUpdateSmsSettings();
+  const createMutation = useCreateSmsSettings();
+
+  const [config, setConfig] = useState({
+    provider: 'mock' as string,
+    awsRegion: '',
+    awsAccessKeyId: '',
+    awsSecretAccessKey: '',
+    twilioAccountSid: '',
+    twilioAuthToken: '',
+    twilioPhoneNumber: '',
+  });
   const [saved, setSaved] = useState(false);
   const [testPhone, setTestPhone] = useState('');
   const [testSent, setTestSent] = useState(false);
 
   useEffect(() => {
-    setConfig(getSmsConfig());
-  }, []);
+    if (activeSettings) {
+      setConfig({
+        provider: activeSettings.provider || 'mock',
+        awsRegion: activeSettings.aws_region || '',
+        awsAccessKeyId: activeSettings.aws_access_key_id || '',
+        awsSecretAccessKey: activeSettings.aws_secret_access_key || '',
+        twilioAccountSid: activeSettings.twilio_account_sid || '',
+        twilioAuthToken: activeSettings.twilio_auth_token || '',
+        twilioPhoneNumber: activeSettings.twilio_phone_number || '',
+      });
+    }
+  }, [activeSettings]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setConfig(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      updateSmsConfig(config);
-      setLoading(false);
+
+    const data = {
+      provider: config.provider,
+      aws_region: config.awsRegion || undefined,
+      aws_access_key_id: config.awsAccessKeyId || undefined,
+      aws_secret_access_key: config.awsSecretAccessKey || undefined,
+      twilio_account_sid: config.twilioAccountSid || undefined,
+      twilio_auth_token: config.twilioAuthToken || undefined,
+      twilio_phone_number: config.twilioPhoneNumber || undefined,
+      is_active: true,
+    };
+
+    try {
+      if (activeSettings?.id) {
+        await updateMutation.mutateAsync({ id: activeSettings.id, data });
+      } else {
+        await createMutation.mutateAsync(data);
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    }, 800);
+    } catch (err) {
+      console.error('Failed to save SMS settings:', err);
+    }
   };
+
+  const isLoading = updateMutation.isPending || createMutation.isPending;
 
   const handleTestSend = () => {
     if (!testPhone) return;
     setTestSent(true);
     setTimeout(() => setTestSent(false), 3000);
   };
+
+  if (loadingSettings) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -155,12 +202,14 @@ const SmsSettings: React.FC = () => {
         <div className="flex justify-end pt-4">
            <button
              type="submit"
-             disabled={loading}
+             disabled={isLoading}
              className={`flex items-center gap-2 px-8 py-3 rounded-lg font-medium text-primary-foreground transition-colors
                ${saved ? 'bg-success' : 'bg-primary hover:bg-primary-600'}
              `}
            >
-             {loading ? t('common.saving') : saved ? t('common.saved') : (
+             {isLoading ? (
+               <Loader2 size={18} className="animate-spin" />
+             ) : saved ? t('common.saved') : (
                <>
                  <Save size={18} /> {t('common.save')}
                </>

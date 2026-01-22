@@ -11,28 +11,30 @@ import (
 type OAuthClient struct {
 	bun.BaseModel `bun:"table:oauth_clients"`
 
-	ID                uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()" example:"123e4567-e89b-12d3-a456-426614174000"`
-	ClientID          string     `json:"client_id" bun:"client_id,notnull,unique" example:"my_client_app_123"`
-	ClientSecretHash  *string    `json:"-" bun:"client_secret_hash"`
-	Name              string     `json:"name" bun:"name,notnull" example:"My Application"`
-	Description       string     `json:"description,omitempty" bun:"description" example:"My OAuth client application"`
-	LogoURL           string     `json:"logo_url,omitempty" bun:"logo_url" example:"https://example.com/logo.png"`
-	ClientType        string     `json:"client_type" bun:"client_type,notnull,default:'confidential'" example:"confidential"`
-	RedirectURIs      []string   `json:"redirect_uris" bun:"redirect_uris,type:jsonb,default:'[]'" example:"https://example.com/callback"`
-	AllowedGrantTypes []string   `json:"allowed_grant_types" bun:"allowed_grant_types,type:jsonb" example:"authorization_code,refresh_token"`
-	AllowedScopes     []string   `json:"allowed_scopes" bun:"allowed_scopes,type:jsonb" example:"openid,profile,email"`
-	DefaultScopes     []string   `json:"default_scopes" bun:"default_scopes,type:jsonb" example:"openid,profile"`
-	AccessTokenTTL    int        `json:"access_token_ttl" bun:"access_token_ttl,default:900" example:"900"`
-	RefreshTokenTTL   int        `json:"refresh_token_ttl" bun:"refresh_token_ttl,default:604800" example:"604800"`
-	IDTokenTTL        int        `json:"id_token_ttl" bun:"id_token_ttl,default:3600" example:"3600"`
-	RequirePKCE       bool       `json:"require_pkce" bun:"require_pkce,default:false" example:"true"`
-	RequireConsent    bool       `json:"require_consent" bun:"require_consent,default:true" example:"true"`
-	FirstParty        bool       `json:"first_party" bun:"first_party,default:false" example:"false"`
-	OwnerID           *uuid.UUID `json:"owner_id,omitempty" bun:"owner_id,type:uuid" example:"123e4567-e89b-12d3-a456-426614174000"`
-	Owner             *User      `json:"owner,omitempty" bun:"rel:belongs-to,join:owner_id=id"`
-	IsActive          bool       `json:"is_active" bun:"is_active,default:true" example:"true"`
-	CreatedAt         time.Time  `json:"created_at" bun:"created_at,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
-	UpdatedAt         time.Time  `json:"updated_at" bun:"updated_at,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
+	ID                uuid.UUID    `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()" example:"123e4567-e89b-12d3-a456-426614174000"`
+	ClientID          string       `json:"client_id" bun:"client_id,notnull,unique" example:"my_client_app_123"`
+	ClientSecretHash  *string      `json:"-" bun:"client_secret_hash"`
+	Name              string       `json:"name" bun:"name,notnull" example:"My Application"`
+	Description       string       `json:"description,omitempty" bun:"description" example:"My OAuth client application"`
+	LogoURL           string       `json:"logo_url,omitempty" bun:"logo_url" example:"https://example.com/logo.png"`
+	ClientType        string       `json:"client_type" bun:"client_type,notnull,default:'confidential'" example:"confidential"`
+	RedirectURIs      []string     `json:"redirect_uris" bun:"redirect_uris,type:jsonb,default:'[]'" example:"https://example.com/callback"`
+	AllowedGrantTypes []string     `json:"allowed_grant_types" bun:"allowed_grant_types,type:jsonb" example:"authorization_code,refresh_token"`
+	AllowedScopes     []string     `json:"allowed_scopes" bun:"allowed_scopes,type:jsonb" example:"openid,profile,email"`
+	DefaultScopes     []string     `json:"default_scopes" bun:"default_scopes,type:jsonb" example:"openid,profile"`
+	AccessTokenTTL    int          `json:"access_token_ttl" bun:"access_token_ttl,default:900" example:"900"`
+	RefreshTokenTTL   int          `json:"refresh_token_ttl" bun:"refresh_token_ttl,default:604800" example:"604800"`
+	IDTokenTTL        int          `json:"id_token_ttl" bun:"id_token_ttl,default:3600" example:"3600"`
+	RequirePKCE       bool         `json:"require_pkce" bun:"require_pkce,default:false" example:"true"`
+	RequireConsent    bool         `json:"require_consent" bun:"require_consent,default:true" example:"true"`
+	FirstParty        bool         `json:"first_party" bun:"first_party,default:false" example:"false"`
+	OwnerID           *uuid.UUID   `json:"owner_id,omitempty" bun:"owner_id,type:uuid" example:"123e4567-e89b-12d3-a456-426614174000"`
+	Owner             *User        `json:"owner,omitempty" bun:"rel:belongs-to,join:owner_id=id"`
+	ApplicationID     *uuid.UUID   `json:"application_id,omitempty" bun:"application_id,type:uuid" example:"123e4567-e89b-12d3-a456-426614174000"`
+	Application       *Application `json:"application,omitempty" bun:"rel:belongs-to,join:application_id=id"`
+	IsActive          bool         `json:"is_active" bun:"is_active,default:true" example:"true"`
+	CreatedAt         time.Time    `json:"created_at" bun:"created_at,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
+	UpdatedAt         time.Time    `json:"updated_at" bun:"updated_at,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
 }
 
 // ClientType represents the OAuth 2.0 client type

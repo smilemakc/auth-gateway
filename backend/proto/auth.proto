@@ -30,6 +30,26 @@ service AuthService {
   // CompletePasswordlessRegistration completes registration after OTP verification
   rpc CompletePasswordlessRegistration(CompletePasswordlessRegistrationRequest) returns (CompletePasswordlessRegistrationResponse);
 
+  // ========== OTP Methods ==========
+
+  // SendOTP sends a one-time password to email
+  rpc SendOTP(SendOTPRequest) returns (SendOTPResponse);
+
+  // VerifyOTP verifies a one-time password
+  rpc VerifyOTP(VerifyOTPRequest) returns (VerifyOTPResponse);
+
+  // LoginWithOTP initiates passwordless login by sending OTP to email
+  rpc LoginWithOTP(LoginWithOTPRequest) returns (LoginWithOTPResponse);
+
+  // VerifyLoginOTP completes passwordless login by verifying OTP
+  rpc VerifyLoginOTP(VerifyLoginOTPRequest) returns (VerifyLoginOTPResponse);
+
+  // RegisterWithOTP initiates OTP-based registration by sending verification code
+  rpc RegisterWithOTP(RegisterWithOTPRequest) returns (RegisterWithOTPResponse);
+
+  // VerifyRegistrationOTP completes OTP-based registration
+  rpc VerifyRegistrationOTP(VerifyRegistrationOTPRequest) returns (VerifyRegistrationOTPResponse);
+
   // ========== OAuth Provider Methods ==========
 
   // IntrospectOAuthToken validates OAuth access token (RFC 7662)
@@ -177,6 +197,109 @@ message CompletePasswordlessRegistrationRequest {
 
 // CompletePasswordlessRegistrationResponse contains the result of completed registration
 message CompletePasswordlessRegistrationResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 expires_in = 4;
+  string error_message = 5;
+}
+
+// ========== OTP Messages ==========
+
+// OTPType represents the type of OTP
+enum OTPType {
+  OTP_TYPE_UNSPECIFIED = 0;
+  OTP_TYPE_VERIFICATION = 1;
+  OTP_TYPE_PASSWORD_RESET = 2;
+  OTP_TYPE_TWO_FA = 3;
+  OTP_TYPE_LOGIN = 4;
+  OTP_TYPE_REGISTRATION = 5;
+}
+
+// SendOTPRequest contains data to send OTP
+message SendOTPRequest {
+  string email = 1;           // Email to send OTP to
+  OTPType otp_type = 2;       // Type of OTP (login, registration, verification, etc.)
+  string profile_id = 3;      // Optional email profile ID for multi-tenant support
+}
+
+// SendOTPResponse contains result of OTP sending
+message SendOTPResponse {
+  bool success = 1;
+  string message = 2;         // Success message
+  string error_message = 3;   // Error message if failed
+  int32 expires_in = 4;       // OTP expiration time in seconds
+}
+
+// VerifyOTPRequest contains OTP verification data
+message VerifyOTPRequest {
+  string email = 1;           // Email that received the OTP
+  string code = 2;            // 6-digit OTP code
+  OTPType otp_type = 3;       // Type of OTP being verified
+}
+
+// VerifyOTPResponse contains OTP verification result
+message VerifyOTPResponse {
+  bool valid = 1;             // Whether OTP is valid
+  string error_message = 2;   // Error message if invalid
+}
+
+// LoginWithOTPRequest contains data for OTP-based login (step 1: request OTP)
+message LoginWithOTPRequest {
+  string email = 1;           // Email for passwordless login
+  string profile_id = 2;      // Optional email profile ID
+}
+
+// LoginWithOTPResponse contains result of OTP login request
+message LoginWithOTPResponse {
+  bool success = 1;
+  string message = 2;         // e.g., "OTP sent to your email"
+  string error_message = 3;
+  int32 expires_in = 4;       // OTP expiration time in seconds
+}
+
+// RegisterWithOTPRequest contains data for OTP-based registration (step 1: send OTP)
+message RegisterWithOTPRequest {
+  string email = 1;           // Email for registration
+  string username = 2;        // Optional username
+  string full_name = 3;       // Optional full name
+  string profile_id = 4;      // Optional email profile ID
+}
+
+// RegisterWithOTPResponse contains result of registration OTP request
+message RegisterWithOTPResponse {
+  bool success = 1;
+  string message = 2;         // e.g., "Verification code sent to your email"
+  string error_message = 3;
+  int32 expires_in = 4;       // OTP expiration time in seconds
+}
+
+// VerifyRegistrationOTPRequest contains data to complete OTP registration (step 2)
+message VerifyRegistrationOTPRequest {
+  string email = 1;           // Email that received the OTP
+  string code = 2;            // 6-digit OTP code
+  string username = 3;        // Optional username (can be set here if not in step 1)
+  string full_name = 4;       // Optional full name (can be set here if not in step 1)
+  string password = 5;        // Optional password (for hybrid registration)
+}
+
+// VerifyRegistrationOTPResponse contains completed registration result
+message VerifyRegistrationOTPResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 expires_in = 4;
+  string error_message = 5;
+}
+
+// VerifyLoginOTPRequest contains data for step 2 of OTP login
+message VerifyLoginOTPRequest {
+  string email = 1;           // Email that received the OTP
+  string code = 2;            // 6-digit OTP code
+}
+
+// VerifyLoginOTPResponse contains the login result after OTP verification
+message VerifyLoginOTPResponse {
   User user = 1;
   string access_token = 2;
   string refresh_token = 3;

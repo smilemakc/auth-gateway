@@ -1,15 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getBranding, updateBranding } from '../services/mockData';
-import { BrandingConfig } from '../types';
-import { ArrowLeft, Save, Palette, Image as ImageIcon, Layout, Lock, Github, Mail } from 'lucide-react';
+import { ArrowLeft, Save, Palette, Image as ImageIcon, Layout, Lock, Github, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useBranding, useUpdateBranding } from '../hooks/useSettings';
 
 const Branding: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [config, setConfig] = useState<BrandingConfig>({
+
+  const { data: brandingData, isLoading: loadingBranding } = useBranding();
+  const updateMutation = useUpdateBranding();
+
+  const [config, setConfig] = useState({
     company_name: 'Auth Gateway',
     logo_url: '',
     favicon_url: '',
@@ -21,18 +24,27 @@ const Branding: React.FC = () => {
     loginPageTitle: 'Sign in to your account',
     loginPageSubtitle: 'Welcome back! Please enter your details.',
     showSocialLogins: true,
-    id: '',
-    created_at: '',
-    updated_at: ''
   });
-  
-  const [loading, setLoading] = useState(false);
+
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const data = getBranding();
-    if (data) setConfig(data);
-  }, []);
+    if (brandingData) {
+      setConfig({
+        company_name: brandingData.company_name || 'Auth Gateway',
+        logo_url: brandingData.logo_url || '',
+        favicon_url: brandingData.favicon_url || '',
+        theme: {
+          primary_color: brandingData.theme?.primary_color || '#2563EB',
+          secondary_color: brandingData.theme?.secondary_color || '#1E40AF',
+          background_color: brandingData.theme?.background_color || '#F3F4F6'
+        },
+        loginPageTitle: brandingData.login_page_title || 'Sign in to your account',
+        loginPageSubtitle: brandingData.login_page_subtitle || 'Welcome back! Please enter your details.',
+        showSocialLogins: brandingData.show_social_logins ?? true,
+      });
+    }
+  }, [brandingData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -54,15 +66,31 @@ const Branding: React.FC = () => {
     }
   };
 
-  const handleSave = () => {
-    setLoading(true);
-    setTimeout(() => {
-      updateBranding(config);
-      setLoading(false);
+  const handleSave = async () => {
+    try {
+      await updateMutation.mutateAsync({
+        company_name: config.company_name,
+        logo_url: config.logo_url,
+        favicon_url: config.favicon_url,
+        theme: config.theme,
+        login_page_title: config.loginPageTitle,
+        login_page_subtitle: config.loginPageSubtitle,
+        show_social_logins: config.showSocialLogins,
+      });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    }, 800);
+    } catch (err) {
+      console.error('Failed to save branding:', err);
+    }
   };
+
+  if (loadingBranding) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col">
@@ -81,11 +109,11 @@ const Branding: React.FC = () => {
         </div>
         <button
           onClick={handleSave}
-          disabled={loading}
+          disabled={updateMutation.isPending}
           className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium text-sm transition-colors
             ${saved ? 'bg-green-600 text-primary-foreground' : 'bg-primary text-primary-foreground hover:bg-primary-600'}`}
         >
-          {loading ? t('common.saving') : saved ? t('common.saved') : (
+          {updateMutation.isPending ? t('common.saving') : saved ? t('common.saved') : (
             <>
               <Save size={18} /> {t('common.save')}
             </>

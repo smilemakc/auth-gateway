@@ -1,48 +1,59 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getEmailTemplate, updateEmailTemplate } from '../services/mockData';
-import { EmailTemplate } from '../types';
-import { ArrowLeft, Save, Eye, Code, RefreshCw, Check } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Code, RefreshCw, Check, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useEmailTemplateDetail, useUpdateEmailTemplate } from '../hooks/useEmailTemplates';
 
 const EmailTemplateEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [template, setTemplate] = useState<EmailTemplate | undefined>();
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
-  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
 
-  useEffect(() => {
-    if (id) {
-      const data = getEmailTemplate(id);
-      if (data) {
-        setTemplate(data);
-        setSubject(data.subject);
-        setBodyHtml(data.html_body);
-      } else {
-        navigate('/settings/email-templates');
-      }
-    }
-  }, [id, navigate]);
+  const { data: template, isLoading } = useEmailTemplateDetail(id || '');
+  const updateMutation = useUpdateEmailTemplate();
 
-  const handleSave = () => {
+  useEffect(() => {
+    if (template) {
+      setSubject(template.subject || '');
+      setBodyHtml(template.html_body || '');
+    }
+  }, [template]);
+
+  const handleSave = async () => {
     if (id) {
-      setSaving(true);
-      setTimeout(() => {
-        updateEmailTemplate(id, { subject, html_body: bodyHtml });
-        setSaving(false);
+      try {
+        await updateMutation.mutateAsync({
+          id,
+          data: { subject, html_body: bodyHtml }
+        });
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
-      }, 800);
+      } catch (err) {
+        console.error('Failed to save template:', err);
+      }
     }
   };
 
-  if (!template) return <div>{t('common.loading')}</div>;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!template) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Template not found</p>
+      </div>
+    );
+  }
 
   // Simple interpolation for preview
   const getPreviewHtml = () => {
@@ -57,7 +68,7 @@ const EmailTemplateEditor: React.FC = () => {
       '{{os}}': 'Windows 11'
     };
 
-    template.variables.forEach(v => {
+    (template.variables || []).forEach(v => {
       const val = mockValues[v] || `[${v}]`;
       html = html.replace(new RegExp(v, 'g'), val);
     });
@@ -90,13 +101,13 @@ const EmailTemplateEditor: React.FC = () => {
           </button>
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={updateMutation.isPending}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors
               ${saved
                 ? 'bg-success text-primary-foreground'
                 : 'bg-primary text-primary-foreground hover:bg-primary-600'}`}
           >
-            {saving ? <RefreshCw size={18} className="animate-spin" /> :
+            {updateMutation.isPending ? <RefreshCw size={18} className="animate-spin" /> :
              saved ? <Check size={18} /> : <Save size={18} />}
             {saved ? t('common.saved') : t('common.save')}
           </button>
@@ -105,7 +116,7 @@ const EmailTemplateEditor: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex gap-6 min-h-0">
-        
+
         {/* Editor Pane */}
         <div className={`flex-1 flex flex-col gap-4 ${activeTab === 'preview' ? 'hidden lg:flex' : 'flex'}`}>
           <div className="bg-card p-4 rounded-xl shadow-sm border border-border flex-shrink-0">
@@ -118,7 +129,7 @@ const EmailTemplateEditor: React.FC = () => {
             />
             <div className="mt-3 flex flex-wrap gap-2">
               <span className="text-xs text-muted-foreground py-1">{t('email.vars')}:</span>
-              {template.variables.map(v => (
+              {(template.variables || []).map(v => (
                 <button
                   key={v}
                   onClick={() => setBodyHtml(prev => prev + v)}

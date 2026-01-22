@@ -27,6 +27,12 @@ const (
 	AuthService_Login_FullMethodName                            = "/auth.AuthService/Login"
 	AuthService_InitPasswordlessRegistration_FullMethodName     = "/auth.AuthService/InitPasswordlessRegistration"
 	AuthService_CompletePasswordlessRegistration_FullMethodName = "/auth.AuthService/CompletePasswordlessRegistration"
+	AuthService_SendOTP_FullMethodName                          = "/auth.AuthService/SendOTP"
+	AuthService_VerifyOTP_FullMethodName                        = "/auth.AuthService/VerifyOTP"
+	AuthService_LoginWithOTP_FullMethodName                     = "/auth.AuthService/LoginWithOTP"
+	AuthService_VerifyLoginOTP_FullMethodName                   = "/auth.AuthService/VerifyLoginOTP"
+	AuthService_RegisterWithOTP_FullMethodName                  = "/auth.AuthService/RegisterWithOTP"
+	AuthService_VerifyRegistrationOTP_FullMethodName            = "/auth.AuthService/VerifyRegistrationOTP"
 	AuthService_IntrospectOAuthToken_FullMethodName             = "/auth.AuthService/IntrospectOAuthToken"
 	AuthService_ValidateOAuthClient_FullMethodName              = "/auth.AuthService/ValidateOAuthClient"
 	AuthService_GetOAuthClient_FullMethodName                   = "/auth.AuthService/GetOAuthClient"
@@ -54,6 +60,18 @@ type AuthServiceClient interface {
 	InitPasswordlessRegistration(ctx context.Context, in *InitPasswordlessRegistrationRequest, opts ...grpc.CallOption) (*InitPasswordlessRegistrationResponse, error)
 	// CompletePasswordlessRegistration completes registration after OTP verification
 	CompletePasswordlessRegistration(ctx context.Context, in *CompletePasswordlessRegistrationRequest, opts ...grpc.CallOption) (*CompletePasswordlessRegistrationResponse, error)
+	// SendOTP sends a one-time password to email
+	SendOTP(ctx context.Context, in *SendOTPRequest, opts ...grpc.CallOption) (*SendOTPResponse, error)
+	// VerifyOTP verifies a one-time password
+	VerifyOTP(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*VerifyOTPResponse, error)
+	// LoginWithOTP initiates passwordless login by sending OTP to email
+	LoginWithOTP(ctx context.Context, in *LoginWithOTPRequest, opts ...grpc.CallOption) (*LoginWithOTPResponse, error)
+	// VerifyLoginOTP completes passwordless login by verifying OTP
+	VerifyLoginOTP(ctx context.Context, in *VerifyLoginOTPRequest, opts ...grpc.CallOption) (*VerifyLoginOTPResponse, error)
+	// RegisterWithOTP initiates OTP-based registration by sending verification code
+	RegisterWithOTP(ctx context.Context, in *RegisterWithOTPRequest, opts ...grpc.CallOption) (*RegisterWithOTPResponse, error)
+	// VerifyRegistrationOTP completes OTP-based registration
+	VerifyRegistrationOTP(ctx context.Context, in *VerifyRegistrationOTPRequest, opts ...grpc.CallOption) (*VerifyRegistrationOTPResponse, error)
 	// IntrospectOAuthToken validates OAuth access token (RFC 7662)
 	IntrospectOAuthToken(ctx context.Context, in *IntrospectOAuthTokenRequest, opts ...grpc.CallOption) (*IntrospectOAuthTokenResponse, error)
 	// ValidateOAuthClient validates OAuth client credentials
@@ -150,6 +168,66 @@ func (c *authServiceClient) CompletePasswordlessRegistration(ctx context.Context
 	return out, nil
 }
 
+func (c *authServiceClient) SendOTP(ctx context.Context, in *SendOTPRequest, opts ...grpc.CallOption) (*SendOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendOTPResponse)
+	err := c.cc.Invoke(ctx, AuthService_SendOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) VerifyOTP(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*VerifyOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyOTPResponse)
+	err := c.cc.Invoke(ctx, AuthService_VerifyOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) LoginWithOTP(ctx context.Context, in *LoginWithOTPRequest, opts ...grpc.CallOption) (*LoginWithOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoginWithOTPResponse)
+	err := c.cc.Invoke(ctx, AuthService_LoginWithOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) VerifyLoginOTP(ctx context.Context, in *VerifyLoginOTPRequest, opts ...grpc.CallOption) (*VerifyLoginOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyLoginOTPResponse)
+	err := c.cc.Invoke(ctx, AuthService_VerifyLoginOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) RegisterWithOTP(ctx context.Context, in *RegisterWithOTPRequest, opts ...grpc.CallOption) (*RegisterWithOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegisterWithOTPResponse)
+	err := c.cc.Invoke(ctx, AuthService_RegisterWithOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) VerifyRegistrationOTP(ctx context.Context, in *VerifyRegistrationOTPRequest, opts ...grpc.CallOption) (*VerifyRegistrationOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyRegistrationOTPResponse)
+	err := c.cc.Invoke(ctx, AuthService_VerifyRegistrationOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *authServiceClient) IntrospectOAuthToken(ctx context.Context, in *IntrospectOAuthTokenRequest, opts ...grpc.CallOption) (*IntrospectOAuthTokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IntrospectOAuthTokenResponse)
@@ -202,6 +280,18 @@ type AuthServiceServer interface {
 	InitPasswordlessRegistration(context.Context, *InitPasswordlessRegistrationRequest) (*InitPasswordlessRegistrationResponse, error)
 	// CompletePasswordlessRegistration completes registration after OTP verification
 	CompletePasswordlessRegistration(context.Context, *CompletePasswordlessRegistrationRequest) (*CompletePasswordlessRegistrationResponse, error)
+	// SendOTP sends a one-time password to email
+	SendOTP(context.Context, *SendOTPRequest) (*SendOTPResponse, error)
+	// VerifyOTP verifies a one-time password
+	VerifyOTP(context.Context, *VerifyOTPRequest) (*VerifyOTPResponse, error)
+	// LoginWithOTP initiates passwordless login by sending OTP to email
+	LoginWithOTP(context.Context, *LoginWithOTPRequest) (*LoginWithOTPResponse, error)
+	// VerifyLoginOTP completes passwordless login by verifying OTP
+	VerifyLoginOTP(context.Context, *VerifyLoginOTPRequest) (*VerifyLoginOTPResponse, error)
+	// RegisterWithOTP initiates OTP-based registration by sending verification code
+	RegisterWithOTP(context.Context, *RegisterWithOTPRequest) (*RegisterWithOTPResponse, error)
+	// VerifyRegistrationOTP completes OTP-based registration
+	VerifyRegistrationOTP(context.Context, *VerifyRegistrationOTPRequest) (*VerifyRegistrationOTPResponse, error)
 	// IntrospectOAuthToken validates OAuth access token (RFC 7662)
 	IntrospectOAuthToken(context.Context, *IntrospectOAuthTokenRequest) (*IntrospectOAuthTokenResponse, error)
 	// ValidateOAuthClient validates OAuth client credentials
@@ -241,6 +331,24 @@ func (UnimplementedAuthServiceServer) InitPasswordlessRegistration(context.Conte
 }
 func (UnimplementedAuthServiceServer) CompletePasswordlessRegistration(context.Context, *CompletePasswordlessRegistrationRequest) (*CompletePasswordlessRegistrationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CompletePasswordlessRegistration not implemented")
+}
+func (UnimplementedAuthServiceServer) SendOTP(context.Context, *SendOTPRequest) (*SendOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendOTP not implemented")
+}
+func (UnimplementedAuthServiceServer) VerifyOTP(context.Context, *VerifyOTPRequest) (*VerifyOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifyOTP not implemented")
+}
+func (UnimplementedAuthServiceServer) LoginWithOTP(context.Context, *LoginWithOTPRequest) (*LoginWithOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method LoginWithOTP not implemented")
+}
+func (UnimplementedAuthServiceServer) VerifyLoginOTP(context.Context, *VerifyLoginOTPRequest) (*VerifyLoginOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifyLoginOTP not implemented")
+}
+func (UnimplementedAuthServiceServer) RegisterWithOTP(context.Context, *RegisterWithOTPRequest) (*RegisterWithOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegisterWithOTP not implemented")
+}
+func (UnimplementedAuthServiceServer) VerifyRegistrationOTP(context.Context, *VerifyRegistrationOTPRequest) (*VerifyRegistrationOTPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifyRegistrationOTP not implemented")
 }
 func (UnimplementedAuthServiceServer) IntrospectOAuthToken(context.Context, *IntrospectOAuthTokenRequest) (*IntrospectOAuthTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method IntrospectOAuthToken not implemented")
@@ -416,6 +524,114 @@ func _AuthService_CompletePasswordlessRegistration_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_SendOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).SendOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_SendOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).SendOTP(ctx, req.(*SendOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_VerifyOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).VerifyOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_VerifyOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).VerifyOTP(ctx, req.(*VerifyOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_LoginWithOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginWithOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).LoginWithOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_LoginWithOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).LoginWithOTP(ctx, req.(*LoginWithOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_VerifyLoginOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyLoginOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).VerifyLoginOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_VerifyLoginOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).VerifyLoginOTP(ctx, req.(*VerifyLoginOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_RegisterWithOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterWithOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).RegisterWithOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_RegisterWithOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).RegisterWithOTP(ctx, req.(*RegisterWithOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_VerifyRegistrationOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyRegistrationOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).VerifyRegistrationOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_VerifyRegistrationOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).VerifyRegistrationOTP(ctx, req.(*VerifyRegistrationOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthService_IntrospectOAuthToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IntrospectOAuthTokenRequest)
 	if err := dec(in); err != nil {
@@ -508,6 +724,30 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CompletePasswordlessRegistration",
 			Handler:    _AuthService_CompletePasswordlessRegistration_Handler,
+		},
+		{
+			MethodName: "SendOTP",
+			Handler:    _AuthService_SendOTP_Handler,
+		},
+		{
+			MethodName: "VerifyOTP",
+			Handler:    _AuthService_VerifyOTP_Handler,
+		},
+		{
+			MethodName: "LoginWithOTP",
+			Handler:    _AuthService_LoginWithOTP_Handler,
+		},
+		{
+			MethodName: "VerifyLoginOTP",
+			Handler:    _AuthService_VerifyLoginOTP_Handler,
+		},
+		{
+			MethodName: "RegisterWithOTP",
+			Handler:    _AuthService_RegisterWithOTP_Handler,
+		},
+		{
+			MethodName: "VerifyRegistrationOTP",
+			Handler:    _AuthService_VerifyRegistrationOTP_Handler,
 		},
 		{
 			MethodName: "IntrospectOAuthToken",

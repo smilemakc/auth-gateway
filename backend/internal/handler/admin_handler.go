@@ -121,6 +121,42 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// GetUserOAuthAccounts returns OAuth accounts linked to a user
+// @Summary Get user OAuth accounts
+// @Description Get OAuth accounts linked to a specific user (admin only)
+// @Tags Admin - Users
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "User ID (UUID)"
+// @Success 200 {array} models.OAuthAccount
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/users/{id}/oauth-accounts [get]
+func (h *AdminHandler) GetUserOAuthAccounts(c *gin.Context) {
+	userID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
+		))
+		return
+	}
+
+	accounts, err := h.adminService.GetUserOAuthAccounts(c.Request.Context(), userID)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, accounts)
+}
+
 // UpdateUser updates user information
 // @Summary Update user
 // @Description Update user information (admin only)

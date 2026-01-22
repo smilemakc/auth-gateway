@@ -1,24 +1,29 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getServiceAccounts, deleteServiceAccount } from '../services/mockData';
-import { ServiceAccount } from '../types';
-import { Plus, Trash2, Edit2, Bot, CheckCircle, XCircle, Copy } from 'lucide-react';
+import { Plus, Trash2, Edit2, Bot, CheckCircle, XCircle, Copy, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useOAuthClients, useDeleteOAuthClient } from '../hooks/useOAuthClients';
 
 const ServiceAccounts: React.FC = () => {
-  const [accounts, setAccounts] = useState<ServiceAccount[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { t } = useLanguage();
 
-  useEffect(() => {
-    setAccounts(getServiceAccounts());
-  }, []);
+  const { data: clientsResponse, isLoading, error } = useOAuthClients();
+  const deleteClientMutation = useDeleteOAuthClient();
 
-  const handleDelete = (id: string) => {
+  // Filter to only show service accounts (clients with client_credentials grant type)
+  const accounts = (clientsResponse?.clients || []).filter(
+    (client: any) => client.allowed_grant_types?.includes('client_credentials')
+  );
+
+  const handleDelete = async (id: string) => {
     if (window.confirm(t('common.confirm_delete'))) {
-      if (deleteServiceAccount(id)) {
-        setAccounts(prev => prev.filter(a => a.id !== id));
+      try {
+        await deleteClientMutation.mutateAsync(id);
+      } catch (err: any) {
+        console.error('Failed to delete service account:', err);
+        alert(err?.message || 'Failed to delete service account');
       }
     }
   };
@@ -28,6 +33,22 @@ const ServiceAccounts: React.FC = () => {
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
+        Failed to load service accounts. Please try again.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -83,7 +104,7 @@ const ServiceAccounts: React.FC = () => {
             </div>
 
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-border">
-               <span className="text-xs text-muted-foreground">{new Date(account.created_at).toLocaleDateString()}</span>
+               <span className="text-xs text-muted-foreground">{account.created_at ? new Date(account.created_at).toLocaleDateString() : '-'}</span>
                <div className="flex gap-2">
                  <Link
                    to={`/developers/service-accounts/${account.id}`}
@@ -93,7 +114,8 @@ const ServiceAccounts: React.FC = () => {
                  </Link>
                  <button
                    onClick={() => handleDelete(account.id)}
-                   className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
+                   disabled={deleteClientMutation.isPending}
+                   className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors disabled:opacity-50"
                  >
                    <Trash2 size={18} />
                  </button>

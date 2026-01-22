@@ -108,3 +108,24 @@ export function useSendPasswordReset() {
     },
   });
 }
+
+/**
+ * Hook for fetching user OAuth accounts (admin only)
+ */
+export function useUserOAuthAccounts(userId: string) {
+  return useQuery({
+    queryKey: ['users', 'oauth-accounts', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/users/${userId}/oauth-accounts`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch OAuth accounts: ${response.status}`);
+      }
+      return response.json();
+    },
+    enabled: !!userId,
+  });
+}

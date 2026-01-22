@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getServiceAccount, createServiceAccount, updateServiceAccount } from '../services/mockData';
-import { ServiceAccount } from '../types';
-import { ArrowLeft, Save, Bot, Copy, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Bot, Copy, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useOAuthClientDetail, useCreateOAuthClient, useUpdateOAuthClient } from '../hooks/useOAuthClients';
 
 const ServiceAccountEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,48 +12,77 @@ const ServiceAccountEdit: React.FC = () => {
   const isEditMode = id && id !== 'new';
   const isNewMode = id === 'new';
 
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<ServiceAccount>>({
+  const { data: existingClient, isLoading: loadingClient } = useOAuthClientDetail(isEditMode ? id! : '');
+  const createMutation = useCreateOAuthClient();
+  const updateMutation = useUpdateOAuthClient();
+
+  const [formData, setFormData] = useState({
     name: '',
     description: '',
     is_active: true
   });
-  
+
   // State for newly created credentials
   const [createdCredentials, setCreatedCredentials] = useState<{clientId: string, clientSecret: string} | null>(null);
 
   useEffect(() => {
-    if (isEditMode) {
-      const existing = getServiceAccount(id);
-      if (existing) {
-        setFormData(existing);
-      } else {
-        navigate('/developers/service-accounts');
-      }
+    if (isEditMode && existingClient) {
+      setFormData({
+        name: existingClient.name || '',
+        description: existingClient.description || '',
+        is_active: existingClient.is_active ?? true
+      });
     }
-  }, [id, isEditMode, navigate]);
+  }, [existingClient, isEditMode]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    
-    setTimeout(() => {
+
+    try {
       if (isNewMode) {
-        const result = createServiceAccount(formData);
-        setCreatedCredentials({ clientId: result.account.client_id, clientSecret: result.clientSecret });
-        setLoading(false);
-        // Don't navigate away yet, show credentials
+        const result = await createMutation.mutateAsync({
+          name: formData.name,
+          description: formData.description,
+          client_type: 'confidential',
+          allowed_grant_types: ['client_credentials'],
+          allowed_scopes: ['openid', 'profile', 'email'],
+          require_pkce: false,
+          require_consent: false,
+          first_party: true,
+        });
+        setCreatedCredentials({
+          clientId: result.client.client_id,
+          clientSecret: result.client_secret
+        });
       } else if (id) {
-        updateServiceAccount(id, formData);
-        setLoading(false);
+        await updateMutation.mutateAsync({
+          id,
+          data: {
+            name: formData.name,
+            description: formData.description,
+            is_active: formData.is_active,
+          }
+        });
         navigate('/developers/service-accounts');
       }
-    }, 800);
+    } catch (err) {
+      console.error('Failed to save service account:', err);
+    }
   };
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
+
+  if (isEditMode && loadingClient) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (createdCredentials) {
     return (
@@ -171,16 +199,16 @@ const ServiceAccountEdit: React.FC = () => {
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className={`flex items-center px-6 py-2 text-sm font-medium text-primary-foreground bg-primary border border-transparent rounded-lg hover:bg-primary-600 focus:outline-none
-              ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {loading ? t('common.saving') : (
-              <>
-                <Save size={16} className="mr-2" />
-                {isNewMode ? t('keys.generate') : t('common.save')}
-              </>
+            {isLoading ? (
+              <Loader2 size={16} className="mr-2 animate-spin" />
+            ) : (
+              <Save size={16} className="mr-2" />
             )}
+            {isNewMode ? t('keys.generate') : t('common.save')}
           </button>
         </div>
       </form>

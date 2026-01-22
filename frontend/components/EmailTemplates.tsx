@@ -1,19 +1,32 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getEmailTemplates } from '../services/mockData';
-import { EmailTemplate } from '../types';
-import { Mail, Edit2, Calendar, FileText, ArrowLeft } from 'lucide-react';
+import { Mail, Edit2, Calendar, FileText, ArrowLeft, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useEmailTemplates } from '../hooks/useEmailTemplates';
 
 const EmailTemplates: React.FC = () => {
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { data: templatesResponse, isLoading, error } = useEmailTemplates();
 
-  useEffect(() => {
-    setTemplates(getEmailTemplates());
-  }, []);
+  const templates = templatesResponse?.templates || [];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
+        Failed to load email templates. Please try again.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -49,13 +62,13 @@ const EmailTemplates: React.FC = () => {
               <p className="text-sm text-muted-foreground mb-4 line-clamp-1">{t('email.subject')}: {template.subject}</p>
 
               <div className="flex flex-wrap gap-2 mt-4">
-                {template.variables.slice(0, 3).map(v => (
+                {(template.variables || []).slice(0, 3).map(v => (
                   <span key={v} className="bg-muted text-muted-foreground px-2 py-1 rounded text-xs font-mono border border-border">
                     {v}
                   </span>
                 ))}
-                {template.variables.length > 3 && (
-                  <span className="text-xs text-muted-foreground self-center">+{template.variables.length - 3} more</span>
+                {(template.variables || []).length > 3 && (
+                  <span className="text-xs text-muted-foreground self-center">+{(template.variables || []).length - 3} more</span>
                 )}
               </div>
             </div>
@@ -67,11 +80,18 @@ const EmailTemplates: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Calendar size={14} />
-                <span>Updated {new Date(template.updated_at).toLocaleDateString()}</span>
+                <span>Updated {template.updated_at ? new Date(template.updated_at).toLocaleDateString() : '-'}</span>
               </div>
             </div>
           </div>
         ))}
+
+        {templates.length === 0 && (
+          <div className="col-span-full text-center py-12 bg-card rounded-xl border border-border">
+            <Mail size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
+            <p className="text-muted-foreground">No email templates found.</p>
+          </div>
+        )}
       </div>
     </div>
   );

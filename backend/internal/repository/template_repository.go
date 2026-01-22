@@ -31,13 +31,14 @@ func (r *TemplateRepository) CreateEmailTemplate(ctx context.Context, template *
 	return err
 }
 
-// GetEmailTemplateByID retrieves a template by ID
+// GetEmailTemplateByID retrieves a template by ID with optional application relation loading
 func (r *TemplateRepository) GetEmailTemplateByID(ctx context.Context, id uuid.UUID) (*models.EmailTemplate, error) {
 	template := new(models.EmailTemplate)
 
 	err := r.db.NewSelect().
 		Model(template).
-		Where("id = ?", id).
+		Relation("Application").
+		Where("email_template.id = ?", id).
 		Scan(ctx)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -47,7 +48,7 @@ func (r *TemplateRepository) GetEmailTemplateByID(ctx context.Context, id uuid.U
 	return template, err
 }
 
-// GetEmailTemplateByType retrieves a template by type
+// GetEmailTemplateByType retrieves a global template by type (no application scope)
 func (r *TemplateRepository) GetEmailTemplateByType(ctx context.Context, templateType string) (*models.EmailTemplate, error) {
 	template := new(models.EmailTemplate)
 
@@ -55,6 +56,7 @@ func (r *TemplateRepository) GetEmailTemplateByType(ctx context.Context, templat
 		Model(template).
 		Where("type = ?", templateType).
 		Where("is_active = ?", true).
+		Where("application_id IS NULL").
 		Scan(ctx)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -64,14 +66,19 @@ func (r *TemplateRepository) GetEmailTemplateByType(ctx context.Context, templat
 	return template, err
 }
 
-// ListEmailTemplates retrieves all templates
-func (r *TemplateRepository) ListEmailTemplates(ctx context.Context) ([]models.EmailTemplate, error) {
+// ListEmailTemplates retrieves all templates with optional application filter
+func (r *TemplateRepository) ListEmailTemplates(ctx context.Context, applicationID *uuid.UUID) ([]models.EmailTemplate, error) {
 	templates := make([]models.EmailTemplate, 0)
 
-	err := r.db.NewSelect().
+	query := r.db.NewSelect().
 		Model(&templates).
-		Order("type").
-		Scan(ctx)
+		Relation("Application")
+
+	if applicationID != nil {
+		query = query.Where("email_template.application_id = ?", applicationID)
+	}
+
+	err := query.Order("email_template.type").Scan(ctx)
 
 	return templates, err
 }
@@ -144,4 +151,96 @@ func (r *TemplateRepository) CreateTemplateVersion(ctx context.Context, template
 		Exec(ctx)
 
 	return err
+}
+
+// CreateTemplateVersionWithApp creates a version history record with application ID
+func (r *TemplateRepository) CreateTemplateVersionWithApp(ctx context.Context, templateID uuid.UUID, applicationID *uuid.UUID, subject, htmlBody, textBody string, createdBy *uuid.UUID) error {
+	version := &models.EmailTemplateVersion{
+		TemplateID:    templateID,
+		ApplicationID: applicationID,
+		Subject:       subject,
+		HTMLBody:      htmlBody,
+		TextBody:      textBody,
+		CreatedBy:     createdBy,
+	}
+
+	_, err := r.db.NewInsert().
+		Model(version).
+		Exec(ctx)
+
+	return err
+}
+
+// ListEmailTemplatesByApplication retrieves templates for a specific application
+func (r *TemplateRepository) ListEmailTemplatesByApplication(ctx context.Context, applicationID uuid.UUID) ([]models.EmailTemplate, error) {
+	templates := make([]models.EmailTemplate, 0)
+
+	err := r.db.NewSelect().
+		Model(&templates).
+		Relation("Application").
+		Where("email_template.application_id = ?", applicationID).
+		Order("email_template.type").
+		Scan(ctx)
+
+	return templates, err
+}
+
+// GetEmailTemplateByTypeAndApp retrieves a template by type for a specific application
+func (r *TemplateRepository) GetEmailTemplateByTypeAndApp(ctx context.Context, templateType string, applicationID uuid.UUID) (*models.EmailTemplate, error) {
+	template := new(models.EmailTemplate)
+
+	err := r.db.NewSelect().
+		Model(template).
+		Relation("Application").
+		Where("email_template.type = ?", templateType).
+		Where("email_template.application_id = ?", applicationID).
+		Where("email_template.is_active = ?", true).
+		Scan(ctx)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("template not found for type: %s and application: %s", templateType, applicationID)
+	}
+
+	return template, err
+}
+
+// CopyTemplatesForApplication copies default templates to a new application
+func (r *TemplateRepository) CopyTemplatesForApplication(ctx context.Context, sourceAppID, targetAppID uuid.UUID) error {
+	sourceTemplates := make([]models.EmailTemplate, 0)
+
+	err := r.db.NewSelect().
+		Model(&sourceTemplates).
+		Where("email_template.application_id = ?", sourceAppID).
+		Scan(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to fetch source templates: %w", err)
+	}
+
+	if len(sourceTemplates) == 0 {
+		return fmt.Errorf("no templates found for source application: %s", sourceAppID)
+	}
+
+	for _, srcTemplate := range sourceTemplates {
+		newTemplate := &models.EmailTemplate{
+			Type:          srcTemplate.Type,
+			Name:          srcTemplate.Name,
+			Subject:       srcTemplate.Subject,
+			HTMLBody:      srcTemplate.HTMLBody,
+			TextBody:      srcTemplate.TextBody,
+			Variables:     srcTemplate.Variables,
+			IsActive:      srcTemplate.IsActive,
+			ApplicationID: &targetAppID,
+		}
+
+		_, err := r.db.NewInsert().
+			Model(newTemplate).
+			Exec(ctx)
+
+		if err != nil {
+			return fmt.Errorf("failed to copy template %s: %w", srcTemplate.Type, err)
+		}
+	}
+
+	return nil
 }

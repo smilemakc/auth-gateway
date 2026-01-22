@@ -24,7 +24,7 @@ import {
   Send
 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
-import { useUserDetail, useReset2FA, useSendPasswordReset } from '../hooks/useUsers';
+import { useUserDetail, useReset2FA, useSendPasswordReset, useUserOAuthAccounts } from '../hooks/useUsers';
 import { useUserSessions, useRevokeSession } from '../hooks/useSessions';
 import { useApiKeys } from '../hooks/useApiKeys';
 import { useUserAuditLogs } from '../hooks/useAuditLogs';
@@ -39,6 +39,7 @@ const UserDetails: React.FC = () => {
   const { data: sessionsData } = useUserSessions(id!, 1, 50);
   const { data: apiKeysData } = useApiKeys(1, 50);
   const { data: logsData } = useUserAuditLogs(id!, 1, 5);
+  const { data: oauthAccountsData } = useUserOAuthAccounts(id!);
 
   // Mutations
   const revokeSessionMutation = useRevokeSession();
@@ -51,7 +52,7 @@ const UserDetails: React.FC = () => {
     (key: any) => key.user_id === id
   );
   const logs = (logsData?.logs || logsData?.items || []).slice(0, 5);
-  const oauthAccounts: any[] = []; // TODO: Add OAuth accounts API
+  const oauthAccounts = oauthAccountsData || [];
 
   const handleRevokeSession = async (sessionId: string) => {
     if (window.confirm('Are you sure you want to revoke this session?')) {
@@ -355,18 +356,17 @@ const UserDetails: React.FC = () => {
             <div className="p-6">
               {oauthAccounts.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {oauthAccounts.map(acc => (
+                  {oauthAccounts.map((acc: any) => (
                     <div key={acc.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-muted flex items-center justify-center font-bold text-muted-foreground uppercase">
-                          {acc.provider[0]}
+                          {acc.provider?.[0] || '?'}
                         </div>
                         <div>
                           <p className="text-sm font-medium capitalize">{acc.provider}</p>
-                          <p className="text-xs text-muted-foreground">Connected {new Date(acc.connectedAt).toLocaleDateString()}</p>
+                          <p className="text-xs text-muted-foreground">Connected {new Date(acc.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <button className="text-xs text-destructive hover:underline">Unlink</button>
                     </div>
                   ))}
                 </div>

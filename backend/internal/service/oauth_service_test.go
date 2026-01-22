@@ -153,10 +153,10 @@ func TestOAuthService_HandleCallback(t *testing.T) {
 		}
 
 		// 5. Generate Tokens
-		mockJWT.GenerateAccessTokenFunc = func(user *models.User) (string, error) {
+		mockJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
 			return "new-jwt-access", nil
 		}
-		mockJWT.GenerateRefreshTokenFunc = func(user *models.User) (string, error) {
+		mockJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
 			return "new-jwt-refresh", nil
 		}
 		mockJWT.GetRefreshTokenExpirationFunc = func() time.Duration {
@@ -200,10 +200,10 @@ func TestOAuthService_HandleCallback(t *testing.T) {
 		}
 
 		// 4. Generate Tokens
-		mockJWT.GenerateAccessTokenFunc = func(user *models.User) (string, error) {
+		mockJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
 			return "jwt-access", nil
 		}
-		mockJWT.GenerateRefreshTokenFunc = func(user *models.User) (string, error) {
+		mockJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
 			return "jwt-refresh", nil
 		}
 		mockJWT.GetRefreshTokenExpirationFunc = func() time.Duration {

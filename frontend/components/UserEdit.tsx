@@ -4,7 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Save,
-  AlertCircle
+  AlertCircle,
+  Shield,
+  Check
 } from 'lucide-react';
 import type {
   AdminUserResponse,
@@ -174,35 +176,75 @@ const UserEdit: React.FC = () => {
               </div>
             </div>
 
-            <div className="sm:col-span-3">
-              <label className="block text-sm font-medium text-foreground mb-2">
+            <div className="sm:col-span-6">
+              <label className="block text-sm font-medium text-foreground mb-3">
                 {t('user.form.role')}
               </label>
-              <div className="space-y-2 mt-1">
-                {availableRoles.map(role => (
-                  <label key={role.id} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.role_ids.includes(role.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setFormData({
-                            ...formData,
-                            role_ids: [...formData.role_ids, role.id]
-                          });
-                        } else {
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {availableRoles.map(role => {
+                  const isSelected = formData.role_ids.includes(role.id);
+                  return (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
                           setFormData({
                             ...formData,
                             role_ids: formData.role_ids.filter((id: string) => id !== role.id)
                           });
+                        } else {
+                          setFormData({
+                            ...formData,
+                            role_ids: [...formData.role_ids, role.id]
+                          });
                         }
                       }}
-                      className="rounded border-input text-primary focus:ring-ring"
-                    />
-                    <span className="ml-2 text-sm text-foreground">{role.display_name || role.name}</span>
-                  </label>
-                ))}
+                      className={`
+                        flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all
+                        ${isSelected
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                          : 'border-border bg-card hover:border-input hover:bg-accent/50'
+                        }
+                      `}
+                    >
+                      <div className={`
+                        p-2 rounded-lg flex-shrink-0
+                        ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}
+                      `}>
+                        <Shield size={18} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                            {role.display_name || role.name}
+                          </span>
+                          {isSelected && (
+                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                              <Check size={12} className="text-primary-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        {role.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {role.description}
+                          </p>
+                        )}
+                        {role.permissions && role.permissions.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {role.permissions.length} permissions
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
+              {availableRoles.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4 bg-muted/50 rounded-lg">
+                  No roles available. Create roles in Access Settings first.
+                </p>
+              )}
             </div>
 
             <div className="sm:col-span-6">

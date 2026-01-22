@@ -62,8 +62,8 @@ func TestAuthService_SignUp(t *testing.T) {
 		mUser.GetByIDWithRolesFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
 			return &models.User{ID: id, Email: validReq.Email, Roles: []models.Role{{Name: "user"}}}, nil
 		}
-		mJWT.GenerateAccessTokenFunc = func(user *models.User) (string, error) { return "access_token", nil }
-		mJWT.GenerateRefreshTokenFunc = func(user *models.User) (string, error) { return "refresh_token", nil }
+		mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "access_token", nil }
+		mJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "refresh_token", nil }
 		mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
 		mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
 		mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }
@@ -127,8 +127,8 @@ func TestAuthService_SignIn(t *testing.T) {
 			}, nil
 		}
 
-		mJWT.GenerateAccessTokenFunc = func(user *models.User) (string, error) { return "access_token", nil }
-		mJWT.GenerateRefreshTokenFunc = func(user *models.User) (string, error) { return "refresh_token", nil }
+		mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "access_token", nil }
+		mJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "refresh_token", nil }
 		mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
 		mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
 		mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }
@@ -186,7 +186,7 @@ func TestAuthService_SignIn(t *testing.T) {
 			}, nil
 		}
 
-		mJWT.GenerateTwoFactorTokenFunc = func(user *models.User) (string, error) { return "2fa_token", nil }
+		mJWT.GenerateTwoFactorTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "2fa_token", nil }
 
 		resp, err := svc.SignIn(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{})
 		assert.NoError(t, err)
@@ -218,8 +218,8 @@ func TestAuthService_RefreshToken(t *testing.T) {
 			return &models.User{ID: userID}, nil
 		}
 		mToken.RevokeRefreshTokenFunc = func(ctx context.Context, tokenHash string) error { return nil }
-		mJWT.GenerateAccessTokenFunc = func(user *models.User) (string, error) { return "at", nil }
-		mJWT.GenerateRefreshTokenFunc = func(user *models.User) (string, error) { return "rt", nil }
+		mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "at", nil }
+		mJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "rt", nil }
 		mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
 		mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
 		mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }
@@ -451,8 +451,8 @@ func TestAuthService_CompletePasswordlessRegistration(t *testing.T) {
 		}
 
 		// Mock token generation
-		mJWT.GenerateAccessTokenFunc = func(user *models.User) (string, error) { return "access_token", nil }
-		mJWT.GenerateRefreshTokenFunc = func(user *models.User) (string, error) { return "refresh_token", nil }
+		mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "access_token", nil }
+		mJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "refresh_token", nil }
 		mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
 		mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
 		mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }
@@ -498,8 +498,8 @@ func TestAuthService_CompletePasswordlessRegistration(t *testing.T) {
 		}
 
 		// Mock token generation
-		mJWT.GenerateAccessTokenFunc = func(user *models.User) (string, error) { return "at", nil }
-		mJWT.GenerateRefreshTokenFunc = func(user *models.User) (string, error) { return "rt", nil }
+		mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "at", nil }
+		mJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "rt", nil }
 		mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
 		mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
 		mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }

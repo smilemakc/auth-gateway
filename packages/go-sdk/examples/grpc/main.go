@@ -90,4 +90,83 @@ func main() {
 		fmt.Printf("User created: %s (%s)\n", createResp.User.Username, createResp.User.Email)
 		fmt.Printf("Access token: %s...\n", createResp.AccessToken[:50])
 	}
+
+	// Example 6: Login with email and password
+	fmt.Println("\n=== Login via gRPC ===")
+	loginResp, err := grpcClient.LoginWithEmail(ctx, "user@example.com", "password123")
+	if err != nil {
+		log.Printf("Login failed: %v", err)
+	} else {
+		fmt.Printf("Logged in as: %s (%s)\n", loginResp.User.Username, loginResp.User.Email)
+		fmt.Printf("Access token expires in: %d seconds\n", loginResp.ExpiresIn)
+	}
+
+	// Example 7: OTP-based passwordless login
+	fmt.Println("\n=== OTP Login Flow ===")
+	// Step 1: Request OTP
+	otpLoginResp, err := grpcClient.LoginWithOTP(ctx, &proto.LoginWithOTPRequest{
+		Email: "user@example.com",
+	})
+	if err != nil {
+		log.Printf("OTP login request failed: %v", err)
+	} else {
+		fmt.Printf("OTP sent: %s (expires in %d seconds)\n", otpLoginResp.Message, otpLoginResp.ExpiresIn)
+
+		// Step 2: Verify OTP (in real app, user would provide this)
+		verifyResp, err := grpcClient.VerifyLoginOTP(ctx, &proto.VerifyLoginOTPRequest{
+			Email: "user@example.com",
+			Code:  "123456", // Replace with actual OTP
+		})
+		if err != nil {
+			log.Printf("OTP verification failed: %v", err)
+		} else {
+			fmt.Printf("OTP login successful for: %s\n", verifyResp.User.Email)
+		}
+	}
+
+	// Example 8: Send and verify generic OTP
+	fmt.Println("\n=== Send/Verify OTP ===")
+	sendOTPResp, err := grpcClient.SendOTP(ctx, &proto.SendOTPRequest{
+		Email:   "user@example.com",
+		OtpType: proto.OTPType_OTP_TYPE_VERIFICATION,
+	})
+	if err != nil {
+		log.Printf("Failed to send OTP: %v", err)
+	} else {
+		fmt.Printf("OTP sent: %s (expires in %d seconds)\n", sendOTPResp.Message, sendOTPResp.ExpiresIn)
+	}
+
+	// Example 9: OAuth token introspection (RFC 7662)
+	fmt.Println("\n=== OAuth Token Introspection ===")
+	oauthToken := "oauth_access_token_here"
+	oauthIntrospect, err := grpcClient.IntrospectOAuthToken(ctx, oauthToken, "access_token")
+	if err != nil {
+		log.Printf("OAuth introspection failed: %v", err)
+	} else {
+		fmt.Printf("Token active: %t\n", oauthIntrospect.Active)
+		fmt.Printf("Client ID: %s, Scope: %s\n", oauthIntrospect.ClientId, oauthIntrospect.Scope)
+		fmt.Printf("Subject: %s, Expires: %d\n", oauthIntrospect.Sub, oauthIntrospect.Exp)
+	}
+
+	// Example 10: Validate OAuth client credentials
+	fmt.Println("\n=== Validate OAuth Client ===")
+	clientValidation, err := grpcClient.ValidateOAuthClient(ctx, "my_client_id", "my_client_secret")
+	if err != nil {
+		log.Printf("Client validation failed: %v", err)
+	} else {
+		fmt.Printf("Client valid: %t\n", clientValidation.Valid)
+		fmt.Printf("Client name: %s, Type: %s\n", clientValidation.ClientName, clientValidation.ClientType)
+		fmt.Printf("Scopes: %v\n", clientValidation.Scopes)
+	}
+
+	// Example 11: Get OAuth client info
+	fmt.Println("\n=== Get OAuth Client ===")
+	oauthClient, err := grpcClient.GetOAuthClient(ctx, "my_client_id")
+	if err != nil {
+		log.Printf("Failed to get OAuth client: %v", err)
+	} else {
+		fmt.Printf("Client: %s (%s)\n", oauthClient.ClientName, oauthClient.ClientId)
+		fmt.Printf("Type: %s, Active: %t\n", oauthClient.ClientType, oauthClient.IsActive)
+		fmt.Printf("Grant types: %v\n", oauthClient.GrantTypes)
+	}
 }

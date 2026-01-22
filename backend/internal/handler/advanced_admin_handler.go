@@ -101,6 +101,56 @@ func (h *AdvancedAdminHandler) CreatePermission(c *gin.Context) {
 	c.JSON(http.StatusCreated, permission)
 }
 
+// UpdatePermission godoc
+// @Summary Update a permission
+// @Description Update an existing permission's description
+// @Tags Admin - RBAC
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Permission ID (UUID)"
+// @Param permission body models.UpdatePermissionRequest true "Permission data"
+// @Success 200 {object} models.Permission
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/rbac/permissions/{id} [put]
+func (h *AdvancedAdminHandler) UpdatePermission(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid permission ID"})
+		return
+	}
+
+	var req models.UpdatePermissionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	err = h.rbacService.UpdatePermission(c.Request.Context(), id, &req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	// Fetch updated permission to return
+	permissions, err := h.rbacService.ListPermissions(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	for _, p := range permissions {
+		if p.ID == id {
+			c.JSON(http.StatusOK, p)
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Permission not found"})
+}
+
 // DeletePermission godoc
 // @Summary Delete a permission
 // @Description Delete a permission by ID

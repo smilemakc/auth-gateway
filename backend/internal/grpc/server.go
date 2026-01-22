@@ -31,6 +31,7 @@ func NewServer(
 	apiKeyService *service.APIKeyService,
 	authService *service.AuthService,
 	oauthProviderService *service.OAuthProviderService,
+	otpService *service.OTPService,
 	redis *service.RedisService,
 	log *logger.Logger,
 ) (*Server, error) {
@@ -42,13 +43,14 @@ func NewServer(
 	// Create gRPC server with interceptors
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			contextExtractorInterceptor(log),
 			loggingInterceptor(log),
 			recoveryInterceptor(log),
 		),
 	)
 
 	// Register auth service handler
-	handler := NewAuthHandlerV2(jwtService, userRepo, tokenRepo, rbacRepo, apiKeyService, authService, oauthProviderService, redis, log)
+	handler := NewAuthHandlerV2(jwtService, userRepo, tokenRepo, rbacRepo, apiKeyService, authService, oauthProviderService, otpService, redis, log)
 	pb.RegisterAuthServiceServer(grpcServer, handler)
 
 	// Register reflection service for debugging

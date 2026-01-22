@@ -1,17 +1,33 @@
 
 import React, { useState } from 'react';
-import { Trash2, Ban, Copy, CheckCircle } from 'lucide-react';
+import { Trash2, Ban, Copy, CheckCircle, X, Plus } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
-import { useApiKeys, useRevokeApiKey, useDeleteApiKey } from '../hooks/useApiKeys';
+import { useApiKeys, useRevokeApiKey, useDeleteApiKey, useCreateApiKey } from '../hooks/useApiKeys';
+
+const AVAILABLE_SCOPES = [
+  'users:read',
+  'users:write',
+  'token:validate',
+  'token:refresh',
+  'sessions:read',
+  'sessions:write',
+  'audit:read',
+];
 
 const ApiKeys: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [newKeyScopes, setNewKeyScopes] = useState<string[]>(['token:validate']);
+  const [newKeyExpiresIn, setNewKeyExpiresIn] = useState<number | undefined>(undefined);
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const { t } = useLanguage();
 
   // Fetch API keys with React Query
   const { data, isLoading, error } = useApiKeys(1, 100);
   const revokeApiKeyMutation = useRevokeApiKey();
   const deleteApiKeyMutation = useDeleteApiKey();
+  const createApiKeyMutation = useCreateApiKey();
 
   const keys = data?.api_keys || [];
 
@@ -43,6 +59,46 @@ const ApiKeys: React.FC = () => {
     }
   };
 
+  const handleCreateKey = async () => {
+    if (!newKeyName.trim()) {
+      alert(t('keys.name_required') || 'Please enter a name for the API key');
+      return;
+    }
+    if (newKeyScopes.length === 0) {
+      alert(t('keys.scopes_required') || 'Please select at least one scope');
+      return;
+    }
+
+    try {
+      const result = await createApiKeyMutation.mutateAsync({
+        name: newKeyName,
+        scopes: newKeyScopes,
+        expires_in: newKeyExpiresIn,
+      });
+      // The API returns the full key only once - show it to the user
+      setGeneratedKey(result.key);
+    } catch (error) {
+      console.error('Failed to create API key:', error);
+      alert('Failed to create API key: ' + (error as Error).message);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowCreateModal(false);
+    setNewKeyName('');
+    setNewKeyScopes(['token:validate']);
+    setNewKeyExpiresIn(undefined);
+    setGeneratedKey(null);
+  };
+
+  const toggleScope = (scope: string) => {
+    setNewKeyScopes(prev =>
+      prev.includes(scope)
+        ? prev.filter(s => s !== scope)
+        : [...prev, scope]
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -63,10 +119,135 @@ const ApiKeys: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">{t('keys.title')}</h1>
-        <button className="bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-          + {t('keys.generate')}
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        >
+          <Plus size={18} />
+          {t('keys.generate')}
         </button>
       </div>
+
+      {/* Create API Key Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-xl shadow-xl border border-border w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h2 className="text-lg font-semibold text-foreground">
+                {generatedKey ? (t('keys.key_generated') || 'API Key Generated') : (t('keys.generate') || 'Generate API Key')}
+              </h2>
+              <button
+                onClick={handleCloseModal}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {generatedKey ? (
+                <>
+                  <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                    <p className="text-sm text-warning font-medium mb-2">
+                      {t('keys.copy_warning') || 'Copy this key now. You won\'t be able to see it again!'}
+                    </p>
+                    <div className="flex items-center gap-2 bg-card rounded border border-border p-2">
+                      <code className="flex-1 text-sm font-mono text-foreground break-all">
+                        {generatedKey}
+                      </code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(generatedKey);
+                          setCopiedId('new-key');
+                          setTimeout(() => setCopiedId(null), 2000);
+                        }}
+                        className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {copiedId === 'new-key' ? <CheckCircle size={18} className="text-success" /> : <Copy size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleCloseModal}
+                    className="w-full bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    {t('common.done') || 'Done'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      {t('keys.name') || 'Name'}
+                    </label>
+                    <input
+                      type="text"
+                      value={newKeyName}
+                      onChange={(e) => setNewKeyName(e.target.value)}
+                      placeholder={t('keys.name_placeholder') || 'My API Key'}
+                      className="w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      {t('keys.scopes') || 'Scopes'}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {AVAILABLE_SCOPES.map(scope => (
+                        <button
+                          key={scope}
+                          onClick={() => toggleScope(scope)}
+                          className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                            newKeyScopes.includes(scope)
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-background text-muted-foreground border-input hover:border-primary'
+                          }`}
+                        >
+                          {scope}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      {t('keys.expires_in') || 'Expires In (days)'}
+                    </label>
+                    <select
+                      value={newKeyExpiresIn || ''}
+                      onChange={(e) => setNewKeyExpiresIn(e.target.value ? parseInt(e.target.value) : undefined)}
+                      className="w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option value="">{t('keys.never') || 'Never'}</option>
+                      <option value="30">30 {t('common.days') || 'days'}</option>
+                      <option value="90">90 {t('common.days') || 'days'}</option>
+                      <option value="180">180 {t('common.days') || 'days'}</option>
+                      <option value="365">365 {t('common.days') || 'days'}</option>
+                    </select>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={handleCloseModal}
+                      className="flex-1 px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
+                    >
+                      {t('common.cancel')}
+                    </button>
+                    <button
+                      onClick={handleCreateKey}
+                      disabled={createApiKeyMutation.isPending}
+                      className="flex-1 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    >
+                      {createApiKeyMutation.isPending ? (t('common.creating') || 'Creating...') : (t('keys.generate') || 'Generate')}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {keys.map((apiKey) => (

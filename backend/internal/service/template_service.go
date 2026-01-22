@@ -86,9 +86,9 @@ func (s *TemplateService) GetEmailTemplateByType(ctx context.Context, templateTy
 	return s.repo.GetEmailTemplateByType(ctx, templateType)
 }
 
-// ListEmailTemplates lists all email templates
+// ListEmailTemplates lists all global email templates
 func (s *TemplateService) ListEmailTemplates(ctx context.Context) ([]models.EmailTemplate, error) {
-	return s.repo.ListEmailTemplates(ctx)
+	return s.repo.ListEmailTemplates(ctx, nil)
 }
 
 // UpdateEmailTemplate updates an email template
@@ -312,6 +312,8 @@ func (s *TemplateService) GetAvailableTemplateTypes() []string {
 		models.EmailTemplateTypePasswordReset,
 		models.EmailTemplateTypeWelcome,
 		models.EmailTemplateType2FA,
+		models.EmailTemplateTypeOTPLogin,
+		models.EmailTemplateTypeOTPRegistration,
 		models.EmailTemplateTypeCustom,
 	}
 }
@@ -319,4 +321,263 @@ func (s *TemplateService) GetAvailableTemplateTypes() []string {
 // GetDefaultVariables returns default variables for a template type
 func (s *TemplateService) GetDefaultVariables(templateType string) []string {
 	return models.GetDefaultTemplateVariables(templateType)
+}
+
+// CreateEmailTemplateForApp creates a template for a specific application
+func (s *TemplateService) CreateEmailTemplateForApp(ctx context.Context, applicationID uuid.UUID, req *models.CreateEmailTemplateRequest, createdBy uuid.UUID) (*models.EmailTemplate, error) {
+	if err := s.validateTemplateSyntax(req.HTMLBody); err != nil {
+		return nil, fmt.Errorf("invalid HTML template: %w", err)
+	}
+	if req.TextBody != "" {
+		if err := s.validateTemplateSyntax(req.TextBody); err != nil {
+			return nil, fmt.Errorf("invalid text template: %w", err)
+		}
+	}
+
+	variables := req.Variables
+	if len(variables) == 0 {
+		variables = models.GetDefaultTemplateVariables(req.Type)
+	}
+	variablesJSON, _ := json.Marshal(variables)
+
+	emailTemplate := &models.EmailTemplate{
+		Type:          req.Type,
+		Name:          req.Name,
+		Subject:       req.Subject,
+		HTMLBody:      req.HTMLBody,
+		TextBody:      req.TextBody,
+		Variables:     variablesJSON,
+		IsActive:      true,
+		ApplicationID: &applicationID,
+	}
+
+	if err := s.repo.CreateEmailTemplate(ctx, emailTemplate); err != nil {
+		return nil, err
+	}
+
+	s.auditService.Log(AuditLogParams{
+		UserID: &createdBy,
+		Action: models.ActionCreate,
+		Status: models.StatusSuccess,
+		Details: map[string]interface{}{
+			"resource_type":  models.ResourceEmailTemplate,
+			"template_id":    emailTemplate.ID.String(),
+			"template_type":  emailTemplate.Type,
+			"template_name":  emailTemplate.Name,
+			"application_id": applicationID.String(),
+		},
+	})
+
+	return emailTemplate, nil
+}
+
+// ListEmailTemplatesForApp lists templates for a specific application
+func (s *TemplateService) ListEmailTemplatesForApp(ctx context.Context, applicationID uuid.UUID) ([]models.EmailTemplate, error) {
+	return s.repo.ListEmailTemplatesByApplication(ctx, applicationID)
+}
+
+// GetEmailTemplateByTypeAndApp retrieves a template by type for a specific application
+func (s *TemplateService) GetEmailTemplateByTypeAndApp(ctx context.Context, templateType string, applicationID uuid.UUID) (*models.EmailTemplate, error) {
+	return s.repo.GetEmailTemplateByTypeAndApp(ctx, templateType, applicationID)
+}
+
+// UpdateEmailTemplateForApp updates an application-scoped template
+func (s *TemplateService) UpdateEmailTemplateForApp(ctx context.Context, applicationID, templateID uuid.UUID, req *models.UpdateEmailTemplateRequest, updatedBy uuid.UUID) error {
+	existingTemplate, err := s.repo.GetEmailTemplateByID(ctx, templateID)
+	if err != nil {
+		return err
+	}
+
+	if existingTemplate.ApplicationID == nil || *existingTemplate.ApplicationID != applicationID {
+		return fmt.Errorf("template does not belong to application")
+	}
+
+	name := existingTemplate.Name
+	if req.Name != "" {
+		name = req.Name
+	}
+
+	subject := existingTemplate.Subject
+	if req.Subject != "" {
+		subject = req.Subject
+	}
+
+	htmlBody := existingTemplate.HTMLBody
+	if req.HTMLBody != "" {
+		if err := s.validateTemplateSyntax(req.HTMLBody); err != nil {
+			return fmt.Errorf("invalid HTML template: %w", err)
+		}
+		htmlBody = req.HTMLBody
+	}
+
+	textBody := existingTemplate.TextBody
+	if req.TextBody != "" {
+		if err := s.validateTemplateSyntax(req.TextBody); err != nil {
+			return fmt.Errorf("invalid text template: %w", err)
+		}
+		textBody = req.TextBody
+	}
+
+	var variablesJSON interface{} = existingTemplate.Variables
+	if len(req.Variables) > 0 {
+		variablesJSON, _ = json.Marshal(req.Variables)
+	}
+
+	isActive := existingTemplate.IsActive
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+
+	if err := s.repo.CreateTemplateVersionWithApp(ctx, templateID, &applicationID, existingTemplate.Subject, existingTemplate.HTMLBody, existingTemplate.TextBody, &updatedBy); err != nil {
+		fmt.Printf("Failed to create template version: %v\n", err)
+	}
+
+	if err := s.repo.UpdateEmailTemplate(ctx, templateID, name, subject, htmlBody, textBody, variablesJSON, isActive); err != nil {
+		return err
+	}
+
+	s.auditService.Log(AuditLogParams{
+		UserID: &updatedBy,
+		Action: models.ActionUpdate,
+		Status: models.StatusSuccess,
+		Details: map[string]interface{}{
+			"resource_type":  models.ResourceEmailTemplate,
+			"template_id":    templateID.String(),
+			"template_name":  name,
+			"application_id": applicationID.String(),
+		},
+	})
+
+	return nil
+}
+
+// RenderTemplateForApp renders a template by type for a specific application
+func (s *TemplateService) RenderTemplateForApp(ctx context.Context, templateType string, applicationID uuid.UUID, variables map[string]interface{}) (subject, htmlBody, textBody string, err error) {
+	emailTemplate, err := s.repo.GetEmailTemplateByTypeAndApp(ctx, templateType, applicationID)
+	if err != nil {
+		emailTemplate, err = s.repo.GetEmailTemplateByType(ctx, templateType)
+		if err != nil {
+			return "", "", "", err
+		}
+	}
+
+	subject, err = s.renderTemplate(emailTemplate.Subject, variables)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to render subject: %w", err)
+	}
+
+	htmlBody, err = s.renderTemplate(emailTemplate.HTMLBody, variables)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to render HTML body: %w", err)
+	}
+
+	if emailTemplate.TextBody != "" {
+		textBody, err = s.renderTemplate(emailTemplate.TextBody, variables)
+		if err != nil {
+			return "", "", "", fmt.Errorf("failed to render text body: %w", err)
+		}
+	}
+
+	return subject, htmlBody, textBody, nil
+}
+
+// InitializeTemplatesForApp creates default templates for a new application
+func (s *TemplateService) InitializeTemplatesForApp(ctx context.Context, applicationID uuid.UUID, createdBy uuid.UUID) error {
+	templateTypes := []string{
+		models.EmailTemplateTypeVerification,
+		models.EmailTemplateTypePasswordReset,
+		models.EmailTemplateTypeWelcome,
+		models.EmailTemplateType2FA,
+		models.EmailTemplateTypeOTPLogin,
+		models.EmailTemplateTypeOTPRegistration,
+	}
+
+	for _, templateType := range templateTypes {
+		variables := models.GetDefaultTemplateVariables(templateType)
+		variablesJSON, _ := json.Marshal(variables)
+
+		subject, htmlBody, textBody := s.getDefaultTemplateContent(templateType)
+
+		emailTemplate := &models.EmailTemplate{
+			Type:          templateType,
+			Name:          s.getDefaultTemplateName(templateType),
+			Subject:       subject,
+			HTMLBody:      htmlBody,
+			TextBody:      textBody,
+			Variables:     variablesJSON,
+			IsActive:      true,
+			ApplicationID: &applicationID,
+		}
+
+		if err := s.repo.CreateEmailTemplate(ctx, emailTemplate); err != nil {
+			return fmt.Errorf("failed to create %s template: %w", templateType, err)
+		}
+	}
+
+	s.auditService.Log(AuditLogParams{
+		UserID: &createdBy,
+		Action: models.ActionCreate,
+		Status: models.StatusSuccess,
+		Details: map[string]interface{}{
+			"resource_type":  models.ResourceEmailTemplate,
+			"action":         "initialize_templates",
+			"application_id": applicationID.String(),
+			"template_count": len(templateTypes),
+		},
+	})
+
+	return nil
+}
+
+func (s *TemplateService) getDefaultTemplateName(templateType string) string {
+	switch templateType {
+	case models.EmailTemplateTypeVerification:
+		return "Email Verification"
+	case models.EmailTemplateTypePasswordReset:
+		return "Password Reset"
+	case models.EmailTemplateTypeWelcome:
+		return "Welcome Email"
+	case models.EmailTemplateType2FA:
+		return "Two-Factor Authentication"
+	case models.EmailTemplateTypeOTPLogin:
+		return "OTP Login"
+	case models.EmailTemplateTypeOTPRegistration:
+		return "OTP Registration"
+	default:
+		return "Custom Template"
+	}
+}
+
+func (s *TemplateService) getDefaultTemplateContent(templateType string) (subject, htmlBody, textBody string) {
+	switch templateType {
+	case models.EmailTemplateTypeVerification:
+		subject = "Verify Your Email Address"
+		htmlBody = `<html><body><h2>Email Verification</h2><p>Hello {{.username}},</p><p>Your verification code is: <strong>{{.code}}</strong></p><p>This code will expire in {{.expiry_minutes}} minutes.</p></body></html>`
+		textBody = `Email Verification\n\nHello {{.username}},\n\nYour verification code is: {{.code}}\n\nThis code will expire in {{.expiry_minutes}} minutes.`
+	case models.EmailTemplateTypePasswordReset:
+		subject = "Reset Your Password"
+		htmlBody = `<html><body><h2>Password Reset</h2><p>Hello {{.username}},</p><p>Your password reset code is: <strong>{{.code}}</strong></p><p>This code will expire in {{.expiry_minutes}} minutes.</p></body></html>`
+		textBody = `Password Reset\n\nHello {{.username}},\n\nYour password reset code is: {{.code}}\n\nThis code will expire in {{.expiry_minutes}} minutes.`
+	case models.EmailTemplateTypeWelcome:
+		subject = "Welcome to Our Platform"
+		htmlBody = `<html><body><h2>Welcome!</h2><p>Hello {{.full_name}},</p><p>Welcome to our platform. We're excited to have you on board!</p></body></html>`
+		textBody = `Welcome!\n\nHello {{.full_name}},\n\nWelcome to our platform. We're excited to have you on board!`
+	case models.EmailTemplateType2FA:
+		subject = "Your Two-Factor Authentication Code"
+		htmlBody = `<html><body><h2>Two-Factor Authentication</h2><p>Hello {{.username}},</p><p>Your 2FA code is: <strong>{{.code}}</strong></p><p>This code will expire in {{.expiry_minutes}} minutes.</p></body></html>`
+		textBody = `Two-Factor Authentication\n\nHello {{.username}},\n\nYour 2FA code is: {{.code}}\n\nThis code will expire in {{.expiry_minutes}} minutes.`
+	case models.EmailTemplateTypeOTPLogin:
+		subject = "Your Login Code"
+		htmlBody = `<html><body><h2>Login Code</h2><p>Hello {{.username}},</p><p>Your one-time login code is: <strong>{{.code}}</strong></p><p>This code will expire in {{.expiry_minutes}} minutes.</p></body></html>`
+		textBody = `Login Code\n\nHello {{.username}},\n\nYour one-time login code is: {{.code}}\n\nThis code will expire in {{.expiry_minutes}} minutes.`
+	case models.EmailTemplateTypeOTPRegistration:
+		subject = "Complete Your Registration"
+		htmlBody = `<html><body><h2>Registration Code</h2><p>Hello {{.username}},</p><p>Your registration code is: <strong>{{.code}}</strong></p><p>This code will expire in {{.expiry_minutes}} minutes.</p></body></html>`
+		textBody = `Registration Code\n\nHello {{.username}},\n\nYour registration code is: {{.code}}\n\nThis code will expire in {{.expiry_minutes}} minutes.`
+	default:
+		subject = "Notification"
+		htmlBody = `<html><body><p>Default template content</p></body></html>`
+		textBody = `Default template content`
+	}
+	return
 }

@@ -21,6 +21,65 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// OTPType represents the type of OTP
+type OTPType int32
+
+const (
+	OTPType_OTP_TYPE_UNSPECIFIED    OTPType = 0
+	OTPType_OTP_TYPE_VERIFICATION   OTPType = 1
+	OTPType_OTP_TYPE_PASSWORD_RESET OTPType = 2
+	OTPType_OTP_TYPE_TWO_FA         OTPType = 3
+	OTPType_OTP_TYPE_LOGIN          OTPType = 4
+	OTPType_OTP_TYPE_REGISTRATION   OTPType = 5
+)
+
+// Enum value maps for OTPType.
+var (
+	OTPType_name = map[int32]string{
+		0: "OTP_TYPE_UNSPECIFIED",
+		1: "OTP_TYPE_VERIFICATION",
+		2: "OTP_TYPE_PASSWORD_RESET",
+		3: "OTP_TYPE_TWO_FA",
+		4: "OTP_TYPE_LOGIN",
+		5: "OTP_TYPE_REGISTRATION",
+	}
+	OTPType_value = map[string]int32{
+		"OTP_TYPE_UNSPECIFIED":    0,
+		"OTP_TYPE_VERIFICATION":   1,
+		"OTP_TYPE_PASSWORD_RESET": 2,
+		"OTP_TYPE_TWO_FA":         3,
+		"OTP_TYPE_LOGIN":          4,
+		"OTP_TYPE_REGISTRATION":   5,
+	}
+)
+
+func (x OTPType) Enum() *OTPType {
+	p := new(OTPType)
+	*p = x
+	return p
+}
+
+func (x OTPType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (OTPType) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_auth_proto_enumTypes[0].Descriptor()
+}
+
+func (OTPType) Type() protoreflect.EnumType {
+	return &file_proto_auth_proto_enumTypes[0]
+}
+
+func (x OTPType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use OTPType.Descriptor instead.
+func (OTPType) EnumDescriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{0}
+}
+
 // ValidateTokenRequest contains the token to validate
 type ValidateTokenRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1242,6 +1301,794 @@ func (x *CompletePasswordlessRegistrationResponse) GetErrorMessage() string {
 	return ""
 }
 
+// SendOTPRequest contains data to send OTP
+type SendOTPRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`                                       // Email to send OTP to
+	OtpType       OTPType                `protobuf:"varint,2,opt,name=otp_type,json=otpType,proto3,enum=auth.OTPType" json:"otp_type,omitempty"` // Type of OTP (login, registration, verification, etc.)
+	ProfileId     string                 `protobuf:"bytes,3,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`              // Optional email profile ID for multi-tenant support
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendOTPRequest) Reset() {
+	*x = SendOTPRequest{}
+	mi := &file_proto_auth_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendOTPRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendOTPRequest) ProtoMessage() {}
+
+func (x *SendOTPRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendOTPRequest.ProtoReflect.Descriptor instead.
+func (*SendOTPRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *SendOTPRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *SendOTPRequest) GetOtpType() OTPType {
+	if x != nil {
+		return x.OtpType
+	}
+	return OTPType_OTP_TYPE_UNSPECIFIED
+}
+
+func (x *SendOTPRequest) GetProfileId() string {
+	if x != nil {
+		return x.ProfileId
+	}
+	return ""
+}
+
+// SendOTPResponse contains result of OTP sending
+type SendOTPResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`                               // Success message
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // Error message if failed
+	ExpiresIn     int32                  `protobuf:"varint,4,opt,name=expires_in,json=expiresIn,proto3" json:"expires_in,omitempty"`         // OTP expiration time in seconds
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendOTPResponse) Reset() {
+	*x = SendOTPResponse{}
+	mi := &file_proto_auth_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendOTPResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendOTPResponse) ProtoMessage() {}
+
+func (x *SendOTPResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendOTPResponse.ProtoReflect.Descriptor instead.
+func (*SendOTPResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *SendOTPResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SendOTPResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *SendOTPResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *SendOTPResponse) GetExpiresIn() int32 {
+	if x != nil {
+		return x.ExpiresIn
+	}
+	return 0
+}
+
+// VerifyOTPRequest contains OTP verification data
+type VerifyOTPRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`                                       // Email that received the OTP
+	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`                                         // 6-digit OTP code
+	OtpType       OTPType                `protobuf:"varint,3,opt,name=otp_type,json=otpType,proto3,enum=auth.OTPType" json:"otp_type,omitempty"` // Type of OTP being verified
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyOTPRequest) Reset() {
+	*x = VerifyOTPRequest{}
+	mi := &file_proto_auth_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyOTPRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyOTPRequest) ProtoMessage() {}
+
+func (x *VerifyOTPRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyOTPRequest.ProtoReflect.Descriptor instead.
+func (*VerifyOTPRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *VerifyOTPRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *VerifyOTPRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *VerifyOTPRequest) GetOtpType() OTPType {
+	if x != nil {
+		return x.OtpType
+	}
+	return OTPType_OTP_TYPE_UNSPECIFIED
+}
+
+// VerifyOTPResponse contains OTP verification result
+type VerifyOTPResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Valid         bool                   `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`                                  // Whether OTP is valid
+	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // Error message if invalid
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyOTPResponse) Reset() {
+	*x = VerifyOTPResponse{}
+	mi := &file_proto_auth_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyOTPResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyOTPResponse) ProtoMessage() {}
+
+func (x *VerifyOTPResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyOTPResponse.ProtoReflect.Descriptor instead.
+func (*VerifyOTPResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *VerifyOTPResponse) GetValid() bool {
+	if x != nil {
+		return x.Valid
+	}
+	return false
+}
+
+func (x *VerifyOTPResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+// LoginWithOTPRequest contains data for OTP-based login (step 1: request OTP)
+type LoginWithOTPRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`                          // Email for passwordless login
+	ProfileId     string                 `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"` // Optional email profile ID
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LoginWithOTPRequest) Reset() {
+	*x = LoginWithOTPRequest{}
+	mi := &file_proto_auth_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginWithOTPRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginWithOTPRequest) ProtoMessage() {}
+
+func (x *LoginWithOTPRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LoginWithOTPRequest.ProtoReflect.Descriptor instead.
+func (*LoginWithOTPRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *LoginWithOTPRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *LoginWithOTPRequest) GetProfileId() string {
+	if x != nil {
+		return x.ProfileId
+	}
+	return ""
+}
+
+// LoginWithOTPResponse contains result of OTP login request
+type LoginWithOTPResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"` // e.g., "OTP sent to your email"
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ExpiresIn     int32                  `protobuf:"varint,4,opt,name=expires_in,json=expiresIn,proto3" json:"expires_in,omitempty"` // OTP expiration time in seconds
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LoginWithOTPResponse) Reset() {
+	*x = LoginWithOTPResponse{}
+	mi := &file_proto_auth_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginWithOTPResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginWithOTPResponse) ProtoMessage() {}
+
+func (x *LoginWithOTPResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LoginWithOTPResponse.ProtoReflect.Descriptor instead.
+func (*LoginWithOTPResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *LoginWithOTPResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *LoginWithOTPResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *LoginWithOTPResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *LoginWithOTPResponse) GetExpiresIn() int32 {
+	if x != nil {
+		return x.ExpiresIn
+	}
+	return 0
+}
+
+// RegisterWithOTPRequest contains data for OTP-based registration (step 1: send OTP)
+type RegisterWithOTPRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`                          // Email for registration
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`                    // Optional username
+	FullName      string                 `protobuf:"bytes,3,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`    // Optional full name
+	ProfileId     string                 `protobuf:"bytes,4,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"` // Optional email profile ID
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterWithOTPRequest) Reset() {
+	*x = RegisterWithOTPRequest{}
+	mi := &file_proto_auth_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterWithOTPRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterWithOTPRequest) ProtoMessage() {}
+
+func (x *RegisterWithOTPRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterWithOTPRequest.ProtoReflect.Descriptor instead.
+func (*RegisterWithOTPRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *RegisterWithOTPRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *RegisterWithOTPRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *RegisterWithOTPRequest) GetFullName() string {
+	if x != nil {
+		return x.FullName
+	}
+	return ""
+}
+
+func (x *RegisterWithOTPRequest) GetProfileId() string {
+	if x != nil {
+		return x.ProfileId
+	}
+	return ""
+}
+
+// RegisterWithOTPResponse contains result of registration OTP request
+type RegisterWithOTPResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"` // e.g., "Verification code sent to your email"
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ExpiresIn     int32                  `protobuf:"varint,4,opt,name=expires_in,json=expiresIn,proto3" json:"expires_in,omitempty"` // OTP expiration time in seconds
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterWithOTPResponse) Reset() {
+	*x = RegisterWithOTPResponse{}
+	mi := &file_proto_auth_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterWithOTPResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterWithOTPResponse) ProtoMessage() {}
+
+func (x *RegisterWithOTPResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterWithOTPResponse.ProtoReflect.Descriptor instead.
+func (*RegisterWithOTPResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *RegisterWithOTPResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *RegisterWithOTPResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *RegisterWithOTPResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *RegisterWithOTPResponse) GetExpiresIn() int32 {
+	if x != nil {
+		return x.ExpiresIn
+	}
+	return 0
+}
+
+// VerifyRegistrationOTPRequest contains data to complete OTP registration (step 2)
+type VerifyRegistrationOTPRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`                       // Email that received the OTP
+	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`                         // 6-digit OTP code
+	Username      string                 `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`                 // Optional username (can be set here if not in step 1)
+	FullName      string                 `protobuf:"bytes,4,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"` // Optional full name (can be set here if not in step 1)
+	Password      string                 `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"`                 // Optional password (for hybrid registration)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyRegistrationOTPRequest) Reset() {
+	*x = VerifyRegistrationOTPRequest{}
+	mi := &file_proto_auth_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyRegistrationOTPRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyRegistrationOTPRequest) ProtoMessage() {}
+
+func (x *VerifyRegistrationOTPRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyRegistrationOTPRequest.ProtoReflect.Descriptor instead.
+func (*VerifyRegistrationOTPRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *VerifyRegistrationOTPRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *VerifyRegistrationOTPRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *VerifyRegistrationOTPRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *VerifyRegistrationOTPRequest) GetFullName() string {
+	if x != nil {
+		return x.FullName
+	}
+	return ""
+}
+
+func (x *VerifyRegistrationOTPRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+// VerifyRegistrationOTPResponse contains completed registration result
+type VerifyRegistrationOTPResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	AccessToken   string                 `protobuf:"bytes,2,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	RefreshToken  string                 `protobuf:"bytes,3,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	ExpiresIn     int64                  `protobuf:"varint,4,opt,name=expires_in,json=expiresIn,proto3" json:"expires_in,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyRegistrationOTPResponse) Reset() {
+	*x = VerifyRegistrationOTPResponse{}
+	mi := &file_proto_auth_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyRegistrationOTPResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyRegistrationOTPResponse) ProtoMessage() {}
+
+func (x *VerifyRegistrationOTPResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyRegistrationOTPResponse.ProtoReflect.Descriptor instead.
+func (*VerifyRegistrationOTPResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *VerifyRegistrationOTPResponse) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
+func (x *VerifyRegistrationOTPResponse) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *VerifyRegistrationOTPResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+func (x *VerifyRegistrationOTPResponse) GetExpiresIn() int64 {
+	if x != nil {
+		return x.ExpiresIn
+	}
+	return 0
+}
+
+func (x *VerifyRegistrationOTPResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+// VerifyLoginOTPRequest contains data for step 2 of OTP login
+type VerifyLoginOTPRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"` // Email that received the OTP
+	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`   // 6-digit OTP code
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyLoginOTPRequest) Reset() {
+	*x = VerifyLoginOTPRequest{}
+	mi := &file_proto_auth_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyLoginOTPRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyLoginOTPRequest) ProtoMessage() {}
+
+func (x *VerifyLoginOTPRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyLoginOTPRequest.ProtoReflect.Descriptor instead.
+func (*VerifyLoginOTPRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *VerifyLoginOTPRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *VerifyLoginOTPRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+// VerifyLoginOTPResponse contains the login result after OTP verification
+type VerifyLoginOTPResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	AccessToken   string                 `protobuf:"bytes,2,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	RefreshToken  string                 `protobuf:"bytes,3,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	ExpiresIn     int64                  `protobuf:"varint,4,opt,name=expires_in,json=expiresIn,proto3" json:"expires_in,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyLoginOTPResponse) Reset() {
+	*x = VerifyLoginOTPResponse{}
+	mi := &file_proto_auth_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyLoginOTPResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyLoginOTPResponse) ProtoMessage() {}
+
+func (x *VerifyLoginOTPResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyLoginOTPResponse.ProtoReflect.Descriptor instead.
+func (*VerifyLoginOTPResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *VerifyLoginOTPResponse) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
+func (x *VerifyLoginOTPResponse) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *VerifyLoginOTPResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+func (x *VerifyLoginOTPResponse) GetExpiresIn() int64 {
+	if x != nil {
+		return x.ExpiresIn
+	}
+	return 0
+}
+
+func (x *VerifyLoginOTPResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
 // IntrospectOAuthTokenRequest contains the OAuth token to introspect
 type IntrospectOAuthTokenRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1253,7 +2100,7 @@ type IntrospectOAuthTokenRequest struct {
 
 func (x *IntrospectOAuthTokenRequest) Reset() {
 	*x = IntrospectOAuthTokenRequest{}
-	mi := &file_proto_auth_proto_msgTypes[17]
+	mi := &file_proto_auth_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1265,7 +2112,7 @@ func (x *IntrospectOAuthTokenRequest) String() string {
 func (*IntrospectOAuthTokenRequest) ProtoMessage() {}
 
 func (x *IntrospectOAuthTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_auth_proto_msgTypes[17]
+	mi := &file_proto_auth_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1278,7 +2125,7 @@ func (x *IntrospectOAuthTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IntrospectOAuthTokenRequest.ProtoReflect.Descriptor instead.
 func (*IntrospectOAuthTokenRequest) Descriptor() ([]byte, []int) {
-	return file_proto_auth_proto_rawDescGZIP(), []int{17}
+	return file_proto_auth_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *IntrospectOAuthTokenRequest) GetToken() string {
@@ -1317,7 +2164,7 @@ type IntrospectOAuthTokenResponse struct {
 
 func (x *IntrospectOAuthTokenResponse) Reset() {
 	*x = IntrospectOAuthTokenResponse{}
-	mi := &file_proto_auth_proto_msgTypes[18]
+	mi := &file_proto_auth_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1329,7 +2176,7 @@ func (x *IntrospectOAuthTokenResponse) String() string {
 func (*IntrospectOAuthTokenResponse) ProtoMessage() {}
 
 func (x *IntrospectOAuthTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_auth_proto_msgTypes[18]
+	mi := &file_proto_auth_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1342,7 +2189,7 @@ func (x *IntrospectOAuthTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IntrospectOAuthTokenResponse.ProtoReflect.Descriptor instead.
 func (*IntrospectOAuthTokenResponse) Descriptor() ([]byte, []int) {
-	return file_proto_auth_proto_rawDescGZIP(), []int{18}
+	return file_proto_auth_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *IntrospectOAuthTokenResponse) GetActive() bool {
@@ -1447,7 +2294,7 @@ type ValidateOAuthClientRequest struct {
 
 func (x *ValidateOAuthClientRequest) Reset() {
 	*x = ValidateOAuthClientRequest{}
-	mi := &file_proto_auth_proto_msgTypes[19]
+	mi := &file_proto_auth_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1459,7 +2306,7 @@ func (x *ValidateOAuthClientRequest) String() string {
 func (*ValidateOAuthClientRequest) ProtoMessage() {}
 
 func (x *ValidateOAuthClientRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_auth_proto_msgTypes[19]
+	mi := &file_proto_auth_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1472,7 +2319,7 @@ func (x *ValidateOAuthClientRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidateOAuthClientRequest.ProtoReflect.Descriptor instead.
 func (*ValidateOAuthClientRequest) Descriptor() ([]byte, []int) {
-	return file_proto_auth_proto_rawDescGZIP(), []int{19}
+	return file_proto_auth_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ValidateOAuthClientRequest) GetClientId() string {
@@ -1505,7 +2352,7 @@ type ValidateOAuthClientResponse struct {
 
 func (x *ValidateOAuthClientResponse) Reset() {
 	*x = ValidateOAuthClientResponse{}
-	mi := &file_proto_auth_proto_msgTypes[20]
+	mi := &file_proto_auth_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1517,7 +2364,7 @@ func (x *ValidateOAuthClientResponse) String() string {
 func (*ValidateOAuthClientResponse) ProtoMessage() {}
 
 func (x *ValidateOAuthClientResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_auth_proto_msgTypes[20]
+	mi := &file_proto_auth_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1530,7 +2377,7 @@ func (x *ValidateOAuthClientResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidateOAuthClientResponse.ProtoReflect.Descriptor instead.
 func (*ValidateOAuthClientResponse) Descriptor() ([]byte, []int) {
-	return file_proto_auth_proto_rawDescGZIP(), []int{20}
+	return file_proto_auth_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ValidateOAuthClientResponse) GetValid() bool {
@@ -1592,7 +2439,7 @@ type GetOAuthClientRequest struct {
 
 func (x *GetOAuthClientRequest) Reset() {
 	*x = GetOAuthClientRequest{}
-	mi := &file_proto_auth_proto_msgTypes[21]
+	mi := &file_proto_auth_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1604,7 +2451,7 @@ func (x *GetOAuthClientRequest) String() string {
 func (*GetOAuthClientRequest) ProtoMessage() {}
 
 func (x *GetOAuthClientRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_auth_proto_msgTypes[21]
+	mi := &file_proto_auth_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1617,7 +2464,7 @@ func (x *GetOAuthClientRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOAuthClientRequest.ProtoReflect.Descriptor instead.
 func (*GetOAuthClientRequest) Descriptor() ([]byte, []int) {
-	return file_proto_auth_proto_rawDescGZIP(), []int{21}
+	return file_proto_auth_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *GetOAuthClientRequest) GetClientId() string {
@@ -1647,7 +2494,7 @@ type OAuthClient struct {
 
 func (x *OAuthClient) Reset() {
 	*x = OAuthClient{}
-	mi := &file_proto_auth_proto_msgTypes[22]
+	mi := &file_proto_auth_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1659,7 +2506,7 @@ func (x *OAuthClient) String() string {
 func (*OAuthClient) ProtoMessage() {}
 
 func (x *OAuthClient) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_auth_proto_msgTypes[22]
+	mi := &file_proto_auth_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1672,7 +2519,7 @@ func (x *OAuthClient) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OAuthClient.ProtoReflect.Descriptor instead.
 func (*OAuthClient) Descriptor() ([]byte, []int) {
-	return file_proto_auth_proto_rawDescGZIP(), []int{22}
+	return file_proto_auth_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *OAuthClient) GetId() string {
@@ -1763,7 +2610,7 @@ type GetOAuthClientResponse struct {
 
 func (x *GetOAuthClientResponse) Reset() {
 	*x = GetOAuthClientResponse{}
-	mi := &file_proto_auth_proto_msgTypes[23]
+	mi := &file_proto_auth_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1775,7 +2622,7 @@ func (x *GetOAuthClientResponse) String() string {
 func (*GetOAuthClientResponse) ProtoMessage() {}
 
 func (x *GetOAuthClientResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_auth_proto_msgTypes[23]
+	mi := &file_proto_auth_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1788,7 +2635,7 @@ func (x *GetOAuthClientResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOAuthClientResponse.ProtoReflect.Descriptor instead.
 func (*GetOAuthClientResponse) Descriptor() ([]byte, []int) {
-	return file_proto_auth_proto_rawDescGZIP(), []int{23}
+	return file_proto_auth_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *GetOAuthClientResponse) GetClient() *OAuthClient {
@@ -1914,6 +2761,71 @@ const file_proto_auth_proto_rawDesc = "" +
 	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\x12\x1d\n" +
 	"\n" +
 	"expires_in\x18\x04 \x01(\x03R\texpiresIn\x12#\n" +
+	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\"o\n" +
+	"\x0eSendOTPRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12(\n" +
+	"\botp_type\x18\x02 \x01(\x0e2\r.auth.OTPTypeR\aotpType\x12\x1d\n" +
+	"\n" +
+	"profile_id\x18\x03 \x01(\tR\tprofileId\"\x89\x01\n" +
+	"\x0fSendOTPResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12#\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\x12\x1d\n" +
+	"\n" +
+	"expires_in\x18\x04 \x01(\x05R\texpiresIn\"f\n" +
+	"\x10VerifyOTPRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\x12(\n" +
+	"\botp_type\x18\x03 \x01(\x0e2\r.auth.OTPTypeR\aotpType\"N\n" +
+	"\x11VerifyOTPResponse\x12\x14\n" +
+	"\x05valid\x18\x01 \x01(\bR\x05valid\x12#\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"J\n" +
+	"\x13LoginWithOTPRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1d\n" +
+	"\n" +
+	"profile_id\x18\x02 \x01(\tR\tprofileId\"\x8e\x01\n" +
+	"\x14LoginWithOTPResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12#\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\x12\x1d\n" +
+	"\n" +
+	"expires_in\x18\x04 \x01(\x05R\texpiresIn\"\x86\x01\n" +
+	"\x16RegisterWithOTPRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x12\x1b\n" +
+	"\tfull_name\x18\x03 \x01(\tR\bfullName\x12\x1d\n" +
+	"\n" +
+	"profile_id\x18\x04 \x01(\tR\tprofileId\"\x91\x01\n" +
+	"\x17RegisterWithOTPResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12#\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\x12\x1d\n" +
+	"\n" +
+	"expires_in\x18\x04 \x01(\x05R\texpiresIn\"\x9d\x01\n" +
+	"\x1cVerifyRegistrationOTPRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\x12\x1a\n" +
+	"\busername\x18\x03 \x01(\tR\busername\x12\x1b\n" +
+	"\tfull_name\x18\x04 \x01(\tR\bfullName\x12\x1a\n" +
+	"\bpassword\x18\x05 \x01(\tR\bpassword\"\xcb\x01\n" +
+	"\x1dVerifyRegistrationOTPResponse\x12\x1e\n" +
+	"\x04user\x18\x01 \x01(\v2\n" +
+	".auth.UserR\x04user\x12!\n" +
+	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\x12#\n" +
+	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\x12\x1d\n" +
+	"\n" +
+	"expires_in\x18\x04 \x01(\x03R\texpiresIn\x12#\n" +
+	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\"A\n" +
+	"\x15VerifyLoginOTPRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\"\xc4\x01\n" +
+	"\x16VerifyLoginOTPResponse\x12\x1e\n" +
+	"\x04user\x18\x01 \x01(\v2\n" +
+	".auth.UserR\x04user\x12!\n" +
+	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\x12#\n" +
+	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\x12\x1d\n" +
+	"\n" +
+	"expires_in\x18\x04 \x01(\x03R\texpiresIn\x12#\n" +
 	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\"[\n" +
 	"\x1bIntrospectOAuthTokenRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12&\n" +
@@ -1969,7 +2881,15 @@ const file_proto_auth_proto_rawDesc = "" +
 	"updated_at\x18\v \x01(\x03R\tupdatedAt\"h\n" +
 	"\x16GetOAuthClientResponse\x12)\n" +
 	"\x06client\x18\x01 \x01(\v2\x11.auth.OAuthClientR\x06client\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage2\xa5\a\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage*\x9f\x01\n" +
+	"\aOTPType\x12\x18\n" +
+	"\x14OTP_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15OTP_TYPE_VERIFICATION\x10\x01\x12\x1b\n" +
+	"\x17OTP_TYPE_PASSWORD_RESET\x10\x02\x12\x13\n" +
+	"\x0fOTP_TYPE_TWO_FA\x10\x03\x12\x12\n" +
+	"\x0eOTP_TYPE_LOGIN\x10\x04\x12\x19\n" +
+	"\x15OTP_TYPE_REGISTRATION\x10\x052\xe1\n" +
+	"\n" +
 	"\vAuthService\x12H\n" +
 	"\rValidateToken\x12\x1a.auth.ValidateTokenRequest\x1a\x1b.auth.ValidateTokenResponse\x126\n" +
 	"\aGetUser\x12\x14.auth.GetUserRequest\x1a\x15.auth.GetUserResponse\x12N\n" +
@@ -1979,7 +2899,13 @@ const file_proto_auth_proto_rawDesc = "" +
 	"CreateUser\x12\x17.auth.CreateUserRequest\x1a\x18.auth.CreateUserResponse\x120\n" +
 	"\x05Login\x12\x12.auth.LoginRequest\x1a\x13.auth.LoginResponse\x12u\n" +
 	"\x1cInitPasswordlessRegistration\x12).auth.InitPasswordlessRegistrationRequest\x1a*.auth.InitPasswordlessRegistrationResponse\x12\x81\x01\n" +
-	" CompletePasswordlessRegistration\x12-.auth.CompletePasswordlessRegistrationRequest\x1a..auth.CompletePasswordlessRegistrationResponse\x12]\n" +
+	" CompletePasswordlessRegistration\x12-.auth.CompletePasswordlessRegistrationRequest\x1a..auth.CompletePasswordlessRegistrationResponse\x126\n" +
+	"\aSendOTP\x12\x14.auth.SendOTPRequest\x1a\x15.auth.SendOTPResponse\x12<\n" +
+	"\tVerifyOTP\x12\x16.auth.VerifyOTPRequest\x1a\x17.auth.VerifyOTPResponse\x12E\n" +
+	"\fLoginWithOTP\x12\x19.auth.LoginWithOTPRequest\x1a\x1a.auth.LoginWithOTPResponse\x12K\n" +
+	"\x0eVerifyLoginOTP\x12\x1b.auth.VerifyLoginOTPRequest\x1a\x1c.auth.VerifyLoginOTPResponse\x12N\n" +
+	"\x0fRegisterWithOTP\x12\x1c.auth.RegisterWithOTPRequest\x1a\x1d.auth.RegisterWithOTPResponse\x12`\n" +
+	"\x15VerifyRegistrationOTP\x12\".auth.VerifyRegistrationOTPRequest\x1a#.auth.VerifyRegistrationOTPResponse\x12]\n" +
 	"\x14IntrospectOAuthToken\x12!.auth.IntrospectOAuthTokenRequest\x1a\".auth.IntrospectOAuthTokenResponse\x12Z\n" +
 	"\x13ValidateOAuthClient\x12 .auth.ValidateOAuthClientRequest\x1a!.auth.ValidateOAuthClientResponse\x12K\n" +
 	"\x0eGetOAuthClient\x12\x1b.auth.GetOAuthClientRequest\x1a\x1c.auth.GetOAuthClientResponseB)Z'github.com/smilemakc/auth-gateway/protob\x06proto3"
@@ -1996,66 +2922,96 @@ func file_proto_auth_proto_rawDescGZIP() []byte {
 	return file_proto_auth_proto_rawDescData
 }
 
-var file_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_proto_auth_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
 var file_proto_auth_proto_goTypes = []any{
-	(*ValidateTokenRequest)(nil),                     // 0: auth.ValidateTokenRequest
-	(*ValidateTokenResponse)(nil),                    // 1: auth.ValidateTokenResponse
-	(*GetUserRequest)(nil),                           // 2: auth.GetUserRequest
-	(*User)(nil),                                     // 3: auth.User
-	(*GetUserResponse)(nil),                          // 4: auth.GetUserResponse
-	(*CheckPermissionRequest)(nil),                   // 5: auth.CheckPermissionRequest
-	(*CheckPermissionResponse)(nil),                  // 6: auth.CheckPermissionResponse
-	(*IntrospectTokenRequest)(nil),                   // 7: auth.IntrospectTokenRequest
-	(*IntrospectTokenResponse)(nil),                  // 8: auth.IntrospectTokenResponse
-	(*CreateUserRequest)(nil),                        // 9: auth.CreateUserRequest
-	(*CreateUserResponse)(nil),                       // 10: auth.CreateUserResponse
-	(*LoginRequest)(nil),                             // 11: auth.LoginRequest
-	(*LoginResponse)(nil),                            // 12: auth.LoginResponse
-	(*InitPasswordlessRegistrationRequest)(nil),      // 13: auth.InitPasswordlessRegistrationRequest
-	(*InitPasswordlessRegistrationResponse)(nil),     // 14: auth.InitPasswordlessRegistrationResponse
-	(*CompletePasswordlessRegistrationRequest)(nil),  // 15: auth.CompletePasswordlessRegistrationRequest
-	(*CompletePasswordlessRegistrationResponse)(nil), // 16: auth.CompletePasswordlessRegistrationResponse
-	(*IntrospectOAuthTokenRequest)(nil),              // 17: auth.IntrospectOAuthTokenRequest
-	(*IntrospectOAuthTokenResponse)(nil),             // 18: auth.IntrospectOAuthTokenResponse
-	(*ValidateOAuthClientRequest)(nil),               // 19: auth.ValidateOAuthClientRequest
-	(*ValidateOAuthClientResponse)(nil),              // 20: auth.ValidateOAuthClientResponse
-	(*GetOAuthClientRequest)(nil),                    // 21: auth.GetOAuthClientRequest
-	(*OAuthClient)(nil),                              // 22: auth.OAuthClient
-	(*GetOAuthClientResponse)(nil),                   // 23: auth.GetOAuthClientResponse
+	(OTPType)(0),                                     // 0: auth.OTPType
+	(*ValidateTokenRequest)(nil),                     // 1: auth.ValidateTokenRequest
+	(*ValidateTokenResponse)(nil),                    // 2: auth.ValidateTokenResponse
+	(*GetUserRequest)(nil),                           // 3: auth.GetUserRequest
+	(*User)(nil),                                     // 4: auth.User
+	(*GetUserResponse)(nil),                          // 5: auth.GetUserResponse
+	(*CheckPermissionRequest)(nil),                   // 6: auth.CheckPermissionRequest
+	(*CheckPermissionResponse)(nil),                  // 7: auth.CheckPermissionResponse
+	(*IntrospectTokenRequest)(nil),                   // 8: auth.IntrospectTokenRequest
+	(*IntrospectTokenResponse)(nil),                  // 9: auth.IntrospectTokenResponse
+	(*CreateUserRequest)(nil),                        // 10: auth.CreateUserRequest
+	(*CreateUserResponse)(nil),                       // 11: auth.CreateUserResponse
+	(*LoginRequest)(nil),                             // 12: auth.LoginRequest
+	(*LoginResponse)(nil),                            // 13: auth.LoginResponse
+	(*InitPasswordlessRegistrationRequest)(nil),      // 14: auth.InitPasswordlessRegistrationRequest
+	(*InitPasswordlessRegistrationResponse)(nil),     // 15: auth.InitPasswordlessRegistrationResponse
+	(*CompletePasswordlessRegistrationRequest)(nil),  // 16: auth.CompletePasswordlessRegistrationRequest
+	(*CompletePasswordlessRegistrationResponse)(nil), // 17: auth.CompletePasswordlessRegistrationResponse
+	(*SendOTPRequest)(nil),                           // 18: auth.SendOTPRequest
+	(*SendOTPResponse)(nil),                          // 19: auth.SendOTPResponse
+	(*VerifyOTPRequest)(nil),                         // 20: auth.VerifyOTPRequest
+	(*VerifyOTPResponse)(nil),                        // 21: auth.VerifyOTPResponse
+	(*LoginWithOTPRequest)(nil),                      // 22: auth.LoginWithOTPRequest
+	(*LoginWithOTPResponse)(nil),                     // 23: auth.LoginWithOTPResponse
+	(*RegisterWithOTPRequest)(nil),                   // 24: auth.RegisterWithOTPRequest
+	(*RegisterWithOTPResponse)(nil),                  // 25: auth.RegisterWithOTPResponse
+	(*VerifyRegistrationOTPRequest)(nil),             // 26: auth.VerifyRegistrationOTPRequest
+	(*VerifyRegistrationOTPResponse)(nil),            // 27: auth.VerifyRegistrationOTPResponse
+	(*VerifyLoginOTPRequest)(nil),                    // 28: auth.VerifyLoginOTPRequest
+	(*VerifyLoginOTPResponse)(nil),                   // 29: auth.VerifyLoginOTPResponse
+	(*IntrospectOAuthTokenRequest)(nil),              // 30: auth.IntrospectOAuthTokenRequest
+	(*IntrospectOAuthTokenResponse)(nil),             // 31: auth.IntrospectOAuthTokenResponse
+	(*ValidateOAuthClientRequest)(nil),               // 32: auth.ValidateOAuthClientRequest
+	(*ValidateOAuthClientResponse)(nil),              // 33: auth.ValidateOAuthClientResponse
+	(*GetOAuthClientRequest)(nil),                    // 34: auth.GetOAuthClientRequest
+	(*OAuthClient)(nil),                              // 35: auth.OAuthClient
+	(*GetOAuthClientResponse)(nil),                   // 36: auth.GetOAuthClientResponse
 }
 var file_proto_auth_proto_depIdxs = []int32{
-	3,  // 0: auth.GetUserResponse.user:type_name -> auth.User
-	3,  // 1: auth.CreateUserResponse.user:type_name -> auth.User
-	3,  // 2: auth.LoginResponse.user:type_name -> auth.User
-	3,  // 3: auth.CompletePasswordlessRegistrationResponse.user:type_name -> auth.User
-	22, // 4: auth.GetOAuthClientResponse.client:type_name -> auth.OAuthClient
-	0,  // 5: auth.AuthService.ValidateToken:input_type -> auth.ValidateTokenRequest
-	2,  // 6: auth.AuthService.GetUser:input_type -> auth.GetUserRequest
-	5,  // 7: auth.AuthService.CheckPermission:input_type -> auth.CheckPermissionRequest
-	7,  // 8: auth.AuthService.IntrospectToken:input_type -> auth.IntrospectTokenRequest
-	9,  // 9: auth.AuthService.CreateUser:input_type -> auth.CreateUserRequest
-	11, // 10: auth.AuthService.Login:input_type -> auth.LoginRequest
-	13, // 11: auth.AuthService.InitPasswordlessRegistration:input_type -> auth.InitPasswordlessRegistrationRequest
-	15, // 12: auth.AuthService.CompletePasswordlessRegistration:input_type -> auth.CompletePasswordlessRegistrationRequest
-	17, // 13: auth.AuthService.IntrospectOAuthToken:input_type -> auth.IntrospectOAuthTokenRequest
-	19, // 14: auth.AuthService.ValidateOAuthClient:input_type -> auth.ValidateOAuthClientRequest
-	21, // 15: auth.AuthService.GetOAuthClient:input_type -> auth.GetOAuthClientRequest
-	1,  // 16: auth.AuthService.ValidateToken:output_type -> auth.ValidateTokenResponse
-	4,  // 17: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
-	6,  // 18: auth.AuthService.CheckPermission:output_type -> auth.CheckPermissionResponse
-	8,  // 19: auth.AuthService.IntrospectToken:output_type -> auth.IntrospectTokenResponse
-	10, // 20: auth.AuthService.CreateUser:output_type -> auth.CreateUserResponse
-	12, // 21: auth.AuthService.Login:output_type -> auth.LoginResponse
-	14, // 22: auth.AuthService.InitPasswordlessRegistration:output_type -> auth.InitPasswordlessRegistrationResponse
-	16, // 23: auth.AuthService.CompletePasswordlessRegistration:output_type -> auth.CompletePasswordlessRegistrationResponse
-	18, // 24: auth.AuthService.IntrospectOAuthToken:output_type -> auth.IntrospectOAuthTokenResponse
-	20, // 25: auth.AuthService.ValidateOAuthClient:output_type -> auth.ValidateOAuthClientResponse
-	23, // 26: auth.AuthService.GetOAuthClient:output_type -> auth.GetOAuthClientResponse
-	16, // [16:27] is the sub-list for method output_type
-	5,  // [5:16] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	4,  // 0: auth.GetUserResponse.user:type_name -> auth.User
+	4,  // 1: auth.CreateUserResponse.user:type_name -> auth.User
+	4,  // 2: auth.LoginResponse.user:type_name -> auth.User
+	4,  // 3: auth.CompletePasswordlessRegistrationResponse.user:type_name -> auth.User
+	0,  // 4: auth.SendOTPRequest.otp_type:type_name -> auth.OTPType
+	0,  // 5: auth.VerifyOTPRequest.otp_type:type_name -> auth.OTPType
+	4,  // 6: auth.VerifyRegistrationOTPResponse.user:type_name -> auth.User
+	4,  // 7: auth.VerifyLoginOTPResponse.user:type_name -> auth.User
+	35, // 8: auth.GetOAuthClientResponse.client:type_name -> auth.OAuthClient
+	1,  // 9: auth.AuthService.ValidateToken:input_type -> auth.ValidateTokenRequest
+	3,  // 10: auth.AuthService.GetUser:input_type -> auth.GetUserRequest
+	6,  // 11: auth.AuthService.CheckPermission:input_type -> auth.CheckPermissionRequest
+	8,  // 12: auth.AuthService.IntrospectToken:input_type -> auth.IntrospectTokenRequest
+	10, // 13: auth.AuthService.CreateUser:input_type -> auth.CreateUserRequest
+	12, // 14: auth.AuthService.Login:input_type -> auth.LoginRequest
+	14, // 15: auth.AuthService.InitPasswordlessRegistration:input_type -> auth.InitPasswordlessRegistrationRequest
+	16, // 16: auth.AuthService.CompletePasswordlessRegistration:input_type -> auth.CompletePasswordlessRegistrationRequest
+	18, // 17: auth.AuthService.SendOTP:input_type -> auth.SendOTPRequest
+	20, // 18: auth.AuthService.VerifyOTP:input_type -> auth.VerifyOTPRequest
+	22, // 19: auth.AuthService.LoginWithOTP:input_type -> auth.LoginWithOTPRequest
+	28, // 20: auth.AuthService.VerifyLoginOTP:input_type -> auth.VerifyLoginOTPRequest
+	24, // 21: auth.AuthService.RegisterWithOTP:input_type -> auth.RegisterWithOTPRequest
+	26, // 22: auth.AuthService.VerifyRegistrationOTP:input_type -> auth.VerifyRegistrationOTPRequest
+	30, // 23: auth.AuthService.IntrospectOAuthToken:input_type -> auth.IntrospectOAuthTokenRequest
+	32, // 24: auth.AuthService.ValidateOAuthClient:input_type -> auth.ValidateOAuthClientRequest
+	34, // 25: auth.AuthService.GetOAuthClient:input_type -> auth.GetOAuthClientRequest
+	2,  // 26: auth.AuthService.ValidateToken:output_type -> auth.ValidateTokenResponse
+	5,  // 27: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
+	7,  // 28: auth.AuthService.CheckPermission:output_type -> auth.CheckPermissionResponse
+	9,  // 29: auth.AuthService.IntrospectToken:output_type -> auth.IntrospectTokenResponse
+	11, // 30: auth.AuthService.CreateUser:output_type -> auth.CreateUserResponse
+	13, // 31: auth.AuthService.Login:output_type -> auth.LoginResponse
+	15, // 32: auth.AuthService.InitPasswordlessRegistration:output_type -> auth.InitPasswordlessRegistrationResponse
+	17, // 33: auth.AuthService.CompletePasswordlessRegistration:output_type -> auth.CompletePasswordlessRegistrationResponse
+	19, // 34: auth.AuthService.SendOTP:output_type -> auth.SendOTPResponse
+	21, // 35: auth.AuthService.VerifyOTP:output_type -> auth.VerifyOTPResponse
+	23, // 36: auth.AuthService.LoginWithOTP:output_type -> auth.LoginWithOTPResponse
+	29, // 37: auth.AuthService.VerifyLoginOTP:output_type -> auth.VerifyLoginOTPResponse
+	25, // 38: auth.AuthService.RegisterWithOTP:output_type -> auth.RegisterWithOTPResponse
+	27, // 39: auth.AuthService.VerifyRegistrationOTP:output_type -> auth.VerifyRegistrationOTPResponse
+	31, // 40: auth.AuthService.IntrospectOAuthToken:output_type -> auth.IntrospectOAuthTokenResponse
+	33, // 41: auth.AuthService.ValidateOAuthClient:output_type -> auth.ValidateOAuthClientResponse
+	36, // 42: auth.AuthService.GetOAuthClient:output_type -> auth.GetOAuthClientResponse
+	26, // [26:43] is the sub-list for method output_type
+	9,  // [9:26] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_proto_auth_proto_init() }
@@ -2068,13 +3024,14 @@ func file_proto_auth_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_auth_proto_rawDesc), len(file_proto_auth_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   24,
+			NumEnums:      1,
+			NumMessages:   36,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_proto_auth_proto_goTypes,
 		DependencyIndexes: file_proto_auth_proto_depIdxs,
+		EnumInfos:         file_proto_auth_proto_enumTypes,
 		MessageInfos:      file_proto_auth_proto_msgTypes,
 	}.Build()
 	File_proto_auth_proto = out.File
