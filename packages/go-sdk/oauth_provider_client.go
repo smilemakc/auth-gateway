@@ -70,6 +70,10 @@ type OAuthProviderConfig struct {
 	Scopes       []string
 	UsePKCE      bool
 	HTTPClient   *http.Client
+
+	// Headers contains custom headers to include in every request.
+	// Common headers: X-Application-ID, X-Client-Name, etc.
+	Headers map[string]string
 }
 
 type OAuthProviderClient struct {
@@ -81,6 +85,10 @@ type OAuthProviderClient struct {
 
 	jwks   *models.JWKS
 	jwksMu sync.RWMutex
+
+	// Custom headers to include in every request
+	headers   map[string]string
+	headersMu sync.RWMutex
 }
 
 func NewOAuthProviderClient(config OAuthProviderConfig) *OAuthProviderClient {
@@ -97,6 +105,71 @@ func NewOAuthProviderClient(config OAuthProviderConfig) *OAuthProviderClient {
 	return &OAuthProviderClient{
 		config:     config,
 		httpClient: config.HTTPClient,
+		headers:    config.Headers,
+	}
+}
+
+// SetHeader sets a custom header to be included in all requests.
+func (c *OAuthProviderClient) SetHeader(key, value string) {
+	c.headersMu.Lock()
+	defer c.headersMu.Unlock()
+
+	if c.headers == nil {
+		c.headers = make(map[string]string)
+	}
+	c.headers[key] = value
+}
+
+// SetHeaders sets multiple custom headers to be included in all requests.
+func (c *OAuthProviderClient) SetHeaders(headers map[string]string) {
+	c.headersMu.Lock()
+	defer c.headersMu.Unlock()
+
+	if c.headers == nil {
+		c.headers = make(map[string]string)
+	}
+	for k, v := range headers {
+		c.headers[k] = v
+	}
+}
+
+// RemoveHeader removes a custom header.
+func (c *OAuthProviderClient) RemoveHeader(key string) {
+	c.headersMu.Lock()
+	defer c.headersMu.Unlock()
+
+	delete(c.headers, key)
+}
+
+// GetHeaders returns a copy of the current custom headers.
+func (c *OAuthProviderClient) GetHeaders() map[string]string {
+	c.headersMu.RLock()
+	defer c.headersMu.RUnlock()
+
+	result := make(map[string]string)
+	for k, v := range c.headers {
+		result[k] = v
+	}
+	return result
+}
+
+// SetApplicationID sets the X-Application-ID header for multi-tenant support.
+func (c *OAuthProviderClient) SetApplicationID(appID string) {
+	c.SetHeader("X-Application-ID", appID)
+}
+
+// SetClientName sets the X-Client-Name header for client identification.
+func (c *OAuthProviderClient) SetClientName(name string) {
+	c.SetHeader("X-Client-Name", name)
+}
+
+// applyHeaders applies custom headers to an HTTP request.
+func (c *OAuthProviderClient) applyHeaders(req *http.Request) {
+	c.headersMu.RLock()
+	defer c.headersMu.RUnlock()
+
+	for key, value := range c.headers {
+		req.Header.Set(key, value)
 	}
 }
 
@@ -109,6 +182,7 @@ func (c *OAuthProviderClient) GetDiscovery(ctx context.Context) (*models.OIDCDis
 			err = reqErr
 			return
 		}
+		c.applyHeaders(req)
 
 		resp, respErr := c.httpClient.Do(req)
 		if respErr != nil {
@@ -149,6 +223,7 @@ func (c *OAuthProviderClient) GetJWKS(ctx context.Context) (*models.JWKS, error)
 	if err != nil {
 		return nil, err
 	}
+	c.applyHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -303,6 +378,7 @@ func (c *OAuthProviderClient) IntrospectToken(ctx context.Context, token string)
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	c.applyHeaders(req)
 	c.setClientAuth(req)
 
 	resp, err := c.httpClient.Do(req)
@@ -340,6 +416,7 @@ func (c *OAuthProviderClient) RevokeToken(ctx context.Context, token, tokenTypeH
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	c.applyHeaders(req)
 	c.setClientAuth(req)
 
 	resp, err := c.httpClient.Do(req)
@@ -362,6 +439,7 @@ func (c *OAuthProviderClient) GetUserInfo(ctx context.Context, accessToken strin
 		return nil, err
 	}
 
+	c.applyHeaders(req)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
 	resp, err := c.httpClient.Do(req)
@@ -404,6 +482,7 @@ func (c *OAuthProviderClient) RequestDeviceCode(ctx context.Context, scopes []st
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	c.applyHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -441,6 +520,7 @@ func (c *OAuthProviderClient) PollDeviceToken(ctx context.Context, deviceCode st
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	c.applyHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -504,6 +584,7 @@ func (c *OAuthProviderClient) ClientCredentialsGrant(ctx context.Context, scopes
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	c.applyHeaders(req)
 	c.setClientAuth(req)
 
 	resp, err := c.httpClient.Do(req)
@@ -531,6 +612,7 @@ func (c *OAuthProviderClient) tokenRequest(ctx context.Context, endpoint string,
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	c.applyHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

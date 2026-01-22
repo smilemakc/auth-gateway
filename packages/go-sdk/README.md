@@ -391,7 +391,96 @@ client := authgateway.NewClient(authgateway.Config{
 
     // Auto-refresh tokens when they expire (default: false)
     AutoRefresh: true,
+
+    // Custom headers for multi-tenant support (optional)
+    Headers: map[string]string{
+        "X-Application-ID": "my-app-id",
+        "X-Client-Name":    "my-service",
+    },
 })
+```
+
+## Custom Headers & Metadata
+
+All SDK clients support custom headers/metadata for multi-tenant environments and request tracing.
+
+### REST Client
+
+```go
+// Set headers at creation time
+client := authgateway.NewClient(authgateway.Config{
+    BaseURL: "http://localhost:3000",
+    Headers: map[string]string{
+        "X-Application-ID": "my-app-id",
+    },
+})
+
+// Or set headers dynamically
+client.SetHeader("X-Application-ID", "my-app-id")
+client.SetClientName("my-service")
+client.SetApplicationID("app-123")
+
+// Set multiple headers at once
+client.SetHeaders(map[string]string{
+    "X-Tenant-ID": "tenant-1",
+    "X-Custom":    "value",
+})
+
+// Per-request headers via context
+ctx := authgateway.WithHeaders(context.Background(), map[string]string{
+    "X-Request-ID": "req-12345",
+})
+user, err := client.Profile.Get(ctx)
+
+// Or use the convenience method for request ID
+ctx = authgateway.WithRequestID(context.Background(), "req-12345")
+```
+
+### gRPC Client
+
+```go
+// Set metadata at creation time
+grpcClient, _ := authgateway.NewGRPCClient(authgateway.GRPCConfig{
+    Address:  "localhost:50051",
+    Insecure: true,
+    Metadata: map[string]string{
+        "x-application-id": "my-app-id",
+    },
+})
+
+// Or set metadata dynamically
+grpcClient.SetMetadata("x-application-id", "my-app-id")
+grpcClient.SetApplicationID("app-123")
+grpcClient.SetClientName("my-service")
+
+// Per-request metadata via context
+ctx := authgateway.WithGRPCMetadata(context.Background(), map[string]string{
+    "x-request-id": "req-12345",
+})
+resp, err := grpcClient.ValidateToken(ctx, token)
+
+// Convenience method for request ID
+ctx = authgateway.WithGRPCRequestID(context.Background(), "req-12345")
+```
+
+### OAuth Provider Client
+
+```go
+// Set headers at creation time
+oauthClient := authgateway.NewOAuthProviderClient(authgateway.OAuthProviderConfig{
+    Issuer:       "https://auth.example.com",
+    ClientID:     "your-client-id",
+    ClientSecret: "your-client-secret",
+    RedirectURI:  "https://yourapp.com/callback",
+    Headers: map[string]string{
+        "X-Application-ID": "my-app-id",
+    },
+})
+
+// Or set headers dynamically
+oauthClient.SetHeader("X-Application-ID", "my-app-id")
+oauthClient.SetApplicationID("app-123")
+oauthClient.SetClientName("my-service")
 ```
 
 ## Token Management

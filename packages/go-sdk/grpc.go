@@ -3,11 +3,13 @@ package authgateway
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/smilemakc/auth-gateway/packages/go-sdk/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 // GRPCClient provides a high-level interface to the Auth Gateway gRPC API.
@@ -15,6 +17,10 @@ import (
 type GRPCClient struct {
 	conn   *grpc.ClientConn
 	client proto.AuthServiceClient
+
+	// Custom metadata to include in every request
+	metadata   map[string]string
+	metadataMu sync.RWMutex
 }
 
 // GRPCConfig contains configuration for the gRPC client.
@@ -30,6 +36,10 @@ type GRPCConfig struct {
 
 	// DialOptions allows passing custom gRPC dial options
 	DialOptions []grpc.DialOption
+
+	// Metadata contains custom metadata to include in every gRPC call.
+	// Common metadata: x-application-id, x-client-name, x-request-id, etc.
+	Metadata map[string]string
 }
 
 // NewGRPCClient creates a new gRPC client for the Auth Gateway.
@@ -53,9 +63,114 @@ func NewGRPCClient(config GRPCConfig) (*GRPCClient, error) {
 	}
 
 	return &GRPCClient{
-		conn:   conn,
-		client: proto.NewAuthServiceClient(conn),
+		conn:     conn,
+		client:   proto.NewAuthServiceClient(conn),
+		metadata: config.Metadata,
 	}, nil
+}
+
+// SetMetadata sets a custom metadata key-value pair to be included in all requests.
+func (c *GRPCClient) SetMetadata(key, value string) {
+	c.metadataMu.Lock()
+	defer c.metadataMu.Unlock()
+
+	if c.metadata == nil {
+		c.metadata = make(map[string]string)
+	}
+	c.metadata[key] = value
+}
+
+// SetMetadataMap sets multiple custom metadata key-value pairs.
+func (c *GRPCClient) SetMetadataMap(md map[string]string) {
+	c.metadataMu.Lock()
+	defer c.metadataMu.Unlock()
+
+	if c.metadata == nil {
+		c.metadata = make(map[string]string)
+	}
+	for k, v := range md {
+		c.metadata[k] = v
+	}
+}
+
+// RemoveMetadata removes a custom metadata key.
+func (c *GRPCClient) RemoveMetadata(key string) {
+	c.metadataMu.Lock()
+	defer c.metadataMu.Unlock()
+
+	delete(c.metadata, key)
+}
+
+// GetMetadata returns a copy of the current custom metadata.
+func (c *GRPCClient) GetMetadata() map[string]string {
+	c.metadataMu.RLock()
+	defer c.metadataMu.RUnlock()
+
+	result := make(map[string]string)
+	for k, v := range c.metadata {
+		result[k] = v
+	}
+	return result
+}
+
+// SetApplicationID sets the x-application-id metadata for multi-tenant support.
+func (c *GRPCClient) SetApplicationID(appID string) {
+	c.SetMetadata("x-application-id", appID)
+}
+
+// SetClientName sets the x-client-name metadata for client identification.
+func (c *GRPCClient) SetClientName(name string) {
+	c.SetMetadata("x-client-name", name)
+}
+
+// withMetadata returns a context with the client's metadata attached.
+// If the context already has metadata, the client metadata is appended.
+func (c *GRPCClient) withMetadata(ctx context.Context) context.Context {
+	c.metadataMu.RLock()
+	defer c.metadataMu.RUnlock()
+
+	if len(c.metadata) == 0 {
+		return ctx
+	}
+
+	pairs := make([]string, 0, len(c.metadata)*2)
+	for k, v := range c.metadata {
+		pairs = append(pairs, k, v)
+	}
+
+	md := metadata.Pairs(pairs...)
+
+	// Merge with existing metadata if present
+	if existingMD, ok := metadata.FromOutgoingContext(ctx); ok {
+		md = metadata.Join(existingMD, md)
+	}
+
+	return metadata.NewOutgoingContext(ctx, md)
+}
+
+// grpcMetadataContextKey is used for per-request metadata via context.
+type grpcMetadataContextKey struct{}
+
+// WithGRPCMetadata returns a context with custom metadata for a single gRPC call.
+// These metadata will be merged with the client's default metadata.
+func WithGRPCMetadata(ctx context.Context, md map[string]string) context.Context {
+	pairs := make([]string, 0, len(md)*2)
+	for k, v := range md {
+		pairs = append(pairs, k, v)
+	}
+	grpcMD := metadata.Pairs(pairs...)
+
+	// Merge with existing metadata if present
+	if existingMD, ok := metadata.FromOutgoingContext(ctx); ok {
+		grpcMD = metadata.Join(existingMD, grpcMD)
+	}
+
+	return metadata.NewOutgoingContext(ctx, grpcMD)
+}
+
+// WithGRPCRequestID returns a context with a request ID for tracing.
+func WithGRPCRequestID(ctx context.Context, requestID string) context.Context {
+	return WithGRPCMetadata(ctx, map[string]string{"x-request-id": requestID})
 }
 
 // Close closes the gRPC connection.
@@ -68,7 +183,7 @@ func (c *GRPCClient) Close() error {
 
 // ValidateToken validates a JWT access token and returns user information.
 func (c *GRPCClient) ValidateToken(ctx context.Context, accessToken string) (*proto.ValidateTokenResponse, error) {
-	resp, err := c.client.ValidateToken(ctx, &proto.ValidateTokenRequest{
+	resp, err := c.client.ValidateToken(c.withMetadata(ctx), &proto.ValidateTokenRequest{
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -87,7 +202,7 @@ func (c *GRPCClient) ValidateToken(ctx context.Context, accessToken string) (*pr
 
 // GetUser retrieves user information by ID.
 func (c *GRPCClient) GetUser(ctx context.Context, userID string) (*proto.User, error) {
-	resp, err := c.client.GetUser(ctx, &proto.GetUserRequest{
+	resp, err := c.client.GetUser(c.withMetadata(ctx), &proto.GetUserRequest{
 		UserId: userID,
 	})
 	if err != nil {
@@ -106,7 +221,7 @@ func (c *GRPCClient) GetUser(ctx context.Context, userID string) (*proto.User, e
 
 // CheckPermission checks if a user has a specific permission.
 func (c *GRPCClient) CheckPermission(ctx context.Context, userID, resource, action string) (*proto.CheckPermissionResponse, error) {
-	resp, err := c.client.CheckPermission(ctx, &proto.CheckPermissionRequest{
+	resp, err := c.client.CheckPermission(c.withMetadata(ctx), &proto.CheckPermissionRequest{
 		UserId:   userID,
 		Resource: resource,
 		Action:   action,
@@ -136,7 +251,7 @@ func (c *GRPCClient) HasPermission(ctx context.Context, userID, resource, action
 
 // IntrospectToken provides detailed information about a token.
 func (c *GRPCClient) IntrospectToken(ctx context.Context, accessToken string) (*proto.IntrospectTokenResponse, error) {
-	resp, err := c.client.IntrospectToken(ctx, &proto.IntrospectTokenRequest{
+	resp, err := c.client.IntrospectToken(c.withMetadata(ctx), &proto.IntrospectTokenRequest{
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -155,7 +270,7 @@ func (c *GRPCClient) IntrospectToken(ctx context.Context, accessToken string) (*
 
 // CreateUser creates a new user account via gRPC.
 func (c *GRPCClient) CreateUser(ctx context.Context, req *proto.CreateUserRequest) (*proto.CreateUserResponse, error) {
-	resp, err := c.client.CreateUser(ctx, req)
+	resp, err := c.client.CreateUser(c.withMetadata(ctx), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
@@ -174,7 +289,7 @@ func (c *GRPCClient) CreateUser(ctx context.Context, req *proto.CreateUserReques
 // Step 1: Provide email or phone and optional name/username.
 // An OTP is sent to the provided email or phone.
 func (c *GRPCClient) InitPasswordlessRegistration(ctx context.Context, req *proto.InitPasswordlessRegistrationRequest) (*proto.InitPasswordlessRegistrationResponse, error) {
-	resp, err := c.client.InitPasswordlessRegistration(ctx, req)
+	resp, err := c.client.InitPasswordlessRegistration(c.withMetadata(ctx), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init passwordless registration: %w", err)
 	}
@@ -193,7 +308,7 @@ func (c *GRPCClient) InitPasswordlessRegistration(ctx context.Context, req *prot
 // Step 2: Provide the OTP code received via email or SMS.
 // Returns tokens and user info on success.
 func (c *GRPCClient) CompletePasswordlessRegistration(ctx context.Context, req *proto.CompletePasswordlessRegistrationRequest) (*proto.CompletePasswordlessRegistrationResponse, error) {
-	resp, err := c.client.CompletePasswordlessRegistration(ctx, req)
+	resp, err := c.client.CompletePasswordlessRegistration(c.withMetadata(ctx), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to complete passwordless registration: %w", err)
 	}
@@ -217,7 +332,7 @@ func (c *GRPCClient) Raw() proto.AuthServiceClient {
 
 // Login authenticates a user with email/phone and password.
 func (c *GRPCClient) Login(ctx context.Context, req *proto.LoginRequest) (*proto.LoginResponse, error) {
-	resp, err := c.client.Login(ctx, req)
+	resp, err := c.client.Login(c.withMetadata(ctx), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to login: %w", err)
 	}
@@ -252,7 +367,7 @@ func (c *GRPCClient) LoginWithPhone(ctx context.Context, phone, password string)
 
 // SendOTP sends a one-time password to email.
 func (c *GRPCClient) SendOTP(ctx context.Context, req *proto.SendOTPRequest) (*proto.SendOTPResponse, error) {
-	resp, err := c.client.SendOTP(ctx, req)
+	resp, err := c.client.SendOTP(c.withMetadata(ctx), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send OTP: %w", err)
 	}
@@ -269,7 +384,7 @@ func (c *GRPCClient) SendOTP(ctx context.Context, req *proto.SendOTPRequest) (*p
 
 // VerifyOTP verifies a one-time password.
 func (c *GRPCClient) VerifyOTP(ctx context.Context, req *proto.VerifyOTPRequest) (*proto.VerifyOTPResponse, error) {
-	resp, err := c.client.VerifyOTP(ctx, req)
+	resp, err := c.client.VerifyOTP(c.withMetadata(ctx), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify OTP: %w", err)
 	}
@@ -286,7 +401,7 @@ func (c *GRPCClient) VerifyOTP(ctx context.Context, req *proto.VerifyOTPRequest)
 
 // LoginWithOTP initiates passwordless login by sending OTP to email.
 func (c *GRPCClient) LoginWithOTP(ctx context.Context, req *proto.LoginWithOTPRequest) (*proto.LoginWithOTPResponse, error) {
-	resp, err := c.client.LoginWithOTP(ctx, req)
+	resp, err := c.client.LoginWithOTP(c.withMetadata(ctx), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initiate OTP login: %w", err)
 	}
@@ -303,7 +418,7 @@ func (c *GRPCClient) LoginWithOTP(ctx context.Context, req *proto.LoginWithOTPRe
 
 // VerifyLoginOTP completes passwordless login by verifying OTP.
 func (c *GRPCClient) VerifyLoginOTP(ctx context.Context, req *proto.VerifyLoginOTPRequest) (*proto.VerifyLoginOTPResponse, error) {
-	resp, err := c.client.VerifyLoginOTP(ctx, req)
+	resp, err := c.client.VerifyLoginOTP(c.withMetadata(ctx), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify login OTP: %w", err)
 	}
@@ -320,7 +435,7 @@ func (c *GRPCClient) VerifyLoginOTP(ctx context.Context, req *proto.VerifyLoginO
 
 // RegisterWithOTP initiates OTP-based registration by sending verification code.
 func (c *GRPCClient) RegisterWithOTP(ctx context.Context, req *proto.RegisterWithOTPRequest) (*proto.RegisterWithOTPResponse, error) {
-	resp, err := c.client.RegisterWithOTP(ctx, req)
+	resp, err := c.client.RegisterWithOTP(c.withMetadata(ctx), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initiate OTP registration: %w", err)
 	}
@@ -337,7 +452,7 @@ func (c *GRPCClient) RegisterWithOTP(ctx context.Context, req *proto.RegisterWit
 
 // VerifyRegistrationOTP completes OTP-based registration.
 func (c *GRPCClient) VerifyRegistrationOTP(ctx context.Context, req *proto.VerifyRegistrationOTPRequest) (*proto.VerifyRegistrationOTPResponse, error) {
-	resp, err := c.client.VerifyRegistrationOTP(ctx, req)
+	resp, err := c.client.VerifyRegistrationOTP(c.withMetadata(ctx), req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to complete OTP registration: %w", err)
 	}
@@ -356,7 +471,7 @@ func (c *GRPCClient) VerifyRegistrationOTP(ctx context.Context, req *proto.Verif
 
 // IntrospectOAuthToken validates an OAuth access token (RFC 7662).
 func (c *GRPCClient) IntrospectOAuthToken(ctx context.Context, token string, tokenTypeHint string) (*proto.IntrospectOAuthTokenResponse, error) {
-	resp, err := c.client.IntrospectOAuthToken(ctx, &proto.IntrospectOAuthTokenRequest{
+	resp, err := c.client.IntrospectOAuthToken(c.withMetadata(ctx), &proto.IntrospectOAuthTokenRequest{
 		Token:         token,
 		TokenTypeHint: tokenTypeHint,
 	})
@@ -376,7 +491,7 @@ func (c *GRPCClient) IntrospectOAuthToken(ctx context.Context, token string, tok
 
 // ValidateOAuthClient validates OAuth client credentials.
 func (c *GRPCClient) ValidateOAuthClient(ctx context.Context, clientID, clientSecret string) (*proto.ValidateOAuthClientResponse, error) {
-	resp, err := c.client.ValidateOAuthClient(ctx, &proto.ValidateOAuthClientRequest{
+	resp, err := c.client.ValidateOAuthClient(c.withMetadata(ctx), &proto.ValidateOAuthClientRequest{
 		ClientId:     clientID,
 		ClientSecret: clientSecret,
 	})
@@ -396,7 +511,7 @@ func (c *GRPCClient) ValidateOAuthClient(ctx context.Context, clientID, clientSe
 
 // GetOAuthClient retrieves OAuth client information by client_id.
 func (c *GRPCClient) GetOAuthClient(ctx context.Context, clientID string) (*proto.OAuthClient, error) {
-	resp, err := c.client.GetOAuthClient(ctx, &proto.GetOAuthClientRequest{
+	resp, err := c.client.GetOAuthClient(c.withMetadata(ctx), &proto.GetOAuthClientRequest{
 		ClientId: clientID,
 	})
 	if err != nil {
