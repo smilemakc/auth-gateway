@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getServiceAccount, createServiceAccount, updateServiceAccount } from '../services/mockData';
-import { ServiceAccount } from '../types';
-import { ArrowLeft, Save, Bot, Copy, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Bot, Copy, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
+import { useOAuthClientDetail, useCreateOAuthClient, useUpdateOAuthClient } from '../hooks/useOAuthClients';
 
 const ServiceAccountEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,85 +12,114 @@ const ServiceAccountEdit: React.FC = () => {
   const isEditMode = id && id !== 'new';
   const isNewMode = id === 'new';
 
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<ServiceAccount>>({
+  const { data: existingClient, isLoading: loadingClient } = useOAuthClientDetail(isEditMode ? id! : '');
+  const createMutation = useCreateOAuthClient();
+  const updateMutation = useUpdateOAuthClient();
+
+  const [formData, setFormData] = useState({
     name: '',
     description: '',
     is_active: true
   });
-  
+
   // State for newly created credentials
   const [createdCredentials, setCreatedCredentials] = useState<{clientId: string, clientSecret: string} | null>(null);
 
   useEffect(() => {
-    if (isEditMode) {
-      const existing = getServiceAccount(id);
-      if (existing) {
-        setFormData(existing);
-      } else {
-        navigate('/developers/service-accounts');
-      }
+    if (isEditMode && existingClient) {
+      setFormData({
+        name: existingClient.name || '',
+        description: existingClient.description || '',
+        is_active: existingClient.is_active ?? true
+      });
     }
-  }, [id, isEditMode, navigate]);
+  }, [existingClient, isEditMode]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    
-    setTimeout(() => {
+
+    try {
       if (isNewMode) {
-        const result = createServiceAccount(formData);
-        setCreatedCredentials({ clientId: result.account.client_id, clientSecret: result.clientSecret });
-        setLoading(false);
-        // Don't navigate away yet, show credentials
+        const result = await createMutation.mutateAsync({
+          name: formData.name,
+          description: formData.description,
+          client_type: 'confidential',
+          allowed_grant_types: ['client_credentials'],
+          allowed_scopes: ['openid', 'profile', 'email'],
+          require_pkce: false,
+          require_consent: false,
+          first_party: true,
+        });
+        setCreatedCredentials({
+          clientId: result.client.client_id,
+          clientSecret: result.client_secret
+        });
       } else if (id) {
-        updateServiceAccount(id, formData);
-        setLoading(false);
+        await updateMutation.mutateAsync({
+          id,
+          data: {
+            name: formData.name,
+            description: formData.description,
+            is_active: formData.is_active,
+          }
+        });
         navigate('/developers/service-accounts');
       }
-    }, 800);
+    } catch (err) {
+      console.error('Failed to save service account:', err);
+    }
   };
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
 
+  if (isEditMode && loadingClient) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   if (createdCredentials) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-          <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="bg-success/10 border border-success/20 rounded-xl p-6 text-center">
+          <div className="w-16 h-16 bg-success/20 text-success rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle size={32} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('sa.generated')}</h2>
-          <p className="text-gray-600">{t('sa.generated_desc')}</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{t('sa.generated')}</h2>
+          <p className="text-muted-foreground">{t('sa.generated_desc')}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6 space-y-6">
           <div>
-            <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider block mb-2">{t('oauth.client_id')}</label>
+            <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider block mb-2">{t('oauth.client_id')}</label>
             <div className="flex gap-2">
-              <input readOnly value={createdCredentials.clientId} className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 font-mono text-sm text-gray-800" />
-              <button onClick={() => copyToClipboard(createdCredentials.clientId)} className="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600"><Copy size={20}/></button>
+              <input readOnly value={createdCredentials.clientId} className="flex-1 bg-muted border border-border rounded-lg px-4 py-3 font-mono text-sm text-foreground" />
+              <button onClick={() => copyToClipboard(createdCredentials.clientId)} className="p-3 bg-muted hover:bg-accent rounded-lg text-muted-foreground"><Copy size={20}/></button>
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider block mb-2">{t('oauth.client_secret')}</label>
+            <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider block mb-2">{t('oauth.client_secret')}</label>
             <div className="flex gap-2">
-              <input readOnly value={createdCredentials.clientSecret} className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 font-mono text-sm text-gray-800" />
-              <button onClick={() => copyToClipboard(createdCredentials.clientSecret)} className="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600"><Copy size={20}/></button>
+              <input readOnly value={createdCredentials.clientSecret} className="flex-1 bg-muted border border-border rounded-lg px-4 py-3 font-mono text-sm text-foreground" />
+              <button onClick={() => copyToClipboard(createdCredentials.clientSecret)} className="p-3 bg-muted hover:bg-accent rounded-lg text-muted-foreground"><Copy size={20}/></button>
             </div>
-            <p className="text-xs text-red-500 mt-2 flex items-center">
+            <p className="text-xs text-destructive mt-2 flex items-center">
               <AlertTriangle size={12} className="mr-1" />
               Store this secret securely.
             </p>
           </div>
 
           <div className="pt-4 flex justify-center">
-            <button 
+            <button
               onClick={() => navigate('/developers/service-accounts')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium"
+              className="bg-primary hover:bg-primary-600 text-primary-foreground px-8 py-3 rounded-lg font-medium"
             >
               {t('common.back')}
             </button>
@@ -104,49 +132,49 @@ const ServiceAccountEdit: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <button 
+        <button
           onClick={() => navigate('/developers/service-accounts')}
-          className="p-2 hover:bg-white rounded-lg transition-colors text-gray-500"
+          className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
         >
           <ArrowLeft size={24} />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{isNewMode ? t('sa.create') : t('common.edit')}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{isNewMode ? t('sa.create') : t('common.edit')}</h1>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <form onSubmit={handleSubmit} className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
         <div className="p-6 space-y-6">
-          <div className="flex items-center gap-4 bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6">
-            <Bot size={24} className="text-blue-600 flex-shrink-0" />
-            <p className="text-sm text-blue-800">
+          <div className="flex items-center gap-4 bg-primary/10 p-4 rounded-lg border border-primary/20 mb-6">
+            <Bot size={24} className="text-primary flex-shrink-0" />
+            <p className="text-sm text-primary">
               Service accounts are used by backend systems to authenticate via Client Credentials flow.
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-            <input 
-              type="text" 
+            <label className="block text-sm font-medium text-foreground mb-1">Name</label>
+            <input
+              type="text"
               required
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="e.g. Payment Microservice"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea 
+            <label className="block text-sm font-medium text-foreground mb-1">Description</label>
+            <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+              className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none resize-none"
             />
           </div>
 
-          <div className="pt-2 border-t border-gray-100">
+          <div className="pt-2 border-t border-border">
             <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -154,33 +182,33 @@ const ServiceAccountEdit: React.FC = () => {
                 checked={formData.is_active}
                 onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
               />
-              <div className={`block w-10 h-6 rounded-full transition-colors ${formData.is_active ? 'bg-green-600' : 'bg-gray-300'}`}></div>
-              <div className={`dot absolute bg-white w-4 h-4 rounded-full transition-transform transform ${formData.is_active ? 'translate-x-5' : 'translate-x-1'} mt-1 ml-0.5`}></div>
-              <span className="ml-3 text-sm font-medium text-gray-700">{t('users.active')}</span>
+              <div className={`block w-10 h-6 rounded-full transition-colors ${formData.is_active ? 'bg-success' : 'bg-muted'}`}></div>
+              <div className={`dot absolute bg-card w-4 h-4 rounded-full transition-transform transform ${formData.is_active ? 'translate-x-5' : 'translate-x-1'} mt-1 ml-0.5`}></div>
+              <span className="ml-3 text-sm font-medium text-foreground">{t('users.active')}</span>
             </label>
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+        <div className="px-6 py-4 bg-muted border-t border-border flex justify-end gap-3">
            <button
             type="button"
             onClick={() => navigate('/developers/service-accounts')}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-card border border-input rounded-lg hover:bg-accent focus:outline-none"
           >
             {t('common.cancel')}
           </button>
           <button
             type="submit"
-            disabled={loading}
-            className={`flex items-center px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none
-              ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+            disabled={isLoading}
+            className={`flex items-center px-6 py-2 text-sm font-medium text-primary-foreground bg-primary border border-transparent rounded-lg hover:bg-primary-600 focus:outline-none
+              ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {loading ? t('common.saving') : (
-              <>
-                <Save size={16} className="mr-2" />
-                {isNewMode ? t('keys.generate') : t('common.save')}
-              </>
+            {isLoading ? (
+              <Loader2 size={16} className="mr-2 animate-spin" />
+            ) : (
+              <Save size={16} className="mr-2" />
             )}
+            {isNewMode ? t('keys.generate') : t('common.save')}
           </button>
         </div>
       </form>

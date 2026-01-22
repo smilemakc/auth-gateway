@@ -146,7 +146,7 @@ func (s *TwoFactorService) VerifyTOTP(ctx context.Context, userID uuid.UUID, cod
 	}
 
 	// Try backup code if TOTP failed
-	backupCodeValid, err := s.verifyBackupCode(userID, code)
+	backupCodeValid, err := s.verifyBackupCode(ctx, userID, code)
 	if err != nil {
 		return false, err
 	}
@@ -155,9 +155,9 @@ func (s *TwoFactorService) VerifyTOTP(ctx context.Context, userID uuid.UUID, cod
 }
 
 // verifyBackupCode verifies and marks a backup code as used
-func (s *TwoFactorService) verifyBackupCode(userID uuid.UUID, code string) (bool, error) {
+func (s *TwoFactorService) verifyBackupCode(ctx context.Context, userID uuid.UUID, code string) (bool, error) {
 	// Get all unused backup codes
-	codes, err := s.backupCodeRepo.GetUnusedByUserID(context.Background(), userID)
+	codes, err := s.backupCodeRepo.GetUnusedByUserID(ctx, userID)
 	if err != nil {
 		return false, err
 	}
@@ -166,7 +166,7 @@ func (s *TwoFactorService) verifyBackupCode(userID uuid.UUID, code string) (bool
 	for _, backupCode := range codes {
 		if err := utils.CheckPassword(backupCode.CodeHash, code); err == nil {
 			// Mark as used
-			if err := s.backupCodeRepo.MarkAsUsed(context.Background(), backupCode.ID); err != nil {
+			if err := s.backupCodeRepo.MarkAsUsed(ctx, backupCode.ID); err != nil {
 				return false, err
 			}
 			return true, nil

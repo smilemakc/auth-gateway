@@ -30,6 +30,103 @@ func NewOTPHandler(
 	}
 }
 
+// ResendVerification handles sending verification OTP to email or phone
+// @Summary Resend verification code
+// @Description Resend the verification code to email or phone
+// @Tags OTP
+// @Accept json
+// @Produce json
+// @Param request body models.SendOTPRequest true "Send OTP request (type must be verification)"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 429 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/auth/verify/resend [post]
+func (h *OTPHandler) ResendVerification(c *gin.Context) {
+	var req models.SendOTPRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid request", err.Error()),
+		))
+		return
+	}
+
+	req.Type = models.OTPTypeVerification
+
+	if err := h.otpService.SendOTP(c.Request.Context(), &req); err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+			return
+		}
+		h.logger.Error("Failed to resend verification code", map[string]interface{}{
+			"error": err.Error(),
+			"email": req.Email,
+			"phone": req.Phone,
+		})
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Verification code sent",
+		"email":   req.Email,
+		"phone":   req.Phone,
+	})
+}
+
+// VerifyEmailOTP verifies email/phone verification code
+// @Summary Verify email or phone
+// @Description Verify a verification code for email or phone
+// @Tags OTP
+// @Accept json
+// @Produce json
+// @Param request body models.VerifyOTPRequest true "Verify OTP request (type must be verification)"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/auth/verify/email [post]
+func (h *OTPHandler) VerifyEmailOTP(c *gin.Context) {
+	var req models.VerifyOTPRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid request", err.Error()),
+		))
+		return
+	}
+
+	req.Type = models.OTPTypeVerification
+
+	response, err := h.otpService.VerifyOTP(c.Request.Context(), &req)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+			return
+		}
+		h.logger.Error("Failed to verify code", map[string]interface{}{
+			"error": err.Error(),
+			"email": req.Email,
+			"phone": req.Phone,
+		})
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	if !response.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"valid":   false,
+			"message": "Invalid or expired verification code",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"valid":   true,
+		"message": "Verification successful",
+		"user":    response.User,
+	})
+}
+
 // SendOTP handles sending an OTP code
 // @Summary Send OTP code
 // @Description Send an OTP code to email for verification, password reset, or login

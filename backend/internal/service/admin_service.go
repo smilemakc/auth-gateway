@@ -8,17 +8,21 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/utils"
+	"github.com/uptrace/bun"
 )
 
 // AdminService provides admin operations
 type AdminService struct {
-	userRepo   UserStore
-	apiKeyRepo APIKeyStore
-	auditRepo  AuditStore
-	oauthRepo  OAuthStore
-	rbacRepo   RBACStore
-	bcryptCost int
+	userRepo       UserStore
+	apiKeyRepo     APIKeyStore
+	auditRepo      AuditStore
+	oauthRepo      OAuthStore
+	rbacRepo       RBACStore
+	backupCodeRepo BackupCodeStore
+	bcryptCost     int
+	db             TransactionDB
 }
 
 // NewAdminService creates a new admin service
@@ -28,15 +32,19 @@ func NewAdminService(
 	auditRepo AuditStore,
 	oauthRepo OAuthStore,
 	rbacRepo RBACStore,
+	backupCodeRepo BackupCodeStore,
 	bcryptCost int,
+	db TransactionDB,
 ) *AdminService {
 	return &AdminService{
-		userRepo:   userRepo,
-		apiKeyRepo: apiKeyRepo,
-		auditRepo:  auditRepo,
-		oauthRepo:  oauthRepo,
-		rbacRepo:   rbacRepo,
-		bcryptCost: bcryptCost,
+		userRepo:       userRepo,
+		apiKeyRepo:     apiKeyRepo,
+		auditRepo:      auditRepo,
+		oauthRepo:      oauthRepo,
+		rbacRepo:       rbacRepo,
+		backupCodeRepo: backupCodeRepo,
+		bcryptCost:     bcryptCost,
+		db:             db,
 	}
 }
 
@@ -224,12 +232,7 @@ func (s *AdminService) CreateUser(ctx context.Context, req *models.AdminCreateUs
 		// For now, assume password is required by request validation model
 	}
 
-	// 3. Create user in DB
-	if err := s.userRepo.Create(ctx, user); err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
-	}
-
-	// 4. Assign roles
+	// 3. Get roles to assign
 	var roleIDs []uuid.UUID
 	if len(req.RoleIDs) > 0 {
 		roleIDs = req.RoleIDs
@@ -241,11 +244,33 @@ func (s *AdminService) CreateUser(ctx context.Context, req *models.AdminCreateUs
 		}
 	}
 
-	if len(roleIDs) > 0 {
-		if err := s.rbacRepo.SetUserRoles(ctx, user.ID, roleIDs, adminID); err != nil {
-			// Log error but continue? Or fail? Fail is better integrity
-			return nil, fmt.Errorf("failed to assign roles: %w", err)
+	// 4. Create user and assign roles in a transaction
+	err := s.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
+		// Create user in DB
+		if userRepo, ok := s.userRepo.(*repository.UserRepository); ok {
+			if err := userRepo.CreateWithTx(ctx, tx, user); err != nil {
+				return fmt.Errorf("failed to create user: %w", err)
+			}
+		} else {
+			// Fallback to non-transactional method if type assertion fails
+			if err := s.userRepo.Create(ctx, user); err != nil {
+				return fmt.Errorf("failed to create user: %w", err)
+			}
 		}
+
+		// Assign roles
+		if len(roleIDs) > 0 {
+			if err := s.rbacRepo.SetUserRoles(ctx, user.ID, roleIDs, adminID); err != nil {
+				// SetUserRoles already uses a transaction internally, so we can call it directly
+				return fmt.Errorf("failed to assign roles: %w", err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	// 5. Return created user
@@ -472,6 +497,65 @@ func (s *AdminService) RemoveRole(ctx context.Context, userID, roleID uuid.UUID)
 	}
 
 	return s.GetUser(ctx, userID)
+}
+
+// AdminReset2FA administratively disables 2FA for a user
+func (s *AdminService) AdminReset2FA(ctx context.Context, userID, adminID uuid.UUID) error {
+	user, err := s.userRepo.GetByID(ctx, userID, nil)
+	if err != nil {
+		return err
+	}
+
+	if !user.TOTPEnabled {
+		return models.NewAppError(400, "2FA is not enabled for this user")
+	}
+
+	err = s.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
+		if err := s.userRepo.DisableTOTP(ctx, userID); err != nil {
+			return err
+		}
+
+		if err := s.backupCodeRepo.DeleteAllByUserID(ctx, userID); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to reset 2FA: %w", err)
+	}
+
+	auditLog := &models.AuditLog{
+		ID:        uuid.New(),
+		UserID:    &adminID,
+		Action:    string(models.Action2FAReset),
+		Status:    string(models.StatusSuccess),
+		CreatedAt: time.Now(),
+		Details:   []byte(fmt.Sprintf(`{"target_user_id":"%s","admin_id":"%s"}`, userID, adminID)),
+	}
+
+	if err := s.auditRepo.Create(ctx, auditLog); err != nil {
+		return fmt.Errorf("failed to create audit log: %w", err)
+	}
+
+	return nil
+}
+
+// GetUserOAuthAccounts returns OAuth accounts linked to a user
+func (s *AdminService) GetUserOAuthAccounts(ctx context.Context, userID uuid.UUID) ([]*models.OAuthAccount, error) {
+	// Verify user exists
+	_, err := s.userRepo.GetByID(ctx, userID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	accounts, err := s.oauthRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get OAuth accounts: %w", err)
+	}
+
+	return accounts, nil
 }
 
 // userToAdminResponse converts User to AdminUserResponse with roles

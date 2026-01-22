@@ -170,7 +170,7 @@ const OAuthClientEdit: React.FC = () => {
   if (!isNew && loadingClient) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -179,27 +179,27 @@ const OAuthClientEdit: React.FC = () => {
   if (newClientSecret) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-          <h2 className="text-xl font-bold text-green-800 mb-2">OAuth Client Created Successfully</h2>
-          <p className="text-green-700 mb-4">
+        <div className="bg-success/10 border border-success rounded-xl p-6">
+          <h2 className="text-xl font-bold text-success mb-2">OAuth Client Created Successfully</h2>
+          <p className="text-success mb-4">
             Save this client secret now. You won't be able to see it again.
           </p>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-green-700 mb-1">Client Secret</label>
+              <label className="block text-sm font-medium text-success mb-1">Client Secret</label>
               <div className="flex items-center gap-2">
-                <code className="flex-1 bg-white rounded-lg px-4 py-3 text-sm font-mono border border-green-200 break-all">
+                <code className="flex-1 bg-card rounded-lg px-4 py-3 text-sm font-mono border border-success break-all">
                   {showSecret ? newClientSecret : '••••••••••••••••••••••••••••••••'}
                 </code>
                 <button
                   onClick={() => setShowSecret(!showSecret)}
-                  className="p-2 text-green-700 hover:bg-green-100 rounded-lg"
+                  className="p-2 text-success hover:bg-success/10 rounded-lg"
                 >
                   {showSecret ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
                 <button
                   onClick={copySecret}
-                  className="p-2 text-green-700 hover:bg-green-100 rounded-lg"
+                  className="p-2 text-success hover:bg-success/10 rounded-lg"
                 >
                   {copiedSecret ? <Check size={20} /> : <Copy size={20} />}
                 </button>
@@ -209,7 +209,7 @@ const OAuthClientEdit: React.FC = () => {
           <div className="mt-6 flex justify-end">
             <button
               onClick={() => navigate('/oauth-clients')}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
+              className="px-4 py-2 bg-success hover:bg-success text-primary-foreground rounded-lg font-medium"
             >
               Done
             </button>
@@ -230,15 +230,15 @@ const OAuthClientEdit: React.FC = () => {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/oauth-clients')}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 hover:bg-accent rounded-lg transition-colors"
         >
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-foreground">
             {isNew ? 'Create OAuth Client' : 'Edit OAuth Client'}
           </h1>
-          <p className="text-gray-500 mt-1">
+          <p className="text-muted-foreground mt-1">
             {isNew ? 'Register a new OAuth 2.0 client application' : 'Update client configuration'}
           </p>
         </div>
@@ -246,52 +246,52 @@ const OAuthClientEdit: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Basic Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                 placeholder="My Application"
                 required
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">Description</label>
               <textarea
                 value={formData.description}
                 onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                 placeholder="A brief description of your application"
                 rows={2}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">Logo URL</label>
               <input
                 type="url"
                 value={formData.logo_url}
                 onChange={e => setFormData(prev => ({ ...prev, logo_url: e.target.value }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                 placeholder="https://example.com/logo.png"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Client Type *</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">Client Type *</label>
               <select
                 value={formData.client_type}
                 onChange={e => setFormData(prev => ({ ...prev, client_type: e.target.value as ClientType }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                 disabled={!isNew}
               >
                 <option value="confidential">Confidential (Server-side)</option>
                 <option value="public">Public (SPA, Mobile)</option>
               </select>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {formData.client_type === 'confidential'
                   ? 'Can securely store client secret'
                   : 'Cannot securely store client secret, requires PKCE'}
@@ -301,8 +301,8 @@ const OAuthClientEdit: React.FC = () => {
         </div>
 
         {/* Redirect URIs */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Redirect URIs</h2>
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Redirect URIs</h2>
           <div className="space-y-3">
             {(formData.redirect_uris || []).map((uri, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -310,12 +310,12 @@ const OAuthClientEdit: React.FC = () => {
                   type="text"
                   value={uri}
                   readOnly
-                  className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600"
+                  className="flex-1 px-4 py-2 bg-muted border border-border rounded-lg text-muted-foreground"
                 />
                 <button
                   type="button"
                   onClick={() => handleRemoveRedirectUri(uri)}
-                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                  className="p-2 text-destructive hover:bg-destructive/10 rounded-lg"
                 >
                   <X size={18} />
                 </button>
@@ -338,31 +338,31 @@ const OAuthClientEdit: React.FC = () => {
                   }
                 }}
                 placeholder="https://example.com/callback"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
               />
               <button
                 type="button"
                 onClick={handleAddRedirectUri}
-                className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg"
+                className="p-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg"
               >
                 <Plus size={18} />
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Press Enter or click + to add URI</p>
+            <p className="text-xs text-muted-foreground mt-1">Press Enter or click + to add URI</p>
           </div>
         </div>
 
         {/* Grant Types */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Grant Types</h2>
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Grant Types</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {GRANT_TYPES.map(grant => (
               <label
                 key={grant.value}
                 className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
                   formData.allowed_grant_types?.includes(grant.value)
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:border-input'
                 }`}
               >
                 <input
@@ -372,8 +372,8 @@ const OAuthClientEdit: React.FC = () => {
                   className="mt-1"
                 />
                 <div>
-                  <div className="font-medium text-gray-900">{grant.label}</div>
-                  <div className="text-sm text-gray-500">{grant.description}</div>
+                  <div className="font-medium text-foreground">{grant.label}</div>
+                  <div className="text-sm text-muted-foreground">{grant.description}</div>
                 </div>
               </label>
             ))}
@@ -381,11 +381,11 @@ const OAuthClientEdit: React.FC = () => {
         </div>
 
         {/* Scopes */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Scopes</h2>
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Scopes</h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Allowed Scopes</h3>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">Allowed Scopes</h3>
               <div className="flex flex-wrap gap-2">
                 {availableScopes.map(scope => (
                   <button
@@ -394,8 +394,8 @@ const OAuthClientEdit: React.FC = () => {
                     onClick={() => handleScopeToggle(scope)}
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                       formData.allowed_scopes?.includes(scope)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-accent'
                     }`}
                   >
                     {scope}
@@ -404,8 +404,8 @@ const OAuthClientEdit: React.FC = () => {
               </div>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Default Scopes</h3>
-              <p className="text-xs text-gray-500 mb-2">Scopes granted automatically if not specified in request</p>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">Default Scopes</h3>
+              <p className="text-xs text-muted-foreground mb-2">Scopes granted automatically if not specified in request</p>
               <div className="flex flex-wrap gap-2">
                 {formData.allowed_scopes?.map(scope => (
                   <button
@@ -414,8 +414,8 @@ const OAuthClientEdit: React.FC = () => {
                     onClick={() => handleScopeToggle(scope, true)}
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                       formData.default_scopes?.includes(scope)
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-success text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-accent'
                     }`}
                   >
                     {scope}
@@ -427,62 +427,62 @@ const OAuthClientEdit: React.FC = () => {
         </div>
 
         {/* Token Settings */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Token Settings</h2>
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Token Settings</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Access Token TTL (seconds)</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">Access Token TTL (seconds)</label>
               <input
                 type="number"
                 value={formData.access_token_ttl}
                 onChange={e => setFormData(prev => ({ ...prev, access_token_ttl: parseInt(e.target.value) }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                 min={60}
                 max={86400}
               />
-              <p className="text-xs text-gray-500 mt-1">{Math.floor((formData.access_token_ttl || 900) / 60)} minutes</p>
+              <p className="text-xs text-muted-foreground mt-1">{Math.floor((formData.access_token_ttl || 900) / 60)} minutes</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Refresh Token TTL (seconds)</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">Refresh Token TTL (seconds)</label>
               <input
                 type="number"
                 value={formData.refresh_token_ttl}
                 onChange={e => setFormData(prev => ({ ...prev, refresh_token_ttl: parseInt(e.target.value) }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                 min={3600}
                 max={2592000}
               />
-              <p className="text-xs text-gray-500 mt-1">{Math.floor((formData.refresh_token_ttl || 604800) / 86400)} days</p>
+              <p className="text-xs text-muted-foreground mt-1">{Math.floor((formData.refresh_token_ttl || 604800) / 86400)} days</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ID Token TTL (seconds)</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">ID Token TTL (seconds)</label>
               <input
                 type="number"
                 value={formData.id_token_ttl}
                 onChange={e => setFormData(prev => ({ ...prev, id_token_ttl: parseInt(e.target.value) }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                 min={300}
                 max={86400}
               />
-              <p className="text-xs text-gray-500 mt-1">{Math.floor((formData.id_token_ttl || 3600) / 60)} minutes</p>
+              <p className="text-xs text-muted-foreground mt-1">{Math.floor((formData.id_token_ttl || 3600) / 60)} minutes</p>
             </div>
           </div>
         </div>
 
         {/* Security Settings */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Security Settings</h2>
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Security Settings</h2>
           <div className="space-y-4">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.require_pkce}
                 onChange={e => setFormData(prev => ({ ...prev, require_pkce: e.target.checked }))}
-                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="w-5 h-5 rounded border-input text-primary focus:ring-ring"
               />
               <div>
-                <div className="font-medium text-gray-900">Require PKCE</div>
-                <div className="text-sm text-gray-500">Require Proof Key for Code Exchange (recommended)</div>
+                <div className="font-medium text-foreground">Require PKCE</div>
+                <div className="text-sm text-muted-foreground">Require Proof Key for Code Exchange (recommended)</div>
               </div>
             </label>
             <label className="flex items-center gap-3 cursor-pointer">
@@ -490,11 +490,11 @@ const OAuthClientEdit: React.FC = () => {
                 type="checkbox"
                 checked={formData.require_consent}
                 onChange={e => setFormData(prev => ({ ...prev, require_consent: e.target.checked }))}
-                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="w-5 h-5 rounded border-input text-primary focus:ring-ring"
               />
               <div>
-                <div className="font-medium text-gray-900">Require User Consent</div>
-                <div className="text-sm text-gray-500">Show consent screen to users before granting access</div>
+                <div className="font-medium text-foreground">Require User Consent</div>
+                <div className="text-sm text-muted-foreground">Show consent screen to users before granting access</div>
               </div>
             </label>
             <label className="flex items-center gap-3 cursor-pointer">
@@ -502,11 +502,11 @@ const OAuthClientEdit: React.FC = () => {
                 type="checkbox"
                 checked={formData.first_party}
                 onChange={e => setFormData(prev => ({ ...prev, first_party: e.target.checked }))}
-                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="w-5 h-5 rounded border-input text-primary focus:ring-ring"
               />
               <div>
-                <div className="font-medium text-gray-900">First Party Application</div>
-                <div className="text-sm text-gray-500">Skip consent for trusted first-party applications</div>
+                <div className="font-medium text-foreground">First Party Application</div>
+                <div className="text-sm text-muted-foreground">Skip consent for trusted first-party applications</div>
               </div>
             </label>
           </div>
@@ -517,14 +517,14 @@ const OAuthClientEdit: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/oauth-clients')}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            className="px-4 py-2 border border-input rounded-lg text-muted-foreground hover:bg-accent"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={createClient.isPending || updateClient.isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg font-medium disabled:opacity-50"
           >
             <Save size={18} />
             {isNew ? 'Create Client' : 'Save Changes'}

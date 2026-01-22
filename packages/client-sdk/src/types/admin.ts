@@ -233,7 +233,7 @@ export interface CreateWebhookResponse {
 // ============================================
 
 /** Email template type */
-export type EmailTemplateType = 'verification' | 'password_reset' | 'welcome' | '2fa' | 'custom';
+export type EmailTemplateType = 'verification' | 'password_reset' | 'welcome' | '2fa' | 'otp_login' | 'otp_registration' | 'custom';
 
 /** Email template entity */
 export interface EmailTemplate extends TimestampedEntity {
@@ -244,6 +244,7 @@ export interface EmailTemplate extends TimestampedEntity {
   text_body?: string;
   variables: string[];
   is_active: boolean;
+  application_id?: string;
 }
 
 /** Create email template request */
@@ -333,3 +334,344 @@ export interface OAuthProviderListResponse {
 
 // Note: OAuth Client, Scope, and Consent types have been moved to oauth-provider.ts
 // for the full OAuth 2.0/OIDC provider implementation.
+
+// ============================================
+// Groups Types
+// ============================================
+
+/** Group entity */
+export interface Group extends TimestampedEntity {
+  id: string;
+  name: string;
+  display_name: string;
+  description?: string;
+  parent_group_id?: string;
+  is_system_group: boolean;
+  member_count: number;
+}
+
+/** Create group request */
+export interface CreateGroupRequest {
+  name: string;
+  display_name: string;
+  description?: string;
+  parent_group_id?: string;
+}
+
+/** Update group request */
+export interface UpdateGroupRequest {
+  display_name?: string;
+  description?: string;
+  parent_group_id?: string;
+}
+
+/** Add group members request */
+export interface AddGroupMembersRequest {
+  user_ids: string[];
+}
+
+/** Group list response */
+export interface GroupListResponse {
+  groups: Group[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+/** Group members response */
+export interface GroupMembersResponse {
+  users: Array<{
+    id: string;
+    email: string;
+    username: string;
+    full_name?: string;
+  }>;
+  total: number;
+  page: number;
+  size: number;
+}
+
+// ============================================
+// LDAP Types
+// ============================================
+
+/** LDAP configuration entity */
+export interface LDAPConfig extends TimestampedEntity {
+  id: string;
+  server: string;
+  port: number;
+  use_tls: boolean;
+  use_ssl: boolean;
+  insecure: boolean;
+  bind_dn: string;
+  base_dn: string;
+  user_search_base?: string;
+  group_search_base?: string;
+  user_search_filter: string;
+  group_search_filter: string;
+  user_id_attribute: string;
+  user_email_attribute: string;
+  user_name_attribute: string;
+  group_id_attribute: string;
+  group_name_attribute: string;
+  group_member_attribute: string;
+  sync_enabled: boolean;
+  sync_interval: number; // in seconds
+  is_active: boolean;
+  last_sync_at?: string;
+  next_sync_at?: string;
+  last_test_at?: string;
+  last_test_result?: string;
+}
+
+/** Create LDAP config request */
+export interface CreateLDAPConfigRequest {
+  server: string;
+  port: number;
+  use_tls?: boolean;
+  use_ssl?: boolean;
+  insecure?: boolean;
+  bind_dn: string;
+  bind_password: string;
+  base_dn: string;
+  user_search_base?: string;
+  group_search_base?: string;
+  user_search_filter?: string;
+  group_search_filter?: string;
+  user_id_attribute?: string;
+  user_email_attribute?: string;
+  user_name_attribute?: string;
+  group_id_attribute?: string;
+  group_name_attribute?: string;
+  group_member_attribute?: string;
+  sync_enabled?: boolean;
+  sync_interval?: number; // in seconds
+}
+
+/** Update LDAP config request */
+export interface UpdateLDAPConfigRequest {
+  server?: string;
+  port?: number;
+  use_tls?: boolean;
+  use_ssl?: boolean;
+  insecure?: boolean;
+  bind_dn?: string;
+  bind_password?: string;
+  base_dn?: string;
+  user_search_base?: string;
+  group_search_base?: string;
+  user_search_filter?: string;
+  group_search_filter?: string;
+  sync_enabled?: boolean;
+  sync_interval?: number; // in seconds
+  is_active?: boolean;
+}
+
+/** LDAP test connection request */
+export interface LDAPTestConnectionRequest {
+  server: string;
+  port: number;
+  use_tls?: boolean;
+  use_ssl?: boolean;
+  insecure?: boolean;
+  bind_dn: string;
+  bind_password: string;
+  base_dn: string;
+}
+
+/** LDAP test connection response */
+export interface LDAPTestConnectionResponse {
+  success: boolean;
+  message: string;
+  error?: string;
+  user_count?: number;
+  group_count?: number;
+}
+
+/** LDAP sync log */
+export interface LDAPSyncLog {
+  id: string;
+  ldap_config_id: string;
+  status: 'success' | 'failed' | 'partial';
+  users_synced: number;
+  users_created: number;
+  users_updated: number;
+  users_deleted: number;
+  groups_synced: number;
+  groups_created: number;
+  groups_updated: number;
+  error_message?: string;
+  started_at: string;
+  completed_at?: string;
+  duration_ms: number;
+}
+
+/** LDAP sync request */
+export interface LDAPSyncRequest {
+  sync_users?: boolean;
+  sync_groups?: boolean;
+  dry_run?: boolean;
+}
+
+/** LDAP sync response */
+export interface LDAPSyncResponse {
+  status: string;
+  sync_log_id: string;
+  users_synced: number;
+  users_created: number;
+  users_updated: number;
+  users_deleted: number;
+  groups_synced: number;
+  groups_created: number;
+  groups_updated: number;
+  message: string;
+  error?: string;
+}
+
+/** LDAP config list response */
+export interface LDAPConfigListResponse {
+  configs: LDAPConfig[];
+  total: number;
+}
+
+/** LDAP sync logs response */
+export interface LDAPSyncLogsResponse {
+  logs: LDAPSyncLog[];
+  total: number;
+}
+
+// ============================================
+// SAML Types
+// ============================================
+
+/** SAML Service Provider entity */
+export interface SAMLServiceProvider extends TimestampedEntity {
+  id: string;
+  name: string;
+  entity_id: string;
+  acs_url: string;
+  slo_url?: string;
+  x509_cert?: string;
+  metadata_url?: string;
+  is_active: boolean;
+}
+
+/** Create SAML SP request */
+export interface CreateSAMLSPRequest {
+  name: string;
+  entity_id: string;
+  acs_url: string;
+  slo_url?: string;
+  x509_cert?: string;
+  metadata_url?: string;
+}
+
+/** Update SAML SP request */
+export interface UpdateSAMLSPRequest {
+  name?: string;
+  entity_id?: string;
+  acs_url?: string;
+  slo_url?: string;
+  x509_cert?: string;
+  metadata_url?: string;
+  is_active?: boolean;
+}
+
+/** SAML SP list response */
+export interface SAMLSPListResponse {
+  sps: SAMLServiceProvider[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/** SAML metadata response */
+export interface SAMLMetadataResponse {
+  metadata: string; // XML string
+}
+
+// ============================================
+// Bulk Operations Types
+// ============================================
+
+/** Bulk user create item */
+export interface BulkUserCreate {
+  email: string;
+  username: string;
+  full_name?: string;
+  password: string;
+  is_active?: boolean;
+  email_verified?: boolean;
+}
+
+/** Bulk user update item */
+export interface BulkUserUpdate {
+  id: string;
+  email?: string;
+  username?: string;
+  full_name?: string;
+  is_active?: boolean;
+}
+
+/** Bulk create users request */
+export interface BulkCreateUsersRequest {
+  users: BulkUserCreate[];
+}
+
+/** Bulk update users request */
+export interface BulkUpdateUsersRequest {
+  users: BulkUserUpdate[];
+}
+
+/** Bulk delete users request */
+export interface BulkDeleteUsersRequest {
+  user_ids: string[];
+}
+
+/** Bulk assign roles request */
+export interface BulkAssignRolesRequest {
+  user_ids: string[];
+  role_ids: string[];
+}
+
+/** Bulk operation error */
+export interface BulkOperationError {
+  index: number;
+  id?: string;
+  email?: string;
+  message: string;
+}
+
+/** Bulk operation item result */
+export interface BulkOperationItemResult {
+  index: number;
+  id: string;
+  email: string;
+  success: boolean;
+  message?: string;
+}
+
+/** Bulk operation result */
+export interface BulkOperationResult {
+  total: number;
+  success: number;
+  failed: number;
+  errors?: BulkOperationError[];
+  results?: BulkOperationItemResult[];
+}
+
+// ============================================
+// SCIM Types
+// ============================================
+
+/** SCIM configuration */
+export interface SCIMConfig {
+  base_url: string;
+  enabled: boolean;
+  supported_operations: string[];
+}
+
+/** SCIM metadata response */
+export interface SCIMMetadataResponse {
+  metadata: Record<string, unknown>;
+}

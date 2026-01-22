@@ -257,3 +257,340 @@ func (h *TemplateHandler) GetDefaultVariables(c *gin.Context) {
 	variables := h.templateService.GetDefaultVariables(templateType)
 	c.JSON(http.StatusOK, gin.H{"variables": variables})
 }
+
+// ListApplicationEmailTemplates godoc
+// @Summary List email templates for an application
+// @Description Get all email templates for a specific application (admin only)
+// @Tags Admin - Application Email Templates
+// @Accept json
+// @Produce json
+// @Param appId path string true "Application ID (UUID)"
+// @Security BearerAuth
+// @Success 200 {object} models.EmailTemplateListResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/applications/{appId}/email-templates [get]
+func (h *TemplateHandler) ListApplicationEmailTemplates(c *gin.Context) {
+	appID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+		return
+	}
+
+	templates, err := h.templateService.ListEmailTemplatesForApp(c.Request.Context(), appID)
+	if err != nil {
+		h.logger.Error("Failed to list application templates", map[string]interface{}{
+			"error":          err.Error(),
+			"application_id": appID.String(),
+		})
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to list templates"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"templates": templates})
+}
+
+// CreateApplicationEmailTemplate godoc
+// @Summary Create email template for application
+// @Description Create a new email template for a specific application (admin only)
+// @Tags Admin - Application Email Templates
+// @Accept json
+// @Produce json
+// @Param appId path string true "Application ID (UUID)"
+// @Param request body models.CreateEmailTemplateRequest true "Template data"
+// @Security BearerAuth
+// @Success 201 {object} models.EmailTemplate
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/applications/{appId}/email-templates [post]
+func (h *TemplateHandler) CreateApplicationEmailTemplate(c *gin.Context) {
+	userID, ok := utils.GetUserIDFromContext(c)
+	if !ok || userID == nil {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
+	appID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+		return
+	}
+
+	var req models.CreateEmailTemplateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	template, err := h.templateService.CreateEmailTemplateForApp(c.Request.Context(), appID, &req, *userID)
+	if err != nil {
+		h.logger.Error("Failed to create application template", map[string]interface{}{
+			"error":          err.Error(),
+			"application_id": appID.String(),
+		})
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, template)
+}
+
+// GetApplicationEmailTemplate godoc
+// @Summary Get application email template by ID
+// @Description Get a specific email template for an application by its ID (admin only)
+// @Tags Admin - Application Email Templates
+// @Accept json
+// @Produce json
+// @Param appId path string true "Application ID (UUID)"
+// @Param id path string true "Template ID (UUID)"
+// @Security BearerAuth
+// @Success 200 {object} models.EmailTemplate
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/applications/{appId}/email-templates/{id} [get]
+func (h *TemplateHandler) GetApplicationEmailTemplate(c *gin.Context) {
+	appID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+		return
+	}
+
+	templateID, err := uuid.Parse(c.Param("templateId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid template ID"})
+		return
+	}
+
+	template, err := h.templateService.GetEmailTemplate(c.Request.Context(), templateID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Template not found"})
+		return
+	}
+
+	if template.ApplicationID == nil || *template.ApplicationID != appID {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Template not found for this application"})
+		return
+	}
+
+	c.JSON(http.StatusOK, template)
+}
+
+// UpdateApplicationEmailTemplate godoc
+// @Summary Update application email template
+// @Description Update an existing email template for a specific application (admin only)
+// @Tags Admin - Application Email Templates
+// @Accept json
+// @Produce json
+// @Param appId path string true "Application ID (UUID)"
+// @Param id path string true "Template ID (UUID)"
+// @Param request body models.UpdateEmailTemplateRequest true "Template update data"
+// @Security BearerAuth
+// @Success 200 {object} models.MessageResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/applications/{appId}/email-templates/{id} [put]
+func (h *TemplateHandler) UpdateApplicationEmailTemplate(c *gin.Context) {
+	userID, ok := utils.GetUserIDFromContext(c)
+	if !ok || userID == nil {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
+	appID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+		return
+	}
+
+	templateID, err := uuid.Parse(c.Param("templateId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid template ID"})
+		return
+	}
+
+	var req models.UpdateEmailTemplateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	if err := h.templateService.UpdateEmailTemplateForApp(c.Request.Context(), appID, templateID, &req, *userID); err != nil {
+		h.logger.Error("Failed to update application template", map[string]interface{}{
+			"error":          err.Error(),
+			"application_id": appID.String(),
+			"template_id":    templateID.String(),
+		})
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Template updated successfully"})
+}
+
+// DeleteApplicationEmailTemplate godoc
+// @Summary Delete application email template
+// @Description Delete an email template for a specific application by ID (admin only)
+// @Tags Admin - Application Email Templates
+// @Accept json
+// @Produce json
+// @Param appId path string true "Application ID (UUID)"
+// @Param id path string true "Template ID (UUID)"
+// @Security BearerAuth
+// @Success 200 {object} models.MessageResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/applications/{appId}/email-templates/{id} [delete]
+func (h *TemplateHandler) DeleteApplicationEmailTemplate(c *gin.Context) {
+	userID, ok := utils.GetUserIDFromContext(c)
+	if !ok || userID == nil {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
+	appID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+		return
+	}
+
+	templateID, err := uuid.Parse(c.Param("templateId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid template ID"})
+		return
+	}
+
+	template, err := h.templateService.GetEmailTemplate(c.Request.Context(), templateID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Template not found"})
+		return
+	}
+
+	if template.ApplicationID == nil || *template.ApplicationID != appID {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Template not found for this application"})
+		return
+	}
+
+	if err := h.templateService.DeleteEmailTemplate(c.Request.Context(), templateID, *userID); err != nil {
+		h.logger.Error("Failed to delete application template", map[string]interface{}{
+			"error":          err.Error(),
+			"application_id": appID.String(),
+			"template_id":    templateID.String(),
+		})
+		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Template not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Template deleted successfully"})
+}
+
+// InitializeApplicationTemplates godoc
+// @Summary Initialize default templates for application
+// @Description Create default email templates for a specific application (admin only)
+// @Tags Admin - Application Email Templates
+// @Accept json
+// @Produce json
+// @Param appId path string true "Application ID (UUID)"
+// @Security BearerAuth
+// @Success 200 {object} models.MessageResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/applications/{appId}/email-templates/initialize [post]
+func (h *TemplateHandler) InitializeApplicationTemplates(c *gin.Context) {
+	userID, ok := utils.GetUserIDFromContext(c)
+	if !ok || userID == nil {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
+	appID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+		return
+	}
+
+	if err := h.templateService.InitializeTemplatesForApp(c.Request.Context(), appID, *userID); err != nil {
+		h.logger.Error("Failed to initialize application templates", map[string]interface{}{
+			"error":          err.Error(),
+			"application_id": appID.String(),
+		})
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Default templates initialized successfully"})
+}
+
+// PreviewApplicationEmailTemplate godoc
+// @Summary Preview application email template
+// @Description Render a template with sample data for preview for a specific application (admin only)
+// @Tags Admin - Application Email Templates
+// @Accept json
+// @Produce json
+// @Param appId path string true "Application ID (UUID)"
+// @Param id path string true "Template ID (UUID)"
+// @Param request body models.PreviewEmailTemplateRequest true "Preview data"
+// @Security BearerAuth
+// @Success 200 {object} models.PreviewEmailTemplateResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/applications/{appId}/email-templates/{id}/preview [post]
+func (h *TemplateHandler) PreviewApplicationEmailTemplate(c *gin.Context) {
+	appID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+		return
+	}
+
+	templateID, err := uuid.Parse(c.Param("templateId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid template ID"})
+		return
+	}
+
+	template, err := h.templateService.GetEmailTemplate(c.Request.Context(), templateID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Template not found"})
+		return
+	}
+
+	if template.ApplicationID == nil || *template.ApplicationID != appID {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Template not found for this application"})
+		return
+	}
+
+	var req models.PreviewEmailTemplateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	req.HTMLBody = template.HTMLBody
+	req.TextBody = template.TextBody
+
+	resp, err := h.templateService.PreviewEmailTemplate(c.Request.Context(), &req)
+	if err != nil {
+		h.logger.Error("Failed to preview application template", map[string]interface{}{
+			"error":          err.Error(),
+			"application_id": appID.String(),
+			"template_id":    templateID.String(),
+		})
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}

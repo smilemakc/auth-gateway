@@ -51,40 +51,40 @@ const TokenInspector: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center gap-4">
-        <button 
+        <button
           onClick={() => navigate('/')}
-          className="p-2 hover:bg-white rounded-lg transition-colors text-gray-500"
+          className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
         >
           <ArrowLeft size={24} />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('inspector.title')}</h1>
-          <p className="text-gray-500 mt-1">{t('inspector.desc')}</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('inspector.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('inspector.desc')}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Input Column */}
         <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('inspector.paste')}</label>
+          <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">{t('inspector.paste')}</label>
             <textarea
               value={token}
               onChange={(e) => handleDecode(e.target.value)}
-              className="w-full h-64 p-4 font-mono text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+              className="w-full h-64 p-4 font-mono text-sm border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none resize-none"
               placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
             />
           </div>
           
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3 text-red-700">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-3 text-destructive">
               <AlertCircle size={20} />
               {error}
             </div>
           )}
 
           {decoded && (
-             <div className={`rounded-lg p-4 flex items-center gap-3 border ${isExpired ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
+             <div className={`rounded-lg p-4 flex items-center gap-3 border ${isExpired ? 'bg-warning/10 border-warning/20 text-warning' : 'bg-success/10 border-success/20 text-success'}`}>
                {isExpired ? <Clock size={20} /> : <CheckCircle size={20} />}
                <div>
                   <p className="font-medium">{isExpired ? 'Token Expired' : 'Token Active'}</p>
@@ -98,21 +98,21 @@ const TokenInspector: React.FC = () => {
 
         {/* Output Column */}
         <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 font-semibold text-gray-700 text-sm">
+          <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+            <div className="bg-muted px-4 py-2 border-b border-border font-semibold text-muted-foreground text-sm">
               {t('inspector.header')}
             </div>
-            <pre className="p-4 overflow-x-auto text-sm font-mono text-gray-800 bg-white">
-              {decoded ? JSON.stringify(decoded.header, null, 2) : <span className="text-gray-400">...</span>}
+            <pre className="p-4 overflow-x-auto text-sm font-mono text-foreground bg-card">
+              {decoded ? JSON.stringify(decoded.header, null, 2) : <span className="text-muted-foreground">...</span>}
             </pre>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 font-semibold text-gray-700 text-sm">
+          <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+            <div className="bg-muted px-4 py-2 border-b border-border font-semibold text-muted-foreground text-sm">
               {t('inspector.payload')}
             </div>
-            <pre className="p-4 overflow-x-auto text-sm font-mono text-gray-800 bg-white">
-              {decoded ? JSON.stringify(decoded.payload, null, 2) : <span className="text-gray-400">...</span>}
+            <pre className="p-4 overflow-x-auto text-sm font-mono text-foreground bg-card">
+              {decoded ? JSON.stringify(decoded.payload, null, 2) : <span className="text-muted-foreground">...</span>}
             </pre>
           </div>
         </div>

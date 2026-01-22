@@ -82,24 +82,50 @@ export function useCreateUser() {
   });
 }
 
-// TODO: Admin 2FA reset functionality not yet implemented in backend
-// Users must disable their own 2FA via /auth/2fa/disable endpoint
-// export function useResetUser2FA() {
-//   const queryClient = useQueryClient();
-//
-//   return useMutation({
-//     mutationFn: (userId: string) => apiClient.admin.users.disable2FA(userId),
-//     onSuccess: (_, userId) => {
-//       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(userId) });
-//       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-//     },
-//   });
-// }
+/**
+ * Hook for resetting user 2FA (admin only)
+ */
+export function useReset2FA() {
+  const queryClient = useQueryClient();
 
-// TODO: Admin password reset functionality not yet implemented in backend
-// Password resets are done via public /auth/password/reset/request endpoint
-// export function useSendPasswordReset() {
-//   return useMutation({
-//     mutationFn: (userId: string) => apiClient.admin.users.sendPasswordReset(userId),
-//   });
-// }
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      return apiClient.admin.users.reset2FA(userId);
+    },
+    onSuccess: (_, userId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(userId) });
+    },
+  });
+}
+
+/**
+ * Hook for sending password reset email (admin only)
+ */
+export function useSendPasswordReset() {
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      return apiClient.admin.users.sendPasswordReset(userId);
+    },
+  });
+}
+
+/**
+ * Hook for fetching user OAuth accounts (admin only)
+ */
+export function useUserOAuthAccounts(userId: string) {
+  return useQuery({
+    queryKey: ['users', 'oauth-accounts', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/users/${userId}/oauth-accounts`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch OAuth accounts: ${response.status}`);
+      }
+      return response.json();
+    },
+    enabled: !!userId,
+  });
+}

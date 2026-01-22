@@ -29,32 +29,41 @@ type AuditLog struct {
 type AuditAction string
 
 const (
-	ActionSignUp         AuditAction = "signup"
-	ActionSignIn         AuditAction = "signin"
-	ActionSignInFailed   AuditAction = "signin_failed"
-	ActionSignOut        AuditAction = "signout"
-	ActionRefreshToken   AuditAction = "refresh_token"
-	ActionChangePassword AuditAction = "change_password"
-	ActionForgotPassword AuditAction = "forgot_password"
-	ActionResetPassword  AuditAction = "reset_password"
-	ActionOAuthBegin     AuditAction = "oauth_begin"
-	ActionOAuthCallback  AuditAction = "oauth_callback"
-	ActionUpdateProfile  AuditAction = "update_profile"
-	ActionRoleAssigned   AuditAction = "role_assigned"
-	ActionRoleRevoked    AuditAction = "role_revoked"
-	ActionRolesUpdated   AuditAction = "roles_updated"
-	ActionCreate         AuditAction = "create"
-	ActionUpdate         AuditAction = "update"
-	ActionDelete         AuditAction = "delete"
-	ActionSessionRevoked AuditAction = "session_revoked"
+	ActionSignUp                     AuditAction = "signup"
+	ActionSignIn                     AuditAction = "signin"
+	ActionSignInFailed               AuditAction = "signin_failed"
+	ActionSignOut                    AuditAction = "signout"
+	ActionRefreshToken               AuditAction = "refresh_token"
+	ActionChangePassword             AuditAction = "change_password"
+	ActionForgotPassword             AuditAction = "forgot_password"
+	ActionResetPassword              AuditAction = "reset_password"
+	ActionOAuthBegin                 AuditAction = "oauth_begin"
+	ActionOAuthCallback              AuditAction = "oauth_callback"
+	ActionUpdateProfile              AuditAction = "update_profile"
+	ActionRoleAssigned               AuditAction = "role_assigned"
+	ActionRoleRevoked                AuditAction = "role_revoked"
+	ActionRolesUpdated               AuditAction = "roles_updated"
+	ActionCreate                     AuditAction = "create"
+	ActionUpdate                     AuditAction = "update"
+	ActionDelete                     AuditAction = "delete"
+	ActionSessionRevoked             AuditAction = "session_revoked"
+	Action2FAReset                   AuditAction = "2fa_reset"
+	ActionAdminPasswordResetInitiate AuditAction = "admin_password_reset_initiated"
+	ActionTest                       AuditAction = "test"
+	ActionSend                       AuditAction = "send"
 )
 
 // AuditResource represents the type of resource being audited
 type AuditResource string
 
 const (
-	ResourceWebhook       AuditResource = "webhook"
-	ResourceEmailTemplate AuditResource = "email_template"
+	ResourceWebhook              AuditResource = "webhook"
+	ResourceEmailTemplate        AuditResource = "email_template"
+	ResourceEmailProvider        AuditResource = "email_provider"
+	ResourceEmailProfile         AuditResource = "email_profile"
+	ResourceEmailProfileTemplate AuditResource = "email_profile_template"
+	ResourceEmail                AuditResource = "email"
+	ResourceEmailLog             AuditResource = "email_log"
 )
 
 // AuditStatus represents the status of an audited action
@@ -63,6 +72,7 @@ type AuditStatus string
 const (
 	StatusSuccess AuditStatus = "success"
 	StatusFailed  AuditStatus = "failed"
+	StatusFailure AuditStatus = "failure"
 	StatusBlocked AuditStatus = "blocked"
 )
 

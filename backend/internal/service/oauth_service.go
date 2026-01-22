@@ -19,15 +19,16 @@ import (
 
 // OAuthService provides OAuth operations
 type OAuthService struct {
-	userRepo       UserStore
-	oauthRepo      OAuthStore
-	tokenRepo      TokenStore
-	auditRepo      AuditStore
-	rbacRepo       RBACStore
-	jwtService     JWTService
-	sessionService *SessionService
-	httpClient     HTTPClient
-	providers      map[models.OAuthProvider]*OAuthProviderConfig
+	userRepo        UserStore
+	oauthRepo       OAuthStore
+	tokenRepo       TokenStore
+	auditRepo       AuditStore
+	rbacRepo        RBACStore
+	jwtService      JWTService
+	sessionService  *SessionService
+	httpClient      HTTPClient
+	providers       map[models.OAuthProvider]*OAuthProviderConfig
+	jitProvisioning bool // Enable Just-In-Time user provisioning
 }
 
 // OAuthProviderConfig holds OAuth provider configuration
@@ -51,6 +52,7 @@ func NewOAuthService(
 	jwtService JWTService,
 	sessionService *SessionService,
 	httpClient HTTPClient,
+	jitProvisioning bool,
 ) *OAuthService {
 	// Use default HTTP client if not provided
 	if httpClient == nil {
@@ -58,15 +60,16 @@ func NewOAuthService(
 	}
 
 	service := &OAuthService{
-		userRepo:       userRepo,
-		oauthRepo:      oauthRepo,
-		tokenRepo:      tokenRepo,
-		auditRepo:      auditRepo,
-		rbacRepo:       rbacRepo,
-		jwtService:     jwtService,
-		sessionService: sessionService,
-		httpClient:     httpClient,
-		providers:      make(map[models.OAuthProvider]*OAuthProviderConfig),
+		userRepo:        userRepo,
+		oauthRepo:       oauthRepo,
+		tokenRepo:       tokenRepo,
+		auditRepo:       auditRepo,
+		rbacRepo:        rbacRepo,
+		jwtService:      jwtService,
+		sessionService:  sessionService,
+		httpClient:      httpClient,
+		providers:       make(map[models.OAuthProvider]*OAuthProviderConfig),
+		jitProvisioning: jitProvisioning,
 	}
 
 	// Initialize providers
@@ -126,6 +129,23 @@ func (s *OAuthService) initializeProviders() {
 		ClientSecret: "",
 		CallbackURL:  os.Getenv("TELEGRAM_CALLBACK_URL"),
 		// Telegram uses widget authentication, not traditional OAuth
+	}
+
+	// 1C OAuth (custom OAuth provider with configurable URLs)
+	if os.Getenv("OAUTH_ONEC_ENABLED") == "true" {
+		scopes := os.Getenv("OAUTH_ONEC_SCOPES")
+		if scopes == "" {
+			scopes = "openid profile email"
+		}
+		s.providers[models.ProviderOneC] = &OAuthProviderConfig{
+			ClientID:     os.Getenv("OAUTH_ONEC_CLIENT_ID"),
+			ClientSecret: os.Getenv("OAUTH_ONEC_CLIENT_SECRET"),
+			CallbackURL:  os.Getenv("OAUTH_ONEC_REDIRECT_URI"),
+			AuthURL:      os.Getenv("OAUTH_ONEC_AUTH_URL"),
+			TokenURL:     os.Getenv("OAUTH_ONEC_TOKEN_URL"),
+			UserInfoURL:  os.Getenv("OAUTH_ONEC_USERINFO_URL"),
+			Scopes:       splitScopes(scopes),
+		}
 	}
 }
 
@@ -284,6 +304,38 @@ func (s *OAuthService) parseUserInfo(provider models.OAuthProvider, data map[str
 		}
 		userInfo.Username = getString(data, "username")
 		userInfo.ProfilePicture = getString(data, "photo_url")
+
+	case models.ProviderOneC:
+		// 1C OAuth userinfo response parsing
+		// Fields may vary depending on 1C system configuration
+		userInfo.ProviderUserID = getString(data, "sub")
+		if userInfo.ProviderUserID == "" {
+			userInfo.ProviderUserID = getString(data, "id")
+		}
+		if userInfo.ProviderUserID == "" {
+			userInfo.ProviderUserID = getString(data, "user_id")
+		}
+		userInfo.Email = getString(data, "email")
+		userInfo.Name = getString(data, "name")
+		if userInfo.Name == "" {
+			// Try to compose name from parts
+			firstName := getString(data, "given_name")
+			lastName := getString(data, "family_name")
+			if firstName != "" || lastName != "" {
+				userInfo.Name = firstName
+				if lastName != "" {
+					if userInfo.Name != "" {
+						userInfo.Name += " "
+					}
+					userInfo.Name += lastName
+				}
+			}
+		}
+		userInfo.Username = getString(data, "preferred_username")
+		if userInfo.Username == "" {
+			userInfo.Username = getString(data, "username")
+		}
+		userInfo.ProfilePicture = getString(data, "picture")
 	}
 
 	return userInfo, nil
@@ -308,7 +360,12 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuth
 	isNewUser := false
 
 	if oauthAccount == nil {
-		// OAuth account doesn't exist, create new user
+		// Check if JIT provisioning is enabled
+		if !s.jitProvisioning {
+			return nil, models.NewAppError(403, "User not found. Automatic user creation is disabled.")
+		}
+
+		// OAuth account doesn't exist, create new user (JIT provisioning)
 		user, err := s.createUserFromOAuth(ctx, userInfo)
 		if err != nil {
 			return nil, err
@@ -503,6 +560,25 @@ func joinScopes(scopes []string) string {
 			result += " "
 		}
 		result += scope
+	}
+	return result
+}
+
+func splitScopes(scopes string) []string {
+	var result []string
+	current := ""
+	for _, char := range scopes {
+		if char == ' ' {
+			if current != "" {
+				result = append(result, current)
+				current = ""
+			}
+		} else {
+			current += string(char)
+		}
+	}
+	if current != "" {
+		result = append(result, current)
 	}
 	return result
 }

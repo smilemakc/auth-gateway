@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	"github.com/smilemakc/auth-gateway/internal/models"
@@ -18,6 +21,206 @@ import (
 	pb "github.com/smilemakc/auth-gateway/proto"
 )
 
+// ClientInfo holds client identification from gRPC metadata
+type ClientInfo struct {
+	IP            string
+	UserAgent     string
+	ApplicationID string
+	ClientName    string
+	ClientVersion string
+	Platform      string
+	Environment   string
+}
+
+// parseOSFromUserAgent attempts to extract OS info from user agent string
+func parseOSFromUserAgent(ua string) string {
+	ua = strings.ToLower(ua)
+	switch {
+	case strings.Contains(ua, "windows"):
+		return "Windows"
+	case strings.Contains(ua, "mac") || strings.Contains(ua, "darwin"):
+		return "macOS"
+	case strings.Contains(ua, "linux"):
+		return "Linux"
+	case strings.Contains(ua, "android"):
+		return "Android"
+	case strings.Contains(ua, "ios") || strings.Contains(ua, "iphone") || strings.Contains(ua, "ipad"):
+		return "iOS"
+	default:
+		return ""
+	}
+}
+
+// parseRuntimeFromUserAgent extracts runtime/language info from user agent
+func parseRuntimeFromUserAgent(ua string) string {
+	ua = strings.ToLower(ua)
+	switch {
+	case strings.Contains(ua, "go/") || strings.Contains(ua, "golang") || strings.Contains(ua, "grpc-go"):
+		return "Go"
+	case strings.Contains(ua, "python") || strings.Contains(ua, "grpc-python"):
+		return "Python"
+	case strings.Contains(ua, "node") || strings.Contains(ua, "javascript") || strings.Contains(ua, "grpc-node"):
+		return "Node.js"
+	case strings.Contains(ua, "java") || strings.Contains(ua, "grpc-java"):
+		return "Java"
+	case strings.Contains(ua, "csharp") || strings.Contains(ua, "dotnet") || strings.Contains(ua, "grpc-dotnet"):
+		return ".NET"
+	case strings.Contains(ua, "ruby"):
+		return "Ruby"
+	case strings.Contains(ua, "php"):
+		return "PHP"
+	case strings.Contains(ua, "rust"):
+		return "Rust"
+	default:
+		return ""
+	}
+}
+
+// extractClientInfo extracts client IP, User-Agent, and Application ID from gRPC context
+// Clients should send metadata:
+//   - "x-application-id": application identifier (UUID)
+//   - "x-client-name": service/client name (e.g., "payment-service", "mobile-app")
+//   - "x-client-version": client version (e.g., "2.1.0")
+//   - "x-platform": platform info (e.g., "kubernetes", "docker", "aws-lambda")
+//   - "x-environment": environment (e.g., "production", "staging", "development")
+//   - "user-agent": standard gRPC user agent
+//   - "x-forwarded-for": original client IP (if behind proxy)
+func extractClientInfo(ctx context.Context) ClientInfo {
+	info := ClientInfo{
+		IP:        "",
+		UserAgent: "gRPC Client",
+	}
+
+	// Extract IP from peer
+	if p, ok := peer.FromContext(ctx); ok && p.Addr != nil {
+		addr := p.Addr.String()
+		// Remove port if present
+		if idx := strings.LastIndex(addr, ":"); idx != -1 {
+			info.IP = addr[:idx]
+		} else {
+			info.IP = addr
+		}
+	}
+
+	// Extract metadata
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		// Check for forwarded IP (proxy)
+		if vals := md.Get("x-forwarded-for"); len(vals) > 0 && vals[0] != "" {
+			ips := strings.Split(vals[0], ",")
+			info.IP = strings.TrimSpace(ips[0])
+		}
+
+		// Application ID
+		if vals := md.Get("x-application-id"); len(vals) > 0 && vals[0] != "" {
+			info.ApplicationID = vals[0]
+		}
+
+		// Client identification
+		if vals := md.Get("x-client-name"); len(vals) > 0 && vals[0] != "" {
+			info.ClientName = vals[0]
+		}
+		if vals := md.Get("x-client-version"); len(vals) > 0 && vals[0] != "" {
+			info.ClientVersion = vals[0]
+		}
+		if vals := md.Get("x-platform"); len(vals) > 0 && vals[0] != "" {
+			info.Platform = vals[0]
+		}
+		if vals := md.Get("x-environment"); len(vals) > 0 && vals[0] != "" {
+			info.Environment = vals[0]
+		}
+
+		// Get base user-agent
+		baseUA := ""
+		if vals := md.Get("user-agent"); len(vals) > 0 && vals[0] != "" {
+			baseUA = vals[0]
+		}
+
+		// Build informative user agent string
+		info.UserAgent = buildUserAgent(info, baseUA)
+	}
+
+	return info
+}
+
+// buildUserAgent creates an informative user agent string from client info
+func buildUserAgent(info ClientInfo, baseUA string) string {
+	var parts []string
+
+	// Add client name and version
+	if info.ClientName != "" {
+		if info.ClientVersion != "" {
+			parts = append(parts, info.ClientName+"/"+info.ClientVersion)
+		} else {
+			parts = append(parts, info.ClientName)
+		}
+	}
+
+	// Add runtime info from base UA
+	runtime := parseRuntimeFromUserAgent(baseUA)
+	if runtime != "" {
+		parts = append(parts, runtime)
+	}
+
+	// Add OS info
+	os := parseOSFromUserAgent(baseUA)
+	if os != "" {
+		parts = append(parts, os)
+	}
+
+	// Add platform
+	if info.Platform != "" {
+		parts = append(parts, info.Platform)
+	}
+
+	// Add environment
+	if info.Environment != "" {
+		parts = append(parts, "["+info.Environment+"]")
+	}
+
+	// If we have custom parts, use them
+	if len(parts) > 0 {
+		return strings.Join(parts, " | ") + " (gRPC)"
+	}
+
+	// Fallback: use base UA or default
+	if baseUA != "" {
+		// Clean up standard grpc-go user agent to be more readable
+		if strings.HasPrefix(baseUA, "grpc-go/") {
+			return "gRPC Go Client " + strings.TrimPrefix(baseUA, "grpc-go/")
+		}
+		return baseUA
+	}
+
+	return "gRPC Client"
+}
+
+// buildDeviceInfo creates DeviceInfo from ClientInfo for session tracking
+func buildDeviceInfo(clientInfo ClientInfo) models.DeviceInfo {
+	os := parseOSFromUserAgent(clientInfo.UserAgent)
+	if os == "" {
+		// Try to extract runtime info for non-browser clients
+		runtime := parseRuntimeFromUserAgent(clientInfo.UserAgent)
+		if runtime != "" {
+			os = runtime + " Runtime"
+		} else if clientInfo.Platform != "" {
+			os = clientInfo.Platform
+		} else {
+			os = "gRPC Client"
+		}
+	}
+
+	deviceType := "grpc_client"
+	if clientInfo.ClientName != "" {
+		deviceType = clientInfo.ClientName
+	}
+
+	return models.DeviceInfo{
+		DeviceType: deviceType,
+		OS:         os,
+		Browser:    clientInfo.UserAgent,
+	}
+}
+
 // AuthHandlerV2 implements the gRPC AuthService with API key support
 type AuthHandlerV2 struct {
 	pb.UnimplementedAuthServiceServer
@@ -28,6 +231,7 @@ type AuthHandlerV2 struct {
 	apiKeyService        *service.APIKeyService
 	authService          *service.AuthService
 	oauthProviderService *service.OAuthProviderService
+	otpService           *service.OTPService
 	redis                *service.RedisService
 	logger               *logger.Logger
 }
@@ -41,6 +245,7 @@ func NewAuthHandlerV2(
 	apiKeyService *service.APIKeyService,
 	authService *service.AuthService,
 	oauthProviderService *service.OAuthProviderService,
+	otpService *service.OTPService,
 	redis *service.RedisService,
 	log *logger.Logger,
 ) *AuthHandlerV2 {
@@ -52,6 +257,7 @@ func NewAuthHandlerV2(
 		apiKeyService:        apiKeyService,
 		authService:          authService,
 		oauthProviderService: oauthProviderService,
+		otpService:           otpService,
 		redis:                redis,
 		logger:               log,
 	}
@@ -302,8 +508,9 @@ func (h *AuthHandlerV2) InitPasswordlessRegistration(ctx context.Context, req *p
 		FullName: req.FullName,
 	}
 
-	// Call AuthService (gRPC doesn't have IP/UserAgent)
-	err := h.authService.InitPasswordlessRegistration(ctx, internalReq, "", "grpc")
+	// Extract client info from gRPC metadata
+	clientInfo := extractClientInfo(ctx)
+	err := h.authService.InitPasswordlessRegistration(ctx, internalReq, clientInfo.IP, clientInfo.UserAgent)
 	if err != nil {
 		h.logger.Error("Failed to init passwordless registration via gRPC", map[string]interface{}{
 			"error": err.Error(),
@@ -362,15 +569,14 @@ func (h *AuthHandlerV2) CompletePasswordlessRegistration(ctx context.Context, re
 		Code:  req.Code,
 	}
 
-	// Create device info for token generation (gRPC doesn't have browser/device info)
-	deviceInfo := models.DeviceInfo{
-		DeviceType: "grpc_client",
-		OS:         "unknown",
-		Browser:    "grpc",
-	}
+	// Extract client info from gRPC metadata
+	clientInfo := extractClientInfo(ctx)
+
+	// Create device info for token generation
+	deviceInfo := buildDeviceInfo(clientInfo)
 
 	// Call AuthService
-	resp, err := h.authService.CompletePasswordlessRegistration(ctx, internalReq, "", "", deviceInfo)
+	resp, err := h.authService.CompletePasswordlessRegistration(ctx, internalReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo)
 	if err != nil {
 		h.logger.Error("Failed to complete passwordless registration via gRPC", map[string]interface{}{
 			"error": err.Error(),
@@ -564,15 +770,14 @@ func (h *AuthHandlerV2) CreateUser(ctx context.Context, req *pb.CreateUserReques
 		AccountType: req.AccountType,
 	}
 
-	// Create device info for token generation (gRPC doesn't have browser/device info)
-	deviceInfo := models.DeviceInfo{
-		DeviceType: "grpc_client",
-		OS:         "unknown",
-		Browser:    "grpc",
-	}
+	// Extract client info from gRPC metadata
+	clientInfo := extractClientInfo(ctx)
+
+	// Create device info for token generation
+	deviceInfo := buildDeviceInfo(clientInfo)
 
 	// Call AuthService.SignUp
-	authResp, err := h.authService.SignUp(ctx, createReq, "", "", deviceInfo)
+	authResp, err := h.authService.SignUp(ctx, createReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo)
 	if err != nil {
 		h.logger.Error("Failed to create user via gRPC", map[string]interface{}{
 			"error":    err.Error(),
@@ -615,6 +820,546 @@ func (h *AuthHandlerV2) CreateUser(ctx context.Context, req *pb.CreateUserReques
 			ProfilePictureUrl: user.ProfilePictureURL,
 			Roles:             extractRoleNames(user.Roles),
 			EmailVerified:     user.EmailVerified,
+			IsActive:          user.IsActive,
+			CreatedAt:         user.CreatedAt.Unix(),
+			UpdatedAt:         user.UpdatedAt.Unix(),
+		},
+		AccessToken:  authResp.AccessToken,
+		RefreshToken: authResp.RefreshToken,
+		ExpiresIn:    authResp.ExpiresIn,
+	}, nil
+}
+
+// Login authenticates a user with email/phone and password
+func (h *AuthHandlerV2) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+	// Validate required fields
+	if req.Password == "" {
+		return nil, status.Error(codes.InvalidArgument, "password is required")
+	}
+	if req.Email == "" && req.Phone == "" {
+		return nil, status.Error(codes.InvalidArgument, "either email or phone is required")
+	}
+
+	// Create sign-in request for AuthService
+	var phone *string
+	if req.Phone != "" {
+		phone = &req.Phone
+	}
+
+	signInReq := &models.SignInRequest{
+		Email:    utils.NormalizeEmail(req.Email),
+		Phone:    phone,
+		Password: req.Password,
+	}
+
+	// Extract client info from gRPC metadata
+	clientInfo := extractClientInfo(ctx)
+
+	// Create device info for token generation
+	deviceInfo := buildDeviceInfo(clientInfo)
+
+	// Call AuthService.SignIn
+	authResp, err := h.authService.SignIn(ctx, signInReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo)
+	if err != nil {
+		h.logger.Debug("Login via gRPC failed", map[string]interface{}{
+			"error": err.Error(),
+			"email": req.Email,
+		})
+
+		// Convert error to appropriate gRPC status
+		if appErr, ok := err.(*models.AppError); ok {
+			switch appErr.Code {
+			case 400:
+				return nil, status.Error(codes.InvalidArgument, appErr.Message)
+			case 401:
+				return nil, status.Error(codes.Unauthenticated, appErr.Message)
+			default:
+				return nil, status.Error(codes.Internal, appErr.Message)
+			}
+		}
+
+		// Check for known error types
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			return nil, status.Error(codes.Unauthenticated, "invalid credentials")
+		}
+		return nil, status.Error(codes.Internal, "login failed")
+	}
+
+	// Handle 2FA requirement
+	if authResp.Requires2FA {
+		return &pb.LoginResponse{
+			ErrorMessage: "2FA required - use TwoFactorToken to verify",
+		}, nil
+	}
+
+	// Convert response
+	user := authResp.User
+	return &pb.LoginResponse{
+		User: &pb.User{
+			Id:                user.ID.String(),
+			Email:             user.Email,
+			Username:          user.Username,
+			FullName:          user.FullName,
+			ProfilePictureUrl: user.ProfilePictureURL,
+			Roles:             extractRoleNames(user.Roles),
+			EmailVerified:     user.EmailVerified,
+			IsActive:          user.IsActive,
+			CreatedAt:         user.CreatedAt.Unix(),
+			UpdatedAt:         user.UpdatedAt.Unix(),
+		},
+		AccessToken:  authResp.AccessToken,
+		RefreshToken: authResp.RefreshToken,
+		ExpiresIn:    authResp.ExpiresIn,
+	}, nil
+}
+
+// ========== OTP Methods ==========
+
+// convertOTPType converts proto OTPType to models.OTPType
+func convertOTPType(otpType pb.OTPType) models.OTPType {
+	switch otpType {
+	case pb.OTPType_OTP_TYPE_VERIFICATION:
+		return models.OTPTypeVerification
+	case pb.OTPType_OTP_TYPE_PASSWORD_RESET:
+		return models.OTPTypePasswordReset
+	case pb.OTPType_OTP_TYPE_TWO_FA:
+		return models.OTPType2FA
+	case pb.OTPType_OTP_TYPE_LOGIN:
+		return models.OTPTypeLogin
+	case pb.OTPType_OTP_TYPE_REGISTRATION:
+		return models.OTPTypeRegistration
+	default:
+		return models.OTPTypeVerification
+	}
+}
+
+// SendOTP sends a one-time password to email
+func (h *AuthHandlerV2) SendOTP(ctx context.Context, req *pb.SendOTPRequest) (*pb.SendOTPResponse, error) {
+	if req.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, "email is required")
+	}
+
+	if h.otpService == nil {
+		return nil, status.Error(codes.Unavailable, "OTP service not configured")
+	}
+
+	// Parse profile ID if provided
+	var profileID *uuid.UUID
+	if req.ProfileId != "" {
+		id, err := uuid.Parse(req.ProfileId)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid profile_id format")
+		}
+		profileID = &id
+	}
+
+	// Create OTP request
+	otpReq := &models.SendOTPRequest{
+		Email:     &req.Email,
+		Type:      convertOTPType(req.OtpType),
+		ProfileID: profileID,
+	}
+
+	// Send OTP
+	err := h.otpService.SendOTP(ctx, otpReq)
+	if err != nil {
+		h.logger.Error("Failed to send OTP via gRPC", map[string]interface{}{
+			"error": err.Error(),
+			"email": req.Email,
+		})
+
+		if appErr, ok := err.(*models.AppError); ok {
+			return &pb.SendOTPResponse{
+				Success:      false,
+				ErrorMessage: appErr.Message,
+			}, nil
+		}
+		return &pb.SendOTPResponse{
+			Success:      false,
+			ErrorMessage: "failed to send OTP",
+		}, nil
+	}
+
+	return &pb.SendOTPResponse{
+		Success:   true,
+		Message:   "OTP sent successfully",
+		ExpiresIn: 600, // 10 minutes
+	}, nil
+}
+
+// VerifyOTP verifies a one-time password
+func (h *AuthHandlerV2) VerifyOTP(ctx context.Context, req *pb.VerifyOTPRequest) (*pb.VerifyOTPResponse, error) {
+	if req.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, "email is required")
+	}
+	if req.Code == "" {
+		return nil, status.Error(codes.InvalidArgument, "code is required")
+	}
+
+	if h.otpService == nil {
+		return nil, status.Error(codes.Unavailable, "OTP service not configured")
+	}
+
+	// Create verify request
+	verifyReq := &models.VerifyOTPRequest{
+		Email: &req.Email,
+		Code:  req.Code,
+		Type:  convertOTPType(req.OtpType),
+	}
+
+	// Verify OTP
+	resp, err := h.otpService.VerifyOTP(ctx, verifyReq)
+	if err != nil {
+		h.logger.Debug("OTP verification failed via gRPC", map[string]interface{}{
+			"error": err.Error(),
+			"email": req.Email,
+		})
+
+		if appErr, ok := err.(*models.AppError); ok {
+			return &pb.VerifyOTPResponse{
+				Valid:        false,
+				ErrorMessage: appErr.Message,
+			}, nil
+		}
+		return &pb.VerifyOTPResponse{
+			Valid:        false,
+			ErrorMessage: "verification failed",
+		}, nil
+	}
+
+	return &pb.VerifyOTPResponse{
+		Valid: resp.Valid,
+	}, nil
+}
+
+// LoginWithOTP initiates passwordless login by sending OTP to email
+func (h *AuthHandlerV2) LoginWithOTP(ctx context.Context, req *pb.LoginWithOTPRequest) (*pb.LoginWithOTPResponse, error) {
+	if req.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, "email is required")
+	}
+
+	if h.otpService == nil {
+		return nil, status.Error(codes.Unavailable, "OTP service not configured")
+	}
+
+	// Check if user exists
+	user, err := h.userRepo.GetByEmail(ctx, req.Email, nil)
+	if err != nil || user == nil {
+		return &pb.LoginWithOTPResponse{
+			Success:      false,
+			ErrorMessage: "user not found",
+		}, nil
+	}
+
+	// Parse profile ID if provided
+	var profileID *uuid.UUID
+	if req.ProfileId != "" {
+		id, err := uuid.Parse(req.ProfileId)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid profile_id format")
+		}
+		profileID = &id
+	}
+
+	// Send login OTP
+	otpReq := &models.SendOTPRequest{
+		Email:     &req.Email,
+		Type:      models.OTPTypeLogin,
+		ProfileID: profileID,
+	}
+
+	err = h.otpService.SendOTP(ctx, otpReq)
+	if err != nil {
+		h.logger.Error("Failed to send login OTP via gRPC", map[string]interface{}{
+			"error": err.Error(),
+			"email": req.Email,
+		})
+
+		if appErr, ok := err.(*models.AppError); ok {
+			return &pb.LoginWithOTPResponse{
+				Success:      false,
+				ErrorMessage: appErr.Message,
+			}, nil
+		}
+		return &pb.LoginWithOTPResponse{
+			Success:      false,
+			ErrorMessage: "failed to send OTP",
+		}, nil
+	}
+
+	return &pb.LoginWithOTPResponse{
+		Success:   true,
+		Message:   "OTP sent to your email",
+		ExpiresIn: 600,
+	}, nil
+}
+
+// VerifyLoginOTP completes passwordless login by verifying OTP
+func (h *AuthHandlerV2) VerifyLoginOTP(ctx context.Context, req *pb.VerifyLoginOTPRequest) (*pb.VerifyLoginOTPResponse, error) {
+	if req.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, "email is required")
+	}
+	if req.Code == "" {
+		return nil, status.Error(codes.InvalidArgument, "code is required")
+	}
+
+	if h.otpService == nil {
+		return nil, status.Error(codes.Unavailable, "OTP service not configured")
+	}
+
+	// Verify OTP
+	verifyReq := &models.VerifyOTPRequest{
+		Email: &req.Email,
+		Code:  req.Code,
+		Type:  models.OTPTypeLogin,
+	}
+
+	verifyResp, err := h.otpService.VerifyOTP(ctx, verifyReq)
+	if err != nil || !verifyResp.Valid {
+		errMsg := "invalid or expired OTP"
+		if appErr, ok := err.(*models.AppError); ok {
+			errMsg = appErr.Message
+		}
+		return &pb.VerifyLoginOTPResponse{
+			ErrorMessage: errMsg,
+		}, nil
+	}
+
+	// Get user and generate tokens
+	user, err := h.userRepo.GetByEmail(ctx, req.Email, nil)
+	if err != nil || user == nil {
+		return &pb.VerifyLoginOTPResponse{
+			ErrorMessage: "user not found",
+		}, nil
+	}
+
+	// Load user with roles
+	userWithRoles, err := h.userRepo.GetByIDWithRoles(ctx, user.ID, nil)
+	if err != nil {
+		h.logger.Error("Failed to load user roles", map[string]interface{}{
+			"user_id": user.ID.String(),
+			"error":   err.Error(),
+		})
+		return &pb.VerifyLoginOTPResponse{
+			ErrorMessage: "failed to load user",
+		}, nil
+	}
+
+	// Generate tokens
+	accessToken, err := h.jwtService.GenerateAccessToken(userWithRoles)
+	if err != nil {
+		h.logger.Error("Failed to generate access token", map[string]interface{}{
+			"user_id": user.ID.String(),
+			"error":   err.Error(),
+		})
+		return &pb.VerifyLoginOTPResponse{
+			ErrorMessage: "failed to generate tokens",
+		}, nil
+	}
+
+	refreshToken, err := h.jwtService.GenerateRefreshToken(userWithRoles)
+	if err != nil {
+		h.logger.Error("Failed to generate refresh token", map[string]interface{}{
+			"user_id": user.ID.String(),
+			"error":   err.Error(),
+		})
+		return &pb.VerifyLoginOTPResponse{
+			ErrorMessage: "failed to generate tokens",
+		}, nil
+	}
+
+	return &pb.VerifyLoginOTPResponse{
+		User: &pb.User{
+			Id:                userWithRoles.ID.String(),
+			Email:             userWithRoles.Email,
+			Username:          userWithRoles.Username,
+			FullName:          userWithRoles.FullName,
+			ProfilePictureUrl: userWithRoles.ProfilePictureURL,
+			Roles:             extractRoleNames(userWithRoles.Roles),
+			EmailVerified:     userWithRoles.EmailVerified,
+			IsActive:          userWithRoles.IsActive,
+			CreatedAt:         userWithRoles.CreatedAt.Unix(),
+			UpdatedAt:         userWithRoles.UpdatedAt.Unix(),
+		},
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    3600, // 1 hour
+	}, nil
+}
+
+// RegisterWithOTP initiates OTP-based registration by sending verification code
+func (h *AuthHandlerV2) RegisterWithOTP(ctx context.Context, req *pb.RegisterWithOTPRequest) (*pb.RegisterWithOTPResponse, error) {
+	if req.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, "email is required")
+	}
+
+	if h.otpService == nil {
+		return nil, status.Error(codes.Unavailable, "OTP service not configured")
+	}
+
+	// Check if user already exists
+	existingUser, _ := h.userRepo.GetByEmail(ctx, req.Email, nil)
+	if existingUser != nil {
+		return &pb.RegisterWithOTPResponse{
+			Success:      false,
+			ErrorMessage: "email already registered",
+		}, nil
+	}
+
+	// Parse profile ID if provided
+	var profileID *uuid.UUID
+	if req.ProfileId != "" {
+		id, err := uuid.Parse(req.ProfileId)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid profile_id format")
+		}
+		profileID = &id
+	}
+
+	// Store registration data in Redis for later use
+	if h.redis != nil {
+		regData := &models.PendingRegistration{
+			Email:    req.Email,
+			Username: req.Username,
+			FullName: req.FullName,
+		}
+		_ = h.redis.StorePendingRegistration(ctx, "otp_reg:"+req.Email, regData, 600*time.Second)
+	}
+
+	// Send registration OTP
+	otpReq := &models.SendOTPRequest{
+		Email:     &req.Email,
+		Type:      models.OTPTypeRegistration,
+		ProfileID: profileID,
+	}
+
+	err := h.otpService.SendOTP(ctx, otpReq)
+	if err != nil {
+		h.logger.Error("Failed to send registration OTP via gRPC", map[string]interface{}{
+			"error": err.Error(),
+			"email": req.Email,
+		})
+
+		if appErr, ok := err.(*models.AppError); ok {
+			return &pb.RegisterWithOTPResponse{
+				Success:      false,
+				ErrorMessage: appErr.Message,
+			}, nil
+		}
+		return &pb.RegisterWithOTPResponse{
+			Success:      false,
+			ErrorMessage: "failed to send OTP",
+		}, nil
+	}
+
+	return &pb.RegisterWithOTPResponse{
+		Success:   true,
+		Message:   "Verification code sent to your email",
+		ExpiresIn: 600,
+	}, nil
+}
+
+// VerifyRegistrationOTP completes OTP-based registration
+func (h *AuthHandlerV2) VerifyRegistrationOTP(ctx context.Context, req *pb.VerifyRegistrationOTPRequest) (*pb.VerifyRegistrationOTPResponse, error) {
+	if req.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, "email is required")
+	}
+	if req.Code == "" {
+		return nil, status.Error(codes.InvalidArgument, "code is required")
+	}
+
+	if h.otpService == nil {
+		return nil, status.Error(codes.Unavailable, "OTP service not configured")
+	}
+
+	// Verify OTP
+	verifyReq := &models.VerifyOTPRequest{
+		Email: &req.Email,
+		Code:  req.Code,
+		Type:  models.OTPTypeRegistration,
+	}
+
+	verifyResp, err := h.otpService.VerifyOTP(ctx, verifyReq)
+	if err != nil || !verifyResp.Valid {
+		errMsg := "invalid or expired OTP"
+		if appErr, ok := err.(*models.AppError); ok {
+			errMsg = appErr.Message
+		}
+		return &pb.VerifyRegistrationOTPResponse{
+			ErrorMessage: errMsg,
+		}, nil
+	}
+
+	// Get stored registration data
+	username := req.Username
+	fullName := req.FullName
+	if h.redis != nil {
+		regData, err := h.redis.GetPendingRegistration(ctx, "otp_reg:"+req.Email)
+		if err == nil && regData != nil {
+			if username == "" && regData.Username != "" {
+				username = regData.Username
+			}
+			if fullName == "" && regData.FullName != "" {
+				fullName = regData.FullName
+			}
+		}
+		// Cleanup registration data
+		_ = h.redis.DeletePendingRegistration(ctx, "otp_reg:"+req.Email)
+	}
+
+	// Generate username if not provided
+	if username == "" {
+		username = strings.Split(req.Email, "@")[0]
+	}
+
+	// Create user via AuthService
+	createReq := &models.CreateUserRequest{
+		Email:       req.Email,
+		Username:    username,
+		Password:    req.Password, // Can be empty for passwordless
+		FullName:    fullName,
+		AccountType: "human",
+	}
+
+	// Extract client info from gRPC metadata
+	clientInfo := extractClientInfo(ctx)
+
+	deviceInfo := models.DeviceInfo{
+		DeviceType: "grpc_client",
+		OS:         parseOSFromUserAgent(clientInfo.UserAgent),
+		Browser:    clientInfo.UserAgent,
+	}
+
+	authResp, err := h.authService.SignUp(ctx, createReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo)
+	if err != nil {
+		h.logger.Error("Failed to create user via gRPC OTP registration", map[string]interface{}{
+			"error": err.Error(),
+			"email": req.Email,
+		})
+
+		if appErr, ok := err.(*models.AppError); ok {
+			return &pb.VerifyRegistrationOTPResponse{
+				ErrorMessage: appErr.Message,
+			}, nil
+		}
+		return &pb.VerifyRegistrationOTPResponse{
+			ErrorMessage: "failed to create user",
+		}, nil
+	}
+
+	// Mark email as verified since OTP was verified
+	_ = h.userRepo.MarkEmailVerified(ctx, authResp.User.ID)
+
+	user := authResp.User
+	return &pb.VerifyRegistrationOTPResponse{
+		User: &pb.User{
+			Id:                user.ID.String(),
+			Email:             user.Email,
+			Username:          user.Username,
+			FullName:          user.FullName,
+			ProfilePictureUrl: user.ProfilePictureURL,
+			Roles:             extractRoleNames(user.Roles),
+			EmailVerified:     true,
 			IsActive:          user.IsActive,
 			CreatedAt:         user.CreatedAt.Unix(),
 			UpdatedAt:         user.UpdatedAt.Unix(),

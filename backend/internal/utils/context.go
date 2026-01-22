@@ -8,10 +8,12 @@ import (
 
 // Context keys
 const (
-	UserIDKey    = "user_id"
-	UserEmailKey = "user_email"
-	UserRoleKey  = "user_role"
-	UserRolesKey = "user_roles"
+	UserIDKey        = "user_id"
+	UserEmailKey     = "user_email"
+	UserRoleKey      = "user_role"
+	UserRolesKey     = "user_roles"
+	TokenKey         = "access_token"
+	ApplicationIDKey = "application_id"
 )
 
 // GetUserIDFromContext retrieves the user ID from the Gin context
@@ -27,6 +29,36 @@ func GetUserIDFromContext(c *gin.Context) (*uuid.UUID, bool) {
 	}
 
 	return &userID, true
+}
+
+// GetApplicationIDFromContext retrieves the application ID from the Gin context
+func GetApplicationIDFromContext(c *gin.Context) (*uuid.UUID, bool) {
+	value, exists := c.Get(ApplicationIDKey)
+	if !exists {
+		return nil, false
+	}
+
+	// Can be a string or uuid.UUID
+	switch v := value.(type) {
+	case uuid.UUID:
+		return &v, true
+	case *uuid.UUID:
+		if v == nil {
+			return nil, false
+		}
+		return v, true
+	case string:
+		if v == "" {
+			return nil, false
+		}
+		parsed, err := uuid.Parse(v)
+		if err != nil {
+			return nil, false
+		}
+		return &parsed, true
+	default:
+		return nil, false
+	}
 }
 
 // GetUserEmailFromContext retrieves the user email from the Gin context
@@ -90,6 +122,17 @@ func GetUserRolesFromContext(c *gin.Context) ([]string, bool) {
 	return roleSlice, ok
 }
 
+// GetTokenFromContext retrieves raw access token set by auth middleware
+func GetTokenFromContext(c *gin.Context) (string, bool) {
+	value, exists := c.Get(TokenKey)
+	if !exists {
+		return "", false
+	}
+
+	token, ok := value.(string)
+	return token, ok && token != ""
+}
+
 // HasRole checks if user has a specific role
 func HasRole(roles []string, role string) bool {
 	for _, r := range roles {
@@ -116,4 +159,9 @@ func HasAnyRole(userRoles, requiredRoles []string) bool {
 func GetDeviceInfoFromContext(c *gin.Context) models.DeviceInfo {
 	userAgent := GetUserAgent(c)
 	return ParseUserAgent(userAgent)
+}
+
+// SetApplicationIDInContext sets the application ID in the Gin context
+func SetApplicationIDInContext(c *gin.Context, applicationID uuid.UUID) {
+	c.Set(ApplicationIDKey, applicationID)
 }

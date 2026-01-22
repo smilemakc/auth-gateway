@@ -76,7 +76,7 @@ const PermissionEdit: React.FC = () => {
   if (isEditMode && permissionLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -90,46 +90,46 @@ const PermissionEdit: React.FC = () => {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/settings/access-control?tab=permissions')}
-          className="p-2 hover:bg-white rounded-lg transition-colors text-gray-500"
+          className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
         >
           <ArrowLeft size={24} />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{isNewMode ? t('common.create') : t('common.edit')}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{isNewMode ? t('common.create') : t('common.edit')}</h1>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <form onSubmit={handleSubmit} className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
         <div className="p-6 space-y-6">
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 flex items-center">
-              <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="bg-destructive/10 border-l-4 border-destructive p-4 flex items-center">
+              <AlertCircle className="h-5 w-5 text-destructive/60 mr-2" />
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
-          <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100 mb-6">
-            <Lock size={24} className="text-gray-500 flex-shrink-0" />
-            <p className="text-sm text-gray-600">
+          <div className="flex items-center gap-4 bg-muted p-4 rounded-lg border border-border mb-6">
+            <Lock size={24} className="text-muted-foreground flex-shrink-0" />
+            <p className="text-sm text-muted-foreground">
               Permissions define granular access controls. They follow the format <code>resource:action</code>.
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('perms.name')}</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('perms.name')}</label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="e.g. Read Users"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('perms.resource')}</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('perms.resource')}</label>
               <input
                 type="text"
                 required
@@ -137,11 +137,11 @@ const PermissionEdit: React.FC = () => {
                 onChange={(e) => setFormData(prev => ({ ...prev, resource: e.target.value.toLowerCase().replace(/\s+/g, '_') }))}
                 placeholder="e.g. users"
                 disabled={isEditMode}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none font-mono text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('perms.action')}</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('perms.action')}</label>
               <input
                 type="text"
                 required
@@ -149,42 +149,42 @@ const PermissionEdit: React.FC = () => {
                 onChange={(e) => setFormData(prev => ({ ...prev, action: e.target.value.toLowerCase().replace(/\s+/g, '_') }))}
                 placeholder="e.g. read"
                 disabled={isEditMode}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none font-mono text-sm"
               />
             </div>
           </div>
 
-          <div className="text-xs text-gray-500">
-            Resulting ID: <code className="bg-gray-100 px-1 py-0.5 rounded border border-gray-200">{isEditMode ? id : generatedId}</code>
+          <div className="text-xs text-muted-foreground">
+            Resulting ID: <code className="bg-muted px-1 py-0.5 rounded border border-border">{isEditMode ? id : generatedId}</code>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+              className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none resize-none"
             />
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+        <div className="px-6 py-4 bg-muted border-t border-border flex justify-end gap-3">
            <button
             type="button"
             onClick={() => navigate('/settings/access-control?tab=permissions')}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-card border border-input rounded-lg hover:bg-accent focus:outline-none"
           >
             {t('common.cancel')}
           </button>
           <button
             type="submit"
             disabled={loading}
-            className={`flex items-center px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none
+            className={`flex items-center px-6 py-2 text-sm font-medium text-primary-foreground bg-primary border border-transparent rounded-lg hover:bg-primary-600 focus:outline-none
               ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             {loading ? (
-              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+              <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></span>
             ) : (
               <Save size={16} className="mr-2" />
             )}

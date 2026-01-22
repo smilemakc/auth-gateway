@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from './services/queryClient';
 import { AuthProvider, useAuth } from './services/authContext';
 import { LanguageProvider } from './services/i18n';
+import { ThemeProvider } from './lib/theme';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import Users from './components/Users';
@@ -34,14 +35,37 @@ import ServiceAccountEdit from './components/ServiceAccountEdit';
 import SmsSettings from './components/SmsSettings';
 import TokenInspector from './components/TokenInspector';
 import Login from './components/Login';
+import Groups from './components/Groups';
+import GroupEdit from './components/GroupEdit';
+import GroupDetails from './components/GroupDetails';
+import LDAPConfigs from './components/LDAPConfigs';
+import LDAPConfigEdit from './components/LDAPConfigEdit';
+import LDAPSyncLogs from './components/LDAPSyncLogs';
+import SAMLSPs from './components/SAMLSPs';
+import SAMLSPEdit from './components/SAMLSPEdit';
+import SAMLMetadata from './components/SAMLMetadata';
+import BulkOperations from './components/BulkOperations';
+import BulkCreateUsers from './components/BulkCreateUsers';
+import BulkUpdateUsers from './components/BulkUpdateUsers';
+import BulkDeleteUsers from './components/BulkDeleteUsers';
+import BulkAssignRoles from './components/BulkAssignRoles';
+import SCIMSettings from './components/SCIMSettings';
+import Applications from './components/Applications';
+import ApplicationEdit from './components/ApplicationEdit';
+import ApplicationDetails from './components/ApplicationDetails';
+import ApplicationBrandingTab from './components/ApplicationBrandingTab';
+import ApplicationUsersTab from './components/ApplicationUsersTab';
+import ApplicationTemplateEditor from './components/ApplicationTemplateEditor';
+import EmailProviders from './components/EmailProviders';
+import EmailProviderEdit from './components/EmailProviderEdit';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, isLoading, logout } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -90,11 +114,36 @@ const AppRoutes: React.FC = () => {
           <Route path="/settings/access-control/permissions/:id" element={<PermissionEdit />} />
           <Route path="/settings/security/ip-rules" element={<IpSecurity />} />
           <Route path="/settings/sms" element={<SmsSettings />} />
+          <Route path="/settings/email-providers" element={<EmailProviders />} />
+          <Route path="/settings/email-providers/:id" element={<EmailProviderEdit />} />
           <Route path="/developers/webhooks" element={<Webhooks />} />
           <Route path="/developers/webhooks/:id" element={<WebhookEdit />} />
           <Route path="/developers/service-accounts" element={<ServiceAccounts />} />
           <Route path="/developers/service-accounts/:id" element={<ServiceAccountEdit />} />
           <Route path="/developers/token-inspector" element={<TokenInspector />} />
+          <Route path="/groups" element={<Groups />} />
+          <Route path="/groups/new" element={<GroupEdit />} />
+          <Route path="/groups/:id" element={<GroupDetails />} />
+          <Route path="/groups/:id/edit" element={<GroupEdit />} />
+          <Route path="/ldap" element={<LDAPConfigs />} />
+          <Route path="/ldap/new" element={<LDAPConfigEdit />} />
+          <Route path="/ldap/:id" element={<LDAPConfigEdit />} />
+          <Route path="/ldap/:id/logs" element={<LDAPSyncLogs />} />
+          <Route path="/saml" element={<SAMLSPs />} />
+          <Route path="/saml/new" element={<SAMLSPEdit />} />
+          <Route path="/saml/:id" element={<SAMLSPEdit />} />
+          <Route path="/saml/metadata" element={<SAMLMetadata />} />
+          <Route path="/bulk" element={<BulkOperations />} />
+          <Route path="/bulk/create" element={<BulkCreateUsers />} />
+          <Route path="/bulk/update" element={<BulkUpdateUsers />} />
+          <Route path="/bulk/delete" element={<BulkDeleteUsers />} />
+          <Route path="/bulk/assign-roles" element={<BulkAssignRoles />} />
+          <Route path="/settings/scim" element={<SCIMSettings />} />
+          <Route path="/applications" element={<Applications />} />
+          <Route path="/applications/new" element={<ApplicationEdit />} />
+          <Route path="/applications/:id" element={<ApplicationDetails />} />
+          <Route path="/applications/:id/edit" element={<ApplicationEdit />} />
+          <Route path="/applications/:appId/email-templates/:templateId" element={<ApplicationTemplateEditor />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
@@ -104,14 +153,16 @@ const AppRoutes: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </LanguageProvider>
-      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-    </QueryClientProvider>
+    <ThemeProvider defaultMode="system">
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </LanguageProvider>
+        {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 

@@ -47,10 +47,26 @@ export function useUpdatePasswordPolicy() {
 
   return useMutation({
     mutationFn: async (policy: any) => {
-      // The SDK might not have this method, we'll need to implement it
-      // For now, return a mock response
-      console.log('Update password policy:', policy);
-      return policy;
+      // Password policy is currently config-based (environment variables)
+      // A backend endpoint to update these dynamically needs to be implemented
+      // For now, attempt to call the system settings endpoint
+      const response = await fetch('/api/admin/system/password-policy', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: JSON.stringify(policy),
+      });
+      if (!response.ok) {
+        // If the endpoint doesn't exist (404), provide a clear message
+        if (response.status === 404) {
+          throw new Error('Password policy update endpoint not implemented. Password policy is currently configured via environment variables.');
+        }
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to update password policy: ${response.status}`);
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.settings.passwordPolicy });
@@ -95,6 +111,55 @@ export function useMaintenanceMode() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.settings.system });
       queryClient.invalidateQueries({ queryKey: queryKeys.settings.maintenance });
+    },
+  });
+}
+
+// SMS Settings
+export function useSmsSettings() {
+  return useQuery({
+    queryKey: ['smsSettings'],
+    queryFn: () => apiClient.admin.smsSettings.list(),
+  });
+}
+
+export function useSmsSettingsActive() {
+  return useQuery({
+    queryKey: ['smsSettings', 'active'],
+    queryFn: () => apiClient.admin.smsSettings.getActive(),
+  });
+}
+
+export function useCreateSmsSettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: any) => apiClient.admin.smsSettings.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['smsSettings'] });
+    },
+  });
+}
+
+export function useUpdateSmsSettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      apiClient.admin.smsSettings.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['smsSettings'] });
+    },
+  });
+}
+
+export function useActivateSmsSettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => apiClient.admin.smsSettings.activate(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['smsSettings'] });
     },
   });
 }

@@ -90,10 +90,20 @@ export function useUpdatePermission() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      // SDK doesn't have updatePermission, might need to delete and recreate
-      console.warn('updatePermission not implemented in SDK');
-      return data;
+    mutationFn: async ({ id, data }: { id: string; data: { name?: string; description?: string } }) => {
+      const response = await fetch(`/api/admin/rbac/permissions/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to update permission: ${response.status}`);
+      }
+      return response.json();
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.rbac.permissions.all });

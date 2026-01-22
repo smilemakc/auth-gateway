@@ -132,4 +132,47 @@ export const queryKeys = {
     scopes: ['oauthClients', 'scopes'] as const,
     consents: (clientId: string) => ['oauthClients', 'consents', clientId] as const,
   },
+
+  // Groups
+  groups: {
+    all: ['groups'] as const,
+    list: (page: number, pageSize: number) => ['groups', 'list', { page, pageSize }] as const,
+    detail: (id: string) => ['groups', 'detail', id] as const,
+    members: (id: string, page: number, pageSize: number) =>
+      ['groups', 'members', id, { page, pageSize }] as const,
+  },
+
+  // LDAP
+  ldap: {
+    all: ['ldap'] as const,
+    configs: ['ldap', 'configs'] as const,
+    active: ['ldap', 'active'] as const,
+    detail: (id: string) => ['ldap', 'detail', id] as const,
+    syncLogs: (id: string) => ['ldap', 'syncLogs', id] as const,
+  },
+
+  // SAML
+  saml: {
+    all: ['saml'] as const,
+    list: (page: number, pageSize: number) => ['saml', 'list', { page, pageSize }] as const,
+    detail: (id: string) => ['saml', 'detail', id] as const,
+    metadata: ['saml', 'metadata'] as const,
+  },
+
+  // SCIM
+  scim: {
+    config: ['scim', 'config'] as const,
+    metadata: ['scim', 'metadata'] as const,
+  },
+
+  // Applications (Multi-tenant)
+  applications: {
+    all: ['applications'] as const,
+    list: (page: number, pageSize: number) => ['applications', 'list', { page, pageSize }] as const,
+    detail: (id: string) => ['applications', 'detail', id] as const,
+    branding: (id: string) => ['applications', 'branding', id] as const,
+    users: (id: string, page: number, pageSize: number) => ['applications', 'users', id, { page, pageSize }] as const,
+    templates: (id: string) => ['applications', 'templates', id] as const,
+    templateDetail: (appId: string, templateId: string) => ['applications', 'templates', appId, templateId] as const,
+  },
 };

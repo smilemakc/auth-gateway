@@ -56,6 +56,65 @@ func (r *TokenRepository) GetRefreshToken(ctx context.Context, tokenHash string)
 	return token, nil
 }
 
+// GetRefreshTokenForUpdate retrieves a refresh token with row lock for update (for atomic operations)
+func (r *TokenRepository) GetRefreshTokenForUpdate(ctx context.Context, tx bun.Tx, tokenHash string) (*models.RefreshToken, error) {
+	token := new(models.RefreshToken)
+
+	err := tx.NewSelect().
+		Model(token).
+		Where("token_hash = ?", tokenHash).
+		Where("revoked_at IS NULL").
+		For("UPDATE").
+		Scan(ctx)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, models.ErrInvalidToken
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get refresh token for update: %w", err)
+	}
+
+	return token, nil
+}
+
+// RevokeRefreshTokenWithTx revokes a refresh token within a transaction
+func (r *TokenRepository) RevokeRefreshTokenWithTx(ctx context.Context, tx bun.Tx, tokenHash string) error {
+	result, err := tx.NewUpdate().
+		Model((*models.RefreshToken)(nil)).
+		Set("revoked_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
+		Where("token_hash = ?", tokenHash).
+		Exec(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to revoke refresh token: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return models.ErrInvalidToken
+	}
+
+	return nil
+}
+
+// CreateRefreshTokenWithTx creates a new refresh token within a transaction
+func (r *TokenRepository) CreateRefreshTokenWithTx(ctx context.Context, tx bun.Tx, token *models.RefreshToken) error {
+	_, err := tx.NewInsert().
+		Model(token).
+		Returning("*").
+		Exec(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to create refresh token: %w", err)
+	}
+
+	return nil
+}
+
 // RevokeRefreshToken revokes a refresh token
 func (r *TokenRepository) RevokeRefreshToken(ctx context.Context, tokenHash string) error {
 	result, err := r.db.NewUpdate().
@@ -128,6 +187,24 @@ func (r *TokenRepository) AddToBlacklist(ctx context.Context, token *models.Toke
 	return nil
 }
 
+// GetAllActiveBlacklistEntries returns all active (non-expired) blacklist entries from database
+// Used for syncing Redis cache on startup
+func (r *TokenRepository) GetAllActiveBlacklistEntries(ctx context.Context) ([]*models.TokenBlacklist, error) {
+	var entries []*models.TokenBlacklist
+
+	err := r.db.NewSelect().
+		Model(&entries).
+		Where("expires_at > ?", time.Now()).
+		Order("created_at DESC").
+		Scan(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active blacklist entries: %w", err)
+	}
+
+	return entries, nil
+}
+
 // IsBlacklisted checks if a token is blacklisted
 func (r *TokenRepository) IsBlacklisted(ctx context.Context, tokenHash string) (bool, error) {
 	exists, err := r.db.NewSelect().
@@ -159,7 +236,7 @@ func (r *TokenRepository) DeleteExpiredBlacklistedTokens(ctx context.Context) er
 
 // CleanupExpiredTokens removes all expired tokens (both refresh and blacklist)
 func (r *TokenRepository) CleanupExpiredTokens(ctx context.Context) error {
-	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+	return r.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
 		// Delete expired refresh tokens
 		_, err := tx.NewDelete().
 			Model((*models.RefreshToken)(nil)).

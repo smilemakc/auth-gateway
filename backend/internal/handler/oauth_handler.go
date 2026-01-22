@@ -32,9 +32,9 @@ func NewOAuthHandler(
 
 // Login initiates OAuth login flow
 // @Summary Initiate OAuth login
-// @Description Redirect to OAuth provider for authentication (Google, Yandex, GitHub, Instagram, Telegram)
+// @Description Redirect to OAuth provider for authentication (Google, Yandex, GitHub, Instagram, Telegram, 1C)
 // @Tags OAuth
-// @Param provider path string true "OAuth provider" Enums(google, yandex, github, instagram, telegram)
+// @Param provider path string true "OAuth provider" Enums(google, yandex, github, instagram, telegram, onec)
 // @Success 302 {string} string "Redirect to OAuth provider"
 // @Failure 400 {object} models.ErrorResponse "Invalid provider"
 // @Failure 500 {object} models.ErrorResponse "Server error"
@@ -85,7 +85,7 @@ func (h *OAuthHandler) Login(c *gin.Context) {
 // @Description Process OAuth callback from provider, create or login user, and redirect with tokens
 // @Tags OAuth
 // @Produce json
-// @Param provider path string true "OAuth provider" Enums(google, yandex, github, instagram)
+// @Param provider path string true "OAuth provider" Enums(google, yandex, github, instagram, onec)
 // @Param code query string true "Authorization code from OAuth provider"
 // @Param state query string true "CSRF state parameter"
 // @Param response_type query string false "Response type: 'json' for JSON response, otherwise redirect" Enums(json)
@@ -275,6 +275,12 @@ func (h *OAuthHandler) GetProviders(c *gin.Context) {
 			DisplayName: "Telegram",
 			IconURL:     "/icons/telegram.svg",
 			Enabled:     getEnv("TELEGRAM_BOT_TOKEN", "") != "",
+		},
+		{
+			Name:        "onec",
+			DisplayName: "1C",
+			IconURL:     "/icons/onec.svg",
+			Enabled:     getEnv("OAUTH_ONEC_ENABLED", "") == "true" && getEnv("OAUTH_ONEC_CLIENT_ID", "") != "",
 		},
 	}
 

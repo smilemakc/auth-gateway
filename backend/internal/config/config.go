@@ -24,6 +24,8 @@ type Config struct {
 	Metrics   MetricsConfig
 	GeoIP     GeoIPConfig
 	OIDC      OIDCConfig
+	LDAP      LDAPConfig
+	SAML      SAMLConfig
 }
 
 // ServerConfig contains server-related configuration
@@ -37,14 +39,15 @@ type ServerConfig struct {
 
 // DatabaseConfig contains database-related configuration
 type DatabaseConfig struct {
-	Host         string
-	Port         string
-	User         string
-	Password     string
-	DBName       string
-	SSLMode      string
-	MaxOpenConns int
-	MaxIdleConns int
+	Host           string
+	Port           string
+	User           string
+	Password       string
+	DBName         string
+	SSLMode        string
+	MaxOpenConns   int
+	MaxIdleConns   int
+	EnableQueryLog bool // Enable query logging (should be false in production)
 }
 
 // RedisConfig contains Redis-related configuration
@@ -63,12 +66,40 @@ type JWTConfig struct {
 	RefreshExpires time.Duration
 }
 
+// Validate validates JWT configuration
+// Returns error if secrets are too short or missing
+func (c *JWTConfig) Validate() error {
+	const minSecretLength = 32 // Minimum 32 characters for HS256
+
+	if c.AccessSecret == "" {
+		return fmt.Errorf("JWT_ACCESS_SECRET is required")
+	}
+	if len(c.AccessSecret) < minSecretLength {
+		return fmt.Errorf("JWT_ACCESS_SECRET must be at least %d characters long (current: %d). This is a security requirement for HS256 algorithm", minSecretLength, len(c.AccessSecret))
+	}
+
+	if c.RefreshSecret == "" {
+		return fmt.Errorf("JWT_REFRESH_SECRET is required")
+	}
+	if len(c.RefreshSecret) < minSecretLength {
+		return fmt.Errorf("JWT_REFRESH_SECRET must be at least %d characters long (current: %d). This is a security requirement for HS256 algorithm", minSecretLength, len(c.RefreshSecret))
+	}
+
+	// Warn if secrets are the same (security risk)
+	if c.AccessSecret == c.RefreshSecret {
+		log.Printf("WARNING: JWT_ACCESS_SECRET and JWT_REFRESH_SECRET are the same. This is a security risk. Use different secrets.")
+	}
+
+	return nil
+}
+
 // OAuthConfig contains OAuth provider configurations
 type OAuthConfig struct {
 	Google      OAuthProvider
 	Yandex      OAuthProvider
 	GitHub      OAuthProvider
 	Instagram   OAuthProvider
+	OneC        CustomOAuthProvider
 	FrontendURL string
 }
 
@@ -77,6 +108,18 @@ type OAuthProvider struct {
 	ClientID     string
 	ClientSecret string
 	CallbackURL  string
+}
+
+// CustomOAuthProvider represents a custom OAuth provider with configurable URLs
+type CustomOAuthProvider struct {
+	Enabled      bool
+	ClientID     string
+	ClientSecret string
+	CallbackURL  string
+	AuthURL      string
+	TokenURL     string
+	UserInfoURL  string
+	Scopes       string
 }
 
 // SMTPConfig contains SMTP email configuration
@@ -121,18 +164,33 @@ type CORSConfig struct {
 
 // RateLimitConfig contains rate limiting configuration
 type RateLimitConfig struct {
-	SignupMax    int
-	SignupWindow time.Duration
-	SigninMax    int
-	SigninWindow time.Duration
-	APIMax       int
-	APIWindow    time.Duration
+	SignupMax     int
+	SignupWindow  time.Duration
+	SigninMax     int
+	SigninWindow  time.Duration
+	RefreshMax    int           // Max refresh token requests per window
+	RefreshWindow time.Duration // Time window for refresh token rate limiting
+	APIMax        int
+	APIWindow     time.Duration
 }
 
 // SecurityConfig contains security-related configuration
 type SecurityConfig struct {
 	BcryptCost                    int
 	TokenBlacklistCleanupInterval time.Duration
+	PasswordPolicy                PasswordPolicyConfig
+	JITProvisioning               bool // Enable Just-In-Time user provisioning for OAuth/OIDC logins
+}
+
+// PasswordPolicyConfig contains password policy configuration
+type PasswordPolicyConfig struct {
+	MinLength        int
+	RequireUppercase bool
+	RequireLowercase bool
+	RequireNumbers   bool
+	RequireSpecial   bool
+	MaxLength        int  // 0 means no maximum
+	CommonPasswords  bool // Check against common passwords list
 }
 
 type MetricsConfig struct {
@@ -143,6 +201,30 @@ type MetricsConfig struct {
 type GeoIPConfig struct {
 	APIKey  string
 	Enabled bool
+}
+
+// LDAPConfig contains LDAP/Active Directory configuration
+type LDAPConfig struct {
+	Enabled bool
+	// Default LDAP server settings (can be overridden per-config in database)
+	DefaultServer       string
+	DefaultPort         string
+	DefaultBaseDN       string
+	DefaultBindDN       string
+	DefaultBindPassword string
+	SyncInterval        time.Duration // Default sync interval
+	AutoSyncEnabled     bool          // Enable automatic periodic sync
+}
+
+// SAMLConfig contains SAML 2.0 IdP configuration
+type SAMLConfig struct {
+	Enabled     bool
+	Issuer      string // SAML Entity ID
+	SSOURL      string // SSO endpoint URL
+	SLOURL      string // Single Logout endpoint URL
+	Certificate string // Path to certificate file for signing
+	PrivateKey  string // Path to private key file for signing
+	MetadataURL string // URL for SAML metadata
 }
 
 // OIDCConfig contains OIDC provider configuration
@@ -189,14 +271,15 @@ func Load() (*Config, error) {
 			ExternalURL: getEnv("EXTERNAL_URL", ""), // e.g., https://api.example.com
 		},
 		Database: DatabaseConfig{
-			Host:         getEnv("DB_HOST", "localhost"),
-			Port:         getEnv("DB_PORT", "5432"),
-			User:         getEnv("DB_USER", "postgres"),
-			Password:     getEnv("DB_PASSWORD", "postgres"),
-			DBName:       getEnv("DB_NAME", "auth_gateway"),
-			SSLMode:      getEnv("DB_SSLMODE", "disable"),
-			MaxOpenConns: getEnvAsInt("DB_MAX_OPEN_CONNS", 25),
-			MaxIdleConns: getEnvAsInt("DB_MAX_IDLE_CONNS", 5),
+			Host:           getEnv("DB_HOST", "localhost"),
+			Port:           getEnv("DB_PORT", "5432"),
+			User:           getEnv("DB_USER", "postgres"),
+			Password:       getEnv("DB_PASSWORD", "postgres"),
+			DBName:         getEnv("DB_NAME", "auth_gateway"),
+			SSLMode:        getEnv("DB_SSLMODE", "disable"),
+			MaxOpenConns:   getEnvAsInt("DB_MAX_OPEN_CONNS", 25),
+			MaxIdleConns:   getEnvAsInt("DB_MAX_IDLE_CONNS", 5),
+			EnableQueryLog: getEnvAsBool("DB_ENABLE_QUERY_LOG", false),
 		},
 		Redis: RedisConfig{
 			Host:     getEnv("REDIS_HOST", "localhost"),
@@ -231,6 +314,16 @@ func Load() (*Config, error) {
 				ClientSecret: getEnv("INSTAGRAM_CLIENT_SECRET", ""),
 				CallbackURL:  getEnv("INSTAGRAM_CALLBACK_URL", ""),
 			},
+			OneC: CustomOAuthProvider{
+				Enabled:      getEnvAsBool("OAUTH_ONEC_ENABLED", false),
+				ClientID:     getEnv("OAUTH_ONEC_CLIENT_ID", ""),
+				ClientSecret: getEnv("OAUTH_ONEC_CLIENT_SECRET", ""),
+				CallbackURL:  getEnv("OAUTH_ONEC_REDIRECT_URI", ""),
+				AuthURL:      getEnv("OAUTH_ONEC_AUTH_URL", ""),
+				TokenURL:     getEnv("OAUTH_ONEC_TOKEN_URL", ""),
+				UserInfoURL:  getEnv("OAUTH_ONEC_USERINFO_URL", ""),
+				Scopes:       getEnv("OAUTH_ONEC_SCOPES", "openid profile email"),
+			},
 			FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3001"),
 		},
 		SMTP: SMTPConfig{
@@ -262,16 +355,28 @@ func Load() (*Config, error) {
 			AllowCredentials: getEnvAsBool("CORS_ALLOW_CREDENTIALS", true),
 		},
 		RateLimit: RateLimitConfig{
-			SignupMax:    getEnvAsInt("RATE_LIMIT_SIGNUP_MAX", 5),
-			SignupWindow: getEnvAsDuration("RATE_LIMIT_SIGNUP_WINDOW", "1h"),
-			SigninMax:    getEnvAsInt("RATE_LIMIT_SIGNIN_MAX", 10),
-			SigninWindow: getEnvAsDuration("RATE_LIMIT_SIGNIN_WINDOW", "15m"),
-			APIMax:       getEnvAsInt("RATE_LIMIT_API_MAX", 100),
-			APIWindow:    getEnvAsDuration("RATE_LIMIT_API_WINDOW", "1m"),
+			SignupMax:     getEnvAsInt("RATE_LIMIT_SIGNUP_MAX", 5),
+			SignupWindow:  getEnvAsDuration("RATE_LIMIT_SIGNUP_WINDOW", "1h"),
+			SigninMax:     getEnvAsInt("RATE_LIMIT_SIGNIN_MAX", 10),
+			SigninWindow:  getEnvAsDuration("RATE_LIMIT_SIGNIN_WINDOW", "15m"),
+			RefreshMax:    getEnvAsInt("RATE_LIMIT_REFRESH_MAX", 30),
+			RefreshWindow: getEnvAsDuration("RATE_LIMIT_REFRESH_WINDOW", "5m"),
+			APIMax:        getEnvAsInt("RATE_LIMIT_API_MAX", 100),
+			APIWindow:     getEnvAsDuration("RATE_LIMIT_API_WINDOW", "1m"),
 		},
 		Security: SecurityConfig{
 			BcryptCost:                    getEnvAsInt("BCRYPT_COST", 10),
 			TokenBlacklistCleanupInterval: getEnvAsDuration("TOKEN_BLACKLIST_CLEANUP_INTERVAL", "1h"),
+			JITProvisioning:               getEnvAsBool("JIT_PROVISIONING_ENABLED", true), // Enabled by default
+			PasswordPolicy: PasswordPolicyConfig{
+				MinLength:        getEnvAsInt("PASSWORD_MIN_LENGTH", 8),
+				RequireUppercase: getEnvAsBool("PASSWORD_REQUIRE_UPPERCASE", false),
+				RequireLowercase: getEnvAsBool("PASSWORD_REQUIRE_LOWERCASE", true),
+				RequireNumbers:   getEnvAsBool("PASSWORD_REQUIRE_NUMBERS", false),
+				RequireSpecial:   getEnvAsBool("PASSWORD_REQUIRE_SPECIAL", false),
+				MaxLength:        getEnvAsInt("PASSWORD_MAX_LENGTH", 0),
+				CommonPasswords:  getEnvAsBool("PASSWORD_CHECK_COMMON", false),
+			},
 		},
 		Metrics: MetricsConfig{
 			Enabled: getEnvAsBool("METRICS_ENABLED", true),
@@ -299,12 +404,9 @@ func Load() (*Config, error) {
 
 	setOIDCDefaults(cfg)
 
-	// Validate critical configuration
-	if cfg.JWT.AccessSecret == "" {
-		return nil, fmt.Errorf("JWT_ACCESS_SECRET is required")
-	}
-	if cfg.JWT.RefreshSecret == "" {
-		return nil, fmt.Errorf("JWT_REFRESH_SECRET is required")
+	// Validate JWT configuration (checks for presence and minimum length)
+	if err := cfg.JWT.Validate(); err != nil {
+		return nil, fmt.Errorf("JWT configuration validation failed: %w", err)
 	}
 
 	return cfg, nil

@@ -212,3 +212,203 @@ func (c *GRPCClient) CompletePasswordlessRegistration(ctx context.Context, req *
 func (c *GRPCClient) Raw() proto.AuthServiceClient {
 	return c.client
 }
+
+// ========== Authentication Methods ==========
+
+// Login authenticates a user with email/phone and password.
+func (c *GRPCClient) Login(ctx context.Context, req *proto.LoginRequest) (*proto.LoginResponse, error) {
+	resp, err := c.client.Login(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to login: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeUnauthorized,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
+
+// LoginWithEmail is a convenience method for login with email and password.
+func (c *GRPCClient) LoginWithEmail(ctx context.Context, email, password string) (*proto.LoginResponse, error) {
+	return c.Login(ctx, &proto.LoginRequest{
+		Email:    email,
+		Password: password,
+	})
+}
+
+// LoginWithPhone is a convenience method for login with phone and password.
+func (c *GRPCClient) LoginWithPhone(ctx context.Context, phone, password string) (*proto.LoginResponse, error) {
+	return c.Login(ctx, &proto.LoginRequest{
+		Phone:    phone,
+		Password: password,
+	})
+}
+
+// ========== OTP Methods ==========
+
+// SendOTP sends a one-time password to email.
+func (c *GRPCClient) SendOTP(ctx context.Context, req *proto.SendOTPRequest) (*proto.SendOTPResponse, error) {
+	resp, err := c.client.SendOTP(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send OTP: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeBadRequest,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
+
+// VerifyOTP verifies a one-time password.
+func (c *GRPCClient) VerifyOTP(ctx context.Context, req *proto.VerifyOTPRequest) (*proto.VerifyOTPResponse, error) {
+	resp, err := c.client.VerifyOTP(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify OTP: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeBadRequest,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
+
+// LoginWithOTP initiates passwordless login by sending OTP to email.
+func (c *GRPCClient) LoginWithOTP(ctx context.Context, req *proto.LoginWithOTPRequest) (*proto.LoginWithOTPResponse, error) {
+	resp, err := c.client.LoginWithOTP(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initiate OTP login: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeBadRequest,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
+
+// VerifyLoginOTP completes passwordless login by verifying OTP.
+func (c *GRPCClient) VerifyLoginOTP(ctx context.Context, req *proto.VerifyLoginOTPRequest) (*proto.VerifyLoginOTPResponse, error) {
+	resp, err := c.client.VerifyLoginOTP(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify login OTP: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeUnauthorized,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
+
+// RegisterWithOTP initiates OTP-based registration by sending verification code.
+func (c *GRPCClient) RegisterWithOTP(ctx context.Context, req *proto.RegisterWithOTPRequest) (*proto.RegisterWithOTPResponse, error) {
+	resp, err := c.client.RegisterWithOTP(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initiate OTP registration: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeBadRequest,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
+
+// VerifyRegistrationOTP completes OTP-based registration.
+func (c *GRPCClient) VerifyRegistrationOTP(ctx context.Context, req *proto.VerifyRegistrationOTPRequest) (*proto.VerifyRegistrationOTPResponse, error) {
+	resp, err := c.client.VerifyRegistrationOTP(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to complete OTP registration: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeBadRequest,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
+
+// ========== OAuth Provider Methods ==========
+
+// IntrospectOAuthToken validates an OAuth access token (RFC 7662).
+func (c *GRPCClient) IntrospectOAuthToken(ctx context.Context, token string, tokenTypeHint string) (*proto.IntrospectOAuthTokenResponse, error) {
+	resp, err := c.client.IntrospectOAuthToken(ctx, &proto.IntrospectOAuthTokenRequest{
+		Token:         token,
+		TokenTypeHint: tokenTypeHint,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to introspect OAuth token: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeInvalidToken,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
+
+// ValidateOAuthClient validates OAuth client credentials.
+func (c *GRPCClient) ValidateOAuthClient(ctx context.Context, clientID, clientSecret string) (*proto.ValidateOAuthClientResponse, error) {
+	resp, err := c.client.ValidateOAuthClient(ctx, &proto.ValidateOAuthClientRequest{
+		ClientId:     clientID,
+		ClientSecret: clientSecret,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate OAuth client: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeUnauthorized,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
+
+// GetOAuthClient retrieves OAuth client information by client_id.
+func (c *GRPCClient) GetOAuthClient(ctx context.Context, clientID string) (*proto.OAuthClient, error) {
+	resp, err := c.client.GetOAuthClient(ctx, &proto.GetOAuthClientRequest{
+		ClientId: clientID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get OAuth client: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeNotFound,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp.Client, nil
+}

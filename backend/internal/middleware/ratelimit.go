@@ -69,6 +69,41 @@ func (m *RateLimitMiddleware) LimitAPI() gin.HandlerFunc {
 	return m.LimitByIP("api", m.config.APIMax, m.config.APIWindow)
 }
 
+// LimitRefreshToken limits refresh token requests by user ID
+// This prevents abuse of refresh token endpoint
+func (m *RateLimitMiddleware) LimitRefreshToken() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Try to get user ID from refresh token claims if available
+		// Otherwise fall back to IP-based limiting
+		userID, exists := utils.GetUserIDFromContext(c)
+		if !exists {
+			// Fall back to IP-based limiting for unauthenticated refresh requests
+			m.LimitByIP("refresh", m.config.RefreshMax, m.config.RefreshWindow)(c)
+			return
+		}
+
+		key := fmt.Sprintf("ratelimit:refresh:%s", userID.String())
+
+		count, err := m.redis.IncrementRateLimit(c.Request.Context(), key, m.config.RefreshWindow)
+		if err != nil {
+			fmt.Printf("Rate limit error: %v\n", err)
+			c.Next()
+			return
+		}
+
+		c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", m.config.RefreshMax))
+		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", m.config.RefreshMax-int(count)))
+
+		if count > int64(m.config.RefreshMax) {
+			c.JSON(http.StatusTooManyRequests, models.NewErrorResponse(models.ErrRateLimitExceeded))
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
 // LimitByUserID limits requests by user ID (for authenticated endpoints)
 func (m *RateLimitMiddleware) LimitByUserID(endpoint string, max int, window time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {

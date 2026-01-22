@@ -17,8 +17,10 @@ func TestAdminService_GetStats(t *testing.T) {
 	mockAudit := &mockAuditStore{}
 	mockOAuth := &mockOAuthStore{}
 	mockRBAC := &mockRBACStore{}
+	mockBackupCode := &mockBackupCodeStore{}
+	mockDB := &mockTransactionDB{}
 
-	svc := NewAdminService(mockUser, mockAPIKey, mockAudit, mockOAuth, mockRBAC, 10)
+	svc := NewAdminService(mockUser, mockAPIKey, mockAudit, mockOAuth, mockRBAC, mockBackupCode, 10, mockDB)
 	ctx := context.Background()
 
 	t.Run("Success", func(t *testing.T) {
@@ -72,8 +74,10 @@ func TestAdminService_ListUsers(t *testing.T) {
 	mockUser := &mockUserStore{}
 	mockAPIKey := &mockAPIKeyStore{}
 	mockOAuth := &mockOAuthStore{}
+	mockBackupCode := &mockBackupCodeStore{}
+	mockDB := &mockTransactionDB{}
 
-	svc := NewAdminService(mockUser, mockAPIKey, nil, mockOAuth, nil, 10)
+	svc := NewAdminService(mockUser, mockAPIKey, nil, mockOAuth, nil, mockBackupCode, 10, mockDB)
 	ctx := context.Background()
 
 	t.Run("Success", func(t *testing.T) {
@@ -103,10 +107,12 @@ func TestAdminService_ListUsers(t *testing.T) {
 func TestAdminService_UpdateUser(t *testing.T) {
 	mockUser := &mockUserStore{}
 	mockRBAC := &mockRBACStore{}
-	mockAPIKey := &mockAPIKeyStore{} // Added to satisfy constructor
-	mockOAuth := &mockOAuthStore{}   // Added to satisfy constructor
+	mockAPIKey := &mockAPIKeyStore{}
+	mockOAuth := &mockOAuthStore{}
+	mockBackupCode := &mockBackupCodeStore{}
+	mockDB := &mockTransactionDB{}
 
-	svc := NewAdminService(mockUser, mockAPIKey, nil, mockOAuth, mockRBAC, 10)
+	svc := NewAdminService(mockUser, mockAPIKey, nil, mockOAuth, mockRBAC, mockBackupCode, 10, mockDB)
 	ctx := context.Background()
 
 	t.Run("Success_UpdateRolesAndActive", func(t *testing.T) {

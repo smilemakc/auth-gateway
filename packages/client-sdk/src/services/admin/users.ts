@@ -182,4 +182,30 @@ export class AdminUsersService extends BaseService {
 
     return results.slice(0, maxResults);
   }
+
+  /**
+   * Reset 2FA for a user (admin only)
+   * Disables TOTP and deletes backup codes
+   * @param userId User ID
+   * @returns Success message
+   */
+  async reset2FA(userId: string): Promise<{ message: string; user_id: string }> {
+    const response = await this.http.post<{ message: string; user_id: string }>(
+      `/admin/users/${userId}/reset-2fa`
+    );
+    return response.data;
+  }
+
+  /**
+   * Send password reset email for a user (admin only)
+   * Initiates password reset flow for the user
+   * @param userId User ID
+   * @returns Success message with email
+   */
+  async sendPasswordReset(userId: string): Promise<{ message: string; email: string }> {
+    const response = await this.http.post<{ message: string; email: string }>(
+      `/admin/users/${userId}/send-password-reset`
+    );
+    return response.data;
+  }
 }

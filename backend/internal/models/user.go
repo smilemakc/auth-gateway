@@ -39,6 +39,10 @@ type User struct {
 	TOTPEnabled bool `json:"totp_enabled" bun:"totp_enabled" example:"false"`
 	// Timestamp when TOTP 2FA was enabled
 	TOTPEnabledAt *time.Time `json:"totp_enabled_at,omitempty" bun:"totp_enabled_at" example:"2024-01-15T10:30:00Z"`
+	// Timestamp when password expires (optional, for password expiry policy)
+	PasswordExpiresAt *time.Time `json:"password_expires_at,omitempty" bun:"password_expires_at" example:"2024-02-15T10:30:00Z"`
+	// Timestamp when password was last changed
+	PasswordChangedAt *time.Time `json:"password_changed_at,omitempty" bun:"password_changed_at" example:"2024-01-15T10:30:00Z"`
 	// Timestamp when user was created
 	CreatedAt time.Time `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
 	// Timestamp when user was last updated

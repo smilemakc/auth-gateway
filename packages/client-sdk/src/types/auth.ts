@@ -110,3 +110,20 @@ export interface PasswordlessVerifyRequest {
   email: string;
   code: string;
 }
+
+/** Token validation request */
+export interface TokenValidationRequest {
+  access_token: string;
+}
+
+/** Token validation response */
+export interface TokenValidationResponse {
+  valid: boolean;
+  user_id?: string;
+  email?: string;
+  username?: string;
+  roles?: string[];
+  expires_at?: number;
+  is_active?: boolean;
+  error_message?: string;
+}

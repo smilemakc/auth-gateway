@@ -12,6 +12,7 @@ import type {
   ResendVerificationRequest,
   SignInRequest,
   SignUpRequest,
+  TokenValidationResponse,
   VerifyEmailRequest,
 } from '../types/auth';
 import type {
@@ -246,6 +247,21 @@ export class AuthService extends BaseService {
    */
   async clearTokens(): Promise<void> {
     await this.http.getTokenStorage().clear();
+  }
+
+  /**
+   * Validate a token (JWT or API key)
+   * This is useful for external services to validate tokens
+   * @param accessToken The token to validate
+   * @returns Token validation result
+   */
+  async validateToken(accessToken: string): Promise<TokenValidationResponse> {
+    const response = await this.http.post<TokenValidationResponse>(
+      '/v1/token/validate',
+      { access_token: accessToken },
+      { skipAuth: true }
+    );
+    return response.data;
   }
 
   /** Store tokens from auth response */

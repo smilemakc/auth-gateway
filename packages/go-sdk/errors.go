@@ -38,8 +38,8 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("%s (status: %d)", e.Code, e.StatusCode)
 }
 
-// Is checks if the error matches a specific error code.
-func (e *APIError) Is(code string) bool {
+// IsCode checks if the error matches a specific error code.
+func (e *APIError) IsCode(code string) bool {
 	return e.Code == code
 }
 
