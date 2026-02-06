@@ -19,10 +19,10 @@ func TestOAuthService_GetAuthURL(t *testing.T) {
 	t.Setenv("GOOGLE_CLIENT_SECRET", "google-secret")
 	t.Setenv("GOOGLE_CALLBACK_URL", "http://localhost/callback")
 
-	svc := NewOAuthService(nil, nil, nil, nil, nil, nil, nil, nil, false)
+	svc := NewOAuthService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, false)
 
 	t.Run("Success_Google", func(t *testing.T) {
-		url, err := svc.GetAuthURL(models.ProviderGoogle, "state-123")
+		url, err := svc.GetAuthURL(context.Background(), models.ProviderGoogle, "state-123", nil)
 		assert.NoError(t, err)
 		assert.Contains(t, url, "accounts.google.com")
 		assert.Contains(t, url, "client_id=")
@@ -30,15 +30,19 @@ func TestOAuthService_GetAuthURL(t *testing.T) {
 	})
 
 	t.Run("InvalidProvider", func(t *testing.T) {
-		url, err := svc.GetAuthURL("invalid", "state")
+		url, err := svc.GetAuthURL(context.Background(), "invalid", "state", nil)
 		assert.ErrorIs(t, err, models.ErrInvalidProvider)
 		assert.Empty(t, url)
 	})
 }
 
 func TestOAuthService_ExchangeCode_And_GetUserInfo(t *testing.T) {
+	t.Setenv("GOOGLE_CLIENT_ID", "google-client-id")
+	t.Setenv("GOOGLE_CLIENT_SECRET", "google-secret")
+	t.Setenv("GOOGLE_CALLBACK_URL", "http://localhost/callback")
+
 	mockHTTP := &mockHTTPClient{}
-	svc := NewOAuthService(nil, nil, nil, nil, nil, nil, nil, mockHTTP, false)
+	svc := NewOAuthService(nil, nil, nil, nil, nil, nil, nil, mockHTTP, nil, nil, false)
 
 	ctx := context.Background()
 
@@ -54,7 +58,7 @@ func TestOAuthService_ExchangeCode_And_GetUserInfo(t *testing.T) {
 			}, nil
 		}
 
-		token, err := svc.ExchangeCode(ctx, models.ProviderGoogle, "auth-code")
+		token, err := svc.ExchangeCode(ctx, models.ProviderGoogle, "auth-code", nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, token)
 		assert.Equal(t, "access-token", token.AccessToken)
@@ -73,7 +77,7 @@ func TestOAuthService_ExchangeCode_And_GetUserInfo(t *testing.T) {
 			}, nil
 		}
 
-		info, err := svc.GetUserInfo(ctx, models.ProviderGoogle, "access-token")
+		info, err := svc.GetUserInfo(ctx, models.ProviderGoogle, "access-token", nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, info)
 		assert.Equal(t, "123", info.ProviderUserID)
@@ -82,6 +86,10 @@ func TestOAuthService_ExchangeCode_And_GetUserInfo(t *testing.T) {
 }
 
 func TestOAuthService_HandleCallback(t *testing.T) {
+	t.Setenv("GOOGLE_CLIENT_ID", "google-client-id")
+	t.Setenv("GOOGLE_CLIENT_SECRET", "google-secret")
+	t.Setenv("GOOGLE_CALLBACK_URL", "http://localhost/callback")
+
 	// Initialize mocks
 	mockUserRepo := &mockUserStore{}
 	mockOAuthRepo := &mockOAuthStore{}
@@ -91,7 +99,7 @@ func TestOAuthService_HandleCallback(t *testing.T) {
 	mockHTTP := &mockHTTPClient{}
 	// mockAudit := &mockAuditStore{} // Not used in current logic apparently
 
-	svc := NewOAuthService(mockUserRepo, mockOAuthRepo, mockTokenRepo, nil, mockRBACRepo, mockJWT, nil, mockHTTP, true)
+	svc := NewOAuthService(mockUserRepo, mockOAuthRepo, mockTokenRepo, nil, mockRBACRepo, mockJWT, nil, mockHTTP, nil, nil, true)
 	ctx := context.Background()
 
 	// Mock HTTP responses for ExchangeCode and GetUserInfo
@@ -168,7 +176,7 @@ func TestOAuthService_HandleCallback(t *testing.T) {
 			return nil
 		}
 
-		resp, err := svc.HandleCallback(ctx, models.ProviderGoogle, "code", "127.0.0.1", "Mozilla/5.0")
+		resp, err := svc.HandleCallback(ctx, models.ProviderGoogle, "code", "127.0.0.1", "Mozilla/5.0", nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.True(t, resp.IsNewUser)
@@ -215,7 +223,7 @@ func TestOAuthService_HandleCallback(t *testing.T) {
 			return nil
 		}
 
-		resp, err := svc.HandleCallback(ctx, models.ProviderGoogle, "code", "127.0.0.1", "Mozilla/5.0")
+		resp, err := svc.HandleCallback(ctx, models.ProviderGoogle, "code", "127.0.0.1", "Mozilla/5.0", nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.False(t, resp.IsNewUser)

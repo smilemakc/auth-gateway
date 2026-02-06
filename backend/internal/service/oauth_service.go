@@ -19,16 +19,18 @@ import (
 
 // OAuthService provides OAuth operations
 type OAuthService struct {
-	userRepo        UserStore
-	oauthRepo       OAuthStore
-	tokenRepo       TokenStore
-	auditRepo       AuditStore
-	rbacRepo        RBACStore
-	jwtService      JWTService
-	sessionService  *SessionService
-	httpClient      HTTPClient
-	providers       map[models.OAuthProvider]*OAuthProviderConfig
-	jitProvisioning bool // Enable Just-In-Time user provisioning
+	userRepo             UserStore
+	oauthRepo            OAuthStore
+	tokenRepo            TokenStore
+	auditRepo            AuditStore
+	rbacRepo             RBACStore
+	jwtService           JWTService
+	sessionService       *SessionService
+	httpClient           HTTPClient
+	providers            map[models.OAuthProvider]*OAuthProviderConfig
+	jitProvisioning      bool // Enable Just-In-Time user provisioning
+	appOAuthProviderRepo AppOAuthProviderStore
+	appRepo              ApplicationStore
 }
 
 // OAuthProviderConfig holds OAuth provider configuration
@@ -52,6 +54,8 @@ func NewOAuthService(
 	jwtService JWTService,
 	sessionService *SessionService,
 	httpClient HTTPClient,
+	appOAuthProviderRepo AppOAuthProviderStore,
+	appRepo ApplicationStore,
 	jitProvisioning bool,
 ) *OAuthService {
 	// Use default HTTP client if not provided
@@ -60,16 +64,18 @@ func NewOAuthService(
 	}
 
 	service := &OAuthService{
-		userRepo:        userRepo,
-		oauthRepo:       oauthRepo,
-		tokenRepo:       tokenRepo,
-		auditRepo:       auditRepo,
-		rbacRepo:        rbacRepo,
-		jwtService:      jwtService,
-		sessionService:  sessionService,
-		httpClient:      httpClient,
-		providers:       make(map[models.OAuthProvider]*OAuthProviderConfig),
-		jitProvisioning: jitProvisioning,
+		userRepo:             userRepo,
+		oauthRepo:            oauthRepo,
+		tokenRepo:            tokenRepo,
+		auditRepo:            auditRepo,
+		rbacRepo:             rbacRepo,
+		jwtService:           jwtService,
+		sessionService:       sessionService,
+		httpClient:           httpClient,
+		providers:            make(map[models.OAuthProvider]*OAuthProviderConfig),
+		jitProvisioning:      jitProvisioning,
+		appOAuthProviderRepo: appOAuthProviderRepo,
+		appRepo:              appRepo,
 	}
 
 	// Initialize providers
@@ -158,11 +164,44 @@ func (s *OAuthService) GenerateState() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-// GetAuthURL returns the OAuth authorization URL for a provider
-func (s *OAuthService) GetAuthURL(provider models.OAuthProvider, state string) (string, error) {
+// getProviderConfigForApp returns OAuth provider config for a specific application.
+// Falls back to env-based config if no app-specific config is found.
+func (s *OAuthService) getProviderConfigForApp(ctx context.Context, provider models.OAuthProvider, appID *uuid.UUID) (*OAuthProviderConfig, error) {
+	if appID != nil && s.appOAuthProviderRepo != nil {
+		appProvider, err := s.appOAuthProviderRepo.GetByAppAndProvider(ctx, *appID, string(provider))
+		if err == nil && appProvider != nil && appProvider.IsActive {
+			scopes := appProvider.Scopes
+			if len(scopes) == 0 {
+				// Use default scopes from env-based config if app doesn't specify
+				if envConfig, ok := s.providers[provider]; ok {
+					scopes = envConfig.Scopes
+				}
+			}
+			return &OAuthProviderConfig{
+				ClientID:     appProvider.ClientID,
+				ClientSecret: appProvider.ClientSecret,
+				CallbackURL:  appProvider.CallbackURL,
+				AuthURL:      appProvider.AuthURL,
+				TokenURL:     appProvider.TokenURL,
+				UserInfoURL:  appProvider.UserInfoURL,
+				Scopes:       scopes,
+			}, nil
+		}
+	}
+
+	// Fallback to env-based config
 	config, exists := s.providers[provider]
 	if !exists || config.ClientID == "" {
-		return "", models.ErrInvalidProvider
+		return nil, models.ErrInvalidProvider
+	}
+	return config, nil
+}
+
+// GetAuthURL returns the OAuth authorization URL for a provider
+func (s *OAuthService) GetAuthURL(ctx context.Context, provider models.OAuthProvider, state string, appID *uuid.UUID) (string, error) {
+	config, err := s.getProviderConfigForApp(ctx, provider, appID)
+	if err != nil {
+		return "", err
 	}
 
 	if provider == models.ProviderTelegram {
@@ -187,10 +226,10 @@ func (s *OAuthService) GetAuthURL(provider models.OAuthProvider, state string) (
 }
 
 // ExchangeCode exchanges authorization code for access token
-func (s *OAuthService) ExchangeCode(ctx context.Context, provider models.OAuthProvider, code string) (*OAuthTokenResponse, error) {
-	config, exists := s.providers[provider]
-	if !exists {
-		return nil, models.ErrInvalidProvider
+func (s *OAuthService) ExchangeCode(ctx context.Context, provider models.OAuthProvider, code string, appID *uuid.UUID) (*OAuthTokenResponse, error) {
+	config, err := s.getProviderConfigForApp(ctx, provider, appID)
+	if err != nil {
+		return nil, err
 	}
 
 	data := url.Values{}
@@ -233,10 +272,10 @@ func (s *OAuthService) ExchangeCode(ctx context.Context, provider models.OAuthPr
 }
 
 // GetUserInfo fetches user information from OAuth provider
-func (s *OAuthService) GetUserInfo(ctx context.Context, provider models.OAuthProvider, accessToken string) (*models.OAuthUserInfo, error) {
-	config, exists := s.providers[provider]
-	if !exists {
-		return nil, models.ErrInvalidProvider
+func (s *OAuthService) GetUserInfo(ctx context.Context, provider models.OAuthProvider, accessToken string, appID *uuid.UUID) (*models.OAuthUserInfo, error) {
+	config, err := s.getProviderConfigForApp(ctx, provider, appID)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", config.UserInfoURL, nil)
@@ -342,15 +381,15 @@ func (s *OAuthService) parseUserInfo(provider models.OAuthProvider, data map[str
 }
 
 // HandleCallback handles OAuth callback and creates/updates user
-func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuthProvider, code, ipAddress, userAgent string) (*models.OAuthLoginResponse, error) {
+func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuthProvider, code, ipAddress, userAgent string, appID *uuid.UUID) (*models.OAuthLoginResponse, error) {
 	// Exchange code for token
-	tokenResp, err := s.ExchangeCode(ctx, provider, code)
+	tokenResp, err := s.ExchangeCode(ctx, provider, code, appID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get user info
-	userInfo, err := s.GetUserInfo(ctx, provider, tokenResp.AccessToken)
+	userInfo, err := s.GetUserInfo(ctx, provider, tokenResp.AccessToken, appID)
 	if err != nil {
 		return nil, err
 	}
@@ -421,12 +460,12 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuth
 	}
 
 	// Generate JWT tokens
-	accessToken, err := s.jwtService.GenerateAccessToken(user)
+	accessToken, err := s.jwtService.GenerateAccessToken(user, appID)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken, err := s.jwtService.GenerateRefreshToken(user)
+	refreshToken, err := s.jwtService.GenerateRefreshToken(user, appID)
 	if err != nil {
 		return nil, err
 	}

@@ -28,6 +28,7 @@ type AuthService struct {
 	bcryptCost       int
 	passwordPolicy   utils.PasswordPolicy
 	db               TransactionDB
+	appRepo          ApplicationStore
 }
 
 // TransactionDB defines the interface for database transactions
@@ -49,6 +50,7 @@ func NewAuthService(
 	bcryptCost int,
 	passwordPolicy utils.PasswordPolicy,
 	db TransactionDB,
+	appRepo ApplicationStore,
 ) *AuthService {
 	return &AuthService{
 		userRepo:         userRepo,
@@ -63,11 +65,12 @@ func NewAuthService(
 		bcryptCost:       bcryptCost,
 		passwordPolicy:   passwordPolicy,
 		db:               db,
+		appRepo:          appRepo,
 	}
 }
 
 // SignUp creates a new user account
-func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest, ip, userAgent string, deviceInfo models.DeviceInfo) (*models.AuthResponse, error) {
+func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest, ip, userAgent string, deviceInfo models.DeviceInfo, appID *uuid.UUID) (*models.AuthResponse, error) {
 	// Require either email or phone
 	if req.Email == "" && (req.Phone == nil || *req.Phone == "") {
 		return nil, models.NewAppError(400, "Either email or phone is required")
@@ -190,8 +193,19 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		return nil, fmt.Errorf("failed to reload user with roles: %w", err)
 	}
 
+	// Create application profile if app context is provided
+	if appID != nil && s.appRepo != nil {
+		profile := &models.UserApplicationProfile{
+			UserID:        user.ID,
+			ApplicationID: *appID,
+		}
+		if err := s.appRepo.CreateUserProfile(ctx, profile); err != nil {
+			// Non-fatal - don't block registration
+		}
+	}
+
 	// Generate tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, appID)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +218,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 
 // SignIn authenticates a user and returns tokens
 // Implements timing attack protection by always performing password check
-func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip, userAgent string, deviceInfo models.DeviceInfo) (*models.AuthResponse, error) {
+func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip, userAgent string, deviceInfo models.DeviceInfo, appID *uuid.UUID) (*models.AuthResponse, error) {
 	// Require either email or phone
 	if req.Email == "" && (req.Phone == nil || *req.Phone == "") {
 		return nil, models.NewAppError(400, "Either email or phone is required")
@@ -266,7 +280,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	// Check if 2FA is enabled
 	if user.TOTPEnabled {
 		// Generate temporary 2FA token
-		twoFactorToken, err := s.jwtService.GenerateTwoFactorToken(user)
+		twoFactorToken, err := s.jwtService.GenerateTwoFactorToken(user, appID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate 2FA token: %w", err)
 		}
@@ -279,7 +293,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	}
 
 	// Generate tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, appID)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +343,7 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 	}
 
 	// Generate full auth tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -423,13 +437,13 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 			return fmt.Errorf("failed to revoke old token: %w", err)
 		}
 
-		// Generate new tokens
-		newAccessToken, err = s.jwtService.GenerateAccessToken(user)
+		// Generate new tokens with app context from original token
+		newAccessToken, err = s.jwtService.GenerateAccessToken(user, claims.ApplicationID)
 		if err != nil {
 			return fmt.Errorf("failed to generate access token: %w", err)
 		}
 
-		newRefreshToken, err = s.jwtService.GenerateRefreshToken(user)
+		newRefreshToken, err = s.jwtService.GenerateRefreshToken(user, claims.ApplicationID)
 		if err != nil {
 			return fmt.Errorf("failed to generate refresh token: %w", err)
 		}
@@ -808,7 +822,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 	}
 
 	// Generate tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -822,15 +836,15 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 }
 
 // generateAuthResponse generates access and refresh tokens and saves refresh token with device info
-func (s *AuthService) generateAuthResponse(ctx context.Context, user *models.User, ip, userAgent string, deviceInfo models.DeviceInfo) (*models.AuthResponse, error) {
+func (s *AuthService) generateAuthResponse(ctx context.Context, user *models.User, ip, userAgent string, deviceInfo models.DeviceInfo, appID *uuid.UUID) (*models.AuthResponse, error) {
 	// Generate access token
-	accessToken, err := s.jwtService.GenerateAccessToken(user)
+	accessToken, err := s.jwtService.GenerateAccessToken(user, appID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
 	}
 
 	// Generate refresh token
-	refreshToken, err := s.jwtService.GenerateRefreshToken(user)
+	refreshToken, err := s.jwtService.GenerateRefreshToken(user, appID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
@@ -885,7 +899,7 @@ func (s *AuthService) GenerateTokensForUser(ctx context.Context, user *models.Us
 	deviceInfo := utils.ParseUserAgent(userAgent)
 
 	// Use the centralized generateAuthResponse method
-	return s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo)
+	return s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, nil)
 }
 
 func (s *AuthService) logAudit(userID *uuid.UUID, action models.AuditAction, status models.AuditStatus, ip, userAgent string, details map[string]interface{}) {

@@ -61,8 +61,9 @@ func (h *OAuthHandler) Login(c *gin.Context) {
 	// Store state in session/cookie for validation
 	c.SetCookie("oauth_state", state, 600, "/", "", false, true) // 10 minutes
 
-	// Get authorization URL
-	authURL, err := h.oauthService.GetAuthURL(models.OAuthProvider(provider), state)
+	// Get authorization URL (with optional app context)
+	appID, _ := utils.GetApplicationIDFromContext(c)
+	authURL, err := h.oauthService.GetAuthURL(c.Request.Context(), models.OAuthProvider(provider), state, appID)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidProvider) {
 			c.JSON(http.StatusBadRequest, models.NewErrorResponse(err))
@@ -127,13 +128,15 @@ func (h *OAuthHandler) Callback(c *gin.Context) {
 		return
 	}
 
-	// Handle OAuth callback
+	// Handle OAuth callback (with optional app context)
+	appID, _ := utils.GetApplicationIDFromContext(c)
 	response, err := h.oauthService.HandleCallback(
 		c.Request.Context(),
 		models.OAuthProvider(provider),
 		code,
 		utils.GetClientIP(c),
 		c.Request.UserAgent(),
+		appID,
 	)
 
 	if err != nil {
@@ -209,12 +212,14 @@ func (h *OAuthHandler) TelegramCallback(c *gin.Context) {
 	// Create a dummy code for HandleCallback
 	// In real implementation, you might want to refactor HandleCallback
 	// to accept userInfo directly for Telegram
+	appID, _ := utils.GetApplicationIDFromContext(c)
 	response, err := h.oauthService.HandleCallback(
 		c.Request.Context(),
 		models.ProviderTelegram,
 		"telegram_auth", // Telegram doesn't use OAuth code flow
 		utils.GetClientIP(c),
 		c.Request.UserAgent(),
+		appID,
 	)
 
 	if err != nil {

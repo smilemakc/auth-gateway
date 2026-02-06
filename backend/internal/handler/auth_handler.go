@@ -55,8 +55,9 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
 	deviceInfo := utils.GetDeviceInfoFromContext(c)
+	appID, _ := utils.GetApplicationIDFromContext(c)
 
-	authResp, err := h.authService.SignUp(c.Request.Context(), &req, ip, userAgent, deviceInfo)
+	authResp, err := h.authService.SignUp(c.Request.Context(), &req, ip, userAgent, deviceInfo, appID)
 	if err != nil {
 		if appErr, ok := err.(*models.AppError); ok {
 			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
@@ -110,8 +111,9 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
 	deviceInfo := utils.GetDeviceInfoFromContext(c)
+	appID, _ := utils.GetApplicationIDFromContext(c)
 
-	authResp, err := h.authService.SignIn(c.Request.Context(), &req, ip, userAgent, deviceInfo)
+	authResp, err := h.authService.SignIn(c.Request.Context(), &req, ip, userAgent, deviceInfo, appID)
 	if err != nil {
 		if appErr, ok := err.(*models.AppError); ok {
 			c.JSON(appErr.Code, models.NewErrorResponse(appErr))

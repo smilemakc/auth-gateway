@@ -33,7 +33,7 @@ func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBA
 	passwordPolicy := utils.DefaultPasswordPolicy()
 
 	// SessionService and TwoFactorService are nil for tests (non-fatal session creation)
-	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, blacklistSvc, mCache, nil, nil, 10, passwordPolicy, mDB)
+	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, blacklistSvc, mCache, nil, nil, 10, passwordPolicy, mDB, nil)
 	return svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache, blacklistSvc
 }
 
@@ -72,7 +72,7 @@ func TestAuthService_SignUp(t *testing.T) {
 			assert.Equal(t, models.StatusSuccess, params.Status)
 		}
 
-		resp, err := svc.SignUp(ctx, validReq, "1.1.1.1", "ua", models.DeviceInfo{})
+		resp, err := svc.SignUp(ctx, validReq, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, "access_token", resp.AccessToken)
@@ -85,7 +85,7 @@ func TestAuthService_SignUp(t *testing.T) {
 			assert.Equal(t, models.StatusFailed, params.Status)
 		}
 
-		resp, err := svc.SignUp(ctx, validReq, "1.1.1.1", "ua", models.DeviceInfo{})
+		resp, err := svc.SignUp(ctx, validReq, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
 		assert.ErrorIs(t, err, models.ErrEmailAlreadyExists)
 		assert.Nil(t, resp)
 	})
@@ -98,7 +98,7 @@ func TestAuthService_SignUp(t *testing.T) {
 			assert.Equal(t, models.StatusFailed, params.Status)
 		}
 
-		resp, err := svc.SignUp(ctx, validReq, "1.1.1.1", "ua", models.DeviceInfo{})
+		resp, err := svc.SignUp(ctx, validReq, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
 		assert.ErrorIs(t, err, models.ErrUsernameAlreadyExists)
 		assert.Nil(t, resp)
 	})
@@ -137,7 +137,7 @@ func TestAuthService_SignIn(t *testing.T) {
 			assert.Equal(t, models.StatusSuccess, params.Status)
 		}
 
-		resp, err := svc.SignIn(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{})
+		resp, err := svc.SignIn(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, "access_token", resp.AccessToken)
@@ -159,7 +159,7 @@ func TestAuthService_SignIn(t *testing.T) {
 			assert.Equal(t, models.ActionSignInFailed, params.Action)
 		}
 
-		resp, err := svc.SignIn(ctx, reqWrong, "1.1.1.1", "ua", models.DeviceInfo{})
+		resp, err := svc.SignIn(ctx, reqWrong, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
 		assert.ErrorIs(t, err, models.ErrInvalidCredentials)
 		assert.Nil(t, resp)
 	})
@@ -171,7 +171,7 @@ func TestAuthService_SignIn(t *testing.T) {
 
 		req := &models.SignInRequest{Email: "unknown@example.com", Password: "pwd"}
 
-		resp, err := svc.SignIn(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{})
+		resp, err := svc.SignIn(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
 		assert.ErrorIs(t, err, models.ErrInvalidCredentials)
 		assert.Nil(t, resp)
 	})
@@ -188,7 +188,7 @@ func TestAuthService_SignIn(t *testing.T) {
 
 		mJWT.GenerateTwoFactorTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "2fa_token", nil }
 
-		resp, err := svc.SignIn(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{})
+		resp, err := svc.SignIn(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
 		assert.NoError(t, err)
 		assert.True(t, resp.Requires2FA)
 		assert.Equal(t, "2fa_token", resp.TwoFactorToken)

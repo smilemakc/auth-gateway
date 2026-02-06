@@ -447,8 +447,8 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 		RequireSpecial:   deps.cfg.Security.PasswordPolicy.RequireSpecial,
 		MaxLength:        deps.cfg.Security.PasswordPolicy.MaxLength,
 	}
-	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db)
-	oauthService := service.NewOAuthService(repos.User, repos.OAuth, repos.Token, repos.Audit, repos.RBAC, deps.jwtService, sessionService, &http.Client{Timeout: 10 * time.Second}, deps.cfg.Security.JITProvisioning)
+	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db, repos.Application)
+	oauthService := service.NewOAuthService(repos.User, repos.OAuth, repos.Token, repos.Audit, repos.RBAC, deps.jwtService, sessionService, &http.Client{Timeout: 10 * time.Second}, repos.AppOAuthProvider, repos.Application, deps.cfg.Security.JITProvisioning)
 	adminService := service.NewAdminService(repos.User, repos.APIKey, repos.Audit, repos.OAuth, repos.RBAC, repos.BackupCode, deps.cfg.Security.BcryptCost, deps.db)
 	rbacService := service.NewRBACService(repos.RBAC, auditService)
 	ipFilterService := service.NewIPFilterService(repos.IPFilter)

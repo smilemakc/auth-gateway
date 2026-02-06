@@ -277,7 +277,8 @@ func (h *LoginHandler) handlePasswordLogin(c *gin.Context, identifier, password,
 	signInReq.Password = password
 
 	// SignIn internally calls generateAuthResponse which creates session via SessionService
-	authResp, err := h.authService.SignIn(c.Request.Context(), &signInReq, ip, userAgent, deviceInfo)
+	appID, _ := utils.GetApplicationIDFromContext(c)
+	authResp, err := h.authService.SignIn(c.Request.Context(), &signInReq, ip, userAgent, deviceInfo, appID)
 	if err != nil {
 		h.logger.Error("Password login failed", map[string]interface{}{
 			"error":      err.Error(),
