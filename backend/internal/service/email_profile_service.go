@@ -444,11 +444,31 @@ func (s *EmailProfileService) RemoveProfileTemplate(ctx context.Context, profile
 	return nil
 }
 
-func (s *EmailProfileService) SendOTPEmail(ctx context.Context, profileID *uuid.UUID, toEmail string, otpType models.OTPType, code string) error {
+func (s *EmailProfileService) SendOTPEmail(ctx context.Context, profileID *uuid.UUID, applicationID *uuid.UUID, toEmail string, otpType models.OTPType, code string) error {
 	var profile *models.EmailProfile
 	var err error
 
-	if profileID == nil {
+	if profileID != nil {
+		profile, err = s.profileRepo.GetByID(ctx, *profileID)
+		if err != nil {
+			return fmt.Errorf("profile not found: %w", err)
+		}
+	} else if applicationID != nil {
+		// Try app-specific default profile, fallback to global default
+		profile, err = s.profileRepo.GetDefaultForApp(ctx, *applicationID)
+		if err != nil {
+			profile, err = s.profileRepo.GetDefault(ctx)
+			if err != nil {
+				if err == models.ErrNotFound {
+					if s.fallbackEmail != nil {
+						return s.fallbackEmail.SendOTP(toEmail, code, string(otpType))
+					}
+					return models.NewAppError(http.StatusNotFound, "no default email profile configured")
+				}
+				return fmt.Errorf("failed to get default profile: %w", err)
+			}
+		}
+	} else {
 		profile, err = s.profileRepo.GetDefault(ctx)
 		if err != nil {
 			if err == models.ErrNotFound {
@@ -458,11 +478,6 @@ func (s *EmailProfileService) SendOTPEmail(ctx context.Context, profileID *uuid.
 				return models.NewAppError(http.StatusNotFound, "no default email profile configured")
 			}
 			return fmt.Errorf("failed to get default profile: %w", err)
-		}
-	} else {
-		profile, err = s.profileRepo.GetByID(ctx, *profileID)
-		if err != nil {
-			return fmt.Errorf("profile not found: %w", err)
 		}
 	}
 
@@ -494,17 +509,25 @@ func (s *EmailProfileService) SendOTPEmail(ctx context.Context, profileID *uuid.
 		"expiry_minutes": 10,
 	}
 
+	renderTemplate := func() (string, string, error) {
+		var subj, html, text string
+		var renderErr error
+		if applicationID != nil {
+			subj, html, text, renderErr = s.templateService.RenderTemplateForApp(ctx, string(otpType), *applicationID, variables)
+		} else {
+			subj, html, text, renderErr = s.templateService.RenderTemplate(ctx, string(otpType), variables)
+		}
+		_ = text
+		return subj, html, renderErr
+	}
+
 	if profileTemplate != nil && profileTemplate.Template != nil {
-		var textBody string
-		subject, htmlBody, textBody, err = s.templateService.RenderTemplate(ctx, string(otpType), variables)
-		_ = textBody
+		subject, htmlBody, err = renderTemplate()
 		if err != nil {
 			return fmt.Errorf("failed to render template: %w", err)
 		}
 	} else {
-		var textBody string
-		subject, htmlBody, textBody, err = s.templateService.RenderTemplate(ctx, string(otpType), variables)
-		_ = textBody
+		subject, htmlBody, err = renderTemplate()
 		if err != nil {
 			subject = s.getDefaultSubject(otpType)
 			htmlBody = s.getDefaultHTMLBody(otpType, code)
@@ -706,6 +729,233 @@ func (s *EmailProfileService) maskProviderSecrets(provider *models.EmailProvider
 	response.HasMailgunAPIKey = provider.MailgunAPIKey != nil && *provider.MailgunAPIKey != ""
 
 	return response
+}
+
+// SendEmail sends an email using the specified template type and variables.
+// It follows the same profile resolution chain as SendOTPEmail:
+// profileID → app default → global default → fallback.
+func (s *EmailProfileService) SendEmail(ctx context.Context, profileID *uuid.UUID, applicationID *uuid.UUID, toEmail string, templateType string, variables map[string]interface{}) error {
+	var profile *models.EmailProfile
+	var err error
+
+	if profileID != nil {
+		profile, err = s.profileRepo.GetByID(ctx, *profileID)
+		if err != nil {
+			return fmt.Errorf("profile not found: %w", err)
+		}
+	} else if applicationID != nil {
+		profile, err = s.profileRepo.GetDefaultForApp(ctx, *applicationID)
+		if err != nil {
+			profile, err = s.profileRepo.GetDefault(ctx)
+			if err != nil {
+				if err == models.ErrNotFound {
+					return nil // silently skip if no profile configured
+				}
+				return fmt.Errorf("failed to get default profile: %w", err)
+			}
+		}
+	} else {
+		profile, err = s.profileRepo.GetDefault(ctx)
+		if err != nil {
+			if err == models.ErrNotFound {
+				return nil // silently skip
+			}
+			return fmt.Errorf("failed to get default profile: %w", err)
+		}
+	}
+
+	if !profile.IsActive {
+		return nil // silently skip inactive profiles for notifications
+	}
+
+	if profile.Provider == nil {
+		provider, err := s.providerRepo.GetByID(ctx, profile.ProviderID)
+		if err != nil {
+			return fmt.Errorf("provider not found: %w", err)
+		}
+		profile.Provider = provider
+	}
+
+	if !profile.Provider.IsActive {
+		return nil // silently skip inactive providers for notifications
+	}
+
+	// Render template
+	var subject, htmlBody string
+
+	renderTemplate := func() (string, string, error) {
+		var subj, html, text string
+		var renderErr error
+		if applicationID != nil {
+			subj, html, text, renderErr = s.templateService.RenderTemplateForApp(ctx, templateType, *applicationID, variables)
+		} else {
+			subj, html, text, renderErr = s.templateService.RenderTemplate(ctx, templateType, variables)
+		}
+		_ = text
+		return subj, html, renderErr
+	}
+
+	subject, htmlBody, err = renderTemplate()
+	if err != nil {
+		// Fallback to hardcoded defaults
+		subject = s.getDefaultNotificationSubject(templateType)
+		htmlBody = s.getDefaultNotificationHTMLBody(templateType, variables)
+	}
+
+	// Send via provider
+	var sendErr error
+	switch profile.Provider.Type {
+	case models.EmailProviderTypeSMTP:
+		sendErr = s.sendViaSMTP(profile.Provider, toEmail, profile.FromEmail, profile.FromName, subject, htmlBody)
+	case models.EmailProviderTypeSendGrid:
+		sendErr = s.sendViaSendGrid(profile.Provider, toEmail, profile.FromEmail, profile.FromName, subject, htmlBody)
+	case models.EmailProviderTypeMailgun:
+		sendErr = s.sendViaMailgun(profile.Provider, toEmail, profile.FromEmail, profile.FromName, subject, htmlBody)
+	case models.EmailProviderTypeSES:
+		sendErr = s.sendViaSES(profile.Provider, toEmail, profile.FromEmail, profile.FromName, subject, htmlBody)
+	default:
+		sendErr = fmt.Errorf("unsupported provider type: %s", profile.Provider.Type)
+	}
+
+	// Log the email
+	now := time.Now()
+	logStatus := models.EmailStatusSent
+	var errorMsg *string
+
+	if sendErr != nil {
+		logStatus = models.EmailStatusFailed
+		errStr := sendErr.Error()
+		errorMsg = &errStr
+	}
+
+	log := &models.EmailLog{
+		ProfileID:      profile.ID,
+		RecipientEmail: toEmail,
+		Subject:        subject,
+		TemplateType:   templateType,
+		ProviderType:   profile.Provider.Type,
+		Status:         logStatus,
+		ErrorMessage:   errorMsg,
+		CreatedAt:      now,
+	}
+
+	if sendErr == nil {
+		log.SentAt = &now
+	}
+
+	if createLogErr := s.profileRepo.CreateLog(ctx, log); createLogErr != nil {
+		s.auditService.Log(AuditLogParams{
+			Action: models.ActionCreate,
+			Status: models.StatusFailure,
+			Details: map[string]interface{}{
+				"resource_type": models.ResourceEmailLog,
+				"error":         createLogErr.Error(),
+			},
+		})
+	}
+
+	if sendErr != nil {
+		s.auditService.Log(AuditLogParams{
+			Action: models.ActionSend,
+			Status: models.StatusFailure,
+			Details: map[string]interface{}{
+				"resource_type": models.ResourceEmail,
+				"profile_id":    profile.ID.String(),
+				"recipient":     toEmail,
+				"template_type": templateType,
+				"error":         sendErr.Error(),
+			},
+		})
+		return fmt.Errorf("failed to send email: %w", sendErr)
+	}
+
+	s.auditService.Log(AuditLogParams{
+		Action: models.ActionSend,
+		Status: models.StatusSuccess,
+		Details: map[string]interface{}{
+			"resource_type": models.ResourceEmail,
+			"profile_id":    profile.ID.String(),
+			"recipient":     toEmail,
+			"template_type": templateType,
+		},
+	})
+
+	return nil
+}
+
+func (s *EmailProfileService) getDefaultNotificationSubject(templateType string) string {
+	switch templateType {
+	case models.EmailTemplateTypeWelcome:
+		return "Welcome to Our Platform"
+	case models.EmailTemplateTypePasswordChanged:
+		return "Your Password Has Been Changed"
+	case models.EmailTemplateTypeLoginAlert:
+		return "New Login to Your Account"
+	case models.EmailTemplateType2FAEnabled:
+		return "Two-Factor Authentication Enabled"
+	case models.EmailTemplateType2FADisabled:
+		return "Two-Factor Authentication Disabled"
+	default:
+		return "Notification"
+	}
+}
+
+func (s *EmailProfileService) getDefaultNotificationHTMLBody(templateType string, variables map[string]interface{}) string {
+	username, _ := variables["username"].(string)
+	if username == "" {
+		username = "User"
+	}
+
+	var title, message string
+
+	switch templateType {
+	case models.EmailTemplateTypeWelcome:
+		title = "Welcome!"
+		message = "Welcome to our platform. We're excited to have you on board!"
+	case models.EmailTemplateTypePasswordChanged:
+		title = "Password Changed"
+		message = "Your password was successfully changed. If you did not make this change, please contact support immediately."
+	case models.EmailTemplateTypeLoginAlert:
+		title = "New Login Detected"
+		message = "A new login to your account was detected. If this wasn't you, please change your password immediately."
+	case models.EmailTemplateType2FAEnabled:
+		title = "2FA Enabled"
+		message = "Two-factor authentication has been successfully enabled on your account."
+	case models.EmailTemplateType2FADisabled:
+		title = "2FA Disabled"
+		message = "Two-factor authentication has been disabled on your account. We recommend re-enabling it."
+	default:
+		title = "Notification"
+		message = "You have a new notification."
+	}
+
+	return fmt.Sprintf(`
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #4F46E5; color: white; padding: 20px; text-align: center; }
+        .content { background: #f9fafb; padding: 30px; }
+        .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>%s</h1></div>
+        <div class="content">
+            <p>Hello %s,</p>
+            <p>%s</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message, please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>
+`, title, username, message)
 }
 
 func (s *EmailProfileService) getDefaultSubject(otpType models.OTPType) string {

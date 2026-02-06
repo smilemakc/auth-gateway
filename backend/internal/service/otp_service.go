@@ -40,7 +40,7 @@ type OTPServiceOptions struct {
 
 // EmailProfileSender defines the interface for profile-based email sending
 type EmailProfileSender interface {
-	SendOTPEmail(ctx context.Context, profileID *uuid.UUID, toEmail string, otpType models.OTPType, code string) error
+	SendOTPEmail(ctx context.Context, profileID *uuid.UUID, applicationID *uuid.UUID, toEmail string, otpType models.OTPType, code string) error
 }
 
 type OTPService struct {
@@ -143,7 +143,7 @@ func (s *OTPService) SendOTP(ctx context.Context, req *models.SendOTPRequest) er
 		return err
 	}
 
-	if err := s.dispatchOTP(ctx, channel, destination, plainCode, req.Type, req.ProfileID); err != nil {
+	if err := s.dispatchOTP(ctx, channel, destination, plainCode, req.Type, req.ProfileID, req.ApplicationID); err != nil {
 		return err
 	}
 
@@ -317,12 +317,12 @@ func (s *OTPService) checkRateLimit(ctx context.Context, channel OTPSendChannel,
 	return nil
 }
 
-func (s *OTPService) dispatchOTP(ctx context.Context, channel OTPSendChannel, destination, code string, otpType models.OTPType, profileID *uuid.UUID) error {
+func (s *OTPService) dispatchOTP(ctx context.Context, channel OTPSendChannel, destination, code string, otpType models.OTPType, profileID *uuid.UUID, applicationID *uuid.UUID) error {
 	switch channel {
 	case OTPChannelEmail:
 		// Try email profile service first if available
 		if s.emailProfileService != nil {
-			if err := s.emailProfileService.SendOTPEmail(ctx, profileID, destination, otpType, code); err != nil {
+			if err := s.emailProfileService.SendOTPEmail(ctx, profileID, applicationID, destination, otpType, code); err != nil {
 				return fmt.Errorf("failed to send OTP email via profile: %w", err)
 			}
 			return nil

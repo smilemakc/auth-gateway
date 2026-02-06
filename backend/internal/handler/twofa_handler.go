@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/smilemakc/auth-gateway/internal/models"
@@ -12,21 +14,24 @@ import (
 
 // TwoFactorHandler handles 2FA-related requests
 type TwoFactorHandler struct {
-	twoFAService *service.TwoFactorService
-	userService  *service.UserService
-	logger       *logger.Logger
+	twoFAService        *service.TwoFactorService
+	userService         *service.UserService
+	emailProfileService *service.EmailProfileService
+	logger              *logger.Logger
 }
 
 // NewTwoFactorHandler creates a new 2FA handler
 func NewTwoFactorHandler(
 	twoFAService *service.TwoFactorService,
 	userService *service.UserService,
+	emailProfileService *service.EmailProfileService,
 	logger *logger.Logger,
 ) *TwoFactorHandler {
 	return &TwoFactorHandler{
-		twoFAService: twoFAService,
-		userService:  userService,
-		logger:       logger,
+		twoFAService:        twoFAService,
+		userService:         userService,
+		emailProfileService: emailProfileService,
+		logger:              logger,
 	}
 }
 
@@ -113,6 +118,30 @@ func (h *TwoFactorHandler) Verify(c *gin.Context) {
 		return
 	}
 
+	// Send 2fa_enabled notification (non-blocking)
+	if h.emailProfileService != nil {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			user, err := h.userService.GetProfile(ctx, *userID)
+			if err != nil {
+				return
+			}
+			appID, _ := utils.GetApplicationIDFromContext(c)
+			variables := map[string]interface{}{
+				"username":  user.Username,
+				"email":     user.Email,
+				"timestamp": time.Now().UTC().Format(time.RFC3339),
+			}
+			if err := h.emailProfileService.SendEmail(ctx, nil, appID, user.Email, models.EmailTemplateType2FAEnabled, variables); err != nil {
+				h.logger.Error("Failed to send 2FA enabled notification", map[string]interface{}{
+					"error":   err.Error(),
+					"user_id": userID.String(),
+				})
+			}
+		}()
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "2FA enabled successfully",
 	})
@@ -153,6 +182,30 @@ func (h *TwoFactorHandler) Disable(c *gin.Context) {
 		}
 		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
 		return
+	}
+
+	// Send 2fa_disabled notification (non-blocking)
+	if h.emailProfileService != nil {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			user, err := h.userService.GetProfile(ctx, *userID)
+			if err != nil {
+				return
+			}
+			appID, _ := utils.GetApplicationIDFromContext(c)
+			variables := map[string]interface{}{
+				"username":  user.Username,
+				"email":     user.Email,
+				"timestamp": time.Now().UTC().Format(time.RFC3339),
+			}
+			if err := h.emailProfileService.SendEmail(ctx, nil, appID, user.Email, models.EmailTemplateType2FADisabled, variables); err != nil {
+				h.logger.Error("Failed to send 2FA disabled notification", map[string]interface{}{
+					"error":   err.Error(),
+					"user_id": userID.String(),
+				})
+			}
+		}()
 	}
 
 	c.JSON(http.StatusOK, gin.H{

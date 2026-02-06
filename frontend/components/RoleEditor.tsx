@@ -85,7 +85,7 @@ const RoleEditor: React.FC = () => {
 
     const displayName = role.display_name || role.name;
     if (!displayName) {
-      setError('Role name is required');
+      setError(t('role_edit.err_name_required'));
       setLoading(false);
       return;
     }
@@ -110,7 +110,7 @@ const RoleEditor: React.FC = () => {
       }
       navigate('/settings/access-control?tab=roles');
     } catch (err: any) {
-      setError(err.message || 'Failed to save role');
+      setError(err.message || t('role_edit.save_error'));
     } finally {
       setLoading(false);
     }
@@ -147,7 +147,7 @@ const RoleEditor: React.FC = () => {
           <h1 className="text-2xl font-bold text-foreground">{isNewMode ? t('common.create') : t('common.edit')}</h1>
           {currentApplication && isNewMode && (
             <p className="text-sm text-muted-foreground mt-1">
-              This role will be created for: <span className="font-medium text-foreground">{currentApplication.name}</span>
+              {t('role_edit.created_for')}: <span className="font-medium text-foreground">{currentApplication.name}</span>
             </p>
           )}
         </div>
@@ -176,7 +176,7 @@ const RoleEditor: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Description</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('common.description')}</label>
               <input
                 type="text"
                 value={role.description}
@@ -212,7 +212,7 @@ const RoleEditor: React.FC = () => {
                         onClick={() => handleSelectAllResource(resource, !allSelected)}
                         className="text-xs text-primary hover:text-primary/80 font-medium"
                       >
-                        {allSelected ? 'Deselect Resource' : 'Select Resource'}
+                        {allSelected ? t('role_edit.deselect_resource') : t('role_edit.select_resource')}
                       </button>
                     </div>
                   </div>

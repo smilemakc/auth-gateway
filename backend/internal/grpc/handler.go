@@ -232,6 +232,7 @@ type AuthHandlerV2 struct {
 	authService          *service.AuthService
 	oauthProviderService *service.OAuthProviderService
 	otpService           *service.OTPService
+	emailProfileService  *service.EmailProfileService
 	redis                *service.RedisService
 	logger               *logger.Logger
 }
@@ -246,6 +247,7 @@ func NewAuthHandlerV2(
 	authService *service.AuthService,
 	oauthProviderService *service.OAuthProviderService,
 	otpService *service.OTPService,
+	emailProfileService *service.EmailProfileService,
 	redis *service.RedisService,
 	log *logger.Logger,
 ) *AuthHandlerV2 {
@@ -258,6 +260,7 @@ func NewAuthHandlerV2(
 		authService:          authService,
 		oauthProviderService: oauthProviderService,
 		otpService:           otpService,
+		emailProfileService:  emailProfileService,
 		redis:                redis,
 		logger:               log,
 	}
@@ -1430,4 +1433,65 @@ func (h *AuthHandlerV2) GetUserTelegramBots(ctx context.Context, req *pb.GetUser
 	}
 
 	return nil, status.Errorf(codes.Unimplemented, "GetUserTelegramBots not implemented - handler requires UserTelegramRepository dependency")
+}
+
+// SendEmail sends an email using a specified template
+func (h *AuthHandlerV2) SendEmail(ctx context.Context, req *pb.SendEmailRequest) (*pb.SendEmailResponse, error) {
+	if req.TemplateType == "" {
+		return nil, status.Error(codes.InvalidArgument, "template_type is required")
+	}
+	if req.ToEmail == "" {
+		return nil, status.Error(codes.InvalidArgument, "to_email is required")
+	}
+
+	if h.emailProfileService == nil {
+		return &pb.SendEmailResponse{
+			Success:      false,
+			ErrorMessage: "email profile service not configured",
+		}, nil
+	}
+
+	// Parse optional profile ID
+	var profileID *uuid.UUID
+	if req.ProfileId != "" {
+		id, err := uuid.Parse(req.ProfileId)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid profile_id format")
+		}
+		profileID = &id
+	}
+
+	// Parse optional application ID
+	var applicationID *uuid.UUID
+	if req.ApplicationId != "" {
+		id, err := uuid.Parse(req.ApplicationId)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+		}
+		applicationID = &id
+	}
+
+	// Convert map[string]string to map[string]interface{}
+	variables := make(map[string]interface{}, len(req.Variables))
+	for k, v := range req.Variables {
+		variables[k] = v
+	}
+
+	err := h.emailProfileService.SendEmail(ctx, profileID, applicationID, req.ToEmail, req.TemplateType, variables)
+	if err != nil {
+		h.logger.Error("Failed to send email via gRPC", map[string]interface{}{
+			"error":         err.Error(),
+			"template_type": req.TemplateType,
+			"to_email":      req.ToEmail,
+		})
+		return &pb.SendEmailResponse{
+			Success:      false,
+			ErrorMessage: err.Error(),
+		}, nil
+	}
+
+	return &pb.SendEmailResponse{
+		Success: true,
+		Message: "Email sent successfully",
+	}, nil
 }

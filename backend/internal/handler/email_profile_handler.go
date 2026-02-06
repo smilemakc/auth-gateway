@@ -622,6 +622,51 @@ func (h *EmailProfileHandler) RemoveProfileTemplate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Profile template removed successfully"})
 }
 
+// SendEmail handles sending an email using a template
+// @Summary Send email
+// @Description Send an email using a specified template type
+// @Tags Email
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body models.AdminSendEmailRequest true "Send email request"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/email/send [post]
+func (h *EmailProfileHandler) SendEmail(c *gin.Context) {
+	var req models.AdminSendEmailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(err))
+		return
+	}
+
+	// Use application ID from body, or fallback to context
+	applicationID := req.ApplicationID
+	if applicationID == nil {
+		appID, _ := utils.GetApplicationIDFromContext(c)
+		applicationID = appID
+	}
+
+	if err := h.emailProfileService.SendEmail(c.Request.Context(), req.ProfileID, applicationID, req.ToEmail, req.TemplateType, req.Variables); err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+			return
+		}
+		h.logger.Error("Failed to send email", map[string]interface{}{
+			"error":         err.Error(),
+			"template_type": req.TemplateType,
+			"to_email":      req.ToEmail,
+		})
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Email sent successfully"})
+}
+
 // GetProfileStats handles retrieving statistics for an email profile
 // @Summary Get profile statistics
 // @Description Get email sending statistics for a specific profile

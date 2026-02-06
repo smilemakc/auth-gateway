@@ -31,43 +31,43 @@ const getTemplateTypeInfo = (type: EmailTemplateType): { icon: React.ReactNode; 
       return {
         icon: <ShieldCheck size={18} />,
         color: 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-950',
-        label: 'Email Verification'
+        label: 'email_tpl.verification'
       };
     case 'password_reset':
       return {
         icon: <KeyRound size={18} />,
         color: 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-950',
-        label: 'Password Reset'
+        label: 'email_tpl.password_reset'
       };
     case 'welcome':
       return {
         icon: <UserPlus size={18} />,
         color: 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-950',
-        label: 'Welcome Email'
+        label: 'email_tpl.welcome'
       };
     case '2fa':
       return {
         icon: <ShieldCheck size={18} />,
         color: 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-950',
-        label: '2FA Code'
+        label: 'email_tpl.2fa_code'
       };
     case 'otp_login':
       return {
         icon: <LogIn size={18} />,
         color: 'text-indigo-600 bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-950',
-        label: 'OTP Login'
+        label: 'email_tpl.otp_login'
       };
     case 'otp_registration':
       return {
         icon: <UserCheck size={18} />,
         color: 'text-teal-600 bg-teal-100 dark:text-teal-400 dark:bg-teal-950',
-        label: 'OTP Registration'
+        label: 'email_tpl.otp_registration'
       };
     case 'custom':
       return {
         icon: <Mail size={18} />,
         color: 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-800',
-        label: 'Custom'
+        label: 'email_tpl.custom'
       };
     default:
       return {
@@ -109,7 +109,7 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
-        Failed to load email templates. Please try again.
+        {t('email_tpl.load_error')}
       </div>
     );
   }
@@ -121,10 +121,10 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
           <Mail size={48} className="text-muted-foreground" />
         </div>
         <h3 className="text-lg font-semibold text-foreground mb-2">
-          No Email Templates
+          {t('email_tpl.no_templates')}
         </h3>
         <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
-          This application doesn't have any custom email templates yet. Initialize default templates to get started.
+          {t('email_tpl.no_templates_desc')}
         </p>
         <button
           onClick={handleInitializeTemplates}
@@ -139,7 +139,7 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
           ) : (
             <>
               <RefreshCw size={18} />
-              Initialize Default Templates
+              {t('email_tpl.initialize')}
             </>
           )}
         </button>
@@ -151,9 +151,9 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-foreground">Email Templates</h2>
+          <h2 className="text-xl font-semibold text-foreground">{t('email_tpl.title')}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Customize email templates for this application
+            {t('email_tpl.desc')}
           </p>
         </div>
         {templates.length > 0 && (
@@ -167,7 +167,7 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
             ) : (
               <RefreshCw size={16} />
             )}
-            Reset to Defaults
+            {t('email_tpl.reset_defaults')}
           </button>
         )}
       </div>
@@ -185,12 +185,12 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
                 <div className="flex items-start justify-between mb-4">
                   <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${typeInfo.color}`}>
                     {typeInfo.icon}
-                    <span className="text-xs font-medium">{typeInfo.label}</span>
+                    <span className="text-xs font-medium">{t(typeInfo.label)}</span>
                   </div>
                   <button
                     onClick={() => handleEditTemplate(template.id)}
                     className="text-muted-foreground hover:text-primary transition-colors"
-                    title="Edit template"
+                    title={t('email_tpl.edit')}
                   >
                     <Edit2 size={18} />
                   </button>
@@ -207,12 +207,12 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
                     {template.is_active ? (
                       <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
                         <CheckCircle size={14} />
-                        <span className="font-medium">Active</span>
+                        <span className="font-medium">{t('common.active')}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5 text-xs text-gray-500">
                         <XCircle size={14} />
-                        <span className="font-medium">Inactive</span>
+                        <span className="font-medium">{t('common.inactive')}</span>
                       </div>
                     )}
                   </div>
@@ -249,7 +249,7 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
                   className="w-full flex items-center justify-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
                 >
                   <Edit2 size={14} />
-                  Edit Template
+                  {t('email_tpl.edit')}
                 </button>
               </div>
             </div>

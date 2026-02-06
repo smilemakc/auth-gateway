@@ -563,9 +563,11 @@ func (h *AdminHandler) SendPasswordReset(c *gin.Context) {
 	}
 
 	email := utils.NormalizeEmail(user.Email)
+	appID, _ := utils.GetApplicationIDFromContext(c)
 	otpReq := &models.SendOTPRequest{
-		Email: &email,
-		Type:  models.OTPTypePasswordReset,
+		Email:         &email,
+		Type:          models.OTPTypePasswordReset,
+		ApplicationID: appID,
 	}
 
 	if err := h.otpService.SendOTP(c.Request.Context(), otpReq); err != nil {

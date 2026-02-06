@@ -60,7 +60,7 @@ const ApplicationOAuthProviders: React.FC<ApplicationOAuthProvidersProps> = ({ a
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
-        Failed to load OAuth providers. Please try again.
+        {t('app_oauth.load_error')}
       </div>
     );
   }
@@ -69,15 +69,15 @@ const ApplicationOAuthProviders: React.FC<ApplicationOAuthProvidersProps> = ({ a
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-foreground">OAuth Providers</h2>
-          <p className="text-muted-foreground mt-1">Configure OAuth providers for this application</p>
+          <h2 className="text-xl font-bold text-foreground">{t('app_oauth.title')}</h2>
+          <p className="text-muted-foreground mt-1">{t('app_oauth.desc')}</p>
         </div>
         <Link
           to={`/applications/${applicationId}/oauth/new`}
           className="flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
           <Plus size={18} />
-          Add Provider
+          {t('app_oauth.add_provider')}
         </Link>
       </div>
 
@@ -97,14 +97,14 @@ const ApplicationOAuthProviders: React.FC<ApplicationOAuthProvidersProps> = ({ a
                         <>
                           <CheckCircle2 className="w-4 h-4 text-green-500" />
                           <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                            Active
+                            {t('common.active')}
                           </span>
                         </>
                       ) : (
                         <>
                           <XCircle className="w-4 h-4 text-gray-300" />
                           <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                            Inactive
+                            {t('common.inactive')}
                           </span>
                         </>
                       )}
@@ -115,20 +115,20 @@ const ApplicationOAuthProviders: React.FC<ApplicationOAuthProvidersProps> = ({ a
 
               <div className="space-y-3 mt-6">
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Client ID</label>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">{t('app_oauth.client_id')}</label>
                   <code className="block bg-muted rounded px-3 py-2 text-sm text-muted-foreground font-mono truncate border border-border">
                     {maskClientId(provider.client_id)}
                   </code>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Callback URL</label>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">{t('app_oauth.callback_url')}</label>
                   <div className="text-xs text-muted-foreground truncate" title={provider.callback_url}>
-                    {provider.callback_url || <span className="italic text-muted-foreground">Not configured</span>}
+                    {provider.callback_url || <span className="italic text-muted-foreground">{t('app_oauth.not_configured')}</span>}
                   </div>
                 </div>
                 {provider.scopes && provider.scopes.length > 0 && (
                   <div>
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Scopes</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">{t('app_oauth.scopes')}</label>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {provider.scopes.map((scope, idx) => (
                         <span key={idx} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
@@ -167,12 +167,12 @@ const ApplicationOAuthProviders: React.FC<ApplicationOAuthProvidersProps> = ({ a
         {providers.length === 0 && (
           <div className="col-span-full text-center py-12 bg-card rounded-xl border border-border">
             <Globe size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground">No OAuth providers configured for this application.</p>
+            <p className="text-muted-foreground">{t('app_oauth.no_providers')}</p>
             <Link
               to={`/applications/${applicationId}/oauth/new`}
               className="mt-4 inline-block text-primary hover:underline text-sm font-medium"
             >
-              Add your first provider
+              {t('app_oauth.add_first')}
             </Link>
           </div>
         )}

@@ -49,7 +49,7 @@ const ApplicationTemplateEditor: React.FC = () => {
   if (!template) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">Template not found</p>
+        <p className="text-muted-foreground">{t('email.template_not_found')}</p>
       </div>
     );
   }
@@ -92,7 +92,7 @@ const ApplicationTemplateEditor: React.FC = () => {
           </button>
           <div>
             <h1 className="text-xl font-bold text-foreground">{template.name}</h1>
-            <p className="text-xs text-muted-foreground">Edit application template content</p>
+            <p className="text-xs text-muted-foreground">{t('email.edit_app_content')}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -137,7 +137,7 @@ const ApplicationTemplateEditor: React.FC = () => {
                   key={v}
                   onClick={() => setBodyHtml(prev => prev + v)}
                   className="text-xs bg-muted hover:bg-accent text-foreground px-2 py-1 rounded font-mono border border-border transition-colors"
-                  title="Click to insert"
+                  title={t('email.click_to_insert')}
                 >
                   {v}
                 </button>
@@ -163,7 +163,7 @@ const ApplicationTemplateEditor: React.FC = () => {
           <div className="flex-1 bg-card rounded-xl shadow-sm border border-border overflow-hidden flex flex-col">
             <div className="bg-muted px-4 py-2 border-b border-border flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground uppercase">{t('email.preview')}</span>
-              <span className="text-xs text-muted-foreground">Values are mocked</span>
+              <span className="text-xs text-muted-foreground">{t('email.values_mocked')}</span>
             </div>
             <div className="bg-muted p-4 border-b border-border">
                <div className="text-sm font-medium text-muted-foreground mb-1">{t('email.subject')}:</div>

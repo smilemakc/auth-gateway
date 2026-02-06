@@ -105,6 +105,8 @@ type SendOTPRequest struct {
 	Type OTPType `json:"type" binding:"required" example:"verification"`
 	// Email profile ID (optional, uses default if not specified)
 	ProfileID *uuid.UUID `json:"profile_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174000"`
+	// Application ID (optional, used to select app-specific email profile and template)
+	ApplicationID *uuid.UUID `json:"application_id,omitempty"`
 }
 
 // VerifyOTPRequest represents OTP verification request

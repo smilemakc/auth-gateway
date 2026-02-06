@@ -4,8 +4,10 @@ import { Save, X, Loader, Download, FileText } from 'lucide-react';
 import type { CreateSAMLSPRequest, UpdateSAMLSPRequest, SAMLServiceProvider } from '@auth-gateway/client-sdk';
 import { useSAMLSP, useCreateSAMLSP, useUpdateSAMLSP } from '../hooks/useSAML';
 import { toast } from '../services/toast';
+import { useLanguage } from '../services/i18n';
 
 const SAMLSPEdit: React.FC = () => {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isNew = !id;
@@ -41,23 +43,23 @@ const SAMLSPEdit: React.FC = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = t('saml_edit.err_name');
     }
     if (!formData.entity_id.trim()) {
-      newErrors.entity_id = 'Entity ID is required';
+      newErrors.entity_id = t('saml_edit.err_entity_id');
     } else if (!formData.entity_id.startsWith('http://') && !formData.entity_id.startsWith('https://')) {
-      newErrors.entity_id = 'Entity ID must be a valid URL';
+      newErrors.entity_id = t('saml_edit.err_entity_id_url');
     }
     if (!formData.acs_url.trim()) {
-      newErrors.acs_url = 'ACS URL is required';
+      newErrors.acs_url = t('saml_edit.err_acs_url');
     } else if (!formData.acs_url.startsWith('http://') && !formData.acs_url.startsWith('https://')) {
-      newErrors.acs_url = 'ACS URL must be a valid URL';
+      newErrors.acs_url = t('saml_edit.err_acs_url_url');
     }
     if (formData.slo_url && !formData.slo_url.startsWith('http://') && !formData.slo_url.startsWith('https://')) {
-      newErrors.slo_url = 'SLO URL must be a valid URL';
+      newErrors.slo_url = t('saml_edit.err_slo_url');
     }
     if (formData.metadata_url && !formData.metadata_url.startsWith('http://') && !formData.metadata_url.startsWith('https://')) {
-      newErrors.metadata_url = 'Metadata URL must be a valid URL';
+      newErrors.metadata_url = t('saml_edit.err_metadata_url');
     }
 
     setErrors(newErrors);
@@ -88,7 +90,7 @@ const SAMLSPEdit: React.FC = () => {
       navigate('/saml');
     } catch (error) {
       console.error('Failed to save SAML SP:', error);
-      toast.error('Failed to save SAML Service Provider');
+      toast.error(t('saml_edit.save_error'));
     }
   };
 
@@ -103,18 +105,18 @@ const SAMLSPEdit: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{isNew ? 'Create SAML Service Provider' : 'Edit SAML Service Provider'}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{isNew ? t('saml_edit.create_title') : t('saml_edit.edit_title')}</h1>
         <div className="flex gap-2">
           <Link
             to="/saml/metadata"
             className="px-3 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors flex items-center gap-2 text-sm"
           >
             <Download size={16} />
-            Download Metadata
+            {t('saml_edit.download_metadata')}
           </Link>
           <button onClick={() => navigate('/saml')} className="text-muted-foreground hover:text-foreground flex items-center gap-2">
             <X size={20} />
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>
@@ -122,11 +124,11 @@ const SAMLSPEdit: React.FC = () => {
       <form onSubmit={handleSubmit} className="bg-card rounded-xl shadow-sm border border-border p-6 space-y-6">
         {/* Basic Information */}
         <div className="border-b border-border pb-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Basic Information</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('saml_edit.basic_info')}</h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Name <span className="text-destructive">*</span>
+                {t('common.name')} <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -142,7 +144,7 @@ const SAMLSPEdit: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Entity ID <span className="text-destructive">*</span>
+                {t('saml_edit.entity_id')} <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -154,12 +156,12 @@ const SAMLSPEdit: React.FC = () => {
                 placeholder="https://saml.salesforce.com"
               />
               {errors.entity_id && <p className="mt-1 text-sm text-destructive">{errors.entity_id}</p>}
-              <p className="mt-1 text-xs text-muted-foreground">Unique identifier for this Service Provider</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t('saml_edit.entity_id_hint')}</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Assertion Consumer Service (ACS) URL <span className="text-destructive">*</span>
+                {t('saml_edit.acs_url')} <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -171,11 +173,11 @@ const SAMLSPEdit: React.FC = () => {
                 placeholder="https://saml.salesforce.com/sp/ACS"
               />
               {errors.acs_url && <p className="mt-1 text-sm text-destructive">{errors.acs_url}</p>}
-              <p className="mt-1 text-xs text-muted-foreground">Where SAML assertions will be sent</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t('saml_edit.acs_url_hint')}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Single Logout (SLO) URL</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('saml_edit.slo_url')}</label>
               <input
                 type="text"
                 value={formData.slo_url}
@@ -186,16 +188,16 @@ const SAMLSPEdit: React.FC = () => {
                 placeholder="https://saml.salesforce.com/sp/SLO"
               />
               {errors.slo_url && <p className="mt-1 text-sm text-destructive">{errors.slo_url}</p>}
-              <p className="mt-1 text-xs text-muted-foreground">Optional: URL for single logout</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t('saml_edit.slo_url_hint')}</p>
             </div>
           </div>
         </div>
 
         {/* Certificate */}
         <div className="border-b border-border pb-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Service Provider Certificate</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('saml_edit.sp_cert')}</h2>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">X.509 Certificate (PEM format)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('saml_edit.x509_cert')}</label>
             <textarea
               value={formData.x509_cert}
               onChange={(e) => setFormData({ ...formData, x509_cert: e.target.value })}
@@ -203,15 +205,15 @@ const SAMLSPEdit: React.FC = () => {
               className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring font-mono text-xs"
               placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
             />
-            <p className="mt-1 text-xs text-muted-foreground">PEM-encoded X.509 certificate from the Service Provider</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t('saml_edit.x509_hint')}</p>
           </div>
         </div>
 
         {/* Metadata */}
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">Metadata</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('saml_edit.metadata')}</h2>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Metadata URL</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('saml_edit.metadata_url')}</label>
             <input
               type="text"
               value={formData.metadata_url}
@@ -222,7 +224,7 @@ const SAMLSPEdit: React.FC = () => {
               placeholder="https://saml.salesforce.com/metadata"
             />
             {errors.metadata_url && <p className="mt-1 text-sm text-destructive">{errors.metadata_url}</p>}
-            <p className="mt-1 text-xs text-muted-foreground">Optional: URL to fetch SP metadata from</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t('saml_edit.metadata_url_hint')}</p>
           </div>
         </div>
 
@@ -232,7 +234,7 @@ const SAMLSPEdit: React.FC = () => {
             onClick={() => navigate('/saml')}
             className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -241,7 +243,7 @@ const SAMLSPEdit: React.FC = () => {
           >
             {(createSP.isPending || updateSP.isPending) && <Loader size={16} className="animate-spin" />}
             <Save size={16} />
-            {isNew ? 'Create SP' : 'Save Changes'}
+            {isNew ? t('saml.create') : t('common.save')}
           </button>
         </div>
       </form>

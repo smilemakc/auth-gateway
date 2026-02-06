@@ -4,8 +4,10 @@ import { Save, X, Loader } from 'lucide-react';
 import type { CreateGroupRequest, UpdateGroupRequest, Group } from '@auth-gateway/client-sdk';
 import { useGroup, useCreateGroup, useUpdateGroup, useGroups } from '../hooks/useGroups';
 import { toast } from '../services/toast';
+import { useLanguage } from '../services/i18n';
 
 const GroupEdit: React.FC = () => {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isNew = !id;
@@ -38,13 +40,13 @@ const GroupEdit: React.FC = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = t('group_edit.err_name');
     } else if (!/^[a-z0-9_-]+$/.test(formData.name)) {
-      newErrors.name = 'Name must contain only lowercase letters, numbers, hyphens, and underscores';
+      newErrors.name = t('group_edit.err_name_format');
     }
 
     if (!formData.display_name.trim()) {
-      newErrors.display_name = 'Display name is required';
+      newErrors.display_name = t('group_edit.err_display_name');
     }
 
     setErrors(newErrors);
@@ -79,7 +81,7 @@ const GroupEdit: React.FC = () => {
       navigate('/groups');
     } catch (error: any) {
       console.error('Failed to save group:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to save group';
+      const errorMessage = error?.response?.data?.message || error?.message || t('group_edit.save_error');
       toast.error(`Error: ${errorMessage}`);
     }
   };
@@ -97,34 +99,34 @@ const GroupEdit: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{isNew ? 'Create Group' : 'Edit Group'}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{isNew ? t('group_edit.create_title') : t('group_edit.edit_title')}</h1>
         <button
           onClick={() => navigate('/groups')}
           className="text-muted-foreground hover:text-foreground flex items-center gap-2"
         >
           <X size={20} />
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-card rounded-xl shadow-sm border border-border p-6 space-y-6">
         {!isNew && (
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Name</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('common.name')}</label>
             <input
               type="text"
               value={formData.name}
               disabled
               className="w-full px-3 py-2 border border-input rounded-lg bg-muted text-muted-foreground"
             />
-            <p className="mt-1 text-xs text-muted-foreground">Group name cannot be changed after creation</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t('group_edit.name_readonly')}</p>
           </div>
         )}
 
         {isNew && (
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Name <span className="text-destructive">*</span>
+              {t('common.name')} <span className="text-destructive">*</span>
             </label>
             <input
               type="text"
@@ -136,13 +138,13 @@ const GroupEdit: React.FC = () => {
               placeholder="engineering"
             />
             {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
-            <p className="mt-1 text-xs text-muted-foreground">Lowercase letters, numbers, hyphens, and underscores only</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t('group_edit.name_hint')}</p>
           </div>
         )}
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">
-            Display Name <span className="text-destructive">*</span>
+            {t('groups.col_display_name')} <span className="text-destructive">*</span>
           </label>
           <input
             type="text"
@@ -157,7 +159,7 @@ const GroupEdit: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Description</label>
+          <label className="block text-sm font-medium text-foreground mb-1">{t('common.description')}</label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -168,7 +170,7 @@ const GroupEdit: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Parent Group</label>
+          <label className="block text-sm font-medium text-foreground mb-1">{t('group_edit.parent_group')}</label>
           <select
             value={formData.parent_group_id || ''}
             onChange={(e) => {
@@ -177,14 +179,14 @@ const GroupEdit: React.FC = () => {
             }}
             className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            <option value="">None (Top-level group)</option>
+            <option value="">{t('group_edit.no_parent')}</option>
             {availableParentGroups.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.display_name}
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-muted-foreground">Optional: Select a parent group to create a hierarchy</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t('group_edit.parent_hint')}</p>
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t border-border">
@@ -193,7 +195,7 @@ const GroupEdit: React.FC = () => {
             onClick={() => navigate('/groups')}
             className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -202,7 +204,7 @@ const GroupEdit: React.FC = () => {
           >
             {(createGroup.isPending || updateGroup.isPending) && <Loader size={16} className="animate-spin" />}
             <Save size={16} />
-            {isNew ? 'Create Group' : 'Save Changes'}
+            {isNew ? t('groups.create_group') : t('common.save')}
           </button>
         </div>
       </form>

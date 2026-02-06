@@ -133,7 +133,7 @@ const TelegramBotEdit: React.FC = () => {
             <Send className="text-blue-500" size={20} />
           </div>
           <h1 className="text-2xl font-bold text-foreground">
-            {isEditMode ? 'Edit Telegram Bot' : 'Add Telegram Bot'}
+            {isEditMode ? t('tg.edit_title') : t('tg.add_title')}
           </h1>
         </div>
       </div>
@@ -142,8 +142,8 @@ const TelegramBotEdit: React.FC = () => {
         <div className="p-6 border-b border-border bg-muted flex items-start gap-3">
           <HelpCircle className="text-primary mt-0.5" size={20} />
           <div className="text-sm text-muted-foreground">
-            <p className="font-medium text-foreground mb-1">Getting Started</p>
-            <p>Create a bot via @BotFather on Telegram to get the bot token and username. Auth bots are used for user authentication via Telegram.</p>
+            <p className="font-medium text-foreground mb-1">{t('tg.getting_started')}</p>
+            <p>{t('tg.getting_started_desc')}</p>
           </div>
         </div>
 
@@ -151,7 +151,7 @@ const TelegramBotEdit: React.FC = () => {
           {/* Bot Token */}
           <div>
             <label htmlFor="bot_token" className="block text-sm font-medium text-muted-foreground mb-1">
-              Bot Token
+              {t('tg.bot_token')}
             </label>
             <div className="relative">
               <input
@@ -162,7 +162,7 @@ const TelegramBotEdit: React.FC = () => {
                 onChange={handleChange}
                 required={isNewMode}
                 className="w-full pl-4 pr-12 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all font-mono text-sm"
-                placeholder={isEditMode ? '(leave blank to keep current)' : 'e.g. 123456789:ABCdefGHIjklMNOpqrsTUVwxyz'}
+                placeholder={isEditMode ? t('tg.token_keep_current') : 'e.g. 123456789:ABCdefGHIjklMNOpqrsTUVwxyz'}
               />
               <button
                 type="button"
@@ -173,14 +173,14 @@ const TelegramBotEdit: React.FC = () => {
               </button>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Get this from @BotFather on Telegram
+              {t('tg.token_hint')}
             </p>
           </div>
 
           {/* Bot Username */}
           <div>
             <label htmlFor="bot_username" className="block text-sm font-medium text-muted-foreground mb-1">
-              Bot Username
+              {t('tg.bot_username')}
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
@@ -196,14 +196,14 @@ const TelegramBotEdit: React.FC = () => {
               />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              The username without @ symbol
+              {t('tg.username_hint')}
             </p>
           </div>
 
           {/* Display Name */}
           <div>
             <label htmlFor="display_name" className="block text-sm font-medium text-muted-foreground mb-1">
-              Display Name
+              {t('tg.display_name')}
             </label>
             <input
               type="text"
@@ -216,7 +216,7 @@ const TelegramBotEdit: React.FC = () => {
               placeholder="e.g. My App Auth Bot"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Friendly name for this bot in the admin panel
+              {t('tg.display_name_hint')}
             </p>
           </div>
 
@@ -232,10 +232,10 @@ const TelegramBotEdit: React.FC = () => {
               </button>
               <div>
                 <span className="font-medium text-foreground block">
-                  Authentication Bot
+                  {t('tg.auth_bot')}
                 </span>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Use this bot for user authentication via Telegram
+                  {t('tg.auth_bot_desc')}
                 </p>
               </div>
             </div>
@@ -250,10 +250,10 @@ const TelegramBotEdit: React.FC = () => {
               </button>
               <div>
                 <span className="font-medium text-foreground block">
-                  Active
+                  {t('common.active')}
                 </span>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Inactive bots cannot be used for authentication
+                  {t('tg.inactive_hint')}
                 </p>
               </div>
             </div>

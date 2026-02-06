@@ -7,8 +7,10 @@ import { useUsers } from '../hooks/useUsers';
 import { formatDate } from '../lib/date';
 import { toast } from '../services/toast';
 import { confirm } from '../services/confirm';
+import { useLanguage } from '../services/i18n';
 
 const GroupDetails: React.FC = () => {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -27,7 +29,7 @@ const GroupDetails: React.FC = () => {
   const handleDelete = async () => {
     if (!group) return;
     const ok = await confirm({
-      description: `Are you sure you want to delete group "${group.display_name}"?`,
+      description: `${t('group_details.delete_confirm')} "${group.display_name}"?`,
       variant: 'danger'
     });
     if (ok) {
@@ -36,7 +38,7 @@ const GroupDetails: React.FC = () => {
         navigate('/groups');
       } catch (error) {
         console.error('Failed to delete group:', error);
-        toast.error('Failed to delete group');
+        toast.error(t('group_details.delete_error'));
       }
     }
   };
@@ -52,14 +54,14 @@ const GroupDetails: React.FC = () => {
       setSelectedUserIds([]);
     } catch (error) {
       console.error('Failed to add members:', error);
-      toast.error('Failed to add members');
+      toast.error(t('group_details.add_error'));
     }
   };
 
   const handleRemoveMember = async (userId: string) => {
     if (!id) return;
     const ok = await confirm({
-      description: 'Are you sure you want to remove this member from the group?',
+      description: t('group_details.remove_member_confirm'),
       variant: 'danger'
     });
     if (ok) {
@@ -67,7 +69,7 @@ const GroupDetails: React.FC = () => {
         await removeMember.mutateAsync({ groupId: id, userId });
       } catch (error) {
         console.error('Failed to remove member:', error);
-        toast.error('Failed to remove member');
+        toast.error(t('group_details.remove_error'));
       }
     }
   };
@@ -83,9 +85,9 @@ const GroupDetails: React.FC = () => {
   if (!group) {
     return (
       <div className="p-8 text-center">
-        <p className="text-destructive">Group not found</p>
+        <p className="text-destructive">{t('group_details.not_found')}</p>
         <Link to="/groups" className="text-primary hover:underline mt-4 inline-block">
-          Back to Groups
+          {t('group_details.back_to_groups')}
         </Link>
       </div>
     );
@@ -109,7 +111,7 @@ const GroupDetails: React.FC = () => {
             className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors flex items-center gap-2"
           >
             <Edit size={16} />
-            Edit
+            {t('common.edit')}
           </Link>
           {!group.is_system_group && (
             <button
@@ -118,7 +120,7 @@ const GroupDetails: React.FC = () => {
               className="px-4 py-2 border border-destructive rounded-lg text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               <Trash2 size={16} />
-              Delete
+              {t('common.delete')}
             </button>
           )}
         </div>
@@ -126,18 +128,18 @@ const GroupDetails: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-          <div className="text-sm text-muted-foreground">Group Name</div>
+          <div className="text-sm text-muted-foreground">{t('group_details.group_name')}</div>
           <div className="text-lg font-semibold text-foreground mt-1">{group.name}</div>
         </div>
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-          <div className="text-sm text-muted-foreground">Members</div>
+          <div className="text-sm text-muted-foreground">{t('groups.col_members')}</div>
           <div className="text-lg font-semibold text-foreground mt-1 flex items-center gap-2">
             <Users size={20} />
             {group.member_count || 0}
           </div>
         </div>
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-          <div className="text-sm text-muted-foreground">Created</div>
+          <div className="text-sm text-muted-foreground">{t('common.created')}</div>
           <div className="text-lg font-semibold text-foreground mt-1">
             {formatDate(group.created_at)}
           </div>
@@ -146,20 +148,20 @@ const GroupDetails: React.FC = () => {
 
       <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
         <div className="p-4 border-b border-border flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Members</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('groups.col_members')}</h2>
           <button
             onClick={() => setShowAddMembers(true)}
             className="px-3 py-1.5 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg text-sm transition-colors flex items-center gap-2"
           >
             <Plus size={16} />
-            Add Members
+            {t('group_details.add_members')}
           </button>
         </div>
 
         {showAddMembers && (
           <div className="p-4 border-b border-border bg-muted">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-medium text-foreground">Select users to add</h3>
+              <h3 className="font-medium text-foreground">{t('group_details.select_users')}</h3>
               <button
                 onClick={() => {
                   setShowAddMembers(false);
@@ -189,7 +191,7 @@ const GroupDetails: React.FC = () => {
                 </label>
               ))}
               {availableUsers.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">All users are already members</p>
+                <p className="text-sm text-muted-foreground text-center py-4">{t('group_details.all_members')}</p>
               )}
             </div>
             <button
@@ -198,7 +200,7 @@ const GroupDetails: React.FC = () => {
               className="w-full px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {addMembers.isPending && <Loader size={16} className="animate-spin" />}
-              Add {selectedUserIds.length > 0 && `(${selectedUserIds.length})`}
+              {t('group_details.add')} {selectedUserIds.length > 0 && `(${selectedUserIds.length})`}
             </button>
           </div>
         )}
@@ -213,10 +215,10 @@ const GroupDetails: React.FC = () => {
               <thead className="bg-muted">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    User
+                    {t('users.col_user')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Email
+                    {t('auth.email')}
                   </th>
                   <th scope="col" className="relative px-6 py-3">
                     <span className="sr-only">Actions</span>
@@ -248,7 +250,7 @@ const GroupDetails: React.FC = () => {
             </table>
 
             {members.length === 0 && (
-              <div className="p-12 text-center text-muted-foreground">No members in this group.</div>
+              <div className="p-12 text-center text-muted-foreground">{t('group_details.no_members')}</div>
             )}
           </div>
         )}
@@ -256,8 +258,8 @@ const GroupDetails: React.FC = () => {
         {membersData && membersData.total > pageSize && (
           <div className="px-6 py-4 border-t border-border flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, membersData.total)} of{' '}
-              {membersData.total} members
+              {t('common.showing')} {(page - 1) * pageSize + 1} {t('common.to')} {Math.min(page * pageSize, membersData.total)} {t('common.of')}{' '}
+              {membersData.total} {t('groups.col_members')}
             </div>
             <div className="flex gap-2">
               <button
@@ -265,14 +267,14 @@ const GroupDetails: React.FC = () => {
                 disabled={page === 1}
                 className="px-3 py-1 border border-input rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
               >
-                Previous
+                {t('common.previous')}
               </button>
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page * pageSize >= membersData.total}
                 className="px-3 py-1 border border-input rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
               >
-                Next
+                {t('common.next')}
               </button>
             </div>
           </div>

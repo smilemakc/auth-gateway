@@ -15,19 +15,21 @@ import (
 
 // AuthHandler handles authentication-related HTTP requests
 type AuthHandler struct {
-	authService *service.AuthService
-	userService *service.UserService
-	otpService  *service.OTPService
-	logger      *logger.Logger
+	authService         *service.AuthService
+	userService         *service.UserService
+	otpService          *service.OTPService
+	emailProfileService *service.EmailProfileService
+	logger              *logger.Logger
 }
 
 // NewAuthHandler creates a new auth handler
-func NewAuthHandler(authService *service.AuthService, userService *service.UserService, otpService *service.OTPService, log *logger.Logger) *AuthHandler {
+func NewAuthHandler(authService *service.AuthService, userService *service.UserService, otpService *service.OTPService, emailProfileService *service.EmailProfileService, log *logger.Logger) *AuthHandler {
 	return &AuthHandler{
-		authService: authService,
-		userService: userService,
-		otpService:  otpService,
-		logger:      log,
+		authService:         authService,
+		userService:         userService,
+		otpService:          otpService,
+		emailProfileService: emailProfileService,
+		logger:              log,
 	}
 }
 
@@ -73,8 +75,9 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 		defer cancel()
 
 		otpReq := &models.SendOTPRequest{
-			Email: &req.Email,
-			Type:  models.OTPTypeVerification,
+			Email:         &req.Email,
+			Type:          models.OTPTypeVerification,
+			ApplicationID: appID,
 		}
 		if err := h.otpService.SendOTP(ctx, otpReq); err != nil {
 			h.logger.Error("Failed to send verification email", map[string]interface{}{
@@ -83,6 +86,25 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 			})
 		}
 	}()
+
+	// Send welcome email (non-blocking)
+	if h.emailProfileService != nil {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			variables := map[string]interface{}{
+				"username":  req.Username,
+				"email":     req.Email,
+				"full_name": req.FullName,
+			}
+			if err := h.emailProfileService.SendEmail(ctx, nil, appID, req.Email, models.EmailTemplateTypeWelcome, variables); err != nil {
+				h.logger.Error("Failed to send welcome email", map[string]interface{}{
+					"error": err.Error(),
+					"email": req.Email,
+				})
+			}
+		}()
+	}
 
 	c.JSON(http.StatusCreated, authResp)
 }
@@ -312,6 +334,32 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
+	// Send password_changed notification (non-blocking)
+	if h.emailProfileService != nil {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			user, err := h.userService.GetProfile(ctx, *userID)
+			if err != nil {
+				return
+			}
+			appID, _ := utils.GetApplicationIDFromContext(c)
+			variables := map[string]interface{}{
+				"username":   user.Username,
+				"email":      user.Email,
+				"ip_address": ip,
+				"user_agent": userAgent,
+				"timestamp":  time.Now().UTC().Format(time.RFC3339),
+			}
+			if err := h.emailProfileService.SendEmail(ctx, nil, appID, user.Email, models.EmailTemplateTypePasswordChanged, variables); err != nil {
+				h.logger.Error("Failed to send password changed notification", map[string]interface{}{
+					"error":   err.Error(),
+					"user_id": userID.String(),
+				})
+			}
+		}()
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
 }
 
@@ -351,9 +399,11 @@ func (h *AuthHandler) RequestPasswordReset(c *gin.Context) {
 		return
 	}
 
+	appID, _ := utils.GetApplicationIDFromContext(c)
 	otpReq := &models.SendOTPRequest{
-		Email: &email,
-		Type:  models.OTPTypePasswordReset,
+		Email:         &email,
+		Type:          models.OTPTypePasswordReset,
+		ApplicationID: appID,
 	}
 
 	if err := h.otpService.SendOTP(c.Request.Context(), otpReq); err != nil {
@@ -451,6 +501,28 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
+	// Send password_changed notification (non-blocking)
+	if h.emailProfileService != nil {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			appID, _ := utils.GetApplicationIDFromContext(c)
+			variables := map[string]interface{}{
+				"username":   user.Username,
+				"email":      user.Email,
+				"ip_address": ip,
+				"user_agent": userAgent,
+				"timestamp":  time.Now().UTC().Format(time.RFC3339),
+			}
+			if err := h.emailProfileService.SendEmail(ctx, nil, appID, user.Email, models.EmailTemplateTypePasswordChanged, variables); err != nil {
+				h.logger.Error("Failed to send password changed notification", map[string]interface{}{
+					"error":   err.Error(),
+					"user_id": user.ID.String(),
+				})
+			}
+		}()
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Password reset successfully",
 	})
@@ -529,9 +601,11 @@ func (h *AuthHandler) InitPasswordlessRegistration(c *gin.Context) {
 
 	// Send OTP via email or SMS
 	if req.Email != nil && *req.Email != "" {
+		appID, _ := utils.GetApplicationIDFromContext(c)
 		otpReq := &models.SendOTPRequest{
-			Email: req.Email,
-			Type:  models.OTPTypeRegistration,
+			Email:         req.Email,
+			Type:          models.OTPTypeRegistration,
+			ApplicationID: appID,
 		}
 		if err := h.otpService.SendOTP(c.Request.Context(), otpReq); err != nil {
 			h.logger.Error("Failed to send registration OTP email", map[string]interface{}{
@@ -611,6 +685,26 @@ func (h *AuthHandler) CompletePasswordlessRegistration(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
 		}
 		return
+	}
+
+	// Send welcome email (non-blocking)
+	if h.emailProfileService != nil && authResp.User != nil {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			appID, _ := utils.GetApplicationIDFromContext(c)
+			variables := map[string]interface{}{
+				"username":  authResp.User.Username,
+				"email":     authResp.User.Email,
+				"full_name": authResp.User.FullName,
+			}
+			if err := h.emailProfileService.SendEmail(ctx, nil, appID, authResp.User.Email, models.EmailTemplateTypeWelcome, variables); err != nil {
+				h.logger.Error("Failed to send welcome email", map[string]interface{}{
+					"error": err.Error(),
+					"email": authResp.User.Email,
+				})
+			}
+		}()
 	}
 
 	c.JSON(http.StatusCreated, authResp)

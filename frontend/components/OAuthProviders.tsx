@@ -62,7 +62,7 @@ const OAuthProviders: React.FC = () => {
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
-        Failed to load OAuth providers. Please try again.
+        {t('oauth.load_error')}
       </div>
     );
   }
@@ -97,7 +97,7 @@ const OAuthProviders: React.FC = () => {
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`w-2 h-2 rounded-full ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`}></span>
                       <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                        {provider.is_active ? 'Enabled' : 'Disabled'}
+                        {provider.is_active ? t('common.enabled') : t('common.disabled')}
                       </span>
                     </div>
                   </div>
@@ -130,9 +130,9 @@ const OAuthProviders: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Callback URL</label>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">{t('oauth.callback_url')}</label>
                   <div className="text-xs text-muted-foreground truncate" title={provider.callback_url}>
-                    {provider.callback_url || <span className="italic text-muted-foreground">Not configured</span>}
+                    {provider.callback_url || <span className="italic text-muted-foreground">{t('oauth.not_configured')}</span>}
                   </div>
                 </div>
               </div>
@@ -164,12 +164,12 @@ const OAuthProviders: React.FC = () => {
         {providers.length === 0 && (
           <div className="col-span-full text-center py-12 bg-card rounded-xl border border-border">
             <Globe size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground">No OAuth providers configured.</p>
+            <p className="text-muted-foreground">{t('oauth.no_providers')}</p>
             <Link
               to="/oauth/new"
               className="mt-4 inline-block text-primary hover:underline text-sm font-medium"
             >
-              Add your first provider
+              {t('oauth.add_first')}
             </Link>
           </div>
         )}

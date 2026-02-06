@@ -313,18 +313,21 @@ func (h *LoginHandler) handlePasswordLogin(c *gin.Context, identifier, password,
 // handleOTPRequest initiates OTP-based login
 func (h *LoginHandler) handleOTPRequest(c *gin.Context, identifier, returnTo string) {
 	var otpReq *models.SendOTPRequest
+	appID, _ := utils.GetApplicationIDFromContext(c)
 
 	if utils.IsValidEmail(identifier) {
 		normalizedEmail := utils.NormalizeEmail(identifier)
 		otpReq = &models.SendOTPRequest{
-			Email: &normalizedEmail,
-			Type:  models.OTPTypeLogin,
+			Email:         &normalizedEmail,
+			Type:          models.OTPTypeLogin,
+			ApplicationID: appID,
 		}
 	} else if utils.IsValidPhone(identifier) {
 		normalizedPhone := utils.NormalizePhone(identifier)
 		otpReq = &models.SendOTPRequest{
-			Phone: &normalizedPhone,
-			Type:  models.OTPTypeLogin,
+			Phone:         &normalizedPhone,
+			Type:          models.OTPTypeLogin,
+			ApplicationID: appID,
 		}
 	} else {
 		h.renderLoginError(c, returnTo, "Please enter a valid email or phone number for OTP login", identifier, "otp")

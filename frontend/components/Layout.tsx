@@ -153,7 +153,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
         `}
       >
         <div className="flex items-center justify-between h-16 px-6 bg-sidebar border-b border-sidebar-border">
-          <span className="text-xl font-bold tracking-wider text-sidebar-accent">Auth Gateway</span>
+          <span className="text-xl font-bold tracking-wider text-sidebar-accent">{t('auth.title')}</span>
           <button onClick={toggleSidebar} className="lg:hidden text-sidebar-muted hover:text-sidebar-foreground">
             <X size={24} />
           </button>
@@ -395,8 +395,8 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                 className="h-8 w-8 rounded-full border border-border"
               />
               <div className="hidden md:block">
-                <p className="text-sm font-medium text-foreground">Admin User</p>
-                <p className="text-xs text-muted-foreground">Super Administrator</p>
+                <p className="text-sm font-medium text-foreground">{t('layout.admin_user')}</p>
+                <p className="text-xs text-muted-foreground">{t('layout.super_admin')}</p>
               </div>
             </div>
           </div>

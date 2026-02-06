@@ -257,6 +257,7 @@ func runServer() {
 		services.Auth,
 		services.OAuthProvider,
 		services.OTP,
+		services.EmailProfile,
 		deps.redis,
 		deps.log,
 	)
@@ -588,12 +589,12 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 }
 
 func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSet {
-	authHandler := handler.NewAuthHandler(services.Auth, services.User, services.OTP, deps.log)
+	authHandler := handler.NewAuthHandler(services.Auth, services.User, services.OTP, services.EmailProfile, deps.log)
 	healthHandler := handler.NewHealthHandler(deps.db, deps.redis)
 	apiKeyHandler := handler.NewAPIKeyHandler(services.APIKey, deps.log)
 	otpHandler := handler.NewOTPHandler(services.OTP, services.Auth, deps.log)
 	oauthHandler := handler.NewOAuthHandler(services.OAuth, deps.log)
-	twoFAHandler := handler.NewTwoFactorHandler(services.TwoFA, services.User, deps.log)
+	twoFAHandler := handler.NewTwoFactorHandler(services.TwoFA, services.User, services.EmailProfile, deps.log)
 	adminHandler := handler.NewAdminHandler(services.Admin, services.User, services.OTP, services.Audit, deps.log)
 	advancedAdminHandler := handler.NewAdvancedAdminHandler(services.RBAC, services.Session, services.IPFilter, repos.Branding, repos.System, repos.Geo, deps.log)
 	webhookHandler := handler.NewWebhookHandler(services.Webhook, deps.log)
@@ -1006,6 +1007,12 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 				samlGroup.GET("/sp/:id", handlers.SAML.GetSP)
 				samlGroup.PUT("/sp/:id", handlers.SAML.UpdateSP)
 				samlGroup.DELETE("/sp/:id", handlers.SAML.DeleteSP)
+			}
+
+			// Email Send endpoint
+			adminEmailGroup := adminGroup.Group("/email")
+			{
+				adminEmailGroup.POST("/send", handlers.EmailProfile.SendEmail)
 			}
 
 			// Email Provider Management

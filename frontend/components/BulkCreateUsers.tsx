@@ -4,9 +4,11 @@ import { ArrowLeft, Upload, FileText, Loader, CheckCircle, XCircle, Download, To
 import type { BulkUserCreate, BulkOperationResult } from '@auth-gateway/client-sdk';
 import { useBulkCreateUsers } from '../hooks/useBulkOperations';
 import { toast } from '../services/toast';
+import { useLanguage } from '../services/i18n';
 
 const BulkCreateUsers: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const bulkCreate = useBulkCreateUsers();
 
   const [users, setUsers] = useState<BulkUserCreate[]>([]);
@@ -35,7 +37,7 @@ const BulkCreateUsers: React.FC = () => {
   const parseCSV = (content: string) => {
     const lines = content.split('\n').filter((line) => line.trim());
     if (lines.length < 2) {
-      toast.warning('CSV must have at least a header row and one data row');
+      toast.warning(t('bulk.csv_min_rows'));
       return;
     }
 
@@ -92,7 +94,7 @@ const BulkCreateUsers: React.FC = () => {
       const parsedUsers: BulkUserCreate[] = Array.isArray(data) ? data : data.users || [];
       setUsers(parsedUsers);
     } catch (error) {
-      toast.error('Invalid JSON format');
+      toast.error(t('bulk.invalid_json'));
     }
   };
 
@@ -122,13 +124,13 @@ const BulkCreateUsers: React.FC = () => {
 
   const handleSubmit = async () => {
     if (users.length === 0) {
-      toast.warning('Please add at least one user');
+      toast.warning(t('bulk.add_one_user'));
       return;
     }
 
     const validUsers = users.filter((u) => u.email && u.username && u.password);
     if (validUsers.length === 0) {
-      toast.warning('Please fill in email, username, and password for at least one user');
+      toast.warning(t('bulk.fill_required'));
       return;
     }
 
@@ -137,7 +139,7 @@ const BulkCreateUsers: React.FC = () => {
       setResult(result);
     } catch (error) {
       console.error('Bulk create failed:', error);
-      toast.error('Failed to create users');
+      toast.error(t('bulk.create_failed'));
     }
   };
 
@@ -157,21 +159,21 @@ const BulkCreateUsers: React.FC = () => {
       <div className="flex items-center gap-4">
         <button onClick={() => navigate('/bulk')} className="text-muted-foreground hover:text-foreground flex items-center gap-2">
           <ArrowLeft size={20} />
-          Back
+          {t('common.back')}
         </button>
-        <h1 className="text-2xl font-bold text-foreground">Bulk Create Users</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('bulk.create_users')}</h1>
       </div>
 
       {!result ? (
         <>
           {/* File Upload */}
           <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Upload File</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">{t('bulk.upload_file')}</h2>
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <label className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg cursor-pointer flex items-center gap-2">
                   <Upload size={16} />
-                  Choose File
+                  {t('bulk.choose_file')}
                   <input type="file" accept=".csv,.json" onChange={handleFileUpload} className="hidden" />
                 </label>
                 <button
@@ -179,13 +181,13 @@ const BulkCreateUsers: React.FC = () => {
                   className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent flex items-center gap-2"
                 >
                   <Download size={16} />
-                  Download Template
+                  {t('bulk.download_template')}
                 </button>
               </div>
 
               {mode === 'csv' && (
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">CSV Content</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">{t('bulk.csv_content')}</label>
                   <textarea
                     value={csvText}
                     onChange={(e) => {
@@ -203,12 +205,12 @@ const BulkCreateUsers: React.FC = () => {
           {/* Manual Entry */}
           <div className="bg-card rounded-xl shadow-sm border border-border p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-foreground">Users ({users.length})</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t('bulk.users_count', { count: users.length })}</h2>
               <button
                 onClick={handleAddUser}
                 className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg text-sm transition-colors"
               >
-                + Add User
+                + {t('bulk.add_user')}
               </button>
             </div>
 
@@ -216,17 +218,17 @@ const BulkCreateUsers: React.FC = () => {
               {users.map((user, index) => (
                 <div key={index} className="border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-foreground">User #{index + 1}</span>
+                    <span className="text-sm font-medium text-foreground">{t('bulk.user_number', { number: index + 1 })}</span>
                     <button
                       onClick={() => handleRemoveUser(index)}
                       className="text-destructive hover:text-destructive/80 text-sm"
                     >
-                      Remove
+                      {t('common.remove')}
                     </button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-foreground mb-1">Email *</label>
+                      <label className="block text-xs font-medium text-foreground mb-1">{t('users.col_email')} *</label>
                       <input
                         type="email"
                         value={user.email}
@@ -236,7 +238,7 @@ const BulkCreateUsers: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-foreground mb-1">Username *</label>
+                      <label className="block text-xs font-medium text-foreground mb-1">{t('users.col_username')} *</label>
                       <input
                         type="text"
                         value={user.username}
@@ -246,7 +248,7 @@ const BulkCreateUsers: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-foreground mb-1">Password *</label>
+                      <label className="block text-xs font-medium text-foreground mb-1">{t('users.col_password')} *</label>
                       <input
                         type="password"
                         value={user.password}
@@ -256,13 +258,13 @@ const BulkCreateUsers: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-foreground mb-1">Full Name</label>
+                      <label className="block text-xs font-medium text-foreground mb-1">{t('users.col_full_name')}</label>
                       <input
                         type="text"
                         value={user.full_name}
                         onChange={(e) => handleUserChange(index, 'full_name', e.target.value)}
                         className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        placeholder="Full Name"
+                        placeholder={t('users.col_full_name')}
                       />
                     </div>
                     <div className="flex items-center gap-4">
@@ -274,7 +276,7 @@ const BulkCreateUsers: React.FC = () => {
                         >
                           {user.is_active ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
                         </button>
-                        <span className="text-xs text-foreground">Active</span>
+                        <span className="text-xs text-foreground">{t('users.active')}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -284,7 +286,7 @@ const BulkCreateUsers: React.FC = () => {
                         >
                           {user.email_verified ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
                         </button>
-                        <span className="text-xs text-foreground">Email Verified</span>
+                        <span className="text-xs text-foreground">{t('bulk.email_verified')}</span>
                       </div>
                     </div>
                   </div>
@@ -294,7 +296,7 @@ const BulkCreateUsers: React.FC = () => {
               {users.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <FileText size={48} className="mx-auto mb-2 text-muted-foreground" />
-                  <p>No users added. Click "Add User" or upload a file.</p>
+                  <p>{t('bulk.no_users_added')}</p>
                 </div>
               )}
             </div>
@@ -305,7 +307,7 @@ const BulkCreateUsers: React.FC = () => {
               onClick={() => navigate('/bulk')}
               className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleSubmit}
@@ -313,37 +315,37 @@ const BulkCreateUsers: React.FC = () => {
               className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {bulkCreate.isPending && <Loader size={16} className="animate-spin" />}
-              Create {users.length > 0 && `(${users.length})`}
+              {t('bulk.create')} {users.length > 0 && `(${users.length})`}
             </button>
           </div>
         </>
       ) : (
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Operation Results</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('bulk.operation_results')}</h2>
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-muted rounded-lg p-4">
-                <div className="text-sm text-muted-foreground">Total</div>
+                <div className="text-sm text-muted-foreground">{t('bulk.total')}</div>
                 <div className="text-2xl font-bold text-foreground">{result.total}</div>
               </div>
               <div className="bg-success/10 rounded-lg p-4">
-                <div className="text-sm text-success">Success</div>
+                <div className="text-sm text-success">{t('bulk.success')}</div>
                 <div className="text-2xl font-bold text-success">{result.success}</div>
               </div>
               <div className="bg-destructive/10 rounded-lg p-4">
-                <div className="text-sm text-destructive">Failed</div>
+                <div className="text-sm text-destructive">{t('bulk.failed')}</div>
                 <div className="text-2xl font-bold text-destructive">{result.failed}</div>
               </div>
             </div>
 
             {result.errors && result.errors.length > 0 && (
               <div>
-                <h3 className="font-semibold text-foreground mb-2">Errors</h3>
+                <h3 className="font-semibold text-foreground mb-2">{t('bulk.errors')}</h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {result.errors.map((error, index) => (
                     <div key={index} className="bg-destructive/10 border border-border rounded-lg p-3">
                       <div className="text-sm text-destructive">
-                        <span className="font-medium">Row {error.index + 1}:</span> {error.message}
+                        <span className="font-medium">{t('bulk.row', { row: error.index + 1 })}:</span> {error.message}
                         {error.email && <span className="text-destructive"> ({error.email})</span>}
                       </div>
                     </div>
@@ -354,7 +356,7 @@ const BulkCreateUsers: React.FC = () => {
 
             {result.results && result.results.length > 0 && (
               <div>
-                <h3 className="font-semibold text-foreground mb-2">Results</h3>
+                <h3 className="font-semibold text-foreground mb-2">{t('bulk.results')}</h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {result.results.map((item, index) => (
                     <div
@@ -370,7 +372,7 @@ const BulkCreateUsers: React.FC = () => {
                           <XCircle className="text-destructive" size={16} />
                         )}
                         <span className="text-sm">
-                          {item.email}: {item.message || (item.success ? 'Created' : 'Failed')}
+                          {item.email}: {item.message || (item.success ? t('bulk.created') : t('bulk.failed'))}
                         </span>
                       </div>
                     </div>
@@ -388,13 +390,13 @@ const BulkCreateUsers: React.FC = () => {
                 }}
                 className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
               >
-                Create More
+                {t('bulk.create_more')}
               </button>
               <button
                 onClick={() => navigate('/bulk')}
                 className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg transition-colors"
               >
-                Done
+                {t('common.done')}
               </button>
             </div>
           </div>
@@ -405,4 +407,3 @@ const BulkCreateUsers: React.FC = () => {
 };
 
 export default BulkCreateUsers;
-

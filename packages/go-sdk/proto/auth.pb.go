@@ -3069,6 +3069,144 @@ func (x *UserTelegramBotsResponse) GetErrorMessage() string {
 	return ""
 }
 
+// SendEmailRequest contains data to send an email via template
+type SendEmailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TemplateType  string                 `protobuf:"bytes,1,opt,name=template_type,json=templateType,proto3" json:"template_type,omitempty"`                                                 // Template type (e.g., "welcome", "password_changed")
+	ToEmail       string                 `protobuf:"bytes,2,opt,name=to_email,json=toEmail,proto3" json:"to_email,omitempty"`                                                                // Recipient email address
+	Variables     map[string]string      `protobuf:"bytes,3,rep,name=variables,proto3" json:"variables,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Template variables
+	ProfileId     string                 `protobuf:"bytes,4,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`                                                          // Optional email profile ID
+	ApplicationId string                 `protobuf:"bytes,5,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`                                              // Optional application ID for app-scoped templates
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendEmailRequest) Reset() {
+	*x = SendEmailRequest{}
+	mi := &file_proto_auth_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendEmailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendEmailRequest) ProtoMessage() {}
+
+func (x *SendEmailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendEmailRequest.ProtoReflect.Descriptor instead.
+func (*SendEmailRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *SendEmailRequest) GetTemplateType() string {
+	if x != nil {
+		return x.TemplateType
+	}
+	return ""
+}
+
+func (x *SendEmailRequest) GetToEmail() string {
+	if x != nil {
+		return x.ToEmail
+	}
+	return ""
+}
+
+func (x *SendEmailRequest) GetVariables() map[string]string {
+	if x != nil {
+		return x.Variables
+	}
+	return nil
+}
+
+func (x *SendEmailRequest) GetProfileId() string {
+	if x != nil {
+		return x.ProfileId
+	}
+	return ""
+}
+
+func (x *SendEmailRequest) GetApplicationId() string {
+	if x != nil {
+		return x.ApplicationId
+	}
+	return ""
+}
+
+// SendEmailResponse contains the result of email sending
+type SendEmailResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendEmailResponse) Reset() {
+	*x = SendEmailResponse{}
+	mi := &file_proto_auth_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendEmailResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendEmailResponse) ProtoMessage() {}
+
+func (x *SendEmailResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendEmailResponse.ProtoReflect.Descriptor instead.
+func (*SendEmailResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *SendEmailResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SendEmailResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *SendEmailResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
 var File_proto_auth_proto protoreflect.FileDescriptor
 
 const file_proto_auth_proto_rawDesc = "" +
@@ -3336,14 +3474,28 @@ const file_proto_auth_proto_rawDesc = "" +
 	"\x13last_interaction_at\x18\b \x01(\x03R\x11lastInteractionAt\"l\n" +
 	"\x18UserTelegramBotsResponse\x12+\n" +
 	"\x04bots\x18\x01 \x03(\v2\x17.auth.TelegramBotAccessR\x04bots\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage*\x9f\x01\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"\x9b\x02\n" +
+	"\x10SendEmailRequest\x12#\n" +
+	"\rtemplate_type\x18\x01 \x01(\tR\ftemplateType\x12\x19\n" +
+	"\bto_email\x18\x02 \x01(\tR\atoEmail\x12C\n" +
+	"\tvariables\x18\x03 \x03(\v2%.auth.SendEmailRequest.VariablesEntryR\tvariables\x12\x1d\n" +
+	"\n" +
+	"profile_id\x18\x04 \x01(\tR\tprofileId\x12%\n" +
+	"\x0eapplication_id\x18\x05 \x01(\tR\rapplicationId\x1a<\n" +
+	"\x0eVariablesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"l\n" +
+	"\x11SendEmailResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12#\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage*\x9f\x01\n" +
 	"\aOTPType\x12\x18\n" +
 	"\x14OTP_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15OTP_TYPE_VERIFICATION\x10\x01\x12\x1b\n" +
 	"\x17OTP_TYPE_PASSWORD_RESET\x10\x02\x12\x13\n" +
 	"\x0fOTP_TYPE_TWO_FA\x10\x03\x12\x12\n" +
 	"\x0eOTP_TYPE_LOGIN\x10\x04\x12\x19\n" +
-	"\x15OTP_TYPE_REGISTRATION\x10\x052\x95\f\n" +
+	"\x15OTP_TYPE_REGISTRATION\x10\x052\xd3\f\n" +
 	"\vAuthService\x12H\n" +
 	"\rValidateToken\x12\x1a.auth.ValidateTokenRequest\x1a\x1b.auth.ValidateTokenResponse\x126\n" +
 	"\aGetUser\x12\x14.auth.GetUserRequest\x1a\x15.auth.GetUserResponse\x12N\n" +
@@ -3362,7 +3514,8 @@ const file_proto_auth_proto_rawDesc = "" +
 	"\x15VerifyRegistrationOTP\x12\".auth.VerifyRegistrationOTPRequest\x1a#.auth.VerifyRegistrationOTPResponse\x12]\n" +
 	"\x14IntrospectOAuthToken\x12!.auth.IntrospectOAuthTokenRequest\x1a\".auth.IntrospectOAuthTokenResponse\x12Z\n" +
 	"\x13ValidateOAuthClient\x12 .auth.ValidateOAuthClientRequest\x1a!.auth.ValidateOAuthClientResponse\x12K\n" +
-	"\x0eGetOAuthClient\x12\x1b.auth.GetOAuthClientRequest\x1a\x1c.auth.GetOAuthClientResponse\x12Y\n" +
+	"\x0eGetOAuthClient\x12\x1b.auth.GetOAuthClientRequest\x1a\x1c.auth.GetOAuthClientResponse\x12<\n" +
+	"\tSendEmail\x12\x16.auth.SendEmailRequest\x1a\x17.auth.SendEmailResponse\x12Y\n" +
 	"\x19GetUserApplicationProfile\x12\x1e.auth.GetUserAppProfileRequest\x1a\x1c.auth.UserAppProfileResponse\x12W\n" +
 	"\x13GetUserTelegramBots\x12 .auth.GetUserTelegramBotsRequest\x1a\x1e.auth.UserTelegramBotsResponseB9Z7github.com/smilemakc/auth-gateway/packages/go-sdk/protob\x06proto3"
 
@@ -3379,7 +3532,7 @@ func file_proto_auth_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_auth_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
+var file_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
 var file_proto_auth_proto_goTypes = []any{
 	(OTPType)(0),                                     // 0: auth.OTPType
 	(*ValidateTokenRequest)(nil),                     // 1: auth.ValidateTokenRequest
@@ -3423,6 +3576,9 @@ var file_proto_auth_proto_goTypes = []any{
 	(*GetUserTelegramBotsRequest)(nil),               // 39: auth.GetUserTelegramBotsRequest
 	(*TelegramBotAccess)(nil),                        // 40: auth.TelegramBotAccess
 	(*UserTelegramBotsResponse)(nil),                 // 41: auth.UserTelegramBotsResponse
+	(*SendEmailRequest)(nil),                         // 42: auth.SendEmailRequest
+	(*SendEmailResponse)(nil),                        // 43: auth.SendEmailResponse
+	nil,                                              // 44: auth.SendEmailRequest.VariablesEntry
 }
 var file_proto_auth_proto_depIdxs = []int32{
 	4,  // 0: auth.GetUserResponse.user:type_name -> auth.User
@@ -3435,49 +3591,52 @@ var file_proto_auth_proto_depIdxs = []int32{
 	4,  // 7: auth.VerifyLoginOTPResponse.user:type_name -> auth.User
 	35, // 8: auth.GetOAuthClientResponse.client:type_name -> auth.OAuthClient
 	40, // 9: auth.UserTelegramBotsResponse.bots:type_name -> auth.TelegramBotAccess
-	1,  // 10: auth.AuthService.ValidateToken:input_type -> auth.ValidateTokenRequest
-	3,  // 11: auth.AuthService.GetUser:input_type -> auth.GetUserRequest
-	6,  // 12: auth.AuthService.CheckPermission:input_type -> auth.CheckPermissionRequest
-	8,  // 13: auth.AuthService.IntrospectToken:input_type -> auth.IntrospectTokenRequest
-	10, // 14: auth.AuthService.CreateUser:input_type -> auth.CreateUserRequest
-	12, // 15: auth.AuthService.Login:input_type -> auth.LoginRequest
-	14, // 16: auth.AuthService.InitPasswordlessRegistration:input_type -> auth.InitPasswordlessRegistrationRequest
-	16, // 17: auth.AuthService.CompletePasswordlessRegistration:input_type -> auth.CompletePasswordlessRegistrationRequest
-	18, // 18: auth.AuthService.SendOTP:input_type -> auth.SendOTPRequest
-	20, // 19: auth.AuthService.VerifyOTP:input_type -> auth.VerifyOTPRequest
-	22, // 20: auth.AuthService.LoginWithOTP:input_type -> auth.LoginWithOTPRequest
-	28, // 21: auth.AuthService.VerifyLoginOTP:input_type -> auth.VerifyLoginOTPRequest
-	24, // 22: auth.AuthService.RegisterWithOTP:input_type -> auth.RegisterWithOTPRequest
-	26, // 23: auth.AuthService.VerifyRegistrationOTP:input_type -> auth.VerifyRegistrationOTPRequest
-	30, // 24: auth.AuthService.IntrospectOAuthToken:input_type -> auth.IntrospectOAuthTokenRequest
-	32, // 25: auth.AuthService.ValidateOAuthClient:input_type -> auth.ValidateOAuthClientRequest
-	34, // 26: auth.AuthService.GetOAuthClient:input_type -> auth.GetOAuthClientRequest
-	37, // 27: auth.AuthService.GetUserApplicationProfile:input_type -> auth.GetUserAppProfileRequest
-	39, // 28: auth.AuthService.GetUserTelegramBots:input_type -> auth.GetUserTelegramBotsRequest
-	2,  // 29: auth.AuthService.ValidateToken:output_type -> auth.ValidateTokenResponse
-	5,  // 30: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
-	7,  // 31: auth.AuthService.CheckPermission:output_type -> auth.CheckPermissionResponse
-	9,  // 32: auth.AuthService.IntrospectToken:output_type -> auth.IntrospectTokenResponse
-	11, // 33: auth.AuthService.CreateUser:output_type -> auth.CreateUserResponse
-	13, // 34: auth.AuthService.Login:output_type -> auth.LoginResponse
-	15, // 35: auth.AuthService.InitPasswordlessRegistration:output_type -> auth.InitPasswordlessRegistrationResponse
-	17, // 36: auth.AuthService.CompletePasswordlessRegistration:output_type -> auth.CompletePasswordlessRegistrationResponse
-	19, // 37: auth.AuthService.SendOTP:output_type -> auth.SendOTPResponse
-	21, // 38: auth.AuthService.VerifyOTP:output_type -> auth.VerifyOTPResponse
-	23, // 39: auth.AuthService.LoginWithOTP:output_type -> auth.LoginWithOTPResponse
-	29, // 40: auth.AuthService.VerifyLoginOTP:output_type -> auth.VerifyLoginOTPResponse
-	25, // 41: auth.AuthService.RegisterWithOTP:output_type -> auth.RegisterWithOTPResponse
-	27, // 42: auth.AuthService.VerifyRegistrationOTP:output_type -> auth.VerifyRegistrationOTPResponse
-	31, // 43: auth.AuthService.IntrospectOAuthToken:output_type -> auth.IntrospectOAuthTokenResponse
-	33, // 44: auth.AuthService.ValidateOAuthClient:output_type -> auth.ValidateOAuthClientResponse
-	36, // 45: auth.AuthService.GetOAuthClient:output_type -> auth.GetOAuthClientResponse
-	38, // 46: auth.AuthService.GetUserApplicationProfile:output_type -> auth.UserAppProfileResponse
-	41, // 47: auth.AuthService.GetUserTelegramBots:output_type -> auth.UserTelegramBotsResponse
-	29, // [29:48] is the sub-list for method output_type
-	10, // [10:29] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	44, // 10: auth.SendEmailRequest.variables:type_name -> auth.SendEmailRequest.VariablesEntry
+	1,  // 11: auth.AuthService.ValidateToken:input_type -> auth.ValidateTokenRequest
+	3,  // 12: auth.AuthService.GetUser:input_type -> auth.GetUserRequest
+	6,  // 13: auth.AuthService.CheckPermission:input_type -> auth.CheckPermissionRequest
+	8,  // 14: auth.AuthService.IntrospectToken:input_type -> auth.IntrospectTokenRequest
+	10, // 15: auth.AuthService.CreateUser:input_type -> auth.CreateUserRequest
+	12, // 16: auth.AuthService.Login:input_type -> auth.LoginRequest
+	14, // 17: auth.AuthService.InitPasswordlessRegistration:input_type -> auth.InitPasswordlessRegistrationRequest
+	16, // 18: auth.AuthService.CompletePasswordlessRegistration:input_type -> auth.CompletePasswordlessRegistrationRequest
+	18, // 19: auth.AuthService.SendOTP:input_type -> auth.SendOTPRequest
+	20, // 20: auth.AuthService.VerifyOTP:input_type -> auth.VerifyOTPRequest
+	22, // 21: auth.AuthService.LoginWithOTP:input_type -> auth.LoginWithOTPRequest
+	28, // 22: auth.AuthService.VerifyLoginOTP:input_type -> auth.VerifyLoginOTPRequest
+	24, // 23: auth.AuthService.RegisterWithOTP:input_type -> auth.RegisterWithOTPRequest
+	26, // 24: auth.AuthService.VerifyRegistrationOTP:input_type -> auth.VerifyRegistrationOTPRequest
+	30, // 25: auth.AuthService.IntrospectOAuthToken:input_type -> auth.IntrospectOAuthTokenRequest
+	32, // 26: auth.AuthService.ValidateOAuthClient:input_type -> auth.ValidateOAuthClientRequest
+	34, // 27: auth.AuthService.GetOAuthClient:input_type -> auth.GetOAuthClientRequest
+	42, // 28: auth.AuthService.SendEmail:input_type -> auth.SendEmailRequest
+	37, // 29: auth.AuthService.GetUserApplicationProfile:input_type -> auth.GetUserAppProfileRequest
+	39, // 30: auth.AuthService.GetUserTelegramBots:input_type -> auth.GetUserTelegramBotsRequest
+	2,  // 31: auth.AuthService.ValidateToken:output_type -> auth.ValidateTokenResponse
+	5,  // 32: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
+	7,  // 33: auth.AuthService.CheckPermission:output_type -> auth.CheckPermissionResponse
+	9,  // 34: auth.AuthService.IntrospectToken:output_type -> auth.IntrospectTokenResponse
+	11, // 35: auth.AuthService.CreateUser:output_type -> auth.CreateUserResponse
+	13, // 36: auth.AuthService.Login:output_type -> auth.LoginResponse
+	15, // 37: auth.AuthService.InitPasswordlessRegistration:output_type -> auth.InitPasswordlessRegistrationResponse
+	17, // 38: auth.AuthService.CompletePasswordlessRegistration:output_type -> auth.CompletePasswordlessRegistrationResponse
+	19, // 39: auth.AuthService.SendOTP:output_type -> auth.SendOTPResponse
+	21, // 40: auth.AuthService.VerifyOTP:output_type -> auth.VerifyOTPResponse
+	23, // 41: auth.AuthService.LoginWithOTP:output_type -> auth.LoginWithOTPResponse
+	29, // 42: auth.AuthService.VerifyLoginOTP:output_type -> auth.VerifyLoginOTPResponse
+	25, // 43: auth.AuthService.RegisterWithOTP:output_type -> auth.RegisterWithOTPResponse
+	27, // 44: auth.AuthService.VerifyRegistrationOTP:output_type -> auth.VerifyRegistrationOTPResponse
+	31, // 45: auth.AuthService.IntrospectOAuthToken:output_type -> auth.IntrospectOAuthTokenResponse
+	33, // 46: auth.AuthService.ValidateOAuthClient:output_type -> auth.ValidateOAuthClientResponse
+	36, // 47: auth.AuthService.GetOAuthClient:output_type -> auth.GetOAuthClientResponse
+	43, // 48: auth.AuthService.SendEmail:output_type -> auth.SendEmailResponse
+	38, // 49: auth.AuthService.GetUserApplicationProfile:output_type -> auth.UserAppProfileResponse
+	41, // 50: auth.AuthService.GetUserTelegramBots:output_type -> auth.UserTelegramBotsResponse
+	31, // [31:51] is the sub-list for method output_type
+	11, // [11:31] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_proto_auth_proto_init() }
@@ -3491,7 +3650,7 @@ func file_proto_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_auth_proto_rawDesc), len(file_proto_auth_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   41,
+			NumMessages:   44,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

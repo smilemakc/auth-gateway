@@ -177,7 +177,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({ embedded = false }) => 
                               )}
                               {!template.application && (
                                 <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                                  Global
+                                  {t('email.global')}
                                 </span>
                               )}
                             </div>

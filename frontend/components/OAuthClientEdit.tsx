@@ -15,11 +15,11 @@ import type {
   ClientType,
 } from '@auth-gateway/client-sdk';
 
-const GRANT_TYPES: { value: GrantType; label: string; description: string }[] = [
-  { value: 'authorization_code', label: 'Authorization Code', description: 'For web apps with server-side code' },
-  { value: 'client_credentials', label: 'Client Credentials', description: 'For machine-to-machine auth' },
-  { value: 'refresh_token', label: 'Refresh Token', description: 'Allow token refresh' },
-  { value: 'urn:ietf:params:oauth:grant-type:device_code', label: 'Device Code', description: 'For devices with limited input' },
+const GRANT_TYPES: { value: GrantType; labelKey: string; descKey: string }[] = [
+  { value: 'authorization_code', labelKey: 'oauth_edit.grant_auth_code', descKey: 'oauth_edit.grant_auth_code_desc' },
+  { value: 'client_credentials', labelKey: 'oauth_edit.grant_client_creds', descKey: 'oauth_edit.grant_client_creds_desc' },
+  { value: 'refresh_token', labelKey: 'oauth_edit.grant_refresh', descKey: 'oauth_edit.grant_refresh_desc' },
+  { value: 'urn:ietf:params:oauth:grant-type:device_code', labelKey: 'oauth_edit.grant_device', descKey: 'oauth_edit.grant_device_desc' },
 ];
 
 const STANDARD_SCOPES = ['openid', 'profile', 'email', 'address', 'phone', 'offline_access'];
@@ -180,13 +180,13 @@ const OAuthClientEdit: React.FC = () => {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="bg-success/10 border border-success rounded-xl p-6">
-          <h2 className="text-xl font-bold text-success mb-2">OAuth Client Created Successfully</h2>
+          <h2 className="text-xl font-bold text-success mb-2">{t('oauth_edit.success_title')}</h2>
           <p className="text-success mb-4">
-            Save this client secret now. You won't be able to see it again.
+            {t('oauth_edit.success_desc')}
           </p>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-success mb-1">Client Secret</label>
+              <label className="block text-sm font-medium text-success mb-1">{t('oauth_edit.client_secret')}</label>
               <div className="flex items-center gap-2">
                 <code className="flex-1 bg-card rounded-lg px-4 py-3 text-sm font-mono border border-success break-all">
                   {showSecret ? newClientSecret : '••••••••••••••••••••••••••••••••'}
@@ -211,7 +211,7 @@ const OAuthClientEdit: React.FC = () => {
               onClick={() => navigate('/oauth-clients')}
               className="px-4 py-2 bg-success hover:bg-success text-primary-foreground rounded-lg font-medium"
             >
-              Done
+              {t('oauth_edit.done')}
             </button>
           </div>
         </div>
@@ -236,10 +236,10 @@ const OAuthClientEdit: React.FC = () => {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            {isNew ? 'Create OAuth Client' : 'Edit OAuth Client'}
+            {isNew ? t('oauth_edit.create_title') : t('oauth_edit.edit_title')}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {isNew ? 'Register a new OAuth 2.0 client application' : 'Update client configuration'}
+            {isNew ? t('oauth_edit.create_desc') : t('oauth_edit.edit_desc')}
           </p>
         </div>
       </div>
@@ -247,10 +247,10 @@ const OAuthClientEdit: React.FC = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Basic Information</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('oauth_edit.basic_info')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-muted-foreground mb-1">Name *</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">{t('common.name')} *</label>
               <input
                 type="text"
                 value={formData.name}
@@ -261,7 +261,7 @@ const OAuthClientEdit: React.FC = () => {
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-muted-foreground mb-1">Description</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">{t('oauth_edit.description')}</label>
               <textarea
                 value={formData.description}
                 onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -271,7 +271,7 @@ const OAuthClientEdit: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">Logo URL</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">{t('oauth_edit.logo_url')}</label>
               <input
                 type="url"
                 value={formData.logo_url}
@@ -281,20 +281,20 @@ const OAuthClientEdit: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">Client Type *</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">{t('oauth_edit.client_type')} *</label>
               <select
                 value={formData.client_type}
                 onChange={e => setFormData(prev => ({ ...prev, client_type: e.target.value as ClientType }))}
                 className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                 disabled={!isNew}
               >
-                <option value="confidential">Confidential (Server-side)</option>
-                <option value="public">Public (SPA, Mobile)</option>
+                <option value="confidential">{t('oauth_edit.confidential')}</option>
+                <option value="public">{t('oauth_edit.public')}</option>
               </select>
               <p className="text-xs text-muted-foreground mt-1">
                 {formData.client_type === 'confidential'
-                  ? 'Can securely store client secret'
-                  : 'Cannot securely store client secret, requires PKCE'}
+                  ? t('oauth_edit.confidential_desc')
+                  : t('oauth_edit.public_desc')}
               </p>
             </div>
           </div>
@@ -302,7 +302,7 @@ const OAuthClientEdit: React.FC = () => {
 
         {/* Redirect URIs */}
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Redirect URIs</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('oauth_edit.redirect_uris')}</h2>
           <div className="space-y-3">
             {(formData.redirect_uris || []).map((uri, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -348,13 +348,13 @@ const OAuthClientEdit: React.FC = () => {
                 <Plus size={18} />
               </button>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Press Enter or click + to add URI</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('oauth_edit.redirect_uris_hint')}</p>
           </div>
         </div>
 
         {/* Grant Types */}
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Grant Types</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('oauth_edit.grant_types')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {GRANT_TYPES.map(grant => (
               <label
@@ -372,8 +372,8 @@ const OAuthClientEdit: React.FC = () => {
                   className="mt-1"
                 />
                 <div>
-                  <div className="font-medium text-foreground">{grant.label}</div>
-                  <div className="text-sm text-muted-foreground">{grant.description}</div>
+                  <div className="font-medium text-foreground">{t(grant.labelKey)}</div>
+                  <div className="text-sm text-muted-foreground">{t(grant.descKey)}</div>
                 </div>
               </label>
             ))}
@@ -382,10 +382,10 @@ const OAuthClientEdit: React.FC = () => {
 
         {/* Scopes */}
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Scopes</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('oauth_edit.scopes')}</h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Allowed Scopes</h3>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('oauth_edit.allowed_scopes')}</h3>
               <div className="flex flex-wrap gap-2">
                 {availableScopes.map(scope => (
                   <button
@@ -404,8 +404,8 @@ const OAuthClientEdit: React.FC = () => {
               </div>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Default Scopes</h3>
-              <p className="text-xs text-muted-foreground mb-2">Scopes granted automatically if not specified in request</p>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('oauth_edit.default_scopes')}</h3>
+              <p className="text-xs text-muted-foreground mb-2">{t('oauth_edit.default_scopes_desc')}</p>
               <div className="flex flex-wrap gap-2">
                 {formData.allowed_scopes?.map(scope => (
                   <button
@@ -428,10 +428,10 @@ const OAuthClientEdit: React.FC = () => {
 
         {/* Token Settings */}
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Token Settings</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('oauth_edit.token_settings')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">Access Token TTL (seconds)</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">{t('oauth_edit.access_token_ttl')}</label>
               <input
                 type="number"
                 value={formData.access_token_ttl}
@@ -440,10 +440,10 @@ const OAuthClientEdit: React.FC = () => {
                 min={60}
                 max={86400}
               />
-              <p className="text-xs text-muted-foreground mt-1">{Math.floor((formData.access_token_ttl || 900) / 60)} minutes</p>
+              <p className="text-xs text-muted-foreground mt-1">{Math.floor((formData.access_token_ttl || 900) / 60)} {t('oauth_edit.minutes')}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">Refresh Token TTL (seconds)</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">{t('oauth_edit.refresh_token_ttl')}</label>
               <input
                 type="number"
                 value={formData.refresh_token_ttl}
@@ -452,10 +452,10 @@ const OAuthClientEdit: React.FC = () => {
                 min={3600}
                 max={2592000}
               />
-              <p className="text-xs text-muted-foreground mt-1">{Math.floor((formData.refresh_token_ttl || 604800) / 86400)} days</p>
+              <p className="text-xs text-muted-foreground mt-1">{Math.floor((formData.refresh_token_ttl || 604800) / 86400)} {t('oauth_edit.days')}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">ID Token TTL (seconds)</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">{t('oauth_edit.id_token_ttl')}</label>
               <input
                 type="number"
                 value={formData.id_token_ttl}
@@ -464,14 +464,14 @@ const OAuthClientEdit: React.FC = () => {
                 min={300}
                 max={86400}
               />
-              <p className="text-xs text-muted-foreground mt-1">{Math.floor((formData.id_token_ttl || 3600) / 60)} minutes</p>
+              <p className="text-xs text-muted-foreground mt-1">{Math.floor((formData.id_token_ttl || 3600) / 60)} {t('oauth_edit.minutes')}</p>
             </div>
           </div>
         </div>
 
         {/* Security Settings */}
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Security Settings</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('oauth_edit.security_settings')}</h2>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <button
@@ -482,8 +482,8 @@ const OAuthClientEdit: React.FC = () => {
                 {formData.require_pkce ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
               </button>
               <div>
-                <div className="font-medium text-foreground">Require PKCE</div>
-                <div className="text-sm text-muted-foreground">Require Proof Key for Code Exchange (recommended)</div>
+                <div className="font-medium text-foreground">{t('oauth_edit.require_pkce')}</div>
+                <div className="text-sm text-muted-foreground">{t('oauth_edit.require_pkce_desc')}</div>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -495,8 +495,8 @@ const OAuthClientEdit: React.FC = () => {
                 {formData.require_consent ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
               </button>
               <div>
-                <div className="font-medium text-foreground">Require User Consent</div>
-                <div className="text-sm text-muted-foreground">Show consent screen to users before granting access</div>
+                <div className="font-medium text-foreground">{t('oauth_edit.require_consent')}</div>
+                <div className="text-sm text-muted-foreground">{t('oauth_edit.require_consent_desc')}</div>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -508,8 +508,8 @@ const OAuthClientEdit: React.FC = () => {
                 {formData.first_party ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
               </button>
               <div>
-                <div className="font-medium text-foreground">First Party Application</div>
-                <div className="text-sm text-muted-foreground">Skip consent for trusted first-party applications</div>
+                <div className="font-medium text-foreground">{t('oauth_edit.first_party')}</div>
+                <div className="text-sm text-muted-foreground">{t('oauth_edit.first_party_desc')}</div>
               </div>
             </div>
           </div>
@@ -522,7 +522,7 @@ const OAuthClientEdit: React.FC = () => {
             onClick={() => navigate('/oauth-clients')}
             className="px-4 py-2 border border-input rounded-lg text-muted-foreground hover:bg-accent"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -530,7 +530,7 @@ const OAuthClientEdit: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg font-medium disabled:opacity-50"
           >
             <Save size={18} />
-            {isNew ? 'Create Client' : 'Save Changes'}
+            {isNew ? t('oauth_edit.create_btn') : t('oauth_edit.save_btn')}
           </button>
         </div>
       </form>

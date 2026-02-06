@@ -71,6 +71,27 @@ func (r *EmailProfileRepository) GetDefault(ctx context.Context) (*models.EmailP
 	return profile, nil
 }
 
+func (r *EmailProfileRepository) GetDefaultForApp(ctx context.Context, appID uuid.UUID) (*models.EmailProfile, error) {
+	profile := new(models.EmailProfile)
+
+	err := r.db.NewSelect().
+		Model(profile).
+		Relation("Provider").
+		Where("email_profile.application_id = ?", appID).
+		Where("email_profile.is_default = ?", true).
+		Limit(1).
+		Scan(ctx)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to get default email profile for app: %w", err)
+	}
+
+	return profile, nil
+}
+
 func (r *EmailProfileRepository) GetAll(ctx context.Context, appID *uuid.UUID) ([]*models.EmailProfile, error) {
 	profiles := make([]*models.EmailProfile, 0)
 

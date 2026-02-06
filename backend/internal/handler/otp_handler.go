@@ -53,6 +53,11 @@ func (h *OTPHandler) ResendVerification(c *gin.Context) {
 
 	req.Type = models.OTPTypeVerification
 
+	if req.ApplicationID == nil {
+		appID, _ := utils.GetApplicationIDFromContext(c)
+		req.ApplicationID = appID
+	}
+
 	if err := h.otpService.SendOTP(c.Request.Context(), &req); err != nil {
 		if appErr, ok := err.(*models.AppError); ok {
 			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
@@ -144,6 +149,11 @@ func (h *OTPHandler) SendOTP(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.NewErrorResponse(err))
 		return
+	}
+
+	if req.ApplicationID == nil {
+		appID, _ := utils.GetApplicationIDFromContext(c)
+		req.ApplicationID = appID
 	}
 
 	if err := h.otpService.SendOTP(c.Request.Context(), &req); err != nil {
@@ -251,9 +261,11 @@ func (h *OTPHandler) RequestPasswordlessLogin(c *gin.Context) {
 		return
 	}
 
+	appID, _ := utils.GetApplicationIDFromContext(c)
 	otpReq := &models.SendOTPRequest{
-		Email: &req.Email,
-		Type:  models.OTPTypeLogin,
+		Email:         &req.Email,
+		Type:          models.OTPTypeLogin,
+		ApplicationID: appID,
 	}
 
 	if err := h.otpService.SendOTP(c.Request.Context(), otpReq); err != nil {

@@ -116,7 +116,7 @@ const SmsSettings: React.FC = () => {
                 />
                 <span className="font-bold text-foreground uppercase">{p}</span>
                 <span className="text-xs text-muted-foreground mt-1 capitalize">
-                   {p === 'mock' ? 'Testing only' : `${p} integration`}
+                   {p === 'mock' ? t('sms.testing_only') : `${p} ${t('sms.integration')}`}
                 </span>
               </label>
             ))}
@@ -128,19 +128,19 @@ const SmsSettings: React.FC = () => {
            <div className="bg-card rounded-xl shadow-sm border border-border p-6 animate-in fade-in slide-in-from-top-4 duration-300">
              <div className="flex items-center gap-2 mb-6 text-warning bg-warning/10 p-3 rounded-lg text-sm">
                 <AlertTriangle size={18} />
-                Requires Amazon SNS access with SMS capabilities.
+                {t('sms.aws_requirement')}
              </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
-                   <label className="block text-sm font-medium text-foreground mb-1">AWS Region</label>
+                   <label className="block text-sm font-medium text-foreground mb-1">{t('sms.aws_region')}</label>
                    <input type="text" name="awsRegion" value={config.awsRegion || ''} onChange={handleChange} placeholder="us-east-1" className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none" />
                 </div>
                 <div>
-                   <label className="block text-sm font-medium text-foreground mb-1">Access Key ID</label>
+                   <label className="block text-sm font-medium text-foreground mb-1">{t('sms.access_key_id')}</label>
                    <input type="text" name="awsAccessKeyId" value={config.awsAccessKeyId || ''} onChange={handleChange} placeholder="AKIA..." className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none font-mono" />
                 </div>
                 <div>
-                   <label className="block text-sm font-medium text-foreground mb-1">Secret Access Key</label>
+                   <label className="block text-sm font-medium text-foreground mb-1">{t('sms.secret_access_key')}</label>
                    <input type="password" name="awsSecretAccessKey" value={config.awsSecretAccessKey || ''} onChange={handleChange} placeholder="wJalrX..." className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none font-mono" />
                 </div>
              </div>
@@ -152,15 +152,15 @@ const SmsSettings: React.FC = () => {
            <div className="bg-card rounded-xl shadow-sm border border-border p-6 animate-in fade-in slide-in-from-top-4 duration-300">
              <div className="grid grid-cols-1 gap-6">
                 <div>
-                   <label className="block text-sm font-medium text-foreground mb-1">Account SID</label>
+                   <label className="block text-sm font-medium text-foreground mb-1">{t('sms.account_sid')}</label>
                    <input type="text" name="twilioAccountSid" value={config.twilioAccountSid || ''} onChange={handleChange} placeholder="AC..." className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none font-mono" />
                 </div>
                 <div>
-                   <label className="block text-sm font-medium text-foreground mb-1">Auth Token</label>
+                   <label className="block text-sm font-medium text-foreground mb-1">{t('sms.auth_token')}</label>
                    <input type="password" name="twilioAuthToken" value={config.twilioAuthToken || ''} onChange={handleChange} placeholder="0a1b2c..." className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none font-mono" />
                 </div>
                 <div>
-                   <label className="block text-sm font-medium text-foreground mb-1">From Phone Number</label>
+                   <label className="block text-sm font-medium text-foreground mb-1">{t('sms.from_phone')}</label>
                    <input type="text" name="twilioPhoneNumber" value={config.twilioPhoneNumber || ''} onChange={handleChange} placeholder="+1234567890" className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none font-mono" />
                 </div>
              </div>
@@ -184,7 +184,7 @@ const SmsSettings: React.FC = () => {
                 disabled={!testPhone}
                 className="bg-muted text-foreground px-6 py-2 rounded-lg font-medium hover:bg-accent transition-colors flex items-center gap-2"
               >
-                 <Send size={16} /> {testSent ? 'Sent!' : 'Send Test'}
+                 <Send size={16} /> {testSent ? t('sms.sent') : t('sms.send_test')}
               </button>
            </div>
         </div>

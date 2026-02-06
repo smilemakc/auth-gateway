@@ -61,6 +61,11 @@ service AuthService {
   // GetOAuthClient retrieves OAuth client information by client_id
   rpc GetOAuthClient(GetOAuthClientRequest) returns (GetOAuthClientResponse);
 
+  // ========== Email Methods ==========
+
+  // SendEmail sends an email using a specified template
+  rpc SendEmail(SendEmailRequest) returns (SendEmailResponse);
+
   // ========== Multi-Application Methods ==========
 
   // GetUserApplicationProfile returns user's profile for a specific application
@@ -432,4 +437,22 @@ message TelegramBotAccess {
 message UserTelegramBotsResponse {
   repeated TelegramBotAccess bots = 1;
   string error_message = 2;
+}
+
+// ========== Email Messages ==========
+
+// SendEmailRequest contains data to send an email via template
+message SendEmailRequest {
+  string template_type = 1;          // Template type (e.g., "welcome", "password_changed")
+  string to_email = 2;               // Recipient email address
+  map<string, string> variables = 3; // Template variables
+  string profile_id = 4;             // Optional email profile ID
+  string application_id = 5;         // Optional application ID for app-scoped templates
+}
+
+// SendEmailResponse contains the result of email sending
+message SendEmailResponse {
+  bool success = 1;
+  string message = 2;
+  string error_message = 3;
 }

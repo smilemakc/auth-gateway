@@ -4,8 +4,10 @@ import { Save, X, TestTube, Loader, AlertCircle, CheckCircle, ToggleLeft, Toggle
 import type { CreateLDAPConfigRequest, UpdateLDAPConfigRequest, LDAPConfig } from '@auth-gateway/client-sdk';
 import { useLDAPConfig, useCreateLDAPConfig, useUpdateLDAPConfig, useTestLDAPConnection } from '../hooks/useLDAP';
 import { toast } from '../services/toast';
+import { useLanguage } from '../services/i18n';
 
 const LDAPConfigEdit: React.FC = () => {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isNew = !id;
@@ -72,19 +74,19 @@ const LDAPConfigEdit: React.FC = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.server.trim()) {
-      newErrors.server = 'Server is required';
+      newErrors.server = t('ldap_edit.err_server');
     }
     if (!formData.port || formData.port < 1 || formData.port > 65535) {
-      newErrors.port = 'Port must be between 1 and 65535';
+      newErrors.port = t('ldap_edit.err_port');
     }
     if (!formData.bind_dn.trim()) {
-      newErrors.bind_dn = 'Bind DN is required';
+      newErrors.bind_dn = t('ldap_edit.err_bind_dn');
     }
     if (isNew && !formData.bind_password.trim()) {
-      newErrors.bind_password = 'Bind password is required';
+      newErrors.bind_password = t('ldap_edit.err_bind_password');
     }
     if (!formData.base_dn.trim()) {
-      newErrors.base_dn = 'Base DN is required';
+      newErrors.base_dn = t('ldap_edit.err_base_dn');
     }
 
     setErrors(newErrors);
@@ -93,7 +95,7 @@ const LDAPConfigEdit: React.FC = () => {
 
   const handleTest = async () => {
     if (!formData.server || !formData.bind_dn || !formData.base_dn) {
-      setTestResult({ success: false, message: 'Please fill in server, bind DN, and base DN' });
+      setTestResult({ success: false, message: t('ldap_edit.test_fields_required') });
       return;
     }
 
@@ -111,7 +113,7 @@ const LDAPConfigEdit: React.FC = () => {
       setTestResult({
         success: result.success,
         message: result.success
-          ? `Connection successful! Users: ${result.user_count || 0}, Groups: ${result.group_count || 0}`
+          ? `${t('ldap.connection_success_msg')} ${t('nav.users')}: ${result.user_count || 0}, ${t('nav.groups')}: ${result.group_count || 0}`
           : result.error || result.message,
       });
     } catch (error) {
@@ -151,7 +153,7 @@ const LDAPConfigEdit: React.FC = () => {
       navigate('/ldap');
     } catch (error) {
       console.error('Failed to save LDAP config:', error);
-      toast.error('Failed to save LDAP configuration');
+      toast.error(t('ldap_edit.save_error'));
     }
   };
 
@@ -166,10 +168,10 @@ const LDAPConfigEdit: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{isNew ? 'Create LDAP Configuration' : 'Edit LDAP Configuration'}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{isNew ? t('ldap_edit.create_title') : t('ldap_edit.edit_title')}</h1>
         <button onClick={() => navigate('/ldap')} className="text-muted-foreground hover:text-foreground flex items-center gap-2">
           <X size={20} />
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
 
@@ -188,7 +190,7 @@ const LDAPConfigEdit: React.FC = () => {
             )}
             <div className="flex-1">
               <p className={`font-medium ${testResult.success ? 'text-success' : 'text-destructive'}`}>
-                {testResult.success ? 'Connection Successful' : 'Connection Failed'}
+                {testResult.success ? t('ldap.connection_success') : t('ldap.connection_failed')}
               </p>
               <p className={`text-sm mt-1 ${testResult.success ? 'text-success' : 'text-destructive'}`}>
                 {testResult.message}
@@ -199,11 +201,11 @@ const LDAPConfigEdit: React.FC = () => {
 
         {/* Basic Settings */}
         <div className="border-b border-border pb-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Connection Settings</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('ldap_edit.connection_settings')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Server <span className="text-destructive">*</span>
+                {t('ldap_edit.server')} <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -219,7 +221,7 @@ const LDAPConfigEdit: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Port <span className="text-destructive">*</span>
+                {t('common.port')} <span className="text-destructive">*</span>
               </label>
               <input
                 type="number"
@@ -236,7 +238,7 @@ const LDAPConfigEdit: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Bind DN <span className="text-destructive">*</span>
+                {t('ldap_edit.bind_dn')} <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -252,7 +254,7 @@ const LDAPConfigEdit: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Bind Password {isNew && <span className="text-destructive">*</span>}
+                {t('ldap_edit.bind_password')} {isNew && <span className="text-destructive">*</span>}
               </label>
               <div className="relative">
                 <input
@@ -262,14 +264,14 @@ const LDAPConfigEdit: React.FC = () => {
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
                     errors.bind_password ? 'border-destructive' : 'border-input'
                   }`}
-                  placeholder={isNew ? 'Enter password' : 'Leave empty to keep current'}
+                  placeholder={isNew ? t('ldap_edit.enter_password') : t('ldap_edit.leave_empty')}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? 'Hide' : 'Show'}
+                  {showPassword ? t('ldap_edit.hide') : t('ldap_edit.show')}
                 </button>
               </div>
               {errors.bind_password && <p className="mt-1 text-sm text-destructive">{errors.bind_password}</p>}
@@ -277,7 +279,7 @@ const LDAPConfigEdit: React.FC = () => {
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-foreground mb-1">
-                Base DN <span className="text-destructive">*</span>
+                {t('ldap_edit.base_dn')} <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -300,7 +302,7 @@ const LDAPConfigEdit: React.FC = () => {
                 >
                   {formData.use_tls ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
                 </button>
-                <span className="text-sm text-foreground">Use TLS</span>
+                <span className="text-sm text-foreground">{t('ldap_edit.use_tls')}</span>
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -310,7 +312,7 @@ const LDAPConfigEdit: React.FC = () => {
                 >
                   {formData.use_ssl ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
                 </button>
-                <span className="text-sm text-foreground">Use SSL</span>
+                <span className="text-sm text-foreground">{t('ldap_edit.use_ssl')}</span>
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -320,7 +322,7 @@ const LDAPConfigEdit: React.FC = () => {
                 >
                   {formData.insecure ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
                 </button>
-                <span className="text-sm text-foreground">Skip certificate verification</span>
+                <span className="text-sm text-foreground">{t('ldap_edit.skip_cert')}</span>
               </div>
             </div>
           </div>
@@ -333,17 +335,17 @@ const LDAPConfigEdit: React.FC = () => {
               className="px-4 py-2 bg-muted hover:bg-accent text-foreground rounded-lg text-sm transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               {testConnection.isPending ? <Loader size={16} className="animate-spin" /> : <TestTube size={16} />}
-              Test Connection
+              {t('ldap.test_connection')}
             </button>
           </div>
         </div>
 
         {/* User Search Settings */}
         <div className="border-b border-border pb-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">User Search Settings</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('ldap_edit.user_search')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">User Search Base</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('ldap_edit.user_search_base')}</label>
               <input
                 type="text"
                 value={formData.user_search_base}
@@ -354,7 +356,7 @@ const LDAPConfigEdit: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">User Search Filter</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('ldap_edit.user_search_filter')}</label>
               <input
                 type="text"
                 value={formData.user_search_filter}
@@ -365,7 +367,7 @@ const LDAPConfigEdit: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">User ID Attribute</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('ldap_edit.user_id_attr')}</label>
               <input
                 type="text"
                 value={formData.user_id_attribute}
@@ -376,7 +378,7 @@ const LDAPConfigEdit: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">User Email Attribute</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('ldap_edit.user_email_attr')}</label>
               <input
                 type="text"
                 value={formData.user_email_attribute}
@@ -387,7 +389,7 @@ const LDAPConfigEdit: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">User Name Attribute</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('ldap_edit.user_name_attr')}</label>
               <input
                 type="text"
                 value={formData.user_name_attribute}
@@ -401,10 +403,10 @@ const LDAPConfigEdit: React.FC = () => {
 
         {/* Group Search Settings */}
         <div className="border-b border-border pb-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Group Search Settings</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('ldap_edit.group_search')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Group Search Base</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('ldap_edit.group_search_base')}</label>
               <input
                 type="text"
                 value={formData.group_search_base}
@@ -415,7 +417,7 @@ const LDAPConfigEdit: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Group Search Filter</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('ldap_edit.group_search_filter')}</label>
               <input
                 type="text"
                 value={formData.group_search_filter}
@@ -426,7 +428,7 @@ const LDAPConfigEdit: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Group ID Attribute</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('ldap_edit.group_id_attr')}</label>
               <input
                 type="text"
                 value={formData.group_id_attribute}
@@ -437,7 +439,7 @@ const LDAPConfigEdit: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Group Name Attribute</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('ldap_edit.group_name_attr')}</label>
               <input
                 type="text"
                 value={formData.group_name_attribute}
@@ -448,7 +450,7 @@ const LDAPConfigEdit: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Group Member Attribute</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('ldap_edit.group_member_attr')}</label>
               <input
                 type="text"
                 value={formData.group_member_attribute}
@@ -462,7 +464,7 @@ const LDAPConfigEdit: React.FC = () => {
 
         {/* Sync Settings */}
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">Synchronization Settings</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('ldap_edit.sync_settings')}</h2>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <button
@@ -472,11 +474,11 @@ const LDAPConfigEdit: React.FC = () => {
               >
                 {formData.sync_enabled ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
               </button>
-              <span className="text-sm text-foreground">Enable automatic synchronization</span>
+              <span className="text-sm text-foreground">{t('ldap_edit.enable_auto_sync')}</span>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Sync Interval (seconds)</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('ldap_edit.sync_interval')}</label>
               <input
                 type="number"
                 value={formData.sync_interval}
@@ -484,7 +486,7 @@ const LDAPConfigEdit: React.FC = () => {
                 className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 min="60"
               />
-              <p className="mt-1 text-xs text-muted-foreground">Minimum: 60 seconds (1 minute)</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t('ldap_edit.sync_min_hint')}</p>
             </div>
           </div>
         </div>
@@ -495,7 +497,7 @@ const LDAPConfigEdit: React.FC = () => {
             onClick={() => navigate('/ldap')}
             className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -504,7 +506,7 @@ const LDAPConfigEdit: React.FC = () => {
           >
             {(createConfig.isPending || updateConfig.isPending) && <Loader size={16} className="animate-spin" />}
             <Save size={16} />
-            {isNew ? 'Create Configuration' : 'Save Changes'}
+            {isNew ? t('ldap_edit.create_config') : t('common.save')}
           </button>
         </div>
       </form>

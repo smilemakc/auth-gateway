@@ -201,7 +201,7 @@ const OAuthClients: React.FC = () => {
                   <div className="text-xs text-muted-foreground truncate" title={client.redirect_uris.join(', ')}>
                     {client.redirect_uris.length > 0 ? client.redirect_uris[0] : <span className="italic text-muted-foreground">{t('oauth_clients.none_configured')}</span>}
                     {client.redirect_uris.length > 1 && (
-                      <span className="text-muted-foreground"> (+{client.redirect_uris.length - 1} more)</span>
+                      <span className="text-muted-foreground"> (+{client.redirect_uris.length - 1} {t('oauth_clients.more_uris')})</span>
                     )}
                   </div>
                 </div>

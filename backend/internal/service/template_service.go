@@ -314,6 +314,10 @@ func (s *TemplateService) GetAvailableTemplateTypes() []string {
 		models.EmailTemplateType2FA,
 		models.EmailTemplateTypeOTPLogin,
 		models.EmailTemplateTypeOTPRegistration,
+		models.EmailTemplateTypePasswordChanged,
+		models.EmailTemplateTypeLoginAlert,
+		models.EmailTemplateType2FAEnabled,
+		models.EmailTemplateType2FADisabled,
 		models.EmailTemplateTypeCustom,
 	}
 }
@@ -490,6 +494,10 @@ func (s *TemplateService) InitializeTemplatesForApp(ctx context.Context, applica
 		models.EmailTemplateType2FA,
 		models.EmailTemplateTypeOTPLogin,
 		models.EmailTemplateTypeOTPRegistration,
+		models.EmailTemplateTypePasswordChanged,
+		models.EmailTemplateTypeLoginAlert,
+		models.EmailTemplateType2FAEnabled,
+		models.EmailTemplateType2FADisabled,
 	}
 
 	for _, templateType := range templateTypes {
@@ -543,6 +551,14 @@ func (s *TemplateService) getDefaultTemplateName(templateType string) string {
 		return "OTP Login"
 	case models.EmailTemplateTypeOTPRegistration:
 		return "OTP Registration"
+	case models.EmailTemplateTypePasswordChanged:
+		return "Password Changed"
+	case models.EmailTemplateTypeLoginAlert:
+		return "Login Alert"
+	case models.EmailTemplateType2FAEnabled:
+		return "2FA Enabled"
+	case models.EmailTemplateType2FADisabled:
+		return "2FA Disabled"
 	default:
 		return "Custom Template"
 	}
@@ -574,6 +590,22 @@ func (s *TemplateService) getDefaultTemplateContent(templateType string) (subjec
 		subject = "Complete Your Registration"
 		htmlBody = `<html><body><h2>Registration Code</h2><p>Hello {{.username}},</p><p>Your registration code is: <strong>{{.code}}</strong></p><p>This code will expire in {{.expiry_minutes}} minutes.</p></body></html>`
 		textBody = `Registration Code\n\nHello {{.username}},\n\nYour registration code is: {{.code}}\n\nThis code will expire in {{.expiry_minutes}} minutes.`
+	case models.EmailTemplateTypePasswordChanged:
+		subject = "Your Password Has Been Changed"
+		htmlBody = `<html><body><h2>Password Changed</h2><p>Hello {{.username}},</p><p>Your password was successfully changed.</p><p><strong>IP Address:</strong> {{.ip_address}}</p><p><strong>Time:</strong> {{.timestamp}}</p><p>If you did not make this change, please contact support immediately.</p></body></html>`
+		textBody = `Password Changed\n\nHello {{.username}},\n\nYour password was successfully changed.\n\nIP Address: {{.ip_address}}\nTime: {{.timestamp}}\n\nIf you did not make this change, please contact support immediately.`
+	case models.EmailTemplateTypeLoginAlert:
+		subject = "New Login to Your Account"
+		htmlBody = `<html><body><h2>New Login Detected</h2><p>Hello {{.username}},</p><p>A new login to your account was detected.</p><p><strong>IP Address:</strong> {{.ip_address}}</p><p><strong>Device:</strong> {{.device_type}}</p><p><strong>Time:</strong> {{.timestamp}}</p><p>If this wasn't you, please change your password immediately.</p></body></html>`
+		textBody = `New Login Detected\n\nHello {{.username}},\n\nA new login to your account was detected.\n\nIP Address: {{.ip_address}}\nDevice: {{.device_type}}\nTime: {{.timestamp}}\n\nIf this wasn't you, please change your password immediately.`
+	case models.EmailTemplateType2FAEnabled:
+		subject = "Two-Factor Authentication Enabled"
+		htmlBody = `<html><body><h2>2FA Enabled</h2><p>Hello {{.username}},</p><p>Two-factor authentication has been successfully enabled on your account.</p><p><strong>Time:</strong> {{.timestamp}}</p><p>Your account is now more secure. You will need your authenticator app to sign in.</p></body></html>`
+		textBody = `2FA Enabled\n\nHello {{.username}},\n\nTwo-factor authentication has been successfully enabled on your account.\n\nTime: {{.timestamp}}\n\nYour account is now more secure.`
+	case models.EmailTemplateType2FADisabled:
+		subject = "Two-Factor Authentication Disabled"
+		htmlBody = `<html><body><h2>2FA Disabled</h2><p>Hello {{.username}},</p><p>Two-factor authentication has been disabled on your account.</p><p><strong>Time:</strong> {{.timestamp}}</p><p>Your account is now less secure. We recommend re-enabling 2FA as soon as possible.</p></body></html>`
+		textBody = `2FA Disabled\n\nHello {{.username}},\n\nTwo-factor authentication has been disabled on your account.\n\nTime: {{.timestamp}}\n\nWe recommend re-enabling 2FA as soon as possible.`
 	default:
 		subject = "Notification"
 		htmlBody = `<html><body><p>Default template content</p></body></html>`

@@ -10,7 +10,7 @@ import (
 // EmailTemplate represents a customizable email template
 type EmailTemplate struct {
 	ID            uuid.UUID       `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
-	Type          string          `json:"type" bun:"type" binding:"required,oneof=verification password_reset welcome 2fa otp_login otp_registration"`
+	Type          string          `json:"type" bun:"type" binding:"required,oneof=verification password_reset welcome 2fa otp_login otp_registration password_changed login_alert 2fa_enabled 2fa_disabled"`
 	Name          string          `json:"name" bun:"name" binding:"required,max=100"`
 	Subject       string          `json:"subject" bun:"subject" binding:"required,max=200"`
 	HTMLBody      string          `json:"html_body" bun:"html_body" binding:"required"`
@@ -37,8 +37,8 @@ type EmailTemplateVersion struct {
 
 // CreateEmailTemplateRequest is the request to create an email template
 type CreateEmailTemplateRequest struct {
-	// Template type: verification, password_reset, welcome, 2fa, otp_login, otp_registration, or custom
-	Type string `json:"type" binding:"required,oneof=verification password_reset welcome 2fa otp_login otp_registration custom" example:"verification"`
+	// Template type: verification, password_reset, welcome, 2fa, otp_login, otp_registration, password_changed, login_alert, 2fa_enabled, 2fa_disabled, or custom
+	Type string `json:"type" binding:"required,oneof=verification password_reset welcome 2fa otp_login otp_registration password_changed login_alert 2fa_enabled 2fa_disabled custom" example:"verification"`
 	// Template name (max 100 characters)
 	Name string `json:"name" binding:"required,max=100" example:"Email Verification Template"`
 	// Email subject line (max 200 characters)
@@ -124,6 +124,12 @@ const (
 	EmailTemplateTypeOTPLogin        = "otp_login"
 	EmailTemplateTypeOTPRegistration = "otp_registration"
 	EmailTemplateTypeCustom          = "custom"
+
+	// Notification template types
+	EmailTemplateTypePasswordChanged = "password_changed"
+	EmailTemplateTypeLoginAlert      = "login_alert"
+	EmailTemplateType2FAEnabled      = "2fa_enabled"
+	EmailTemplateType2FADisabled     = "2fa_disabled"
 )
 
 // GetDefaultTemplateVariables returns default variables for each template type
@@ -141,6 +147,14 @@ func GetDefaultTemplateVariables(templateType string) []string {
 		return []string{"username", "email", "code", "expiry_minutes"}
 	case EmailTemplateTypeOTPRegistration:
 		return []string{"username", "email", "code", "expiry_minutes"}
+	case EmailTemplateTypePasswordChanged:
+		return []string{"username", "email", "ip_address", "user_agent", "timestamp"}
+	case EmailTemplateTypeLoginAlert:
+		return []string{"username", "email", "ip_address", "user_agent", "device_type", "location", "timestamp"}
+	case EmailTemplateType2FAEnabled:
+		return []string{"username", "email", "timestamp"}
+	case EmailTemplateType2FADisabled:
+		return []string{"username", "email", "timestamp"}
 	default:
 		return []string{}
 	}
@@ -156,4 +170,18 @@ type TemplateTypesResponse struct {
 type TemplateVariablesResponse struct {
 	// List of available variables for the template type
 	Variables []string `json:"variables" example:"username,email,code,expiry_minutes"`
+}
+
+// AdminSendEmailRequest is the request to send an email using a template
+type AdminSendEmailRequest struct {
+	// Template type to use for the email
+	TemplateType string `json:"template_type" binding:"required" example:"welcome"`
+	// Recipient email address
+	ToEmail string `json:"to_email" binding:"required,email" example:"user@example.com"`
+	// Template variables for rendering
+	Variables map[string]interface{} `json:"variables"`
+	// Optional email profile ID to use
+	ProfileID *uuid.UUID `json:"profile_id,omitempty"`
+	// Optional application ID for app-scoped templates
+	ApplicationID *uuid.UUID `json:"application_id,omitempty"`
 }

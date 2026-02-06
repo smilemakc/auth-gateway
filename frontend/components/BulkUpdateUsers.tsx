@@ -5,8 +5,10 @@ import type { BulkUserUpdate, BulkOperationResult, AdminUserResponse } from '@au
 import { useBulkUpdateUsers } from '../hooks/useBulkOperations';
 import { useUsers } from '../hooks/useUsers';
 import { toast } from '../services/toast';
+import { useLanguage } from '../services/i18n';
 
 const BulkUpdateUsers: React.FC = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const bulkUpdate = useBulkUpdateUsers();
   const { data: usersData } = useUsers(1, 1000);
@@ -48,7 +50,7 @@ const BulkUpdateUsers: React.FC = () => {
 
   const handleSubmit = async () => {
     if (selectedUserIds.length === 0) {
-      toast.warning('Please select at least one user');
+      toast.warning(t('bulk_update.select_user_warning'));
       return;
     }
 
@@ -65,7 +67,7 @@ const BulkUpdateUsers: React.FC = () => {
       setResult(result);
     } catch (error) {
       console.error('Bulk update failed:', error);
-      toast.error('Failed to update users');
+      toast.error(t('bulk_update.update_error'));
     }
   };
 
@@ -75,30 +77,30 @@ const BulkUpdateUsers: React.FC = () => {
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/bulk')} className="text-muted-foreground hover:text-foreground flex items-center gap-2">
             <ArrowLeft size={20} />
-            Back
+            {t('common.back')}
           </button>
-          <h1 className="text-2xl font-bold text-foreground">Bulk Update Results</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('bulk_update.results_title')}</h1>
         </div>
 
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="bg-muted rounded-lg p-4">
-              <div className="text-sm text-muted-foreground">Total</div>
+              <div className="text-sm text-muted-foreground">{t('bulk_update.total')}</div>
               <div className="text-2xl font-bold text-foreground">{result.total}</div>
             </div>
             <div className="bg-success/10 rounded-lg p-4">
-              <div className="text-sm text-success">Success</div>
+              <div className="text-sm text-success">{t('bulk_update.success')}</div>
               <div className="text-2xl font-bold text-success">{result.success}</div>
             </div>
             <div className="bg-destructive/10 rounded-lg p-4">
-              <div className="text-sm text-destructive">Failed</div>
+              <div className="text-sm text-destructive">{t('bulk_update.failed')}</div>
               <div className="text-2xl font-bold text-destructive">{result.failed}</div>
             </div>
           </div>
 
           {result.errors && result.errors.length > 0 && (
             <div className="mb-4">
-              <h3 className="font-semibold text-foreground mb-2">Errors</h3>
+              <h3 className="font-semibold text-foreground mb-2">{t('bulk_update.errors')}</h3>
               <div className="space-y-2">
                 {result.errors.map((error, index) => (
                   <div key={index} className="bg-destructive/10 border border-border rounded-lg p-3">
@@ -118,13 +120,13 @@ const BulkUpdateUsers: React.FC = () => {
               }}
               className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
             >
-              Update More
+              {t('bulk_update.update_more')}
             </button>
             <button
               onClick={() => navigate('/bulk')}
               className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg transition-colors"
             >
-              Done
+              {t('common.done')}
             </button>
           </div>
         </div>
@@ -137,48 +139,48 @@ const BulkUpdateUsers: React.FC = () => {
       <div className="flex items-center gap-4">
         <button onClick={() => navigate('/bulk')} className="text-muted-foreground hover:text-foreground flex items-center gap-2">
           <ArrowLeft size={20} />
-          Back
+          {t('common.back')}
         </button>
-        <h1 className="text-2xl font-bold text-foreground">Bulk Update Users</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('bulk.update_users')}</h1>
       </div>
 
       <div className="bg-card rounded-xl shadow-sm border border-border p-6 space-y-6">
         {/* Update Fields */}
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">Update Fields</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('bulk_update.update_fields')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Email</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('auth.email')}</label>
               <input
                 type="email"
                 value={updateFields.email || ''}
                 onChange={(e) => setUpdateFields({ ...updateFields, email: e.target.value || undefined })}
                 className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="Leave empty to keep current"
+                placeholder={t('bulk_update.leave_empty')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Username</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('common.username')}</label>
               <input
                 type="text"
                 value={updateFields.username || ''}
                 onChange={(e) => setUpdateFields({ ...updateFields, username: e.target.value || undefined })}
                 className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="Leave empty to keep current"
+                placeholder={t('bulk_update.leave_empty')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Full Name</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('user.form.fullname')}</label>
               <input
                 type="text"
                 value={updateFields.full_name || ''}
                 onChange={(e) => setUpdateFields({ ...updateFields, full_name: e.target.value || undefined })}
                 className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="Leave empty to keep current"
+                placeholder={t('bulk_update.leave_empty')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Status</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('common.status')}</label>
               <select
                 value={updateFields.is_active === undefined ? '' : updateFields.is_active ? 'true' : 'false'}
                 onChange={(e) =>
@@ -189,9 +191,9 @@ const BulkUpdateUsers: React.FC = () => {
                 }
                 className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                <option value="">Keep current</option>
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
+                <option value="">{t('bulk_update.keep_current')}</option>
+                <option value="true">{t('common.active')}</option>
+                <option value="false">{t('common.inactive')}</option>
               </select>
             </div>
           </div>
@@ -201,14 +203,14 @@ const BulkUpdateUsers: React.FC = () => {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-foreground">
-              Select Users ({selectedUserIds.length} selected)
+              {t('bulk_update.select_users')} ({selectedUserIds.length} {t('bulk_update.selected')})
             </h2>
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
                   type="text"
-                  placeholder="Search users..."
+                  placeholder={t('common.search')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
@@ -218,7 +220,7 @@ const BulkUpdateUsers: React.FC = () => {
                 onClick={handleSelectAll}
                 className="px-3 py-2 border border-input rounded-lg text-sm text-foreground hover:bg-accent"
               >
-                {selectedUserIds.length === filteredUsers.length ? 'Deselect All' : 'Select All'}
+                {selectedUserIds.length === filteredUsers.length ? t('bulk_update.deselect_all') : t('bulk_update.select_all')}
               </button>
             </div>
           </div>
@@ -236,13 +238,13 @@ const BulkUpdateUsers: React.FC = () => {
                     />
                   </th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                    User
+                    {t('users.col_user')}
                   </th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                    Email
+                    {t('auth.email')}
                   </th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                    Status
+                    {t('common.status')}
                   </th>
                 </tr>
               </thead>
@@ -265,7 +267,7 @@ const BulkUpdateUsers: React.FC = () => {
                           user.is_active ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
                         }`}
                       >
-                        {user.is_active ? 'Active' : 'Inactive'}
+                        {user.is_active ? t('common.active') : t('common.inactive')}
                       </span>
                     </td>
                   </tr>
@@ -280,7 +282,7 @@ const BulkUpdateUsers: React.FC = () => {
             onClick={() => navigate('/bulk')}
             className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleSubmit}
@@ -288,7 +290,7 @@ const BulkUpdateUsers: React.FC = () => {
             className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {bulkUpdate.isPending && <Loader size={16} className="animate-spin" />}
-            Update {selectedUserIds.length > 0 && `(${selectedUserIds.length})`}
+            {t('bulk_update.update')} {selectedUserIds.length > 0 && `(${selectedUserIds.length})`}
           </button>
         </div>
       </div>

@@ -6,8 +6,10 @@ import { useBulkAssignRoles } from '../hooks/useBulkOperations';
 import { useUsers } from '../hooks/useUsers';
 import { useRoles } from '../hooks/useRBAC';
 import { toast } from '../services/toast';
+import { useLanguage } from '../services/i18n';
 
 const BulkAssignRoles: React.FC = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const bulkAssignRoles = useBulkAssignRoles();
   const { data: usersData } = useUsers(1, 1000);
@@ -54,11 +56,11 @@ const BulkAssignRoles: React.FC = () => {
 
   const handleSubmit = async () => {
     if (selectedUserIds.length === 0) {
-      toast.warning('Please select at least one user');
+      toast.warning(t('bulk_update.select_user_warning'));
       return;
     }
     if (selectedRoleIds.length === 0) {
-      toast.warning('Please select at least one role');
+      toast.warning(t('bulk_assign.select_role_warning'));
       return;
     }
 
@@ -70,7 +72,7 @@ const BulkAssignRoles: React.FC = () => {
       setResult(result);
     } catch (error) {
       console.error('Bulk assign roles failed:', error);
-      toast.error('Failed to assign roles');
+      toast.error(t('bulk_assign.assign_error'));
     }
   };
 
@@ -80,30 +82,30 @@ const BulkAssignRoles: React.FC = () => {
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/bulk')} className="text-muted-foreground hover:text-foreground flex items-center gap-2">
             <ArrowLeft size={20} />
-            Back
+            {t('common.back')}
           </button>
-          <h1 className="text-2xl font-bold text-foreground">Bulk Assign Roles Results</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('bulk_assign.results_title')}</h1>
         </div>
 
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="bg-muted rounded-lg p-4">
-              <div className="text-sm text-muted-foreground">Total</div>
+              <div className="text-sm text-muted-foreground">{t('bulk_update.total')}</div>
               <div className="text-2xl font-bold text-foreground">{result.total}</div>
             </div>
             <div className="bg-success/10 rounded-lg p-4">
-              <div className="text-sm text-success">Success</div>
+              <div className="text-sm text-success">{t('bulk_update.success')}</div>
               <div className="text-2xl font-bold text-success">{result.success}</div>
             </div>
             <div className="bg-destructive/10 rounded-lg p-4">
-              <div className="text-sm text-destructive">Failed</div>
+              <div className="text-sm text-destructive">{t('bulk_update.failed')}</div>
               <div className="text-2xl font-bold text-destructive">{result.failed}</div>
             </div>
           </div>
 
           {result.errors && result.errors.length > 0 && (
             <div className="mb-4">
-              <h3 className="font-semibold text-foreground mb-2">Errors</h3>
+              <h3 className="font-semibold text-foreground mb-2">{t('bulk_update.errors')}</h3>
               <div className="space-y-2">
                 {result.errors.map((error, index) => (
                   <div key={index} className="bg-destructive/10 border border-destructive rounded-lg p-3">
@@ -123,13 +125,13 @@ const BulkAssignRoles: React.FC = () => {
               }}
               className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
             >
-              Assign More
+              {t('bulk_assign.assign_more')}
             </button>
             <button
               onClick={() => navigate('/bulk')}
               className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg transition-colors"
             >
-              Done
+              {t('common.done')}
             </button>
           </div>
         </div>
@@ -142,9 +144,9 @@ const BulkAssignRoles: React.FC = () => {
       <div className="flex items-center gap-4">
         <button onClick={() => navigate('/bulk')} className="text-muted-foreground hover:text-foreground flex items-center gap-2">
           <ArrowLeft size={20} />
-          Back
+          {t('common.back')}
         </button>
-        <h1 className="text-2xl font-bold text-foreground">Bulk Assign Roles</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('bulk.assign_roles')}</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -152,7 +154,7 @@ const BulkAssignRoles: React.FC = () => {
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <Shield size={20} />
-            Select Roles ({selectedRoleIds.length} selected)
+            {t('bulk_assign.select_roles')} ({selectedRoleIds.length} {t('bulk_update.selected')})
           </h2>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {roles.map((role) => (
@@ -172,7 +174,7 @@ const BulkAssignRoles: React.FC = () => {
                 </div>
               </label>
             ))}
-            {roles.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No roles available</p>}
+            {roles.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">{t('bulk_assign.no_roles')}</p>}
           </div>
         </div>
 
@@ -180,14 +182,14 @@ const BulkAssignRoles: React.FC = () => {
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-foreground">
-              Select Users ({selectedUserIds.length} selected)
+              {t('bulk_update.select_users')} ({selectedUserIds.length} {t('bulk_update.selected')})
             </h2>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
                   type="text"
-                  placeholder="Search users..."
+                  placeholder={t('common.search')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-sm"
@@ -197,7 +199,7 @@ const BulkAssignRoles: React.FC = () => {
                 onClick={handleSelectAllUsers}
                 className="px-3 py-2 border border-input rounded-lg text-sm text-foreground hover:bg-accent"
               >
-                {selectedUserIds.length === filteredUsers.length ? 'Deselect All' : 'Select All'}
+                {selectedUserIds.length === filteredUsers.length ? t('bulk_update.deselect_all') : t('bulk_update.select_all')}
               </button>
             </div>
           </div>
@@ -215,10 +217,10 @@ const BulkAssignRoles: React.FC = () => {
                     />
                   </th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                    User
+                    {t('users.col_user')}
                   </th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
-                    Current Roles
+                    {t('bulk_assign.current_roles')}
                   </th>
                 </tr>
               </thead>
@@ -262,7 +264,7 @@ const BulkAssignRoles: React.FC = () => {
           onClick={() => navigate('/bulk')}
           className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-accent transition-colors"
         >
-          Cancel
+          {t('common.cancel')}
         </button>
         <button
           onClick={handleSubmit}
@@ -270,7 +272,7 @@ const BulkAssignRoles: React.FC = () => {
           className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {bulkAssignRoles.isPending && <Loader size={16} className="animate-spin" />}
-          Assign Roles to {selectedUserIds.length > 0 && `${selectedUserIds.length} User(s)`}
+          {t('bulk_assign.assign_btn')} {selectedUserIds.length > 0 && `(${selectedUserIds.length})`}
         </button>
       </div>
     </div>

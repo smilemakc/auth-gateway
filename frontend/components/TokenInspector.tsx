@@ -15,7 +15,7 @@ const TokenInspector: React.FC = () => {
   const handleDecode = (input: string) => {
     setToken(input);
     setError('');
-    
+
     if (!input) {
       setDecoded(null);
       return;
@@ -45,8 +45,8 @@ const TokenInspector: React.FC = () => {
     }
   };
 
-  const isExpired = decoded?.payload?.exp 
-    ? (decoded.payload.exp * 1000) < Date.now() 
+  const isExpired = decoded?.payload?.exp
+    ? (decoded.payload.exp * 1000) < Date.now()
     : false;
 
   return (
@@ -76,7 +76,7 @@ const TokenInspector: React.FC = () => {
               placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
             />
           </div>
-          
+
           {error && (
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-3 text-destructive">
               <AlertCircle size={20} />
@@ -88,9 +88,9 @@ const TokenInspector: React.FC = () => {
              <div className={`rounded-lg p-4 flex items-center gap-3 border ${isExpired ? 'bg-warning/10 border-warning/20 text-warning' : 'bg-success/10 border-success/20 text-success'}`}>
                {isExpired ? <Clock size={20} /> : <CheckCircle size={20} />}
                <div>
-                  <p className="font-medium">{isExpired ? 'Token Expired' : 'Token Active'}</p>
+                  <p className="font-medium">{isExpired ? t('inspector.expired') : t('inspector.active')}</p>
                   {decoded.payload.exp && (
-                    <p className="text-xs mt-1">Expires: {formatDateTime(new Date(decoded.payload.exp * 1000).toISOString())}</p>
+                    <p className="text-xs mt-1">{t('inspector.expires')} {formatDateTime(new Date(decoded.payload.exp * 1000).toISOString())}</p>
                   )}
                </div>
              </div>

@@ -154,7 +154,7 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-2xl font-bold text-foreground">
-          {isEditMode ? 'Edit OAuth Provider' : 'Add OAuth Provider'}
+          {isEditMode ? t('app_oauth.edit_title') : t('app_oauth.add_title')}
         </h1>
       </div>
 
@@ -162,15 +162,15 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
         <div className="p-6 border-b border-border bg-muted flex items-start gap-3">
           <HelpCircle className="text-primary mt-0.5" size={20} />
           <div className="text-sm text-muted-foreground">
-            <p className="font-medium text-foreground mb-1">Getting Started</p>
-            <p>Configure OAuth provider settings for this application. You need to create an OAuth application in the provider's developer console.</p>
+            <p className="font-medium text-foreground mb-1">{t('app_oauth.getting_started')}</p>
+            <p>{t('app_oauth.getting_started_desc')}</p>
           </div>
         </div>
 
         <div className="p-6 space-y-8">
           {/* Provider Selection */}
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-2">Provider</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">{t('app_oauth.provider')}</label>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
               {['google', 'github', 'yandex', 'telegram', 'instagram'].map(p => (
                 <label key={p} className={`
@@ -195,7 +195,7 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
           {/* Credentials */}
           <div className="grid grid-cols-1 gap-6">
             <div>
-              <label htmlFor="client_id" className="block text-sm font-medium text-muted-foreground mb-1">Client ID</label>
+              <label htmlFor="client_id" className="block text-sm font-medium text-muted-foreground mb-1">{t('app_oauth.client_id')}</label>
               <input
                 type="text"
                 id="client_id"
@@ -208,7 +208,7 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
               />
             </div>
             <div>
-              <label htmlFor="client_secret" className="block text-sm font-medium text-muted-foreground mb-1">Client Secret</label>
+              <label htmlFor="client_secret" className="block text-sm font-medium text-muted-foreground mb-1">{t('app_oauth.client_secret')}</label>
               <div className="relative">
                 <input
                   type={showSecret ? "text" : "password"}
@@ -218,7 +218,7 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
                   onChange={handleChange}
                   required={isNewMode}
                   className="w-full pl-4 pr-12 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all font-mono text-sm"
-                  placeholder={isEditMode ? '(unchanged)' : 'e.g. GOCSPX-...'}
+                  placeholder={isEditMode ? t('app_oauth.secret_unchanged') : 'e.g. GOCSPX-...'}
                 />
                 <button
                   type="button"
@@ -233,7 +233,7 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
 
           {/* Callback URL */}
           <div>
-            <label htmlFor="callback_url" className="block text-sm font-medium text-muted-foreground mb-1">Callback URL</label>
+            <label htmlFor="callback_url" className="block text-sm font-medium text-muted-foreground mb-1">{t('app_oauth.callback_url')}</label>
             <input
               type="url"
               id="callback_url"
@@ -249,7 +249,7 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
           {/* Scopes */}
           <div>
             <label htmlFor="scopes" className="block text-sm font-medium text-muted-foreground mb-1">
-              Scopes <span className="text-xs font-normal">(comma-separated)</span>
+              {t('app_oauth.scopes')} <span className="text-xs font-normal">{t('app_oauth.scopes_hint')}</span>
             </label>
             <input
               type="text"
@@ -264,11 +264,11 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
 
           {/* Advanced URLs */}
           <div className="space-y-4 pt-4 border-t border-border">
-            <h3 className="text-sm font-semibold text-foreground">Advanced Configuration</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t('app_oauth.advanced')}</h3>
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label htmlFor="auth_url" className="block text-sm font-medium text-muted-foreground mb-1">
-                  Authorization URL <span className="text-xs font-normal">(optional)</span>
+                  {t('app_oauth.auth_url')} <span className="text-xs font-normal">{t('app_oauth.optional')}</span>
                 </label>
                 <input
                   type="url"
@@ -282,7 +282,7 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
               </div>
               <div>
                 <label htmlFor="token_url" className="block text-sm font-medium text-muted-foreground mb-1">
-                  Token URL <span className="text-xs font-normal">(optional)</span>
+                  {t('app_oauth.token_url')} <span className="text-xs font-normal">{t('app_oauth.optional')}</span>
                 </label>
                 <input
                   type="url"
@@ -296,7 +296,7 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
               </div>
               <div>
                 <label htmlFor="user_info_url" className="block text-sm font-medium text-muted-foreground mb-1">
-                  User Info URL <span className="text-xs font-normal">(optional)</span>
+                  {t('app_oauth.user_info_url')} <span className="text-xs font-normal">{t('app_oauth.optional')}</span>
                 </label>
                 <input
                   type="url"
@@ -322,8 +322,8 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
                  {formData.is_active ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
                </button>
                <div>
-                 <span className="font-medium text-foreground block">Enable this provider</span>
-                 <p className="text-xs text-muted-foreground">When enabled, users can authenticate using this OAuth provider</p>
+                 <span className="font-medium text-foreground block">{t('app_oauth.enable_provider')}</span>
+                 <p className="text-xs text-muted-foreground">{t('app_oauth.enable_provider_desc')}</p>
                </div>
              </div>
           </div>

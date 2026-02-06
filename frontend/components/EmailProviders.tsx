@@ -36,16 +36,16 @@ const getProviderIcon = (type: string) => {
   }
 };
 
-const getProviderTypeLabel = (type: string) => {
+const getProviderTypeLabel = (type: string, t: (key: string) => string) => {
   switch (type) {
     case 'smtp':
-      return 'SMTP';
+      return t('email.provider_smtp');
     case 'sendgrid':
-      return 'SendGrid';
+      return t('email.provider_sendgrid');
     case 'ses':
-      return 'AWS SES';
+      return t('email.provider_ses');
     case 'mailgun':
-      return 'Mailgun';
+      return t('email.provider_mailgun');
     default:
       return type;
   }
@@ -209,7 +209,7 @@ const EmailProviders: React.FC<EmailProvidersProps> = ({ embedded = false }) => 
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {getProviderTypeLabel(provider.type)}
+                      {getProviderTypeLabel(provider.type, t)}
                     </p>
 
                     {/* Provider Details */}

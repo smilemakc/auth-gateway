@@ -44,7 +44,7 @@ const TelegramBots: React.FC<TelegramBotsProps> = ({ applicationId }) => {
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
-        Failed to load Telegram bots. Please try again.
+        {t('tg.load_error')}
       </div>
     );
   }
@@ -53,15 +53,15 @@ const TelegramBots: React.FC<TelegramBotsProps> = ({ applicationId }) => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-foreground">Telegram Bots</h2>
-          <p className="text-muted-foreground mt-1">Manage Telegram authentication bots</p>
+          <h2 className="text-xl font-bold text-foreground">{t('tg.title')}</h2>
+          <p className="text-muted-foreground mt-1">{t('tg.desc')}</p>
         </div>
         <Link
           to={`/applications/${applicationId}/telegram-bots/new`}
           className="flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
           <Plus size={18} />
-          Add Bot
+          {t('tg.add_bot')}
         </Link>
       </div>
 
@@ -79,23 +79,23 @@ const TelegramBots: React.FC<TelegramBotsProps> = ({ applicationId }) => {
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`w-2 h-2 rounded-full ${bot.is_active ? 'bg-green-500' : 'bg-gray-300'}`}></span>
                       <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                        {bot.is_active ? 'Active' : 'Inactive'}
+                        {bot.is_active ? t('common.active') : t('common.inactive')}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div>
                   {bot.is_auth_bot ? (
-                    <Shield className="text-primary" size={20} title="Auth Bot" />
+                    <Shield className="text-primary" size={20} title={t('tg.auth_bot')} />
                   ) : (
-                    <ShieldOff className="text-muted-foreground" size={20} title="Not Auth Bot" />
+                    <ShieldOff className="text-muted-foreground" size={20} title={t('tg.not_auth_bot')} />
                   )}
                 </div>
               </div>
 
               <div className="space-y-3 mt-6">
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Bot Username</label>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">{t('tg.bot_username')}</label>
                   <code className="block bg-muted rounded px-3 py-2 text-sm text-muted-foreground font-mono truncate border border-border">
                     @{bot.bot_username}
                   </code>
@@ -103,7 +103,7 @@ const TelegramBots: React.FC<TelegramBotsProps> = ({ applicationId }) => {
                 {bot.is_auth_bot && (
                   <div className="flex items-center gap-2 text-xs text-primary bg-primary/10 px-3 py-2 rounded-lg border border-primary/20">
                     <Shield size={14} />
-                    <span className="font-medium">Authentication Bot</span>
+                    <span className="font-medium">{t('tg.auth_bot')}</span>
                   </div>
                 )}
               </div>
@@ -135,12 +135,12 @@ const TelegramBots: React.FC<TelegramBotsProps> = ({ applicationId }) => {
         {bots.length === 0 && (
           <div className="col-span-full text-center py-12 bg-card rounded-xl border border-border">
             <Send size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground">No Telegram bots configured.</p>
+            <p className="text-muted-foreground">{t('tg.no_bots')}</p>
             <Link
               to={`/applications/${applicationId}/telegram-bots/new`}
               className="mt-4 inline-block text-primary hover:underline text-sm font-medium"
             >
-              Add your first bot
+              {t('tg.add_first')}
             </Link>
           </div>
         )}

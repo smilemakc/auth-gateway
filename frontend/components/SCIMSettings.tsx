@@ -2,8 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ExternalLink, Info, CheckCircle } from 'lucide-react';
 import { useSCIMConfig, useSCIMMetadata } from '../hooks/useSCIM';
+import { useLanguage } from '../services/i18n';
 
 const SCIMSettings: React.FC = () => {
+  const { t } = useLanguage();
   const { data: config, isLoading: isLoadingConfig } = useSCIMConfig();
   const { data: metadata, isLoading: isLoadingMetadata } = useSCIMMetadata();
 
@@ -18,8 +20,8 @@ const SCIMSettings: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">SCIM 2.0 Configuration</h1>
-        <p className="text-muted-foreground mt-1">System for Cross-domain Identity Management</p>
+        <h1 className="text-2xl font-bold text-foreground">{t('scim.title')}</h1>
+        <p className="text-muted-foreground mt-1">{t('scim.desc')}</p>
       </div>
 
       <div className="bg-card rounded-xl shadow-sm border border-border p-6 space-y-6">
@@ -27,17 +29,17 @@ const SCIMSettings: React.FC = () => {
         <div className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/20 rounded-lg">
           <CheckCircle className="text-primary" size={24} />
           <div>
-            <h3 className="font-semibold text-primary">SCIM 2.0 Enabled</h3>
-            <p className="text-sm text-primary">SCIM endpoints are available for user and group provisioning</p>
+            <h3 className="font-semibold text-primary">{t('scim.enabled')}</h3>
+            <p className="text-sm text-primary">{t('scim.endpoints_available')}</p>
           </div>
         </div>
 
         {/* Endpoints */}
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">SCIM Endpoints</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('scim.endpoints')}</h2>
           <div className="space-y-3">
             <div className="border border-border rounded-lg p-4">
-              <div className="text-sm font-medium text-foreground mb-1">Base URL</div>
+              <div className="text-sm font-medium text-foreground mb-1">{t('scim.base_url')}</div>
               <code className="text-sm text-foreground bg-muted px-2 py-1 rounded">
                 {config?.base_url || window.location.origin}/scim/v2
               </code>
@@ -45,7 +47,7 @@ const SCIMSettings: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="border border-border rounded-lg p-4">
-                <div className="text-sm font-medium text-foreground mb-2">Users Endpoint</div>
+                <div className="text-sm font-medium text-foreground mb-2">{t('scim.users_endpoint')}</div>
                 <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded block">
                   GET/POST /scim/v2/Users
                 </code>
@@ -55,7 +57,7 @@ const SCIMSettings: React.FC = () => {
               </div>
 
               <div className="border border-border rounded-lg p-4">
-                <div className="text-sm font-medium text-foreground mb-2">Groups Endpoint</div>
+                <div className="text-sm font-medium text-foreground mb-2">{t('scim.groups_endpoint')}</div>
                 <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded block">
                   GET/POST /scim/v2/Groups
                 </code>
@@ -66,7 +68,7 @@ const SCIMSettings: React.FC = () => {
             </div>
 
             <div className="border border-border rounded-lg p-4">
-              <div className="text-sm font-medium text-foreground mb-2">Service Provider Config</div>
+              <div className="text-sm font-medium text-foreground mb-2">{t('scim.sp_config')}</div>
               <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded block">
                 GET /scim/v2/ServiceProviderConfig
               </code>
@@ -77,29 +79,29 @@ const SCIMSettings: React.FC = () => {
         {/* Supported Operations */}
         {metadata && (
           <div>
-            <h2 className="text-lg font-semibold text-foreground mb-4">Supported Operations</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">{t('scim.supported_ops')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="border border-border rounded-lg p-4">
-                <div className="text-sm font-medium text-foreground mb-2">Users</div>
+                <div className="text-sm font-medium text-foreground mb-2">{t('scim.users')}</div>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Create</li>
-                  <li>• Read</li>
-                  <li>• Update (PUT/PATCH)</li>
-                  <li>• Delete</li>
-                  <li>• List with pagination</li>
-                  <li>• Filter and search</li>
+                  <li>• {t('scim.op_create')}</li>
+                  <li>• {t('scim.op_read')}</li>
+                  <li>• {t('scim.op_update')}</li>
+                  <li>• {t('scim.op_delete')}</li>
+                  <li>• {t('scim.op_list')}</li>
+                  <li>• {t('scim.op_filter')}</li>
                 </ul>
               </div>
 
               <div className="border border-border rounded-lg p-4">
-                <div className="text-sm font-medium text-foreground mb-2">Groups</div>
+                <div className="text-sm font-medium text-foreground mb-2">{t('scim.groups')}</div>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Create</li>
-                  <li>• Read</li>
-                  <li>• Update (PUT/PATCH)</li>
-                  <li>• Delete</li>
-                  <li>• List with pagination</li>
-                  <li>• Member management</li>
+                  <li>• {t('scim.op_create')}</li>
+                  <li>• {t('scim.op_read')}</li>
+                  <li>• {t('scim.op_update')}</li>
+                  <li>• {t('scim.op_delete')}</li>
+                  <li>• {t('scim.op_list')}</li>
+                  <li>• {t('scim.op_members')}</li>
                 </ul>
               </div>
             </div>
@@ -111,17 +113,16 @@ const SCIMSettings: React.FC = () => {
           <div className="flex items-start gap-3">
             <Info className="text-primary mt-0.5" size={20} />
             <div className="flex-1">
-              <h3 className="font-semibold text-foreground mb-1">Integration Guide</h3>
+              <h3 className="font-semibold text-foreground mb-1">{t('scim.integration_guide')}</h3>
               <p className="text-sm text-muted-foreground mb-3">
-                For detailed information on integrating SCIM 2.0 with your identity provider or HR system, see the
-                documentation.
+                {t('scim.integration_desc')}
               </p>
               <Link
                 to="/docs/scim-integration"
                 target="_blank"
                 className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80"
               >
-                View SCIM Integration Guide
+                {t('scim.view_guide')}
                 <ExternalLink size={16} />
               </Link>
             </div>

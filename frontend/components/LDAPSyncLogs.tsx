@@ -3,8 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 import { useLDAPSyncLogs } from '../hooks/useLDAP';
 import { formatDateTime } from '../lib/date';
+import { useLanguage } from '../services/i18n';
 
 const LDAPSyncLogs: React.FC = () => {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useLDAPSyncLogs(id || '');
 
@@ -19,9 +21,9 @@ const LDAPSyncLogs: React.FC = () => {
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-destructive">Error loading sync logs: {(error as Error).message}</p>
+        <p className="text-destructive">{t('ldap_sync.error_loading')}: {(error as Error).message}</p>
         <Link to="/ldap" className="text-primary hover:underline mt-4 inline-block">
-          Back to LDAP Configurations
+          {t('ldap_sync.back_to_configs')}
         </Link>
       </div>
     );
@@ -63,9 +65,9 @@ const LDAPSyncLogs: React.FC = () => {
           className="text-muted-foreground hover:text-foreground flex items-center gap-2"
         >
           <ArrowLeft size={20} />
-          Back
+          {t('common.back')}
         </Link>
-        <h1 className="text-2xl font-bold text-foreground">LDAP Sync Logs</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('ldap_sync.title')}</h1>
       </div>
 
       <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
@@ -74,22 +76,22 @@ const LDAPSyncLogs: React.FC = () => {
             <thead className="bg-muted">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Date
+                  {t('ldap_sync.col_date')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Status
+                  {t('common.status')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Users
+                  {t('nav.users')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Groups
+                  {t('nav.groups')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Duration
+                  {t('ldap_sync.col_duration')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Error
+                  {t('ldap_sync.col_error')}
                 </th>
               </tr>
             </thead>
@@ -102,7 +104,7 @@ const LDAPSyncLogs: React.FC = () => {
                     </div>
                     {log.completed_at && (
                       <div className="text-xs text-muted-foreground">
-                        Completed: {formatDateTime(log.completed_at)}
+                        {t('ldap_sync.completed')}: {formatDateTime(log.completed_at)}
                       </div>
                     )}
                   </td>
@@ -120,17 +122,17 @@ const LDAPSyncLogs: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-foreground">
-                      <div>Synced: {log.users_synced}</div>
+                      <div>{t('ldap_sync.synced')}: {log.users_synced}</div>
                       <div className="text-xs text-muted-foreground">
-                        Created: {log.users_created} | Updated: {log.users_updated} | Deleted: {log.users_deleted}
+                        {t('ldap_sync.created')}: {log.users_created} | {t('ldap_sync.updated')}: {log.users_updated} | {t('ldap_sync.deleted')}: {log.users_deleted}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-foreground">
-                      <div>Synced: {log.groups_synced}</div>
+                      <div>{t('ldap_sync.synced')}: {log.groups_synced}</div>
                       <div className="text-xs text-muted-foreground">
-                        Created: {log.groups_created} | Updated: {log.groups_updated}
+                        {t('ldap_sync.created')}: {log.groups_created} | {t('ldap_sync.updated')}: {log.groups_updated}
                       </div>
                     </div>
                   </td>
@@ -152,7 +154,7 @@ const LDAPSyncLogs: React.FC = () => {
           </table>
 
           {logs.length === 0 && (
-            <div className="p-12 text-center text-muted-foreground">No sync logs found.</div>
+            <div className="p-12 text-center text-muted-foreground">{t('ldap_sync.no_logs')}</div>
           )}
         </div>
       </div>

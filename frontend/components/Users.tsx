@@ -37,7 +37,7 @@ const Users: React.FC = () => {
       });
     } catch (error) {
       console.error('Failed to toggle user status:', error);
-      toast.error('Failed to update user status');
+      toast.error(t('users.status_update_error'));
     }
   };
 
@@ -52,7 +52,7 @@ const Users: React.FC = () => {
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-destructive">Error loading users: {(error as Error).message}</p>
+        <p className="text-destructive">{t('users.loading_error')} {(error as Error).message}</p>
       </div>
     );
   }
@@ -97,7 +97,7 @@ const Users: React.FC = () => {
       {currentApplication && (
         <div className="px-4 py-2 bg-muted/50 rounded-lg border border-border">
           <span className="text-sm text-muted-foreground">
-            Showing users for: <span className="font-medium text-foreground">{currentApplication.name}</span>
+            {t('users.showing_for')} <span className="font-medium text-foreground">{currentApplication.name}</span>
           </span>
         </div>
       )}

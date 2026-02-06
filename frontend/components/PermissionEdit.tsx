@@ -45,7 +45,7 @@ const PermissionEdit: React.FC = () => {
     setError('');
 
     if (!formData.resource || !formData.action) {
-      setError('Resource and action are required');
+      setError(t('perm_edit.err_resource_action'));
       setLoading(false);
       return;
     }
@@ -61,12 +61,12 @@ const PermissionEdit: React.FC = () => {
         navigate('/settings/access-control?tab=permissions');
       } else {
         // Note: Update is not fully implemented in SDK
-        setError('Permission editing is not yet supported. Please delete and recreate.');
+        setError(t('perm_edit.edit_not_supported'));
         setLoading(false);
         return;
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to save permission');
+      setError(err.message || t('perm_edit.save_error'));
     } finally {
       setLoading(false);
     }
@@ -111,7 +111,7 @@ const PermissionEdit: React.FC = () => {
           <div className="flex items-center gap-4 bg-muted p-4 rounded-lg border border-border mb-6">
             <Lock size={24} className="text-muted-foreground flex-shrink-0" />
             <p className="text-sm text-muted-foreground">
-              Permissions define granular access controls. They follow the format <code>resource:action</code>.
+              {t('perm_edit.info_text')} <code>resource:action</code>.
             </p>
           </div>
 
@@ -122,7 +122,7 @@ const PermissionEdit: React.FC = () => {
               required
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g. Read Users"
+              placeholder={t('perm_edit.name_placeholder')}
               className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none"
             />
           </div>
@@ -135,7 +135,7 @@ const PermissionEdit: React.FC = () => {
                 required
                 value={formData.resource}
                 onChange={(e) => setFormData(prev => ({ ...prev, resource: e.target.value.toLowerCase().replace(/\s+/g, '_') }))}
-                placeholder="e.g. users"
+                placeholder={t('perm_edit.resource_placeholder')}
                 disabled={isEditMode}
                 className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none font-mono text-sm"
               />
@@ -147,7 +147,7 @@ const PermissionEdit: React.FC = () => {
                 required
                 value={formData.action}
                 onChange={(e) => setFormData(prev => ({ ...prev, action: e.target.value.toLowerCase().replace(/\s+/g, '_') }))}
-                placeholder="e.g. read"
+                placeholder={t('perm_edit.action_placeholder')}
                 disabled={isEditMode}
                 className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none font-mono text-sm"
               />
@@ -155,11 +155,11 @@ const PermissionEdit: React.FC = () => {
           </div>
 
           <div className="text-xs text-muted-foreground">
-            Resulting ID: <code className="bg-muted px-1 py-0.5 rounded border border-border">{isEditMode ? id : generatedId}</code>
+            {t('perm_edit.resulting_id')}: <code className="bg-muted px-1 py-0.5 rounded border border-border">{isEditMode ? id : generatedId}</code>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Description</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('common.description')}</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
