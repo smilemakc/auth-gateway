@@ -43,7 +43,7 @@ const Webhooks: React.FC = () => {
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
-        Failed to load webhooks. Please try again.
+        {t('hooks.load_error')}
       </div>
     );
   }
@@ -72,7 +72,7 @@ const Webhooks: React.FC = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('hooks.events')}</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('hooks.secret')}</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('common.status')}</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Last Triggered</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('hooks.last_triggered')}</th>
                 <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -116,11 +116,11 @@ const Webhooks: React.FC = () => {
                     <div className="flex items-center gap-2">
                        {webhook.is_active
                         ? <span className="flex items-center text-success text-xs font-medium bg-success/10 px-2 py-1 rounded-full"><CheckCircle size={12} className="mr-1"/> {t('users.active')}</span>
-                        : <span className="flex items-center text-muted-foreground text-xs font-medium bg-muted px-2 py-1 rounded-full"><XCircle size={12} className="mr-1"/> Disabled</span>
+                        : <span className="flex items-center text-muted-foreground text-xs font-medium bg-muted px-2 py-1 rounded-full"><XCircle size={12} className="mr-1"/> {t('hooks.disabled')}</span>
                        }
                        {(webhook.failure_count || 0) > 0 && (
                          <span className="flex items-center text-destructive text-xs font-medium bg-destructive/10 px-2 py-1 rounded-full" title={`${webhook.failure_count} recent failures`}>
-                            <Activity size={12} className="mr-1"/> {webhook.failure_count} failed
+                            <Activity size={12} className="mr-1"/> {webhook.failure_count} {t('hooks.recent_failures')}
                          </span>
                        )}
                     </div>
@@ -150,7 +150,7 @@ const Webhooks: React.FC = () => {
               {webhooks.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
-                    No webhooks configured.
+                    {t('hooks.no_webhooks')}
                   </td>
                 </tr>
               )}

@@ -59,6 +59,7 @@ import ApplicationUsersTab from './components/ApplicationUsersTab';
 import ApplicationTemplateEditor from './components/ApplicationTemplateEditor';
 import EmailProviders from './components/EmailProviders';
 import EmailProviderEdit from './components/EmailProviderEdit';
+import EmailSettings from './components/EmailSettings';
 import ApplicationOAuthProviderEdit from './components/ApplicationOAuthProviderEdit';
 import TelegramBotEdit from './components/TelegramBotEdit';
 
@@ -104,6 +105,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/audit-logs" element={<AuditLogs />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/branding" element={<Branding />} />
+          <Route path="/settings/email" element={<EmailSettings />} />
           <Route path="/settings/email-templates" element={<EmailTemplates />} />
           <Route path="/settings/email-templates/:id" element={<EmailTemplateEditor />} />
           <Route path="/settings/roles" element={<Roles />} />

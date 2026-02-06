@@ -37,18 +37,18 @@ const ApplicationDetails: React.FC = () => {
   if (error || !application) {
     return (
       <div className="bg-destructive/10 border border-destructive rounded-lg p-4 text-destructive">
-        {t('apps.not_found') || 'Application not found.'}
+        {t('apps.not_found')}
       </div>
     );
   }
 
   const tabs = [
-    { id: 'overview' as Tab, label: t('apps.tab_overview') || 'Overview', icon: Settings },
-    { id: 'branding' as Tab, label: t('apps.tab_branding') || 'Branding', icon: Palette },
-    { id: 'users' as Tab, label: t('apps.tab_users') || 'Users', icon: Users },
-    { id: 'templates' as Tab, label: t('apps.tab_templates') || 'Email Templates', icon: Mail },
-    { id: 'oauth' as Tab, label: t('apps.tab_oauth') || 'OAuth Providers', icon: Globe },
-    { id: 'telegram' as Tab, label: t('apps.tab_telegram') || 'Telegram Bots', icon: Bot },
+    { id: 'overview' as Tab, label: t('apps.tab_overview'), icon: Settings },
+    { id: 'branding' as Tab, label: t('apps.tab_branding'), icon: Palette },
+    { id: 'users' as Tab, label: t('apps.tab_users'), icon: Users },
+    { id: 'templates' as Tab, label: t('apps.tab_templates'), icon: Mail },
+    { id: 'oauth' as Tab, label: t('apps.tab_oauth'), icon: Globe },
+    { id: 'telegram' as Tab, label: t('apps.tab_telegram'), icon: Bot },
   ];
 
   return (
@@ -75,12 +75,12 @@ const ApplicationDetails: React.FC = () => {
               <div className="flex items-center gap-2 mt-1">
                 <span className={`w-2 h-2 rounded-full ${application.is_active ? 'bg-success' : 'bg-muted-foreground'}`}></span>
                 <span className="text-sm text-muted-foreground">
-                  {application.is_active ? (t('common.active') || 'Active') : (t('common.inactive') || 'Inactive')}
+                  {application.is_active ? t('common.active') : t('common.inactive')}
                 </span>
                 {application.is_system && (
                   <>
                     <span className="text-muted-foreground">•</span>
-                    <span className="text-sm text-warning">{t('apps.system') || 'System Application'}</span>
+                    <span className="text-sm text-warning">{t('apps.system')}</span>
                   </>
                 )}
               </div>
@@ -92,7 +92,7 @@ const ApplicationDetails: React.FC = () => {
           className="flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
           <Edit2 size={18} />
-          {t('common.edit') || 'Edit'}
+          {t('common.edit')}
         </Link>
       </div>
 
@@ -124,11 +124,11 @@ const ApplicationDetails: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Basic Information */}
           <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">{t('apps.basic_info') || 'Basic Information'}</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">{t('apps.basic_info')}</h2>
             <dl className="space-y-4">
               <div>
                 <dt className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  {t('apps.name_slug') || 'Name (Slug)'}
+                  {t('apps.name_slug')}
                 </dt>
                 <dd className="flex items-center gap-2">
                   <code className="flex-1 bg-muted rounded px-3 py-2 text-sm text-foreground font-mono border border-border">
@@ -145,7 +145,7 @@ const ApplicationDetails: React.FC = () => {
 
               <div>
                 <dt className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  {t('apps.app_id') || 'Application ID'}
+                  {t('apps.app_id')}
                 </dt>
                 <dd className="flex items-center gap-2">
                   <code className="flex-1 bg-muted rounded px-3 py-2 text-sm text-muted-foreground font-mono border border-border truncate">
@@ -163,7 +163,7 @@ const ApplicationDetails: React.FC = () => {
               {application.description && (
                 <div>
                   <dt className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                    {t('apps.description') || 'Description'}
+                    {t('apps.description')}
                   </dt>
                   <dd className="text-sm text-foreground">{application.description}</dd>
                 </div>
@@ -172,7 +172,7 @@ const ApplicationDetails: React.FC = () => {
               {application.homepage_url && (
                 <div>
                   <dt className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                    {t('apps.homepage') || 'Homepage URL'}
+                    {t('apps.homepage')}
                   </dt>
                   <dd>
                     <a
@@ -190,7 +190,7 @@ const ApplicationDetails: React.FC = () => {
 
               <div>
                 <dt className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  {t('common.created') || 'Created'}
+                  {t('common.created')}
                 </dt>
                 <dd className="text-sm text-foreground">
                   {new Date(application.created_at).toLocaleString()}
@@ -199,7 +199,7 @@ const ApplicationDetails: React.FC = () => {
 
               <div>
                 <dt className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  {t('common.updated') || 'Updated'}
+                  {t('common.updated')}
                 </dt>
                 <dd className="text-sm text-foreground">
                   {new Date(application.updated_at).toLocaleString()}
@@ -210,7 +210,7 @@ const ApplicationDetails: React.FC = () => {
 
           {/* Callback URLs */}
           <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">{t('apps.callback_urls') || 'Callback URLs'}</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">{t('apps.callback_urls')}</h2>
             {application.callback_urls && application.callback_urls.length > 0 ? (
               <ul className="space-y-2">
                 {application.callback_urls.map((url, index) => (
@@ -228,16 +228,16 @@ const ApplicationDetails: React.FC = () => {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground italic">{t('apps.no_callbacks') || 'No callback URLs configured.'}</p>
+              <p className="text-sm text-muted-foreground italic">{t('apps.no_callbacks')}</p>
             )}
           </div>
 
           {/* Quick Stats */}
           <div className="bg-card rounded-xl shadow-sm border border-border p-6 lg:col-span-2">
-            <h2 className="text-lg font-semibold text-foreground mb-4">{t('apps.integration') || 'Integration'}</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">{t('apps.integration')}</h2>
             <div className="bg-muted rounded-lg p-4">
               <p className="text-sm text-muted-foreground mb-3">
-                {t('apps.integration_hint') || 'Use this Application ID in the X-Application-ID header for API requests:'}
+                {t('apps.integration_hint')}
               </p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 bg-background rounded px-3 py-2 text-sm text-foreground font-mono border border-border">

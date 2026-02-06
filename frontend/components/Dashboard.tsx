@@ -49,7 +49,7 @@ const Dashboard: React.FC = () => {
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-destructive">Error loading dashboard: {(error as Error).message}</p>
+        <p className="text-destructive">{t('dash.error_loading')}: {(error as Error).message}</p>
       </div>
     );
   }
@@ -65,7 +65,7 @@ const Dashboard: React.FC = () => {
           value={stats?.total_users || 0}
           icon={Users}
           trend={stats?.new_users_today}
-          subtext="new today"
+          subtext={t('dash.new_today')}
           color="blue"
         />
         <StatCard
@@ -73,41 +73,41 @@ const Dashboard: React.FC = () => {
           value={stats?.active_users || 0}
           icon={Activity}
           trend={null}
-          subtext="currently active"
+          subtext={t('dash.currently_active')}
           color="green"
         />
         <StatCard
-          title="Total API Keys"
+          title={t('dash.total_api_keys')}
           value={stats?.total_api_keys || 0}
           icon={Key}
           trend={null}
-          subtext={`${stats?.active_api_keys || 0} active`}
+          subtext={`${stats?.active_api_keys || 0} ${t('dash.active_keys')}`}
           color="purple"
         />
         <StatCard
-          title="Login Attempts"
+          title={t('dash.login_attempts')}
           value={stats?.login_attempts_today || 0}
           icon={ShieldCheck}
           trend={null}
-          subtext={`${stats?.failed_login_attempts_today || 0} failed today`}
+          subtext={`${stats?.failed_login_attempts_today || 0} ${t('dash.failed_today')}`}
           color="amber"
         />
       </div>
 
       {/* Additional Stats */}
       <div className="bg-card rounded-xl shadow-sm border border-border p-6">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Today's Activity</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-4">{t('dash.todays_activity')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="p-4 bg-primary/10 rounded-lg">
-            <p className="text-sm text-primary font-medium">New Users</p>
+            <p className="text-sm text-primary font-medium">{t('dash.new_users')}</p>
             <p className="text-2xl font-bold text-foreground mt-1">{stats?.new_users_today || 0}</p>
           </div>
           <div className="p-4 bg-success/10 rounded-lg">
-            <p className="text-sm text-success font-medium">Login Attempts</p>
+            <p className="text-sm text-success font-medium">{t('dash.login_attempts')}</p>
             <p className="text-2xl font-bold text-foreground mt-1">{stats?.login_attempts_today || 0}</p>
           </div>
           <div className="p-4 bg-destructive/10 rounded-lg">
-            <p className="text-sm text-destructive font-medium">Failed Logins</p>
+            <p className="text-sm text-destructive font-medium">{t('dash.failed_logins')}</p>
             <p className="text-2xl font-bold text-foreground mt-1">{stats?.failed_login_attempts_today || 0}</p>
           </div>
         </div>

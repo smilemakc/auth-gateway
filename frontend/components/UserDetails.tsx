@@ -60,10 +60,10 @@ const UserDetails: React.FC = () => {
   const oauthAccounts = oauthAccountsData || [];
 
   const handleRevokeSession = async (sessionId: string) => {
-    if (window.confirm('Are you sure you want to revoke this session?')) {
+    if (window.confirm(t('user.revoke_confirm'))) {
       try {
         await revokeSessionMutation.mutateAsync(sessionId);
-        alert('Session revoked successfully');
+        alert(t('user.revoked_success'));
       } catch (error) {
         console.error('Failed to revoke session:', error);
         alert('Failed to revoke session');
@@ -72,10 +72,10 @@ const UserDetails: React.FC = () => {
   };
 
   const handleReset2FA = async () => {
-    if (confirm('Are you sure you want to reset 2FA for this user? They will need to set up 2FA again.')) {
+    if (confirm(t('user.reset_2fa_confirm'))) {
       try {
         await reset2FAMutation.mutateAsync(id!);
-        alert('2FA has been reset successfully');
+        alert(t('user.reset_2fa_success'));
       } catch (error) {
         alert('Failed to reset 2FA: ' + (error as Error).message);
       }
@@ -83,7 +83,7 @@ const UserDetails: React.FC = () => {
   };
 
   const handleSendPasswordReset = async () => {
-    if (confirm('Are you sure you want to send a password reset email to this user?')) {
+    if (confirm(t('user.reset_password_confirm'))) {
       try {
         const result = await sendPasswordResetMutation.mutateAsync(id!);
         alert(`Password reset email sent to ${result.email}`);
@@ -147,7 +147,7 @@ const UserDetails: React.FC = () => {
           onClick={() => navigate('/users')}
           className="mt-4 text-primary hover:underline"
         >
-          Back to Users
+          {t('user.back_to_users')}
         </button>
       </div>
     );
@@ -231,7 +231,7 @@ const UserDetails: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground flex items-center gap-2">
-                    <Clock size={16} /> Login
+                    <Clock size={16} /> {t('user.login')}
                   </span>
                   <span className="text-foreground">
                     {user.last_login ? new Date(user.last_login).toLocaleDateString() : '-'}
@@ -249,11 +249,11 @@ const UserDetails: React.FC = () => {
             </h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Two-Factor Auth</span>
+                <span className="text-sm text-muted-foreground">{t('user.two_factor')}</span>
                 {user.totp_enabled ? (
-                  <span className="text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">Enabled</span>
+                  <span className="text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">{t('user.enabled')}</span>
                 ) : (
-                  <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-full">Disabled</span>
+                  <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-full">{t('user.disabled')}</span>
                 )}
               </div>
               <div className="flex items-center justify-between">
@@ -281,7 +281,7 @@ const UserDetails: React.FC = () => {
                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                  >
                    <RotateCcw size={16} />
-                   {reset2FAMutation.isPending ? 'Resetting...' : t('user.reset_2fa')}
+                   {reset2FAMutation.isPending ? t('user.resetting') : t('user.reset_2fa')}
                  </button>
                )}
                <button
@@ -290,7 +290,7 @@ const UserDetails: React.FC = () => {
                  className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                >
                  <Send size={16} />
-                 {sendPasswordResetMutation.isPending ? 'Sending...' : t('user.reset_password_email')}
+                 {sendPasswordResetMutation.isPending ? t('user.sending') : t('user.reset_password_email')}
                </button>
              </div>
           </div>
@@ -356,7 +356,7 @@ const UserDetails: React.FC = () => {
               <div className="p-6 border-b border-border">
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <Briefcase size={18} className="text-primary" />
-                  App Profile
+                  {t('user.app_profile')}
                 </h3>
               </div>
               <div className="p-6">
@@ -367,15 +367,15 @@ const UserDetails: React.FC = () => {
                 ) : appProfile ? (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Display Name</span>
+                      <span className="text-sm text-muted-foreground">{t('user.display_name')}</span>
                       <span className="text-sm font-medium text-foreground">{appProfile.display_name || '-'}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Nickname</span>
+                      <span className="text-sm text-muted-foreground">{t('user.nickname')}</span>
                       <span className="text-sm font-medium text-foreground">{appProfile.nickname || '-'}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">App Roles</span>
+                      <span className="text-sm text-muted-foreground">{t('user.app_roles')}</span>
                       <div className="flex gap-2 flex-wrap justify-end">
                         {appProfile.app_roles && appProfile.app_roles.length > 0 ? (
                           appProfile.app_roles.map((role, idx) => (
@@ -387,12 +387,12 @@ const UserDetails: React.FC = () => {
                             </span>
                           ))
                         ) : (
-                          <span className="text-sm text-muted-foreground">No roles</span>
+                          <span className="text-sm text-muted-foreground">{t('user.no_roles')}</span>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Status</span>
+                      <span className="text-sm text-muted-foreground">{t('common.status')}</span>
                       <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                         appProfile.is_banned
                           ? 'bg-destructive/20 text-destructive'
@@ -400,23 +400,23 @@ const UserDetails: React.FC = () => {
                           ? 'bg-success/20 text-success'
                           : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {appProfile.is_banned ? 'Banned' : appProfile.is_active ? 'Active' : 'Inactive'}
+                        {appProfile.is_banned ? t('apps.banned') : appProfile.is_active ? t('common.active') : t('common.inactive')}
                       </span>
                     </div>
                     {appProfile.is_banned && appProfile.ban_reason && (
                       <div className="pt-3 border-t border-border">
-                        <p className="text-xs text-muted-foreground mb-1">Ban Reason</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t('user.ban_reason')}</p>
                         <p className="text-sm text-destructive">{appProfile.ban_reason}</p>
                         {appProfile.banned_at && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Banned on {new Date(appProfile.banned_at).toLocaleDateString()}
+                            {t('user.banned_on')} {new Date(appProfile.banned_at).toLocaleDateString()}
                           </p>
                         )}
                       </div>
                     )}
                     {appProfile.last_access_at && (
                       <div className="flex items-center justify-between pt-3 border-t border-border">
-                        <span className="text-sm text-muted-foreground">Last Access</span>
+                        <span className="text-sm text-muted-foreground">{t('apps.last_access')}</span>
                         <span className="text-sm text-foreground">
                           {new Date(appProfile.last_access_at).toLocaleString()}
                         </span>
@@ -425,7 +425,7 @@ const UserDetails: React.FC = () => {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
-                    User not associated with this application
+                    {t('user.not_associated')}
                   </p>
                 )}
               </div>
@@ -451,14 +451,14 @@ const UserDetails: React.FC = () => {
                         </div>
                         <div>
                           <p className="text-sm font-medium capitalize">{acc.provider}</p>
-                          <p className="text-xs text-muted-foreground">Connected {new Date(acc.created_at).toLocaleDateString()}</p>
+                          <p className="text-xs text-muted-foreground">{t('user.connected')} {new Date(acc.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground italic">No external accounts linked.</p>
+                <p className="text-sm text-muted-foreground italic">{t('user.no_linked_accounts')}</p>
               )}
             </div>
           </div>
@@ -477,10 +477,10 @@ const UserDetails: React.FC = () => {
                 <table className="min-w-full divide-y divide-border">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Prefix</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Created</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">{t('common.name')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">{t('keys.prefix')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">{t('common.status')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">{t('common.created')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -491,7 +491,7 @@ const UserDetails: React.FC = () => {
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize
                             ${key.is_active ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>
-                            {key.is_active ? 'active' : 'inactive'}
+                            {key.is_active ? t('common.active') : t('common.inactive')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-muted-foreground">{new Date(key.created_at).toLocaleDateString()}</td>
@@ -539,7 +539,7 @@ const UserDetails: React.FC = () => {
                   </div>
                 ))
               ) : (
-                <div className="p-6 text-sm text-muted-foreground italic">No recent activity.</div>
+                <div className="p-6 text-sm text-muted-foreground italic">{t('user.no_activity')}</div>
               )}
             </div>
           </div>

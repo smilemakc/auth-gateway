@@ -134,7 +134,7 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
           {initializeTemplates.isPending ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              {t('common.loading') || 'Initializing...'}
+              {t('common.loading')}
             </>
           ) : (
             <>
@@ -198,7 +198,7 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
 
                 <h3 className="text-lg font-semibold text-foreground mb-2">{template.name}</h3>
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-1">
-                  <span className="font-medium">{t('email.subject') || 'Subject'}:</span> {template.subject}
+                  <span className="font-medium">{t('email.subject')}:</span> {template.subject}
                 </p>
 
                 <div className="space-y-3">
@@ -221,7 +221,7 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
                   {template.variables && template.variables.length > 0 && (
                     <div>
                       <p className="text-xs text-muted-foreground mb-2 font-medium">
-                        {t('email.vars') || 'Variables'}:
+                        {t('email.vars')}:
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {template.variables.slice(0, 4).map((v: string) => (

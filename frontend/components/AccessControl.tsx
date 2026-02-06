@@ -205,7 +205,7 @@ const AccessControl: React.FC = () => {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              {t('nav.access_settings') || 'Access Settings'}
+              {t('nav.access_settings')}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Manage roles and assign permissions to control access

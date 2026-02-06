@@ -16,12 +16,12 @@ const Groups: React.FC = () => {
   const deleteGroup = useDeleteGroup();
 
   const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to delete group "${name}"?`)) {
+    if (window.confirm(`${t('groups.delete_confirm')} "${name}"?`)) {
       try {
         await deleteGroup.mutateAsync(id);
       } catch (error) {
         console.error('Failed to delete group:', error);
-        alert('Failed to delete group');
+        alert(t('common.failed_to_load'));
       }
     }
   };
@@ -37,7 +37,7 @@ const Groups: React.FC = () => {
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-destructive">Error loading groups: {(error as Error).message}</p>
+        <p className="text-destructive">{t('groups.error_loading')}: {(error as Error).message}</p>
       </div>
     );
   }
@@ -54,7 +54,7 @@ const Groups: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-foreground">Groups</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('groups.title')}</h1>
         <button
           type="button"
           onClick={(e) => {
@@ -64,7 +64,7 @@ const Groups: React.FC = () => {
           className="bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
         >
           <Plus size={18} />
-          Create Group
+          {t('groups.create')}
         </button>
       </div>
 
@@ -75,7 +75,7 @@ const Groups: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
             <input
               type="text"
-              placeholder="Search groups..."
+              placeholder={t('groups.search')}
               className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -89,22 +89,22 @@ const Groups: React.FC = () => {
             <thead className="bg-muted">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Name
+                  {t('groups.col_name')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Display Name
+                  {t('groups.col_display_name')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Description
+                  {t('groups.col_description')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Members
+                  {t('groups.col_members')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Created
+                  {t('groups.col_created')}
                 </th>
                 <th scope="col" className="relative px-6 py-3">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t('groups.col_actions')}</span>
                 </th>
               </tr>
             </thead>
@@ -114,7 +114,7 @@ const Groups: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-foreground">{group.name}</div>
                     {group.is_system_group && (
-                      <span className="text-xs text-muted-foreground">System Group</span>
+                      <span className="text-xs text-muted-foreground">{t('groups.system_group')}</span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -139,14 +139,14 @@ const Groups: React.FC = () => {
                       <Link
                         to={`/groups/${group.id}`}
                         className="p-1 text-muted-foreground hover:text-primary rounded-md hover:bg-accent"
-                        title="View Details"
+                        title={t('common.view_details')}
                       >
                         <Eye size={18} />
                       </Link>
                       <Link
                         to={`/groups/${group.id}/edit`}
                         className="p-1 text-muted-foreground hover:text-primary rounded-md hover:bg-accent"
-                        title="Edit"
+                        title={t('common.edit')}
                       >
                         <Edit size={18} />
                       </Link>
@@ -154,7 +154,7 @@ const Groups: React.FC = () => {
                         <button
                           onClick={() => handleDelete(group.id, group.display_name)}
                           className="p-1 text-muted-foreground hover:text-destructive rounded-md hover:bg-accent"
-                          title="Delete"
+                          title={t('common.delete')}
                           disabled={deleteGroup.isPending}
                         >
                           <Trash2 size={18} />
@@ -168,7 +168,7 @@ const Groups: React.FC = () => {
           </table>
 
           {filteredGroups.length === 0 && (
-            <div className="p-12 text-center text-muted-foreground">No groups found.</div>
+            <div className="p-12 text-center text-muted-foreground">{t('groups.no_groups')}</div>
           )}
         </div>
 
@@ -176,7 +176,7 @@ const Groups: React.FC = () => {
         {data && data.total > pageSize && (
           <div className="px-6 py-4 border-t border-border flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, data.total)} of {data.total} groups
+              {t('common.showing')} {(page - 1) * pageSize + 1} {t('common.to')} {Math.min(page * pageSize, data.total)} {t('common.of')} {data.total} {t('groups.showing')}
             </div>
             <div className="flex gap-2">
               <button
@@ -184,14 +184,14 @@ const Groups: React.FC = () => {
                 disabled={page === 1}
                 className="px-3 py-1 border border-input rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
               >
-                Previous
+                {t('common.previous')}
               </button>
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page * pageSize >= data.total}
                 className="px-3 py-1 border border-input rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
               >
-                Next
+                {t('common.next')}
               </button>
             </div>
           </div>

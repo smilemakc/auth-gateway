@@ -1,10 +1,12 @@
 import React from 'react';
 import {Clock, MapPin, Monitor, Trash2, User} from 'lucide-react';
 import {useRevokeSession, useSessions} from '../hooks/useSessions';
+import { useLanguage } from '../services/i18n';
 
 const Sessions: React.FC = () => {
     const {data, isLoading, error} = useSessions(1, 100);
     const revokeSession = useRevokeSession();
+    const { t } = useLanguage();
 
     const sessions = data?.sessions || [];
 
@@ -20,13 +22,13 @@ const Sessions: React.FC = () => {
     if (error) {
         return (
             <div className="p-8 text-center">
-                <p className="text-destructive">Error loading sessions: {(error as Error).message}</p>
+                <p className="text-destructive">{t('sessions.error_loading')}: {(error as Error).message}</p>
             </div>
         );
     }
 
     const handleRevoke = (sessionId: string) => {
-        if (confirm('Are you sure you want to revoke this session?')) {
+        if (confirm(t('sessions.revoke_confirm'))) {
             revokeSession.mutate(sessionId);
         }
     };
@@ -34,8 +36,8 @@ const Sessions: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-foreground">Sessions</h1>
-                <span className="text-sm text-muted-foreground">{sessions.length} active sessions</span>
+                <h1 className="text-2xl font-bold text-foreground">{t('sessions.title')}</h1>
+                <span className="text-sm text-muted-foreground">{sessions.length} {t('sessions.active_sessions')}</span>
             </div>
 
             <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
@@ -43,15 +45,15 @@ const Sessions: React.FC = () => {
                     <table className="min-w-full text-left text-sm whitespace-nowrap">
                         <thead className="uppercase tracking-wider border-b border-border bg-muted">
                         <tr>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">Session name</th>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">User</th>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">Device</th>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">OS</th>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">IP Address</th>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">User Agent</th>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">Last Active</th>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">Created</th>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">Actions</th>
+                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('sessions.col_name')}</th>
+                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('sessions.col_user')}</th>
+                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('sessions.col_device')}</th>
+                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('sessions.col_os')}</th>
+                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('sessions.col_ip')}</th>
+                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('sessions.col_user_agent')}</th>
+                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('sessions.col_last_active')}</th>
+                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('sessions.col_created')}</th>
+                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('common.actions')}</th>
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -60,20 +62,20 @@ const Sessions: React.FC = () => {
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-2 text-muted-foreground">
                                         <User size={16}/>
-                                        {session.session_name || 'Unknown'}
+                                        {session.session_name || t('common.unknown')}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-2 text-muted-foreground">
                                         <User size={16}/>
-                                        {session.user_id || 'Unknown'}
+                                        {session.user_id || t('common.unknown')}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-2 text-muted-foreground">
                                         <Monitor size={16}/>
                                         <span className="truncate max-w-xs" title={session.device_type}>
-                                                {(session.device_type || 'Unknown')}
+                                                {(session.device_type || t('common.unknown'))}
                                             </span>
                                     </div>
                                 </td>
@@ -81,7 +83,7 @@ const Sessions: React.FC = () => {
                                     <div className="flex items-center gap-2 text-muted-foreground">
                                         <Monitor size={16}/>
                                         <span className="truncate max-w-xs" title={session.os}>
-                                                {(session.os || 'Unknown')}
+                                                {(session.os || t('common.unknown'))}
                                             </span>
                                     </div>
                                 </td>
@@ -95,7 +97,7 @@ const Sessions: React.FC = () => {
                                     <div className="flex items-center gap-2 text-muted-foreground">
                                         <Monitor size={16}/>
                                         <span className="truncate max-w-xs" title={session.user_agent}>
-                                                {(session.user_agent || 'Unknown').slice(0, 40)}...
+                                                {(session.user_agent || t('common.unknown')).slice(0, 40)}...
                                             </span>
                                     </div>
                                 </td>
@@ -112,7 +114,7 @@ const Sessions: React.FC = () => {
                                     <button
                                         onClick={() => handleRevoke(session.id)}
                                         className="text-destructive hover:text-destructive p-1 rounded"
-                                        title="Revoke session"
+                                        title={t('sessions.revoke')}
                                     >
                                         <Trash2 size={16}/>
                                     </button>
@@ -123,7 +125,7 @@ const Sessions: React.FC = () => {
                     </table>
                 </div>
                 <div className="p-4 border-t border-border flex justify-between items-center text-sm text-muted-foreground">
-                    <span>Showing {sessions.length} sessions</span>
+                    <span>{t('sessions.showing')} {sessions.length} {t('sessions.sessions_count')}</span>
                 </div>
             </div>
         </div>

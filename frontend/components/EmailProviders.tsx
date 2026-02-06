@@ -51,7 +51,11 @@ const getProviderTypeLabel = (type: string) => {
   }
 };
 
-const EmailProviders: React.FC = () => {
+interface EmailProvidersProps {
+  embedded?: boolean;
+}
+
+const EmailProviders: React.FC<EmailProvidersProps> = ({ embedded = false }) => {
   const { t } = useLanguage();
   const { data: providers, isLoading, error } = useEmailProviders();
   const deleteProvider = useDeleteEmailProvider();
@@ -64,7 +68,7 @@ const EmailProviders: React.FC = () => {
 
   const handleTest = async (providerId: string) => {
     if (!testEmail) {
-      setTestResult({ success: false, message: 'Please enter an email address' });
+      setTestResult({ success: false, message: t('email.enter_email') });
       return;
     }
 
@@ -73,9 +77,9 @@ const EmailProviders: React.FC = () => {
 
     try {
       await testProvider.mutateAsync({ id: providerId, email: testEmail });
-      setTestResult({ success: true, message: 'Test email sent successfully!' });
+      setTestResult({ success: true, message: t('email.test_success') });
     } catch (err) {
-      setTestResult({ success: false, message: err instanceof Error ? err.message : 'Failed to send test email' });
+      setTestResult({ success: false, message: err instanceof Error ? err.message : t('email.test_failed') });
     } finally {
       setTestingProviderId(null);
     }
@@ -101,7 +105,7 @@ const EmailProviders: React.FC = () => {
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
-        Failed to load email providers. Please try again.
+        {t('email.load_error')}
       </div>
     );
   }
@@ -109,29 +113,42 @@ const EmailProviders: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {t('email.providers') || 'Email Providers'}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t('email.providers_desc') || 'Configure SMTP and email service providers'}
-          </p>
+      {!embedded && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              {t('email.providers')}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {t('email.providers_desc')}
+            </p>
+          </div>
+          <Link
+            to="/settings/email-providers/new"
+            className="flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            <Plus size={18} />
+            {t('email.add_provider')}
+          </Link>
         </div>
-        <Link
-          to="/settings/email-providers/new"
-          className="flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
-          <Plus size={18} />
-          {t('email.add_provider') || 'Add Provider'}
-        </Link>
-      </div>
+      )}
+      {embedded && (
+        <div className="flex justify-end">
+          <Link
+            to="/settings/email-providers/new"
+            className="flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            <Plus size={18} />
+            {t('email.add_provider')}
+          </Link>
+        </div>
+      )}
 
       {/* Test Email Input */}
       <div className="bg-card rounded-xl shadow-sm border border-border p-4">
         <div className="flex items-center gap-4">
           <label className="text-sm font-medium text-foreground whitespace-nowrap">
-            {t('email.test_email') || 'Test Email Address'}:
+            {t('email.test_email')}:
           </label>
           <input
             type="email"
@@ -155,17 +172,17 @@ const EmailProviders: React.FC = () => {
             <Mail size={48} className="text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            {t('email.no_providers') || 'No Email Providers'}
+            {t('email.no_providers')}
           </h3>
           <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
-            {t('email.no_providers_desc') || 'Configure an email provider to enable sending emails from the system.'}
+            {t('email.no_providers_desc')}
           </p>
           <Link
             to="/settings/email-providers/new"
             className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg text-sm font-medium transition-colors"
           >
             <Plus size={18} />
-            {t('email.add_first_provider') || 'Add Your First Provider'}
+            {t('email.add_first_provider')}
           </Link>
         </div>
       ) : (
@@ -188,7 +205,7 @@ const EmailProviders: React.FC = () => {
                           ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                           : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                       }`}>
-                        {provider.is_active ? 'Active' : 'Inactive'}
+                        {provider.is_active ? t('common.active') : t('common.inactive')}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -200,40 +217,40 @@ const EmailProviders: React.FC = () => {
                       {provider.type === 'smtp' && (
                         <>
                           <p className="text-muted-foreground">
-                            <span className="font-medium text-foreground">Host:</span> {provider.smtp_host || 'N/A'}
+                            <span className="font-medium text-foreground">{t('email.host')}:</span> {provider.smtp_host || 'N/A'}
                           </p>
                           <p className="text-muted-foreground">
-                            <span className="font-medium text-foreground">Port:</span> {provider.smtp_port || 'N/A'}
+                            <span className="font-medium text-foreground">{t('email.port')}:</span> {provider.smtp_port || 'N/A'}
                           </p>
                           <p className="text-muted-foreground">
-                            <span className="font-medium text-foreground">Username:</span> {provider.smtp_username || 'N/A'}
+                            <span className="font-medium text-foreground">{t('email.username')}:</span> {provider.smtp_username || 'N/A'}
                           </p>
                           <p className="text-muted-foreground">
-                            <span className="font-medium text-foreground">TLS:</span> {provider.smtp_use_tls ? 'Enabled' : 'Disabled'}
+                            <span className="font-medium text-foreground">{t('email.tls')}:</span> {provider.smtp_use_tls ? t('common.enabled') : t('common.disabled')}
                           </p>
                           <p className="text-muted-foreground">
-                            <span className="font-medium text-foreground">Password:</span> {provider.has_smtp_password ? '••••••••' : 'Not set'}
+                            <span className="font-medium text-foreground">{t('email.password')}:</span> {provider.has_smtp_password ? '••••••••' : t('common.not_set')}
                           </p>
                         </>
                       )}
                       {provider.type === 'sendgrid' && (
                         <p className="text-muted-foreground">
-                          <span className="font-medium text-foreground">API Key:</span> {provider.has_sendgrid_api_key ? '••••••••' : 'Not set'}
+                          <span className="font-medium text-foreground">{t('email.api_key')}:</span> {provider.has_sendgrid_api_key ? '••••••••' : t('common.not_set')}
                         </p>
                       )}
                       {provider.type === 'ses' && (
                         <>
                           <p className="text-muted-foreground">
-                            <span className="font-medium text-foreground">Region:</span> {provider.ses_region || 'N/A'}
+                            <span className="font-medium text-foreground">{t('email.region')}:</span> {provider.ses_region || 'N/A'}
                           </p>
                           <p className="text-muted-foreground">
-                            <span className="font-medium text-foreground">Access Key:</span> {provider.ses_access_key_id || 'N/A'}
+                            <span className="font-medium text-foreground">{t('email.access_key')}:</span> {provider.ses_access_key_id || 'N/A'}
                           </p>
                         </>
                       )}
                       {provider.type === 'mailgun' && (
                         <p className="text-muted-foreground">
-                          <span className="font-medium text-foreground">Domain:</span> {provider.mailgun_domain || 'N/A'}
+                          <span className="font-medium text-foreground">{t('email.domain')}:</span> {provider.mailgun_domain || 'N/A'}
                         </p>
                       )}
                     </div>
@@ -251,7 +268,7 @@ const EmailProviders: React.FC = () => {
                     ) : (
                       <Send size={16} />
                     )}
-                    Test
+                    {t('common.test')}
                   </button>
                   <Link
                     to={`/settings/email-providers/${provider.id}`}
@@ -274,7 +291,7 @@ const EmailProviders: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="text-destructive" size={20} />
                     <p className="text-sm text-foreground">
-                      Are you sure you want to delete this provider? This action cannot be undone.
+                      {t('email.delete_confirm')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 mt-3">
@@ -283,13 +300,13 @@ const EmailProviders: React.FC = () => {
                       disabled={deleteProvider.isPending}
                       className="px-3 py-1.5 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:bg-destructive/90 disabled:opacity-50"
                     >
-                      {deleteProvider.isPending ? 'Deleting...' : 'Delete'}
+                      {deleteProvider.isPending ? t('email.deleting') : t('common.delete')}
                     </button>
                     <button
                       onClick={() => setDeleteConfirm(null)}
                       className="px-3 py-1.5 bg-muted text-foreground rounded-lg text-sm font-medium hover:bg-muted/80"
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </div>

@@ -29,6 +29,7 @@ import {
   ChevronRight,
   UserCog,
   Lock,
+  Mail,
   Boxes
 } from 'lucide-react';
 
@@ -61,34 +62,34 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const navGroups: NavGroup[] = [
     {
       id: 'users',
-      label: t('nav.users_identity') || 'Users & Identity',
+      label: t('nav.users_identity'),
       icon: Users,
       items: [
         { path: '/users', label: t('nav.users'), icon: Users },
-        { path: '/groups', label: t('nav.groups') || 'Groups', icon: FolderTree },
-        { path: '/bulk', label: t('nav.bulk_operations') || 'Bulk Operations', icon: FileSpreadsheet },
+        { path: '/groups', label: t('nav.groups'), icon: FolderTree },
+        { path: '/bulk', label: t('nav.bulk_operations'), icon: FileSpreadsheet },
       ],
     },
     {
       id: 'auth',
-      label: t('nav.authentication') || 'Authentication',
+      label: t('nav.authentication'),
       icon: Key,
       items: [
-        { path: '/applications', label: t('nav.applications') || 'Applications', icon: Boxes },
-        { path: '/sessions', label: t('nav.sessions') || 'Sessions', icon: Key },
+        { path: '/applications', label: t('nav.applications'), icon: Boxes },
+        { path: '/sessions', label: t('nav.sessions'), icon: Key },
         { path: '/api-keys', label: t('nav.api_keys'), icon: Key },
         { path: '/oauth', label: t('nav.oauth'), icon: Globe },
-        { path: '/oauth-clients', label: t('nav.oauth_clients') || 'OAuth Clients', icon: Shield },
+        { path: '/oauth-clients', label: t('nav.oauth_clients'), icon: Shield },
       ],
     },
     {
       id: 'security',
-      label: t('nav.security') || 'Security',
+      label: t('nav.security'),
       icon: ShieldAlert,
       items: [
         { path: '/ldap', label: 'LDAP', icon: Server },
         { path: '/saml', label: 'SAML', icon: Shield },
-        { path: '/ip-security', label: t('nav.ip_security') || 'IP Security', icon: ShieldAlert },
+        { path: '/ip-security', label: t('nav.ip_security'), icon: ShieldAlert },
         { path: '/audit-logs', label: t('nav.audit_logs'), icon: ShieldAlert },
       ],
     },
@@ -173,7 +174,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
               `}
             >
               <Lock className="mr-3 h-5 w-5" />
-              {t('nav.access_settings') || 'Access Settings'}
+              {t('nav.access_settings')}
             </Link>
           </nav>
 
@@ -267,6 +268,23 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
             })}
           </nav>
 
+          {/* Email - standalone item */}
+          <nav className="mb-4">
+            <Link
+              to="/settings/email"
+              onClick={() => setIsSidebarOpen(false)}
+              className={`
+                flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors
+                ${location.pathname.startsWith('/settings/email')
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                  : 'text-sidebar-foreground/80 hover:bg-sidebar-muted hover:text-sidebar-foreground'}
+              `}
+            >
+              <Mail className="mr-3 h-5 w-5" />
+              {t('nav.email')}
+            </Link>
+          </nav>
+
           {/* Settings - standalone item */}
           <nav>
             <Link
@@ -317,7 +335,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                   onChange={(e) => setCurrentApplicationId(e.target.value || null)}
                   className="text-sm border rounded-md px-2 py-1.5 bg-card border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 max-w-[200px]"
                 >
-                  <option value="">{t('apps.all_applications') || 'All Applications'}</option>
+                  <option value="">{t('apps.all_applications')}</option>
                   {applications.map((app) => (
                     <option key={app.id} value={app.id}>
                       {app.display_name || app.name}
@@ -325,7 +343,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                   ))}
                 </select>
                 <Link to="/applications" className="text-xs text-primary hover:underline whitespace-nowrap">
-                  {t('apps.manage') || 'Manage'}
+                  {t('apps.manage')}
                 </Link>
               </div>
             )}
@@ -335,21 +353,21 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
               <button
                 onClick={() => setMode('light')}
                 className={`p-1.5 transition-colors ${mode === 'light' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent'}`}
-                title="Light mode"
+                title={t('layout.light_mode')}
               >
                 <Sun size={16} />
               </button>
               <button
                 onClick={() => setMode('system')}
                 className={`p-1.5 transition-colors ${mode === 'system' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent'}`}
-                title="System preference"
+                title={t('layout.system_mode')}
               >
                 <Monitor size={16} />
               </button>
               <button
                 onClick={() => setMode('dark')}
                 className={`p-1.5 transition-colors ${mode === 'dark' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent'}`}
-                title="Dark mode"
+                title={t('layout.dark_mode')}
               >
                 <Moon size={16} />
               </button>
@@ -395,7 +413,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
             <div className="mb-4 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-sm text-primary">
               <Boxes className="h-4 w-4" />
               <span>
-                {t('apps.filtering_by') || 'Filtering by'}:{' '}
+                {t('apps.filtering_by')}:{' '}
                 <strong>{currentApplication.display_name || currentApplication.name}</strong>
               </span>
             </div>

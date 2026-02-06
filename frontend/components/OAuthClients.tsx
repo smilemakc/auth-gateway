@@ -39,7 +39,7 @@ const OAuthClients: React.FC = () => {
   };
 
   const handleRotateSecret = async (clientId: string) => {
-    if (window.confirm('Are you sure you want to rotate the client secret? The old secret will stop working immediately.')) {
+    if (window.confirm(t('oauth_clients.rotate_confirm'))) {
       const result = await rotateSecret.mutateAsync(clientId);
       setNewSecret({ clientId, secret: result.client_secret });
     }
@@ -69,7 +69,7 @@ const OAuthClients: React.FC = () => {
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive rounded-lg p-4 text-destructive">
-        Failed to load OAuth clients. Please try again.
+        {t('oauth_clients.load_error')}
       </div>
     );
   }
@@ -82,24 +82,24 @@ const OAuthClients: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">OAuth Clients</h1>
-          <p className="text-muted-foreground mt-1">Manage OAuth 2.0 / OIDC client applications</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('oauth_clients.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('oauth_clients.desc')}</p>
         </div>
         <Link
           to="/oauth-clients/new"
           className="flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
           <Plus size={18} />
-          Add Client
+          {t('oauth_clients.add')}
         </Link>
       </div>
 
       {/* New Secret Alert */}
       {newSecret && (
         <div className="bg-primary/10 border border-primary rounded-lg p-4">
-          <h3 className="font-semibold text-primary mb-2">New Client Secret Generated</h3>
+          <h3 className="font-semibold text-primary mb-2">{t('oauth_clients.new_secret')}</h3>
           <p className="text-sm text-primary mb-3">
-            Copy this secret now. You won't be able to see it again.
+            {t('oauth_clients.new_secret_desc')}
           </p>
           <div className="flex items-center gap-2">
             <code className="flex-1 bg-primary/20 rounded px-3 py-2 text-sm font-mono text-primary break-all">
@@ -116,7 +116,7 @@ const OAuthClients: React.FC = () => {
             onClick={() => setNewSecret(null)}
             className="mt-3 text-sm text-primary hover:text-primary"
           >
-            Dismiss
+            {t('common.dismiss')}
           </button>
         </div>
       )}
@@ -136,7 +136,7 @@ const OAuthClients: React.FC = () => {
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`w-2 h-2 rounded-full ${client.is_active ? 'bg-success' : 'bg-muted-foreground'}`}></span>
                       <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                        {client.is_active ? 'Active' : 'Inactive'}
+                        {client.is_active ? t('common.active') : t('common.inactive')}
                       </span>
                       <span className="text-xs text-muted-foreground">|</span>
                       <span className="text-xs text-muted-foreground capitalize">{client.client_type}</span>
@@ -158,7 +158,7 @@ const OAuthClients: React.FC = () => {
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Client ID</label>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">{t('oauth_clients.client_id')}</label>
                   <div className="flex items-center gap-2">
                     <code className="flex-1 bg-muted rounded px-3 py-2 text-sm text-muted-foreground font-mono truncate border border-border">
                       {client.client_id}
@@ -172,16 +172,16 @@ const OAuthClients: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Redirect URIs</label>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">{t('oauth_clients.redirect_uris')}</label>
                   <div className="text-xs text-muted-foreground truncate" title={client.redirect_uris.join(', ')}>
-                    {client.redirect_uris.length > 0 ? client.redirect_uris[0] : <span className="italic text-muted-foreground">None configured</span>}
+                    {client.redirect_uris.length > 0 ? client.redirect_uris[0] : <span className="italic text-muted-foreground">{t('oauth_clients.none_configured')}</span>}
                     {client.redirect_uris.length > 1 && (
                       <span className="text-muted-foreground"> (+{client.redirect_uris.length - 1} more)</span>
                     )}
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Grant Types</label>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">{t('oauth_clients.grant_types')}</label>
                   <div className="flex flex-wrap gap-1">
                     {client.allowed_grant_types.slice(0, 2).map((grant) => (
                       <span key={grant} className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded">
@@ -206,7 +206,7 @@ const OAuthClients: React.FC = () => {
                 <button
                   onClick={() => handleRotateSecret(client.id)}
                   className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                  title="Rotate Secret"
+                  title={t('oauth_clients.rotate_secret')}
                   disabled={rotateSecret.isPending}
                 >
                   <Key size={18} />
@@ -233,15 +233,15 @@ const OAuthClients: React.FC = () => {
       {clients.length === 0 && (
         <div className="text-center py-12">
           <Shield className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h3 className="mt-2 text-sm font-medium text-foreground">No OAuth clients</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Get started by creating a new OAuth client.</p>
+          <h3 className="mt-2 text-sm font-medium text-foreground">{t('oauth_clients.no_clients')}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">{t('oauth_clients.no_clients_desc')}</p>
           <div className="mt-6">
             <Link
               to="/oauth-clients/new"
               className="inline-flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium"
             >
               <Plus size={18} />
-              Add Client
+              {t('oauth_clients.add')}
             </Link>
           </div>
         </div>
@@ -251,9 +251,9 @@ const OAuthClients: React.FC = () => {
       {totalPages > 1 && (
         <div className="flex items-center justify-between bg-card px-4 py-3 rounded-lg border border-border">
           <div className="text-sm text-foreground">
-            Showing <span className="font-medium">{(page - 1) * pageSize + 1}</span> to{' '}
-            <span className="font-medium">{Math.min(page * pageSize, total)}</span> of{' '}
-            <span className="font-medium">{total}</span> results
+            {t('common.showing')} <span className="font-medium">{(page - 1) * pageSize + 1}</span> {t('common.to')}{' '}
+            <span className="font-medium">{Math.min(page * pageSize, total)}</span> {t('common.of')}{' '}
+            <span className="font-medium">{total}</span> {t('common.results')}
           </div>
           <div className="flex gap-2">
             <button
@@ -261,14 +261,14 @@ const OAuthClients: React.FC = () => {
               disabled={page === 1}
               className="px-3 py-1 border border-input rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
             >
-              Previous
+              {t('common.previous')}
             </button>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
               className="px-3 py-1 border border-input rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
             >
-              Next
+              {t('common.next')}
             </button>
           </div>
         </div>

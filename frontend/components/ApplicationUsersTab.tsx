@@ -26,7 +26,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
 
   const handleBan = async (profile: UserApplicationProfile) => {
     if (!banReason.trim()) {
-      alert(t('apps.ban_reason_required') || 'Please provide a reason for banning.');
+      alert(t('apps.ban_reason_required'));
       return;
     }
     try {
@@ -43,7 +43,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
   };
 
   const handleUnban = async (profile: UserApplicationProfile) => {
-    if (window.confirm(t('apps.confirm_unban') || 'Are you sure you want to unban this user?')) {
+    if (window.confirm(t('apps.confirm_unban'))) {
       try {
         await unbanUser.mutateAsync({
           applicationId,
@@ -66,7 +66,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive rounded-lg p-4 text-destructive">
-        {t('apps.users_load_error') || 'Failed to load users.'}
+        {t('apps.users_load_error')}
       </div>
     );
   }
@@ -86,7 +86,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">{total}</p>
-              <p className="text-sm text-muted-foreground">{t('apps.total_users') || 'Total Users'}</p>
+              <p className="text-sm text-muted-foreground">{t('apps.total_users')}</p>
             </div>
           </div>
         </div>
@@ -99,7 +99,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
               <p className="text-2xl font-bold text-foreground">
                 {profiles.filter(p => p.is_active && !p.is_banned).length}
               </p>
-              <p className="text-sm text-muted-foreground">{t('apps.active_users') || 'Active Users'}</p>
+              <p className="text-sm text-muted-foreground">{t('apps.active_users')}</p>
             </div>
           </div>
         </div>
@@ -112,7 +112,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
               <p className="text-2xl font-bold text-foreground">
                 {profiles.filter(p => p.is_banned).length}
               </p>
-              <p className="text-sm text-muted-foreground">{t('apps.banned_users') || 'Banned Users'}</p>
+              <p className="text-sm text-muted-foreground">{t('apps.banned_users')}</p>
             </div>
           </div>
         </div>
@@ -125,19 +125,19 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
             <thead className="bg-muted">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {t('apps.user') || 'User'}
+                  {t('apps.user')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {t('apps.profile') || 'Profile'}
+                  {t('apps.profile')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {t('common.status') || 'Status'}
+                  {t('common.status')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {t('apps.last_access') || 'Last Access'}
+                  {t('apps.last_access')}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {t('common.actions') || 'Actions'}
+                  {t('common.actions')}
                 </th>
               </tr>
             </thead>
@@ -194,30 +194,30 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
                       {profile.is_banned ? (
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-destructive/10 text-destructive text-xs font-medium rounded">
                           <Ban size={12} />
-                          {t('apps.banned') || 'Banned'}
+                          {t('apps.banned')}
                         </span>
                       ) : profile.is_active ? (
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-success/10 text-success text-xs font-medium rounded">
                           <UserCheck size={12} />
-                          {t('common.active') || 'Active'}
+                          {t('common.active')}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-muted-foreground text-xs font-medium rounded">
-                          {t('common.inactive') || 'Inactive'}
+                          {t('common.inactive')}
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {profile.last_access_at
                         ? new Date(profile.last_access_at).toLocaleString()
-                        : (t('apps.never') || 'Never')}
+                        : t('apps.never')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Link
                           to={`/users/${profile.user_id}`}
                           className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                          title={t('common.view') || 'View User'}
+                          title={t('common.view')}
                         >
                           <Eye size={18} />
                         </Link>
@@ -226,7 +226,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
                             onClick={() => handleUnban(profile)}
                             disabled={unbanUser.isPending}
                             className="p-2 text-muted-foreground hover:text-success hover:bg-success/10 rounded-lg transition-colors"
-                            title={t('apps.unban') || 'Unban'}
+                            title={t('apps.unban')}
                           >
                             <UserCheck size={18} />
                           </button>
@@ -234,7 +234,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
                           <button
                             onClick={() => setBanningUserId(profile.user_id)}
                             className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                            title={t('apps.ban') || 'Ban'}
+                            title={t('apps.ban')}
                           >
                             <Ban size={18} />
                           </button>
@@ -251,13 +251,13 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
                           <AlertCircle className="text-destructive" size={20} />
                           <div className="flex-1">
                             <p className="text-sm font-medium text-destructive mb-2">
-                              {t('apps.ban_user') || 'Ban user from this application'}
+                              {t('apps.ban_user')}
                             </p>
                             <input
                               type="text"
                               value={banReason}
                               onChange={e => setBanReason(e.target.value)}
-                              placeholder={t('apps.ban_reason_placeholder') || 'Enter reason for ban...'}
+                              placeholder={t('apps.ban_reason_placeholder')}
                               className="w-full px-3 py-2 bg-background border border-destructive/30 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-destructive"
                             />
                           </div>
@@ -269,7 +269,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
                               }}
                               className="px-3 py-2 text-sm text-foreground hover:bg-accent rounded-lg transition-colors"
                             >
-                              {t('common.cancel') || 'Cancel'}
+                              {t('common.cancel')}
                             </button>
                             <button
                               onClick={() => handleBan(profile)}
@@ -277,13 +277,13 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
                               className="flex items-center gap-2 px-3 py-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                             >
                               {banUser.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                              {t('apps.confirm_ban') || 'Confirm Ban'}
+                              {t('apps.confirm_ban')}
                             </button>
                           </div>
                         </div>
                         {profile.is_banned && profile.ban_reason && (
                           <p className="mt-2 text-sm text-muted-foreground">
-                            <span className="font-medium">{t('apps.current_reason') || 'Current reason'}:</span> {profile.ban_reason}
+                            <span className="font-medium">{t('apps.current_reason')}:</span> {profile.ban_reason}
                           </p>
                         )}
                       </td>
@@ -298,9 +298,9 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
         {profiles.length === 0 && (
           <div className="text-center py-12">
             <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-2 text-sm font-medium text-foreground">{t('apps.no_users') || 'No users'}</h3>
+            <h3 className="mt-2 text-sm font-medium text-foreground">{t('apps.no_users')}</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              {t('apps.no_users_desc') || 'No users have accessed this application yet.'}
+              {t('apps.no_users_desc')}
             </p>
           </div>
         )}
@@ -309,9 +309,9 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-border">
             <div className="text-sm text-foreground">
-              {t('common.showing') || 'Showing'} <span className="font-medium">{(page - 1) * pageSize + 1}</span>{' '}
-              {t('common.to') || 'to'} <span className="font-medium">{Math.min(page * pageSize, total)}</span>{' '}
-              {t('common.of') || 'of'} <span className="font-medium">{total}</span>
+              {t('common.showing')} <span className="font-medium">{(page - 1) * pageSize + 1}</span>{' '}
+              {t('common.to')} <span className="font-medium">{Math.min(page * pageSize, total)}</span>{' '}
+              {t('common.of')} <span className="font-medium">{total}</span>
             </div>
             <div className="flex gap-2">
               <button
@@ -319,14 +319,14 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
                 disabled={page === 1}
                 className="px-3 py-1 border border-input rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
               >
-                {t('common.previous') || 'Previous'}
+                {t('common.previous')}
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className="px-3 py-1 border border-input rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
               >
-                {t('common.next') || 'Next'}
+                {t('common.next')}
               </button>
             </div>
           </div>

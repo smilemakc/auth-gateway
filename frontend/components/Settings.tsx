@@ -92,7 +92,7 @@ const Settings: React.FC = () => {
           className="flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Save size={18} />
-          {updatePolicyMutation.isPending ? 'Saving...' : t('common.save')}
+          {updatePolicyMutation.isPending ? t('settings.saving') : t('common.save')}
         </button>
       </div>
 
@@ -107,11 +107,11 @@ const Settings: React.FC = () => {
                 <h2 className="text-lg font-semibold text-foreground">{t('sys.health')}</h2>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                    <span className={`inline-block w-2 h-2 rounded-full ${systemStatus?.status === 'healthy' ? 'bg-success' : 'bg-destructive'}`}></span>
-                   Status: <span className="uppercase font-medium">{systemStatus?.status}</span>
+                   {t('settings.status_label')}: <span className="uppercase font-medium">{systemStatus?.status}</span>
                    <span className="mx-1">•</span>
-                   <span>DB: {systemStatus?.services?.database || 'unknown'}</span>
+                   <span>{t('settings.db_label')}: {systemStatus?.services?.database || 'unknown'}</span>
                    <span className="mx-1">•</span>
-                   <span>Redis: {systemStatus?.services?.redis || 'unknown'}</span>
+                   <span>{t('settings.redis_label')}: {systemStatus?.services?.redis || 'unknown'}</span>
                 </div>
              </div>
           </div>
@@ -167,7 +167,7 @@ const Settings: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-foreground">{t('settings.roles_desc')}</h2>
-              <p className="text-sm text-muted-foreground">Manage roles and permissions in one place.</p>
+              <p className="text-sm text-muted-foreground">{t('settings.roles_manage_desc')}</p>
             </div>
           </div>
           <Link
@@ -291,83 +291,45 @@ const Settings: React.FC = () => {
         )}
       </section>
 
-      {/* OAuth Providers */}
+      {/* Email Settings */}
       <section className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-        <div className="p-6 border-b border-border flex items-center gap-3">
-          <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-             <Globe size={20} />
-          </div>
-          <h2 className="text-lg font-semibold text-foreground">{t('oauth.title')}</h2>
-        </div>
-        <div className="p-6">
-           <div className="space-y-4">
-             {['Google', 'GitHub', 'Yandex', 'Telegram'].map((provider) => (
-               <div key={provider} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center font-bold text-muted-foreground text-lg">
-                      {provider[0]}
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-foreground">{provider}</h3>
-                      <p className="text-xs text-muted-foreground">{t('oauth.client_id')}: ************392a</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-medium text-success bg-success/10 px-2 py-1 rounded">Enabled</span>
-                    <button className="text-sm text-primary hover:text-primary-700 font-medium">{t('oauth.configure')}</button>
-                  </div>
-               </div>
-             ))}
-           </div>
-           <div className="mt-4 text-center">
-             <Link to="/oauth" className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1">
-               {t('oauth.manage_desc')} <ExternalLink size={14} />
-             </Link>
-           </div>
-        </div>
-      </section>
-
-       {/* Email & SMS */}
-       <section className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
         <div className="p-6 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-success/10 text-success rounded-lg">
                <Mail size={20} />
             </div>
-            <h2 className="text-lg font-semibold text-foreground">{t('settings.email_smtp')}</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">{t('settings.email_smtp')}</h2>
+              <p className="text-sm text-muted-foreground">{t('email.providers_desc')}</p>
+            </div>
           </div>
           <Link
-            to="/settings/email-templates"
-            className="text-sm bg-card border border-input text-foreground hover:bg-accent px-3 py-1.5 rounded-md font-medium transition-colors"
+            to="/settings/email"
+            className="text-sm bg-card border border-input text-foreground hover:bg-accent px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
           >
-            {t('settings.manage_templates')}
+            {t('oauth.configure')} <ChevronRight size={16} />
           </Link>
         </div>
-        <div className="p-6">
-          <p className="text-sm text-muted-foreground mb-4">
-            {t('email.providers_desc') || 'Configure SMTP servers and email service providers for sending system emails.'}
-          </p>
-          <Link
-            to="/settings/email-providers"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg text-sm font-medium transition-colors"
-          >
-            <Server size={16} />
-            {t('email.manage_providers') || 'Manage Email Providers'}
-          </Link>
-        </div>
+      </section>
 
-        {/* SMS Settings Link */}
-        <div className="bg-muted p-6 border-t border-border flex items-center justify-between">
-            <div className="flex items-center gap-3">
-               <MessageSquare size={18} className="text-muted-foreground" />
-               <span className="text-sm font-medium text-foreground">{t('sms.title')}</span>
+      {/* SMS Settings */}
+      <section className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-muted text-muted-foreground rounded-lg">
+               <MessageSquare size={20} />
             </div>
-            <Link
-              to="/settings/sms"
-              className="text-sm bg-card border border-input text-foreground hover:bg-accent px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
-            >
-              {t('oauth.configure')} <ChevronRight size={16} />
-            </Link>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">{t('sms.title')}</h2>
+              <p className="text-sm text-muted-foreground">{t('sms.desc')}</p>
+            </div>
+          </div>
+          <Link
+            to="/settings/sms"
+            className="text-sm bg-card border border-input text-foreground hover:bg-accent px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
+          >
+            {t('oauth.configure')} <ChevronRight size={16} />
+          </Link>
         </div>
       </section>
     </div>

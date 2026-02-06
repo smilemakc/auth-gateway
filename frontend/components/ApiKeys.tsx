@@ -61,11 +61,11 @@ const ApiKeys: React.FC = () => {
 
   const handleCreateKey = async () => {
     if (!newKeyName.trim()) {
-      alert(t('keys.name_required') || 'Please enter a name for the API key');
+      alert(t('keys.name_required'));
       return;
     }
     if (newKeyScopes.length === 0) {
-      alert(t('keys.scopes_required') || 'Please select at least one scope');
+      alert(t('keys.scopes_required'));
       return;
     }
 
@@ -134,7 +134,7 @@ const ApiKeys: React.FC = () => {
           <div className="bg-card rounded-xl shadow-xl border border-border w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-border">
               <h2 className="text-lg font-semibold text-foreground">
-                {generatedKey ? (t('keys.key_generated') || 'API Key Generated') : (t('keys.generate') || 'Generate API Key')}
+                {generatedKey ? t('keys.key_generated') : t('keys.generate')}
               </h2>
               <button
                 onClick={handleCloseModal}
@@ -149,7 +149,7 @@ const ApiKeys: React.FC = () => {
                 <>
                   <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
                     <p className="text-sm text-warning font-medium mb-2">
-                      {t('keys.copy_warning') || 'Copy this key now. You won\'t be able to see it again!'}
+                      {t('keys.copy_warning')}
                     </p>
                     <div className="flex items-center gap-2 bg-card rounded border border-border p-2">
                       <code className="flex-1 text-sm font-mono text-foreground break-all">
@@ -171,27 +171,27 @@ const ApiKeys: React.FC = () => {
                     onClick={handleCloseModal}
                     className="w-full bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors"
                   >
-                    {t('common.done') || 'Done'}
+                    {t('common.done')}
                   </button>
                 </>
               ) : (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      {t('keys.name') || 'Name'}
+                      {t('keys.name')}
                     </label>
                     <input
                       type="text"
                       value={newKeyName}
                       onChange={(e) => setNewKeyName(e.target.value)}
-                      placeholder={t('keys.name_placeholder') || 'My API Key'}
+                      placeholder={t('keys.name_placeholder')}
                       className="w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      {t('keys.scopes') || 'Scopes'}
+                      {t('keys.scopes')}
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {AVAILABLE_SCOPES.map(scope => (
@@ -212,18 +212,18 @@ const ApiKeys: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      {t('keys.expires_in') || 'Expires In (days)'}
+                      {t('keys.expires_in')}
                     </label>
                     <select
                       value={newKeyExpiresIn || ''}
                       onChange={(e) => setNewKeyExpiresIn(e.target.value ? parseInt(e.target.value) : undefined)}
                       className="w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     >
-                      <option value="">{t('keys.never') || 'Never'}</option>
-                      <option value="30">30 {t('common.days') || 'days'}</option>
-                      <option value="90">90 {t('common.days') || 'days'}</option>
-                      <option value="180">180 {t('common.days') || 'days'}</option>
-                      <option value="365">365 {t('common.days') || 'days'}</option>
+                      <option value="">{t('keys.never')}</option>
+                      <option value="30">30 {t('common.days')}</option>
+                      <option value="90">90 {t('common.days')}</option>
+                      <option value="180">180 {t('common.days')}</option>
+                      <option value="365">365 {t('common.days')}</option>
                     </select>
                   </div>
 
@@ -239,7 +239,7 @@ const ApiKeys: React.FC = () => {
                       disabled={createApiKeyMutation.isPending}
                       className="flex-1 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
                     >
-                      {createApiKeyMutation.isPending ? (t('common.creating') || 'Creating...') : (t('keys.generate') || 'Generate')}
+                      {createApiKeyMutation.isPending ? t('common.creating') : t('keys.generate')}
                     </button>
                   </div>
                 </>

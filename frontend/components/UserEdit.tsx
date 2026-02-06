@@ -289,7 +289,7 @@ const UserEdit: React.FC = () => {
                     className="shadow-sm focus:ring-ring focus:border-ring block w-full sm:text-sm border-input rounded-md p-2.5 border"
                     required
                     minLength={8}
-                    placeholder={t('user.form.password_placeholder') || 'Minimum 8 characters'}
+                    placeholder={t('user.form.password_placeholder')}
                   />
                 </div>
               </div>
@@ -312,7 +312,7 @@ const UserEdit: React.FC = () => {
 
           {!isEditMode && (
             <div className="pt-6 border-t border-border">
-              <h3 className="text-sm font-medium text-foreground mb-4">{t('user.form.account_type') || 'Account Type'}</h3>
+              <h3 className="text-sm font-medium text-foreground mb-4">{t('user.form.account_type')}</h3>
               <div className="flex gap-4">
                 <label className="flex items-center">
                   <input
@@ -323,7 +323,7 @@ const UserEdit: React.FC = () => {
                     onChange={handleChange}
                     className="focus:ring-ring h-4 w-4 text-primary border-input"
                   />
-                  <span className="ml-2 text-sm text-foreground">{t('user.form.account_human') || 'Human'}</span>
+                  <span className="ml-2 text-sm text-foreground">{t('user.form.account_human')}</span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -334,7 +334,7 @@ const UserEdit: React.FC = () => {
                     onChange={handleChange}
                     className="focus:ring-ring h-4 w-4 text-primary border-input"
                   />
-                  <span className="ml-2 text-sm text-foreground">{t('user.form.account_service') || 'Service'}</span>
+                  <span className="ml-2 text-sm text-foreground">{t('user.form.account_service')}</span>
                 </label>
               </div>
             </div>

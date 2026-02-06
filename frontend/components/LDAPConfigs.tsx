@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, TestTube, RefreshCw, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
 import type { LDAPConfig } from '@auth-gateway/client-sdk';
 import { useLDAPConfigs, useDeleteLDAPConfig, useSyncLDAP, useTestLDAPConnection } from '../hooks/useLDAP';
+import { useLanguage } from '../services/i18n';
 
 const LDAPConfigs: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [testingId, setTestingId] = useState<string | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
 
@@ -15,12 +17,12 @@ const LDAPConfigs: React.FC = () => {
   const testConnection = useTestLDAPConnection();
 
   const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to delete LDAP configuration "${name}"?`)) {
+    if (window.confirm(`${t('ldap.delete_confirm')} "${name}"?`)) {
       try {
         await deleteConfig.mutateAsync(id);
       } catch (error) {
         console.error('Failed to delete LDAP config:', error);
-        alert('Failed to delete LDAP configuration');
+        alert(t('common.failed_to_load'));
       }
     }
   };
@@ -39,12 +41,12 @@ const LDAPConfigs: React.FC = () => {
         base_dn: config.base_dn,
       });
       if (result.success) {
-        alert(`Connection successful!\nUsers: ${result.user_count || 0}\nGroups: ${result.group_count || 0}`);
+        alert(`${t('ldap.connection_success')}\nUsers: ${result.user_count || 0}\nGroups: ${result.group_count || 0}`);
       } else {
-        alert(`Connection failed: ${result.error || result.message}`);
+        alert(`${t('ldap.connection_failed')}: ${result.error || result.message}`);
       }
     } catch (error) {
-      alert(`Connection test failed: ${(error as Error).message}`);
+      alert(`${t('ldap.connection_failed')}: ${(error as Error).message}`);
     } finally {
       setTestingId(null);
     }
@@ -54,10 +56,10 @@ const LDAPConfigs: React.FC = () => {
     setSyncingId(id);
     try {
       await syncLDAP.mutateAsync({ id, data: { sync_users: true, sync_groups: true } });
-      alert('Synchronization started successfully');
+      alert(t('ldap.sync_started'));
     } catch (error) {
       console.error('Failed to start sync:', error);
-      alert('Failed to start synchronization');
+      alert(t('common.failed_to_load'));
     } finally {
       setSyncingId(null);
     }
@@ -74,7 +76,7 @@ const LDAPConfigs: React.FC = () => {
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-destructive">Error loading LDAP configurations: {(error as Error).message}</p>
+        <p className="text-destructive">{t('ldap.error_loading')}: {(error as Error).message}</p>
       </div>
     );
   }
@@ -85,15 +87,15 @@ const LDAPConfigs: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">LDAP Configurations</h1>
-          <p className="text-muted-foreground mt-1">Manage LDAP/Active Directory integrations</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('ldap.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('ldap.desc')}</p>
         </div>
         <button
           onClick={() => navigate('/ldap/new')}
           className="bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
         >
           <Plus size={18} />
-          Create Configuration
+          {t('ldap.create')}
         </button>
       </div>
 
@@ -103,22 +105,22 @@ const LDAPConfigs: React.FC = () => {
             <thead className="bg-muted">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Name / Server
+                  {t('ldap.col_name_server')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Port
+                  {t('ldap.col_port')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Base DN
+                  {t('ldap.col_base_dn')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Status
+                  {t('ldap.col_status')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Last Sync
+                  {t('ldap.col_last_sync')}
                 </th>
                 <th scope="col" className="relative px-6 py-3">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t('ldap.col_actions')}</span>
                 </th>
               </tr>
             </thead>
@@ -138,24 +140,24 @@ const LDAPConfigs: React.FC = () => {
                       {config.is_active ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">
                           <CheckCircle size={12} />
-                          Active
+                          {t('ldap.active')}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
                           <XCircle size={12} />
-                          Inactive
+                          {t('ldap.inactive')}
                         </span>
                       )}
                       {config.sync_enabled && (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                           <Clock size={12} />
-                          Auto-sync
+                          {t('ldap.auto_sync')}
                         </span>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                    {config.last_sync_at ? new Date(config.last_sync_at).toLocaleString() : 'Never'}
+                    {config.last_sync_at ? new Date(config.last_sync_at).toLocaleString() : t('common.never')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-1">
@@ -163,7 +165,7 @@ const LDAPConfigs: React.FC = () => {
                         onClick={() => handleTestConnection(config)}
                         disabled={testingId === config.id}
                         className="p-1.5 text-muted-foreground hover:text-primary rounded-md hover:bg-accent disabled:opacity-50"
-                        title="Test Connection"
+                        title={t('ldap.test_connection')}
                       >
                         <TestTube size={16} />
                       </button>
@@ -171,28 +173,28 @@ const LDAPConfigs: React.FC = () => {
                         onClick={() => handleSync(config.id)}
                         disabled={syncingId === config.id}
                         className="p-1.5 text-muted-foreground hover:text-success rounded-md hover:bg-accent disabled:opacity-50"
-                        title="Sync Now"
+                        title={t('ldap.sync_now')}
                       >
                         <RefreshCw size={16} className={syncingId === config.id ? 'animate-spin' : ''} />
                       </button>
                       <Link
                         to={`/ldap/${config.id}/logs`}
                         className="p-1.5 text-muted-foreground hover:text-primary rounded-md hover:bg-accent"
-                        title="View Sync Logs"
+                        title={t('ldap.view_logs')}
                       >
                         <FileText size={16} />
                       </Link>
                       <Link
                         to={`/ldap/${config.id}`}
                         className="p-1.5 text-muted-foreground hover:text-primary rounded-md hover:bg-accent"
-                        title="Edit"
+                        title={t('common.edit')}
                       >
                         <Edit size={16} />
                       </Link>
                       <button
                         onClick={() => handleDelete(config.id, config.server)}
                         className="p-1.5 text-muted-foreground hover:text-destructive rounded-md hover:bg-accent"
-                        title="Delete"
+                        title={t('common.delete')}
                         disabled={deleteConfig.isPending}
                       >
                         <Trash2 size={16} />
@@ -205,7 +207,7 @@ const LDAPConfigs: React.FC = () => {
           </table>
 
           {configs.length === 0 && (
-            <div className="p-12 text-center text-muted-foreground">No LDAP configurations found.</div>
+            <div className="p-12 text-center text-muted-foreground">{t('ldap.no_configs')}</div>
           )}
         </div>
       </div>

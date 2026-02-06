@@ -1,37 +1,40 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Users, UserPlus, UserMinus, UserCheck, FileSpreadsheet } from 'lucide-react';
+import { useLanguage } from '../services/i18n';
 
 const BulkOperations: React.FC = () => {
+  const { t } = useLanguage();
+
   const operations = [
     {
       id: 'create',
-      title: 'Bulk Create Users',
-      description: 'Create multiple users at once from CSV or JSON file',
+      title: t('bulk.create_users'),
+      description: t('bulk.create_desc'),
       icon: UserPlus,
       path: '/bulk/create',
       color: 'bg-blue-500',
     },
     {
       id: 'update',
-      title: 'Bulk Update Users',
-      description: 'Update multiple users simultaneously',
+      title: t('bulk.update_users'),
+      description: t('bulk.update_desc'),
       icon: Users,
       path: '/bulk/update',
       color: 'bg-green-500',
     },
     {
       id: 'delete',
-      title: 'Bulk Delete Users',
-      description: 'Delete multiple users at once',
+      title: t('bulk.delete_users'),
+      description: t('bulk.delete_desc'),
       icon: UserMinus,
       path: '/bulk/delete',
       color: 'bg-red-500',
     },
     {
       id: 'assign-roles',
-      title: 'Bulk Assign Roles',
-      description: 'Assign roles to multiple users',
+      title: t('bulk.assign_roles'),
+      description: t('bulk.assign_desc'),
       icon: UserCheck,
       path: '/bulk/assign-roles',
       color: 'bg-purple-500',
@@ -41,8 +44,8 @@ const BulkOperations: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Bulk Operations</h1>
-        <p className="text-muted-foreground mt-1">Perform operations on multiple users at once</p>
+        <h1 className="text-2xl font-bold text-foreground">{t('bulk.title')}</h1>
+        <p className="text-muted-foreground mt-1">{t('bulk.desc')}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -71,11 +74,10 @@ const BulkOperations: React.FC = () => {
       <div className="bg-primary/10 border border-border rounded-lg p-4">
         <h3 className="font-semibold text-primary mb-2 flex items-center gap-2">
           <FileSpreadsheet size={20} />
-          CSV/JSON Format
+          {t('bulk.csv_format')}
         </h3>
         <p className="text-sm text-primary">
-          For bulk create operations, you can upload a CSV or JSON file. The CSV should have columns: email, username,
-          full_name, password, is_active, email_verified
+          {t('bulk.csv_hint')}
         </p>
       </div>
     </div>

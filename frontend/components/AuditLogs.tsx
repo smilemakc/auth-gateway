@@ -23,7 +23,7 @@ const AuditLogs: React.FC = () => {
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-destructive">Error loading audit logs: {(error as Error).message}</p>
+        <p className="text-destructive">{t('common.error_loading')}: {(error as Error).message}</p>
       </div>
     );
   }
@@ -41,7 +41,7 @@ const AuditLogs: React.FC = () => {
                 <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('users.col_user')}</th>
                 <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('ip.address')}</th>
                 <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('common.status')}</th>
-                <th scope="col" className="px-6 py-4 font-semibold text-foreground">Time</th>
+                <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('audit.col_time')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -58,7 +58,7 @@ const AuditLogs: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <User size={16} />
-                      {log.user_id || 'System'}
+                      {log.user_id || t('audit.system')}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -86,7 +86,7 @@ const AuditLogs: React.FC = () => {
           </table>
         </div>
         <div className="p-4 border-t border-border flex justify-between items-center text-sm text-muted-foreground">
-          <span>Showing {logs.length} entries</span>
+          <span>{t('common.showing')} {logs.length} {t('audit.showing')}</span>
         </div>
       </div>
     </div>

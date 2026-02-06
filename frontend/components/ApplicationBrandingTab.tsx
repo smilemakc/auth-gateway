@@ -82,13 +82,13 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <Image className="text-primary" size={20} />
             </div>
-            <h2 className="text-lg font-semibold text-foreground">{t('brand.visual') || 'Visual Identity'}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t('brand.visual')}</h2>
           </div>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t('brand.logo') || 'Logo URL'}
+                {t('brand.logo')}
               </label>
               <input
                 type="url"
@@ -106,7 +106,7 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t('brand.favicon') || 'Favicon URL'}
+                {t('brand.favicon')}
               </label>
               <input
                 type="url"
@@ -125,13 +125,13 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <Palette className="text-primary" size={20} />
             </div>
-            <h2 className="text-lg font-semibold text-foreground">{t('brand.colors') || 'Colors'}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t('brand.colors')}</h2>
           </div>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t('brand.primary') || 'Primary Color'}
+                {t('brand.primary')}
               </label>
               <div className="flex items-center gap-3">
                 <input
@@ -151,7 +151,7 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t('brand.secondary') || 'Secondary Color'}
+                {t('brand.secondary')}
               </label>
               <div className="flex items-center gap-3">
                 <input
@@ -171,7 +171,7 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t('brand.bg') || 'Background Color'}
+                {t('brand.bg')}
               </label>
               <div className="flex items-center gap-3">
                 <input
@@ -196,10 +196,10 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
                   className="inline-block px-4 py-2 rounded-lg text-white font-medium"
                   style={{ backgroundColor: formData.primary_color }}
                 >
-                  {t('brand.preview_btn') || 'Primary Button'}
+                  {t('brand.preview_btn')}
                 </div>
                 <p className="mt-2 text-sm" style={{ color: formData.secondary_color }}>
-                  {t('brand.preview_text') || 'Secondary text color'}
+                  {t('brand.preview_text')}
                 </p>
               </div>
             </div>
@@ -212,13 +212,13 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <Mail className="text-primary" size={20} />
             </div>
-            <h2 className="text-lg font-semibold text-foreground">{t('brand.company_info') || 'Company Information'}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t('brand.company_info')}</h2>
           </div>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t('brand.company') || 'Company Name'}
+                {t('brand.company')}
               </label>
               <input
                 type="text"
@@ -231,7 +231,7 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t('brand.support_email') || 'Support Email'}
+                {t('brand.support_email')}
               </label>
               <input
                 type="email"
@@ -250,13 +250,13 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <FileText className="text-primary" size={20} />
             </div>
-            <h2 className="text-lg font-semibold text-foreground">{t('brand.legal') || 'Legal Links'}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t('brand.legal')}</h2>
           </div>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t('brand.terms') || 'Terms of Service URL'}
+                {t('brand.terms')}
               </label>
               <input
                 type="url"
@@ -269,7 +269,7 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t('brand.privacy') || 'Privacy Policy URL'}
+                {t('brand.privacy')}
               </label>
               <input
                 type="url"
@@ -284,9 +284,9 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
 
         {/* Custom CSS */}
         <div className="bg-card rounded-xl shadow-sm border border-border p-6 lg:col-span-2">
-          <h2 className="text-lg font-semibold text-foreground mb-4">{t('brand.custom_css') || 'Custom CSS'}</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">{t('brand.custom_css')}</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            {t('brand.custom_css_hint') || 'Add custom CSS to override default styles on login pages.'}
+            {t('brand.custom_css_hint')}
           </p>
           <textarea
             value={formData.custom_css}
@@ -310,7 +310,7 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
           ) : (
             <Save size={18} />
           )}
-          {updateBranding.isPending ? (t('common.saving') || 'Saving...') : (t('common.save') || 'Save Branding')}
+          {updateBranding.isPending ? t('common.saving') : t('common.save')}
         </button>
       </div>
     </form>

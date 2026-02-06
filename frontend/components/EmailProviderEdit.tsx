@@ -167,12 +167,12 @@ const EmailProviderEdit: React.FC = () => {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            {isNew ? (t('email.new_provider') || 'New Email Provider') : (t('email.edit_provider') || 'Edit Email Provider')}
+            {isNew ? t('email.new_provider') : t('email.edit_provider')}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isNew
-              ? (t('email.new_provider_desc') || 'Configure a new email service provider')
-              : (t('email.edit_provider_desc') || 'Update email provider settings')}
+              ? t('email.new_provider_desc')
+              : t('email.edit_provider_desc')}
           </p>
         </div>
       </div>
@@ -181,13 +181,13 @@ const EmailProviderEdit: React.FC = () => {
         {/* Basic Settings */}
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4">
-            {t('email.basic_settings') || 'Basic Settings'}
+            {t('email.basic_settings')}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t('email.provider_name') || 'Provider Name'} *
+                {t('email.provider_name')} *
               </label>
               <input
                 type="text"
@@ -201,7 +201,7 @@ const EmailProviderEdit: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t('email.provider_type') || 'Provider Type'} *
+                {t('email.provider_type')} *
               </label>
               <select
                 value={formData.type}
@@ -225,7 +225,7 @@ const EmailProviderEdit: React.FC = () => {
                 className="w-4 h-4 text-primary bg-background border-input rounded focus:ring-primary"
               />
               <label htmlFor="is_active" className="text-sm font-medium text-foreground">
-                {t('email.provider_active') || 'Active'}
+                {t('email.provider_active')}
               </label>
             </div>
           </div>
@@ -237,14 +237,14 @@ const EmailProviderEdit: React.FC = () => {
             <div className="flex items-center gap-3 mb-4">
               <Server className="text-primary" size={20} />
               <h2 className="text-lg font-semibold text-foreground">
-                {t('email.smtp_settings') || 'SMTP Settings'}
+                {t('email.smtp_settings')}
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {t('email.smtp_host') || 'SMTP Host'} *
+                  {t('email.smtp_host')} *
                 </label>
                 <input
                   type="text"
@@ -258,7 +258,7 @@ const EmailProviderEdit: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {t('email.smtp_port') || 'SMTP Port'} *
+                  {t('email.smtp_port')} *
                 </label>
                 <input
                   type="number"
@@ -272,7 +272,7 @@ const EmailProviderEdit: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {t('email.smtp_username') || 'Username'}
+                  {t('email.smtp_username')}
                 </label>
                 <input
                   type="text"
@@ -285,7 +285,7 @@ const EmailProviderEdit: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {t('email.smtp_password') || 'Password'}
+                  {t('email.smtp_password')}
                   {!isNew && provider?.has_smtp_password && (
                     <span className="text-muted-foreground font-normal ml-2">(leave blank to keep current)</span>
                   )}
@@ -317,7 +317,7 @@ const EmailProviderEdit: React.FC = () => {
                   className="w-4 h-4 text-primary bg-background border-input rounded focus:ring-primary"
                 />
                 <label htmlFor="smtp_use_tls" className="text-sm font-medium text-foreground">
-                  {t('email.smtp_use_tls') || 'Use TLS/STARTTLS'}
+                  {t('email.smtp_use_tls')}
                 </label>
               </div>
             </div>
@@ -330,13 +330,13 @@ const EmailProviderEdit: React.FC = () => {
             <div className="flex items-center gap-3 mb-4">
               <Cloud className="text-primary" size={20} />
               <h2 className="text-lg font-semibold text-foreground">
-                {t('email.sendgrid_settings') || 'SendGrid Settings'}
+                {t('email.sendgrid_settings')}
               </h2>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t('email.api_key') || 'API Key'} *
+                {t('email.api_key')} *
                 {!isNew && provider?.has_sendgrid_api_key && (
                   <span className="text-muted-foreground font-normal ml-2">(leave blank to keep current)</span>
                 )}
@@ -368,14 +368,14 @@ const EmailProviderEdit: React.FC = () => {
             <div className="flex items-center gap-3 mb-4">
               <Cloud className="text-primary" size={20} />
               <h2 className="text-lg font-semibold text-foreground">
-                {t('email.ses_settings') || 'AWS SES Settings'}
+                {t('email.ses_settings')}
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {t('email.ses_region') || 'Region'} *
+                  {t('email.ses_region')} *
                 </label>
                 <select
                   value={formData.ses_region}
@@ -395,7 +395,7 @@ const EmailProviderEdit: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {t('email.ses_access_key') || 'Access Key ID'} *
+                  {t('email.ses_access_key')} *
                 </label>
                 <input
                   type="text"
@@ -409,7 +409,7 @@ const EmailProviderEdit: React.FC = () => {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {t('email.ses_secret_key') || 'Secret Access Key'} *
+                  {t('email.ses_secret_key')} *
                   {!isNew && provider?.has_ses_secret_access_key && (
                     <span className="text-muted-foreground font-normal ml-2">(leave blank to keep current)</span>
                   )}
@@ -442,14 +442,14 @@ const EmailProviderEdit: React.FC = () => {
             <div className="flex items-center gap-3 mb-4">
               <Cloud className="text-primary" size={20} />
               <h2 className="text-lg font-semibold text-foreground">
-                {t('email.mailgun_settings') || 'Mailgun Settings'}
+                {t('email.mailgun_settings')}
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {t('email.mailgun_domain') || 'Domain'} *
+                  {t('email.mailgun_domain')} *
                 </label>
                 <input
                   type="text"
@@ -463,7 +463,7 @@ const EmailProviderEdit: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  {t('email.api_key') || 'API Key'} *
+                  {t('email.api_key')} *
                   {!isNew && provider?.has_mailgun_api_key && (
                     <span className="text-muted-foreground font-normal ml-2">(leave blank to keep current)</span>
                   )}
@@ -496,7 +496,7 @@ const EmailProviderEdit: React.FC = () => {
             to="/settings/email-providers"
             className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            {t('common.cancel') || 'Cancel'}
+            {t('common.cancel')}
           </Link>
           <button
             type="submit"
@@ -508,7 +508,7 @@ const EmailProviderEdit: React.FC = () => {
             ) : (
               <Save size={18} />
             )}
-            {isPending ? (t('common.saving') || 'Saving...') : (t('common.save') || 'Save')}
+            {isPending ? t('common.saving') : t('common.save')}
           </button>
         </div>
       </form>

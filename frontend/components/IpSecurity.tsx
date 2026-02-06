@@ -152,7 +152,7 @@ const IpSecurity: React.FC = () => {
                         {rule.ip_address}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {rule.description || <span className="text-muted-foreground italic">No description</span>}
+                        {rule.description || <span className="text-muted-foreground italic">{t('ip.no_description')}</span>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {rule.created_by || '-'}
@@ -176,7 +176,7 @@ const IpSecurity: React.FC = () => {
                     <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
                       <div className="flex flex-col items-center justify-center gap-2">
                          {activeTab === 'blacklist' ? <ShieldAlert size={32} className="text-muted-foreground" /> : <ShieldCheck size={32} className="text-muted-foreground" />}
-                         <p>No rules found</p>
+                         <p>{t('ip.no_rules')}</p>
                       </div>
                     </td>
                   </tr>
@@ -191,10 +191,9 @@ const IpSecurity: React.FC = () => {
       <div className="bg-primary/10 rounded-lg p-4 border border-primary/20 flex gap-3">
         <Info className="text-primary flex-shrink-0" size={20} />
         <div className="text-sm text-primary">
-          <p className="font-semibold mb-1">How IP Filtering Works</p>
+          <p className="font-semibold mb-1">{t('ip.how_it_works')}</p>
           <p>
-            The <strong>Whitelist</strong> takes precedence. If a whitelist exists, only IPs in that list (or matching CIDR ranges) can access the system.
-            The <strong>Blacklist</strong> is checked next. Any IP in the blacklist is blocked, even if no whitelist is defined.
+            {t('ip.how_it_works_desc')}
           </p>
         </div>
       </div>
@@ -206,7 +205,7 @@ const IpSecurity: React.FC = () => {
             <div className={`px-6 py-4 border-b flex items-center gap-3 ${activeTab === 'blacklist' ? 'bg-destructive/10 border-destructive/20' : 'bg-success/10 border-success/20'}`}>
                {activeTab === 'blacklist' ? <ShieldAlert className="text-destructive" /> : <ShieldCheck className="text-success" />}
                <h3 className={`font-semibold ${activeTab === 'blacklist' ? 'text-destructive' : 'text-success'}`}>
-                 Add to {activeTab === 'blacklist' ? 'Blacklist' : 'Whitelist'}
+                 {t('ip.add_to')} {activeTab === 'blacklist' ? t('ip.blacklist') : t('ip.whitelist')}
                </h3>
             </div>
 
@@ -217,19 +216,19 @@ const IpSecurity: React.FC = () => {
                   type="text"
                   value={newIp}
                   onChange={(e) => setNewIp(e.target.value)}
-                  placeholder="e.g. 192.168.1.1 or 10.0.0.0/24"
+                  placeholder={t('ip.example_ip')}
                   className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Description</label>
+                <label className="block text-sm font-medium text-foreground mb-1">{t('common.description')}</label>
                 <input
                   type="text"
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
-                  placeholder="e.g. Malicious botnet / Office VPN"
+                  placeholder={t('ip.example_desc')}
                   className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none"
                 />
               </div>
