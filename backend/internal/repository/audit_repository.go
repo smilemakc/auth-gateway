@@ -151,3 +151,29 @@ func (r *AuditRepository) CountByActionSince(ctx context.Context, action models.
 
 	return count, nil
 }
+
+// ListByApp retrieves audit logs for a specific application with pagination
+func (r *AuditRepository) ListByApp(ctx context.Context, appID uuid.UUID, limit, offset int) ([]*models.AuditLog, int, error) {
+	logs := make([]*models.AuditLog, 0)
+
+	query := r.db.NewSelect().
+		Model(&logs).
+		Where("application_id = ?", appID)
+
+	total, err := query.Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count audit logs by app: %w", err)
+	}
+
+	err = query.
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list audit logs by app: %w", err)
+	}
+
+	return logs, total, nil
+}

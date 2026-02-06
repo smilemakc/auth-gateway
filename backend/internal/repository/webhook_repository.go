@@ -264,3 +264,20 @@ func (r *WebhookRepository) DeleteOldDeliveries(ctx context.Context, olderThanDa
 
 	return err
 }
+
+// ListByApp retrieves webhooks for a specific application
+func (r *WebhookRepository) ListByApp(ctx context.Context, appID uuid.UUID) ([]*models.Webhook, error) {
+	webhooks := make([]*models.Webhook, 0)
+
+	err := r.db.NewSelect().
+		Model(&webhooks).
+		Where("application_id = ?", appID).
+		Order("created_at DESC").
+		Scan(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to list webhooks by app: %w", err)
+	}
+
+	return webhooks, nil
+}

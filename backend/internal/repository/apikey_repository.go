@@ -274,3 +274,21 @@ func (r *APIKeyRepository) ListAll(ctx context.Context) ([]*models.APIKey, error
 
 	return keys, nil
 }
+
+// GetByUserIDAndApp retrieves API keys for a user in a specific application
+func (r *APIKeyRepository) GetByUserIDAndApp(ctx context.Context, userID, appID uuid.UUID) ([]*models.APIKey, error) {
+	apiKeys := make([]*models.APIKey, 0)
+
+	err := r.db.NewSelect().
+		Model(&apiKeys).
+		Where("user_id = ?", userID).
+		Where("application_id = ?", appID).
+		Order("created_at DESC").
+		Scan(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get API keys by user and app: %w", err)
+	}
+
+	return apiKeys, nil
+}

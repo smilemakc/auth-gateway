@@ -434,3 +434,45 @@ func (r *SessionRepository) DeleteExpiredSessions(ctx context.Context, olderThan
 
 	return nil
 }
+
+// GetUserSessionsByApp retrieves active sessions for a user in a specific application
+func (r *SessionRepository) GetUserSessionsByApp(ctx context.Context, userID, appID uuid.UUID) ([]models.Session, error) {
+	sessions := make([]models.Session, 0)
+
+	err := r.db.NewSelect().
+		Model(&sessions).
+		Where("user_id = ?", userID).
+		Where("application_id = ?", appID).
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", bun.Safe("NOW()")).
+		Order("last_active_at DESC").
+		Scan(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user sessions by app: %w", err)
+	}
+
+	return sessions, nil
+}
+
+// GetAppSessionsPaginated retrieves paginated active sessions for an application
+func (r *SessionRepository) GetAppSessionsPaginated(ctx context.Context, appID uuid.UUID, page, perPage int) ([]models.Session, int, error) {
+	offset := (page - 1) * perPage
+	sessions := make([]models.Session, 0)
+
+	total, err := r.db.NewSelect().
+		Model(&sessions).
+		Where("application_id = ?", appID).
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", bun.Safe("NOW()")).
+		Order("last_active_at DESC").
+		Limit(perPage).
+		Offset(offset).
+		ScanAndCount(ctx)
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get app sessions paginated: %w", err)
+	}
+
+	return sessions, total, nil
+}

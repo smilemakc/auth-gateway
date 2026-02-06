@@ -617,3 +617,137 @@ func (r *RBACRepository) GetPermissionMatrix(ctx context.Context) (*models.Permi
 		Resources: resources,
 	}, nil
 }
+
+// GetRoleByNameAndApp retrieves a role by name within an application scope
+func (r *RBACRepository) GetRoleByNameAndApp(ctx context.Context, name string, appID *uuid.UUID) (*models.Role, error) {
+	role := new(models.Role)
+
+	query := r.db.NewSelect().
+		Model(role).
+		Where("name = ?", name).
+		Relation("Permissions")
+
+	if appID != nil {
+		query = query.Where("application_id = ?", *appID)
+	} else {
+		query = query.Where("application_id IS NULL")
+	}
+
+	err := query.Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("role not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get role by name and app: %w", err)
+	}
+
+	return role, nil
+}
+
+// ListRolesByApp retrieves roles for an application (nil = global/system roles)
+func (r *RBACRepository) ListRolesByApp(ctx context.Context, appID *uuid.UUID) ([]models.Role, error) {
+	roles := make([]models.Role, 0)
+
+	query := r.db.NewSelect().
+		Model(&roles).
+		Relation("Permissions")
+
+	if appID != nil {
+		query = query.Where("application_id = ?", *appID)
+	} else {
+		query = query.Where("application_id IS NULL")
+	}
+
+	err := query.Order("is_system_role DESC", "name").Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list roles by app: %w", err)
+	}
+
+	return roles, nil
+}
+
+// ListPermissionsByApp retrieves permissions for an application (nil = global permissions)
+func (r *RBACRepository) ListPermissionsByApp(ctx context.Context, appID *uuid.UUID) ([]models.Permission, error) {
+	permissions := make([]models.Permission, 0)
+
+	query := r.db.NewSelect().
+		Model(&permissions)
+
+	if appID != nil {
+		query = query.Where("application_id = ?", *appID)
+	} else {
+		query = query.Where("application_id IS NULL")
+	}
+
+	err := query.Order("resource", "action").Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list permissions by app: %w", err)
+	}
+
+	return permissions, nil
+}
+
+// HasPermissionInApp checks if a user has a specific permission within an application
+func (r *RBACRepository) HasPermissionInApp(ctx context.Context, userID uuid.UUID, permissionName string, appID *uuid.UUID) (bool, error) {
+	query := r.db.NewSelect().
+		Model((*models.Permission)(nil)).
+		Join("INNER JOIN role_permissions AS rp ON rp.permission_id = permission.id").
+		Join("INNER JOIN roles AS r ON r.id = rp.role_id").
+		Join("INNER JOIN user_roles AS ur ON ur.role_id = r.id").
+		Where("ur.user_id = ?", userID).
+		Where("permission.name = ?", permissionName)
+
+	if appID != nil {
+		query = query.Where("ur.application_id = ?", *appID)
+	} else {
+		query = query.Where("ur.application_id IS NULL")
+	}
+
+	count, err := query.Count(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to check permission in app: %w", err)
+	}
+
+	return count > 0, nil
+}
+
+// GetUserRolesInApp returns roles assigned to a user within an application
+func (r *RBACRepository) GetUserRolesInApp(ctx context.Context, userID uuid.UUID, appID *uuid.UUID) ([]models.Role, error) {
+	var roles []models.Role
+
+	query := r.db.NewSelect().
+		Model(&roles).
+		Join("INNER JOIN user_roles AS ur ON ur.role_id = role.id").
+		Where("ur.user_id = ?", userID).
+		Relation("Permissions")
+
+	if appID != nil {
+		query = query.Where("ur.application_id = ?", *appID)
+	} else {
+		query = query.Where("ur.application_id IS NULL")
+	}
+
+	err := query.Order("role.name").Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user roles in app: %w", err)
+	}
+
+	return roles, nil
+}
+
+// AssignRoleToUserInApp assigns a role to a user within an application scope
+func (r *RBACRepository) AssignRoleToUserInApp(ctx context.Context, userID, roleID, assignedBy uuid.UUID, appID *uuid.UUID) error {
+	userRole := &models.UserRole{
+		UserID:        userID,
+		RoleID:        roleID,
+		AssignedBy:    &assignedBy,
+		ApplicationID: appID,
+	}
+
+	_, err := r.db.NewInsert().
+		Model(userRole).
+		On("CONFLICT (user_id, role_id) DO NOTHING").
+		Exec(ctx)
+
+	return handlePgError(err)
+}

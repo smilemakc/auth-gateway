@@ -105,6 +105,9 @@ type repoSet struct {
 	EmailProvider *repository.EmailProviderRepository
 	EmailProfile  *repository.EmailProfileRepository
 	Application   *repository.ApplicationRepository
+	AppOAuthProvider *repository.AppOAuthProviderRepository
+	TelegramBot      *repository.TelegramBotRepository
+	UserTelegram     *repository.UserTelegramRepository
 }
 
 type serviceSet struct {
@@ -398,6 +401,9 @@ func buildRepositories(deps *infra) *repoSet {
 		EmailProvider: repository.NewEmailProviderRepository(deps.db),
 		EmailProfile:  repository.NewEmailProfileRepository(deps.db),
 		Application:   repository.NewApplicationRepository(deps.db),
+		AppOAuthProvider: repository.NewAppOAuthProviderRepository(deps.db),
+		TelegramBot:      repository.NewTelegramBotRepository(deps.db),
+		UserTelegram:     repository.NewUserTelegramRepository(deps.db),
 	}
 }
 

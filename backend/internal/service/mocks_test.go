@@ -235,7 +235,13 @@ type mockRBACStore struct {
 	HasAnyPermissionFunc    func(ctx context.Context, userID uuid.UUID, permissionNames []string) (bool, error)
 	HasAllPermissionsFunc   func(ctx context.Context, userID uuid.UUID, permissionNames []string) (bool, error)
 	GetUserPermissionsFunc  func(ctx context.Context, userID uuid.UUID) ([]models.Permission, error)
-	GetPermissionMatrixFunc func(ctx context.Context) (*models.PermissionMatrix, error)
+	GetPermissionMatrixFunc    func(ctx context.Context) (*models.PermissionMatrix, error)
+	GetRoleByNameAndAppFunc    func(ctx context.Context, name string, appID *uuid.UUID) (*models.Role, error)
+	ListRolesByAppFunc         func(ctx context.Context, appID *uuid.UUID) ([]models.Role, error)
+	ListPermissionsByAppFunc   func(ctx context.Context, appID *uuid.UUID) ([]models.Permission, error)
+	HasPermissionInAppFunc     func(ctx context.Context, userID uuid.UUID, permissionName string, appID *uuid.UUID) (bool, error)
+	GetUserRolesInAppFunc      func(ctx context.Context, userID uuid.UUID, appID *uuid.UUID) ([]models.Role, error)
+	AssignRoleToUserInAppFunc  func(ctx context.Context, userID, roleID, assignedBy uuid.UUID, appID *uuid.UUID) error
 }
 
 // Permission Method Implementations
@@ -382,6 +388,42 @@ func (m *mockRBACStore) GetPermissionMatrix(ctx context.Context) (*models.Permis
 		return m.GetPermissionMatrixFunc(ctx)
 	}
 	return nil, nil
+}
+func (m *mockRBACStore) GetRoleByNameAndApp(ctx context.Context, name string, appID *uuid.UUID) (*models.Role, error) {
+	if m.GetRoleByNameAndAppFunc != nil {
+		return m.GetRoleByNameAndAppFunc(ctx, name, appID)
+	}
+	return nil, nil
+}
+func (m *mockRBACStore) ListRolesByApp(ctx context.Context, appID *uuid.UUID) ([]models.Role, error) {
+	if m.ListRolesByAppFunc != nil {
+		return m.ListRolesByAppFunc(ctx, appID)
+	}
+	return nil, nil
+}
+func (m *mockRBACStore) ListPermissionsByApp(ctx context.Context, appID *uuid.UUID) ([]models.Permission, error) {
+	if m.ListPermissionsByAppFunc != nil {
+		return m.ListPermissionsByAppFunc(ctx, appID)
+	}
+	return nil, nil
+}
+func (m *mockRBACStore) HasPermissionInApp(ctx context.Context, userID uuid.UUID, permissionName string, appID *uuid.UUID) (bool, error) {
+	if m.HasPermissionInAppFunc != nil {
+		return m.HasPermissionInAppFunc(ctx, userID, permissionName, appID)
+	}
+	return false, nil
+}
+func (m *mockRBACStore) GetUserRolesInApp(ctx context.Context, userID uuid.UUID, appID *uuid.UUID) ([]models.Role, error) {
+	if m.GetUserRolesInAppFunc != nil {
+		return m.GetUserRolesInAppFunc(ctx, userID, appID)
+	}
+	return nil, nil
+}
+func (m *mockRBACStore) AssignRoleToUserInApp(ctx context.Context, userID, roleID, assignedBy uuid.UUID, appID *uuid.UUID) error {
+	if m.AssignRoleToUserInAppFunc != nil {
+		return m.AssignRoleToUserInAppFunc(ctx, userID, roleID, assignedBy, appID)
+	}
+	return nil
 }
 
 type mockCacheService struct {
@@ -757,6 +799,7 @@ type mockAuditStore struct {
 	CountFunc                  func(ctx context.Context) (int, error)
 	DeleteOlderThanFunc        func(ctx context.Context, days int) error
 	CountByActionSinceFunc     func(ctx context.Context, action models.AuditAction, since time.Time) (int, error)
+	ListByAppFunc              func(ctx context.Context, appID uuid.UUID, limit, offset int) ([]*models.AuditLog, int, error)
 }
 
 func (m *mockAuditStore) Create(ctx context.Context, log *models.AuditLog) error {
@@ -806,6 +849,12 @@ func (m *mockAuditStore) CountByActionSince(ctx context.Context, action models.A
 		return m.CountByActionSinceFunc(ctx, action, since)
 	}
 	return 0, nil
+}
+func (m *mockAuditStore) ListByApp(ctx context.Context, appID uuid.UUID, limit, offset int) ([]*models.AuditLog, int, error) {
+	if m.ListByAppFunc != nil {
+		return m.ListByAppFunc(ctx, appID, limit, offset)
+	}
+	return nil, 0, nil
 }
 
 type mockJWTService struct {
@@ -879,6 +928,7 @@ type mockAPIKeyStore struct {
 	CountFunc             func(ctx context.Context, userID uuid.UUID) (int, error)
 	CountActiveFunc       func(ctx context.Context, userID uuid.UUID) (int, error)
 	ListAllFunc           func(ctx context.Context) ([]*models.APIKey, error)
+	GetByUserIDAndAppFunc func(ctx context.Context, userID, appID uuid.UUID) ([]*models.APIKey, error)
 }
 
 func (m *mockAPIKeyStore) Create(ctx context.Context, apiKey *models.APIKey) error {
@@ -998,6 +1048,12 @@ func (m *mockAPIKeyStore) ListAll(ctx context.Context) ([]*models.APIKey, error)
 	}
 	return nil, nil
 }
+func (m *mockAPIKeyStore) GetByUserIDAndApp(ctx context.Context, userID, appID uuid.UUID) ([]*models.APIKey, error) {
+	if m.GetByUserIDAndAppFunc != nil {
+		return m.GetByUserIDAndAppFunc(ctx, userID, appID)
+	}
+	return nil, nil
+}
 
 type mockSessionStore struct {
 	CreateSessionFunc                func(ctx context.Context, session *models.Session) error
@@ -1014,6 +1070,8 @@ type mockSessionStore struct {
 	RefreshSessionTokensFunc         func(ctx context.Context, oldTokenHash, newTokenHash, newAccessTokenHash string, newExpiresAt time.Time) error
 	GetSessionStatsFunc              func(ctx context.Context) (*models.SessionStats, error)
 	DeleteExpiredSessionsFunc        func(ctx context.Context, olderThan time.Duration) error
+	GetUserSessionsByAppFunc         func(ctx context.Context, userID, appID uuid.UUID) ([]models.Session, error)
+	GetAppSessionsPaginatedFunc      func(ctx context.Context, appID uuid.UUID, page, perPage int) ([]models.Session, int, error)
 }
 
 type mockTransactionDB struct {
@@ -1110,4 +1168,16 @@ func (m *mockSessionStore) DeleteExpiredSessions(ctx context.Context, olderThan 
 		return m.DeleteExpiredSessionsFunc(ctx, olderThan)
 	}
 	return nil
+}
+func (m *mockSessionStore) GetUserSessionsByApp(ctx context.Context, userID, appID uuid.UUID) ([]models.Session, error) {
+	if m.GetUserSessionsByAppFunc != nil {
+		return m.GetUserSessionsByAppFunc(ctx, userID, appID)
+	}
+	return nil, nil
+}
+func (m *mockSessionStore) GetAppSessionsPaginated(ctx context.Context, appID uuid.UUID, page, perPage int) ([]models.Session, int, error) {
+	if m.GetAppSessionsPaginatedFunc != nil {
+		return m.GetAppSessionsPaginatedFunc(ctx, appID, page, perPage)
+	}
+	return nil, 0, nil
 }

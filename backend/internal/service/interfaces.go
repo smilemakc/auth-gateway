@@ -88,6 +88,14 @@ type RBACStore interface {
 	HasAllPermissions(ctx context.Context, userID uuid.UUID, permissionNames []string) (bool, error)
 	GetUserPermissions(ctx context.Context, userID uuid.UUID) ([]models.Permission, error)
 	GetPermissionMatrix(ctx context.Context) (*models.PermissionMatrix, error)
+
+	// Application-scoped Methods
+	GetRoleByNameAndApp(ctx context.Context, name string, appID *uuid.UUID) (*models.Role, error)
+	ListRolesByApp(ctx context.Context, appID *uuid.UUID) ([]models.Role, error)
+	ListPermissionsByApp(ctx context.Context, appID *uuid.UUID) ([]models.Permission, error)
+	HasPermissionInApp(ctx context.Context, userID uuid.UUID, permissionName string, appID *uuid.UUID) (bool, error)
+	GetUserRolesInApp(ctx context.Context, userID uuid.UUID, appID *uuid.UUID) ([]models.Role, error)
+	AssignRoleToUserInApp(ctx context.Context, userID, roleID, assignedBy uuid.UUID, appID *uuid.UUID) error
 }
 
 // CacheService defines the interface for caching (Redis)
@@ -181,6 +189,7 @@ type AuditStore interface {
 	Count(ctx context.Context) (int, error)
 	DeleteOlderThan(ctx context.Context, days int) error
 	CountByActionSince(ctx context.Context, action models.AuditAction, since time.Time) (int, error)
+	ListByApp(ctx context.Context, appID uuid.UUID, limit, offset int) ([]*models.AuditLog, int, error)
 }
 
 // JWTService defines the interface for JWT token operations
@@ -213,6 +222,7 @@ type APIKeyStore interface {
 	Count(ctx context.Context, userID uuid.UUID) (int, error)
 	CountActive(ctx context.Context, userID uuid.UUID) (int, error)
 	ListAll(ctx context.Context) ([]*models.APIKey, error)
+	GetByUserIDAndApp(ctx context.Context, userID, appID uuid.UUID) ([]*models.APIKey, error)
 }
 
 // SessionStore defines the interface for session storage
@@ -231,6 +241,8 @@ type SessionStore interface {
 	RefreshSessionTokens(ctx context.Context, oldTokenHash, newTokenHash, newAccessTokenHash string, newExpiresAt time.Time) error
 	GetSessionStats(ctx context.Context) (*models.SessionStats, error)
 	DeleteExpiredSessions(ctx context.Context, olderThan time.Duration) error
+	GetUserSessionsByApp(ctx context.Context, userID, appID uuid.UUID) ([]models.Session, error)
+	GetAppSessionsPaginated(ctx context.Context, appID uuid.UUID, page, perPage int) ([]models.Session, int, error)
 }
 
 // OAuthProviderStore defines the interface for OAuth provider operations
@@ -324,4 +336,42 @@ type ApplicationStore interface {
 	// User banning
 	BanUserFromApplication(ctx context.Context, userID, applicationID, bannedBy uuid.UUID, reason string) error
 	UnbanUserFromApplication(ctx context.Context, userID, applicationID uuid.UUID) error
+}
+
+// AppOAuthProviderStore - per-app OAuth provider configuration
+type AppOAuthProviderStore interface {
+	Create(ctx context.Context, provider *models.ApplicationOAuthProvider) error
+	GetByID(ctx context.Context, id uuid.UUID) (*models.ApplicationOAuthProvider, error)
+	GetByAppAndProvider(ctx context.Context, appID uuid.UUID, provider string) (*models.ApplicationOAuthProvider, error)
+	ListByApp(ctx context.Context, appID uuid.UUID) ([]*models.ApplicationOAuthProvider, error)
+	Update(ctx context.Context, provider *models.ApplicationOAuthProvider) error
+	Delete(ctx context.Context, id uuid.UUID) error
+}
+
+// TelegramBotStore - Telegram bots per application
+type TelegramBotStore interface {
+	Create(ctx context.Context, bot *models.TelegramBot) error
+	GetByID(ctx context.Context, id uuid.UUID) (*models.TelegramBot, error)
+	ListByApp(ctx context.Context, appID uuid.UUID) ([]*models.TelegramBot, error)
+	ListAuthBotsByApp(ctx context.Context, appID uuid.UUID) ([]*models.TelegramBot, error)
+	Update(ctx context.Context, bot *models.TelegramBot) error
+	Delete(ctx context.Context, id uuid.UUID) error
+}
+
+// UserTelegramStore - user Telegram accounts and bot access
+type UserTelegramStore interface {
+	// Accounts
+	CreateAccount(ctx context.Context, account *models.UserTelegramAccount) error
+	GetAccountByUserAndTgID(ctx context.Context, userID uuid.UUID, telegramUserID int64) (*models.UserTelegramAccount, error)
+	GetAccountByTgID(ctx context.Context, telegramUserID int64) (*models.UserTelegramAccount, error)
+	ListAccountsByUser(ctx context.Context, userID uuid.UUID) ([]*models.UserTelegramAccount, error)
+	UpdateAccount(ctx context.Context, account *models.UserTelegramAccount) error
+	DeleteAccount(ctx context.Context, id uuid.UUID) error
+	// Bot Access
+	CreateBotAccess(ctx context.Context, access *models.UserTelegramBotAccess) error
+	GetBotAccess(ctx context.Context, userID, botID uuid.UUID) (*models.UserTelegramBotAccess, error)
+	ListBotAccessByUser(ctx context.Context, userID uuid.UUID) ([]*models.UserTelegramBotAccess, error)
+	ListBotAccessByUserAndApp(ctx context.Context, userID, appID uuid.UUID) ([]*models.UserTelegramBotAccess, error)
+	UpdateBotAccess(ctx context.Context, access *models.UserTelegramBotAccess) error
+	DeleteBotAccess(ctx context.Context, id uuid.UUID) error
 }
