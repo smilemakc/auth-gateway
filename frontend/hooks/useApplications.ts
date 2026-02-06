@@ -205,3 +205,17 @@ export function useUpdateMyApplicationProfile() {
     },
   });
 }
+
+// Admin: Get a specific user's application profile
+export function useUserApplicationProfile(userId: string, applicationId: string) {
+  return useQuery<UserApplicationProfile | null>({
+    queryKey: ['admin', 'user-application-profile', userId, applicationId],
+    queryFn: async () => {
+      // Fetch the user from the application users list and find the specific user
+      const response = await fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/users?page=1&per_page=100`);
+      const profile = response.profiles?.find((p: UserApplicationProfile) => p.user_id === userId);
+      return profile || null;
+    },
+    enabled: !!userId && !!applicationId,
+  });
+}

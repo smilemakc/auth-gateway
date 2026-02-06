@@ -5,12 +5,14 @@ import { Search, Shield, ShieldOff, Check, X, Filter, Eye, Edit } from 'lucide-r
 import type { AdminUserResponse } from '@auth-gateway/client-sdk';
 import { useLanguage } from '../services/i18n';
 import { useUsers, useUpdateUser } from '../hooks/useUsers';
+import { useApplication } from '../services/appContext';
 
 const Users: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { currentApplication } = useApplication();
 
   // Fetch users with React Query
   const { data, isLoading, error } = useUsers(1, 50, searchTerm, roleFilter);
@@ -66,6 +68,14 @@ const Users: React.FC = () => {
           + {t('users.create_new')}
         </button>
       </div>
+
+      {currentApplication && (
+        <div className="px-4 py-2 bg-muted/50 rounded-lg border border-border">
+          <span className="text-sm text-muted-foreground">
+            Showing users for: <span className="font-medium text-foreground">{currentApplication.name}</span>
+          </span>
+        </div>
+      )}
 
       <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
         {/* Filters */}

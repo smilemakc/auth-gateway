@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
@@ -34,7 +35,8 @@ func NewEmailProfileHandler(emailProfileService *service.EmailProfileService, lo
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/email-providers [get]
 func (h *EmailProfileHandler) ListProviders(c *gin.Context) {
-	providers, err := h.emailProfileService.ListProviders(c.Request.Context())
+	appID, _ := utils.GetApplicationIDFromContext(c)
+	providers, err := h.emailProfileService.ListProviders(c.Request.Context(), appID)
 	if err != nil {
 		h.logger.Error("Failed to list email providers", map[string]interface{}{
 			"error": err.Error(),
@@ -268,7 +270,8 @@ func (h *EmailProfileHandler) TestProvider(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/email-profiles [get]
 func (h *EmailProfileHandler) ListProfiles(c *gin.Context) {
-	profiles, err := h.emailProfileService.ListProfiles(c.Request.Context())
+	appID, _ := utils.GetApplicationIDFromContext(c)
+	profiles, err := h.emailProfileService.ListProfiles(c.Request.Context(), appID)
 	if err != nil {
 		h.logger.Error("Failed to list email profiles", map[string]interface{}{
 			"error": err.Error(),

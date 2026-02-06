@@ -71,14 +71,21 @@ func (r *EmailProfileRepository) GetDefault(ctx context.Context) (*models.EmailP
 	return profile, nil
 }
 
-func (r *EmailProfileRepository) GetAll(ctx context.Context) ([]*models.EmailProfile, error) {
+func (r *EmailProfileRepository) GetAll(ctx context.Context, appID *uuid.UUID) ([]*models.EmailProfile, error) {
 	profiles := make([]*models.EmailProfile, 0)
 
-	err := r.db.NewSelect().
+	query := r.db.NewSelect().
 		Model(&profiles).
 		Relation("Provider").
-		Order("email_profile.created_at DESC").
-		Scan(ctx)
+		Order("email_profile.created_at DESC")
+
+	if appID != nil {
+		query = query.Where("email_profile.application_id = ?", appID)
+	} else {
+		query = query.Where("email_profile.application_id IS NULL")
+	}
+
+	err := query.Scan(ctx)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all email profiles: %w", err)

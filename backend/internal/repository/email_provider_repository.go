@@ -53,14 +53,21 @@ func (r *EmailProviderRepository) GetByID(ctx context.Context, id uuid.UUID) (*m
 	return provider, nil
 }
 
-// GetAll retrieves all email providers
-func (r *EmailProviderRepository) GetAll(ctx context.Context) ([]*models.EmailProvider, error) {
+// GetAll retrieves all email providers, optionally filtered by application
+func (r *EmailProviderRepository) GetAll(ctx context.Context, appID *uuid.UUID) ([]*models.EmailProvider, error) {
 	providers := make([]*models.EmailProvider, 0)
 
-	err := r.db.NewSelect().
+	query := r.db.NewSelect().
 		Model(&providers).
-		Order("created_at DESC").
-		Scan(ctx)
+		Order("created_at DESC")
+
+	if appID != nil {
+		query = query.Where("application_id = ?", appID)
+	} else {
+		query = query.Where("application_id IS NULL")
+	}
+
+	err := query.Scan(ctx)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all email providers: %w", err)

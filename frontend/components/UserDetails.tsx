@@ -21,18 +21,22 @@ import {
   LogOut,
   AlertTriangle,
   RotateCcw,
-  Send
+  Send,
+  Briefcase
 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useUserDetail, useReset2FA, useSendPasswordReset, useUserOAuthAccounts } from '../hooks/useUsers';
 import { useUserSessions, useRevokeSession } from '../hooks/useSessions';
 import { useApiKeys } from '../hooks/useApiKeys';
 import { useUserAuditLogs } from '../hooks/useAuditLogs';
+import { useApplication } from '../services/appContext';
+import { useUserApplicationProfile } from '../hooks/useApplications';
 
 const UserDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { currentApplicationId } = useApplication();
 
   // Fetch user data with React Query
   const { data: user, isLoading: userLoading, error: userError } = useUserDetail(id!);
@@ -40,6 +44,7 @@ const UserDetails: React.FC = () => {
   const { data: apiKeysData } = useApiKeys(1, 50);
   const { data: logsData } = useUserAuditLogs(id!, 1, 5);
   const { data: oauthAccountsData } = useUserOAuthAccounts(id!);
+  const { data: appProfile, isLoading: appProfileLoading } = useUserApplicationProfile(id!, currentApplicationId || '');
 
   // Mutations
   const revokeSessionMutation = useRevokeSession();
@@ -344,7 +349,89 @@ const UserDetails: React.FC = () => {
               )}
             </div>
           </div>
-          
+
+          {/* App Profile Section - Shown when an application is selected */}
+          {currentApplicationId && (
+            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+              <div className="p-6 border-b border-border">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <Briefcase size={18} className="text-primary" />
+                  App Profile
+                </h3>
+              </div>
+              <div className="p-6">
+                {appProfileLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : appProfile ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Display Name</span>
+                      <span className="text-sm font-medium text-foreground">{appProfile.display_name || '-'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Nickname</span>
+                      <span className="text-sm font-medium text-foreground">{appProfile.nickname || '-'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">App Roles</span>
+                      <div className="flex gap-2 flex-wrap justify-end">
+                        {appProfile.app_roles && appProfile.app_roles.length > 0 ? (
+                          appProfile.app_roles.map((role, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                            >
+                              {role}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-muted-foreground">No roles</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Status</span>
+                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        appProfile.is_banned
+                          ? 'bg-destructive/20 text-destructive'
+                          : appProfile.is_active
+                          ? 'bg-success/20 text-success'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {appProfile.is_banned ? 'Banned' : appProfile.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    {appProfile.is_banned && appProfile.ban_reason && (
+                      <div className="pt-3 border-t border-border">
+                        <p className="text-xs text-muted-foreground mb-1">Ban Reason</p>
+                        <p className="text-sm text-destructive">{appProfile.ban_reason}</p>
+                        {appProfile.banned_at && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Banned on {new Date(appProfile.banned_at).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {appProfile.last_access_at && (
+                      <div className="flex items-center justify-between pt-3 border-t border-border">
+                        <span className="text-sm text-muted-foreground">Last Access</span>
+                        <span className="text-sm text-foreground">
+                          {new Date(appProfile.last_access_at).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    User not associated with this application
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Linked Accounts */}
           <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
             <div className="p-6 border-b border-border">

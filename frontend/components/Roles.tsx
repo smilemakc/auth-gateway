@@ -5,10 +5,12 @@ import { RoleDefinition } from '../types';
 import { ArrowLeft, Shield, Plus, Edit2, Trash2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useRoles, useDeleteRole } from '../hooks/useRBAC';
+import { useApplication } from '../services/appContext';
 
 const Roles: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { currentApplication } = useApplication();
   const { data: roles = [], isLoading, error } = useRoles();
   const deleteRoleMutation = useDeleteRole();
 
@@ -50,6 +52,11 @@ const Roles: React.FC = () => {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">{t('roles.title')}</h1>
+            {currentApplication && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Roles for: <span className="font-medium text-foreground">{currentApplication.name}</span>
+              </p>
+            )}
           </div>
         </div>
         <Link

@@ -86,8 +86,8 @@ func (s *EmailProfileService) GetProvider(ctx context.Context, id uuid.UUID) (*m
 	return s.maskProviderSecrets(provider), nil
 }
 
-func (s *EmailProfileService) ListProviders(ctx context.Context) ([]*models.EmailProviderResponse, error) {
-	providers, err := s.providerRepo.GetAll(ctx)
+func (s *EmailProfileService) ListProviders(ctx context.Context, appID *uuid.UUID) ([]*models.EmailProviderResponse, error) {
+	providers, err := s.providerRepo.GetAll(ctx, appID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list providers: %w", err)
 	}
@@ -287,8 +287,8 @@ func (s *EmailProfileService) GetProfile(ctx context.Context, id uuid.UUID) (*mo
 	return profile, nil
 }
 
-func (s *EmailProfileService) ListProfiles(ctx context.Context) ([]*models.EmailProfile, error) {
-	profiles, err := s.profileRepo.GetAll(ctx)
+func (s *EmailProfileService) ListProfiles(ctx context.Context, appID *uuid.UUID) ([]*models.EmailProfile, error) {
+	profiles, err := s.profileRepo.GetAll(ctx, appID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list profiles: %w", err)
 	}

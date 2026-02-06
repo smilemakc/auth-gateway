@@ -5,6 +5,7 @@ import { Permission } from '../types';
 import { ArrowLeft, Save, Shield, Check, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useRoleDetail, useCreateRole, useUpdateRole, usePermissions } from '../hooks/useRBAC';
+import { useApplication } from '../services/appContext';
 
 interface RoleFormState {
   name: string;
@@ -18,6 +19,7 @@ const RoleEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { currentApplication } = useApplication();
   const isEditMode = id && id !== 'new';
   const isNewMode = id === 'new';
 
@@ -143,6 +145,11 @@ const RoleEditor: React.FC = () => {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-foreground">{isNewMode ? t('common.create') : t('common.edit')}</h1>
+          {currentApplication && isNewMode && (
+            <p className="text-sm text-muted-foreground mt-1">
+              This role will be created for: <span className="font-medium text-foreground">{currentApplication.name}</span>
+            </p>
+          )}
         </div>
       </div>
 
