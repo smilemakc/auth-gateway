@@ -957,6 +957,12 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 
 				adminOAuth.GET("/clients/:id/consents", handlers.OAuthAdmin.ListClientConsents)
 				adminOAuth.DELETE("/clients/:id/consents/:user_id", handlers.OAuthAdmin.RevokeUserConsent)
+
+				adminOAuth.GET("/providers", handlers.AppOAuthProvider.ListProvidersAdmin)
+				adminOAuth.POST("/providers", handlers.AppOAuthProvider.CreateProviderAdmin)
+				adminOAuth.GET("/providers/:providerId", handlers.AppOAuthProvider.GetProviderAdmin)
+				adminOAuth.PUT("/providers/:providerId", handlers.AppOAuthProvider.UpdateProviderAdmin)
+				adminOAuth.DELETE("/providers/:providerId", handlers.AppOAuthProvider.DeleteProviderAdmin)
 			}
 
 			groupsGroup := adminGroup.Group("/groups")

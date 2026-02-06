@@ -24,11 +24,11 @@ const OAuthProviders: React.FC = () => {
   const deleteProviderMutation = useDeleteOAuthProvider();
   const toggleProviderMutation = useToggleOAuthProvider();
 
-  const providers = providersResponse?.providers || [];
+  const providers = Array.isArray(providersResponse) ? providersResponse : [];
 
-  const handleToggle = async (id: string, currentStatus: boolean) => {
+  const handleToggle = async (id: string, currentActive: boolean) => {
     try {
-      await toggleProviderMutation.mutateAsync({ id, enabled: !currentStatus });
+      await toggleProviderMutation.mutateAsync({ id, enabled: !currentActive });
     } catch (err) {
       console.error('Failed to toggle provider:', err);
     }
@@ -88,19 +88,19 @@ const OAuthProviders: React.FC = () => {
                   <div>
                     <h3 className="font-semibold text-foreground capitalize text-lg">{provider.provider}</h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`w-2 h-2 rounded-full ${provider.is_enabled ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                      <span className={`w-2 h-2 rounded-full ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`}></span>
                       <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                        {provider.is_enabled ? 'Enabled' : 'Disabled'}
+                        {provider.is_active ? 'Enabled' : 'Disabled'}
                       </span>
                     </div>
                   </div>
                 </div>
                 <button
-                  onClick={() => handleToggle(provider.id, provider.is_enabled)}
+                  onClick={() => handleToggle(provider.id, provider.is_active)}
                   disabled={toggleProviderMutation.isPending}
-                  className={`transition-colors ${provider.is_enabled ? 'text-success hover:text-success' : 'text-muted-foreground hover:text-muted-foreground'} disabled:opacity-50`}
+                  className={`transition-colors ${provider.is_active ? 'text-success hover:text-success' : 'text-muted-foreground hover:text-muted-foreground'} disabled:opacity-50`}
                 >
-                  {provider.is_enabled ? <ToggleRight size={36} /> : <ToggleLeft size={36} />}
+                  {provider.is_active ? <ToggleRight size={36} /> : <ToggleLeft size={36} />}
                 </button>
               </div>
 
@@ -113,8 +113,8 @@ const OAuthProviders: React.FC = () => {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Callback URL</label>
-                  <div className="text-xs text-muted-foreground truncate" title={provider.redirect_uris?.[0]}>
-                    {provider.redirect_uris?.[0] || <span className="italic text-muted-foreground">Not configured</span>}
+                  <div className="text-xs text-muted-foreground truncate" title={provider.callback_url}>
+                    {provider.callback_url || <span className="italic text-muted-foreground">Not configured</span>}
                   </div>
                 </div>
               </div>

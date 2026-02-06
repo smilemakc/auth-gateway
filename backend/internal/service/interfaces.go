@@ -344,6 +344,7 @@ type AppOAuthProviderStore interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.ApplicationOAuthProvider, error)
 	GetByAppAndProvider(ctx context.Context, appID uuid.UUID, provider string) (*models.ApplicationOAuthProvider, error)
 	ListByApp(ctx context.Context, appID uuid.UUID) ([]*models.ApplicationOAuthProvider, error)
+	ListAll(ctx context.Context) ([]*models.ApplicationOAuthProvider, error)
 	Update(ctx context.Context, provider *models.ApplicationOAuthProvider) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }

@@ -121,6 +121,14 @@ func (s *AppOAuthProviderService) ListByApp(ctx context.Context, appID uuid.UUID
 	return providers, nil
 }
 
+func (s *AppOAuthProviderService) ListAll(ctx context.Context) ([]*models.ApplicationOAuthProvider, error) {
+	providers, err := s.repo.ListAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all oauth providers: %w", err)
+	}
+	return providers, nil
+}
+
 func (s *AppOAuthProviderService) Update(ctx context.Context, id uuid.UUID, req *models.UpdateAppOAuthProviderRequest) (*models.ApplicationOAuthProvider, error) {
 	provider, err := s.repo.GetByID(ctx, id)
 	if err != nil {

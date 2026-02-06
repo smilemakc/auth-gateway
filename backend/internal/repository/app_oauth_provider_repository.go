@@ -85,6 +85,21 @@ func (r *AppOAuthProviderRepository) ListByApp(ctx context.Context, appID uuid.U
 	return providers, nil
 }
 
+func (r *AppOAuthProviderRepository) ListAll(ctx context.Context) ([]*models.ApplicationOAuthProvider, error) {
+	providers := make([]*models.ApplicationOAuthProvider, 0)
+
+	err := r.db.NewSelect().
+		Model(&providers).
+		Order("aop.created_at DESC").
+		Scan(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all oauth providers: %w", err)
+	}
+
+	return providers, nil
+}
+
 func (r *AppOAuthProviderRepository) Update(ctx context.Context, provider *models.ApplicationOAuthProvider) error {
 	provider.UpdatedAt = time.Now()
 

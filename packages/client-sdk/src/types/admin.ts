@@ -300,15 +300,19 @@ export interface EmailTemplateVariablesResponse {
 // ============================================
 
 /** OAuth provider type */
-export type OAuthProviderType = 'google' | 'github' | 'yandex' | 'telegram' | 'instagram';
+export type OAuthProviderType = 'google' | 'github' | 'yandex' | 'telegram' | 'instagram' | 'onec' | string;
 
 /** OAuth provider configuration entity */
 export interface OAuthProviderConfig extends TimestampedEntity {
   provider: OAuthProviderType;
+  application_id: string;
   client_id: string;
-  client_secret?: string;
-  redirect_uris: string[];
-  is_enabled: boolean;
+  callback_url: string;
+  scopes?: string[];
+  auth_url?: string;
+  token_url?: string;
+  user_info_url?: string;
+  is_active: boolean;
 }
 
 /** Create OAuth provider request */
@@ -316,15 +320,23 @@ export interface CreateOAuthProviderRequest {
   provider: OAuthProviderType;
   client_id: string;
   client_secret: string;
-  redirect_uris: string[];
+  callback_url: string;
+  scopes?: string[];
+  auth_url?: string;
+  token_url?: string;
+  user_info_url?: string;
 }
 
 /** Update OAuth provider request */
 export interface UpdateOAuthProviderRequest {
   client_id?: string;
   client_secret?: string;
-  redirect_uris?: string[];
-  is_enabled?: boolean;
+  callback_url?: string;
+  scopes?: string[];
+  auth_url?: string;
+  token_url?: string;
+  user_info_url?: string;
+  is_active?: boolean;
 }
 
 /** OAuth provider list response */

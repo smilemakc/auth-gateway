@@ -102,7 +102,7 @@ export class AdminOAuthProvidersService extends BaseService {
    * @returns Updated provider configuration
    */
   async enable(id: string): Promise<OAuthProviderConfig> {
-    return this.update(id, { is_enabled: true });
+    return this.update(id, { is_active: true });
   }
 
   /**
@@ -111,7 +111,7 @@ export class AdminOAuthProvidersService extends BaseService {
    * @returns Updated provider configuration
    */
   async disable(id: string): Promise<OAuthProviderConfig> {
-    return this.update(id, { is_enabled: false });
+    return this.update(id, { is_active: false });
   }
 
   /**
@@ -120,19 +120,19 @@ export class AdminOAuthProvidersService extends BaseService {
    */
   async getEnabled(): Promise<OAuthProviderConfig[]> {
     const providers = await this.list();
-    return providers.filter((p) => p.is_enabled);
+    return providers.filter((p) => p.is_active);
   }
 
   /**
-   * Update redirect URIs for a provider
+   * Update callback URL for a provider
    * @param id Provider ID
-   * @param redirectUris New redirect URIs
+   * @param callbackUrl New callback URL
    * @returns Updated provider configuration
    */
-  async updateRedirectUris(
+  async updateCallbackUrl(
     id: string,
-    redirectUris: string[]
+    callbackUrl: string
   ): Promise<OAuthProviderConfig> {
-    return this.update(id, { redirect_uris: redirectUris });
+    return this.update(id, { callback_url: callbackUrl });
   }
 }

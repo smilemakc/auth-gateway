@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Trash2, HelpCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, HelpCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useOAuthProviderDetail, useCreateOAuthProvider, useUpdateOAuthProvider, useDeleteOAuthProvider } from '../hooks/useOAuth';
 
@@ -17,8 +17,9 @@ const OAuthProviderEdit: React.FC = () => {
     provider: 'google',
     client_id: '',
     client_secret: '',
-    redirect_uris: [''],
-    is_enabled: true
+    callback_url: '',
+    scopes: '',
+    is_active: true
   });
 
   const { data: existingProvider, isLoading: loadingProvider } = useOAuthProviderDetail(isEditMode ? id! : '');
@@ -31,9 +32,10 @@ const OAuthProviderEdit: React.FC = () => {
       setFormData({
         provider: existingProvider.provider || 'google',
         client_id: existingProvider.client_id || '',
-        client_secret: existingProvider.client_secret || '',
-        redirect_uris: existingProvider.redirect_uris || [''],
-        is_enabled: existingProvider.is_enabled ?? true
+        client_secret: '',
+        callback_url: existingProvider.callback_url || '',
+        scopes: existingProvider.scopes?.join(', ') || '',
+        is_active: existingProvider.is_active ?? true
       });
     }
   }, [existingProvider, isEditMode]);
@@ -48,44 +50,31 @@ const OAuthProviderEdit: React.FC = () => {
     }
   };
 
-  const handleArrayChange = (index: number, value: string) => {
-    const newUris = [...(formData.redirect_uris || [])];
-    newUris[index] = value;
-    setFormData(prev => ({ ...prev, redirect_uris: newUris }));
-  };
-
-  const addUri = () => {
-    setFormData(prev => ({ ...prev, redirect_uris: [...(prev.redirect_uris || []), ''] }));
-  };
-
-  const removeUri = (index: number) => {
-    const newUris = [...(formData.redirect_uris || [])];
-    if (newUris.length > 1) {
-      newUris.splice(index, 1);
-      setFormData(prev => ({ ...prev, redirect_uris: newUris }));
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const scopes = formData.scopes
+      ? formData.scopes.split(',').map(s => s.trim()).filter(Boolean)
+      : undefined;
 
     try {
       if (isNewMode) {
         await createMutation.mutateAsync({
-          provider: formData.provider,
+          provider: formData.provider as any,
           client_id: formData.client_id,
           client_secret: formData.client_secret,
-          redirect_uris: formData.redirect_uris.filter(u => u.trim()),
-          is_enabled: formData.is_enabled
+          callback_url: formData.callback_url,
+          scopes,
         });
       } else if (id) {
         await updateMutation.mutateAsync({
           id,
           data: {
             client_id: formData.client_id,
-            client_secret: formData.client_secret,
-            redirect_uris: formData.redirect_uris.filter(u => u.trim()),
-            is_enabled: formData.is_enabled
+            ...(formData.client_secret ? { client_secret: formData.client_secret } : {}),
+            callback_url: formData.callback_url,
+            scopes,
+            is_active: formData.is_active,
           }
         });
       }
@@ -201,38 +190,34 @@ const OAuthProviderEdit: React.FC = () => {
             </div>
           </div>
 
-          {/* Redirect URIs */}
+          {/* Callback URL */}
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-2">{t('oauth.redirect_uris')}</label>
-            <div className="space-y-3">
-              {formData.redirect_uris?.map((uri, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="url"
-                    value={uri}
-                    onChange={(e) => handleArrayChange(index, e.target.value)}
-                    className="flex-1 px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent outline-none font-mono text-sm"
-                    placeholder="https://your-app.com/auth/callback"
-                  />
-                  {formData.redirect_uris!.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeUri(index)}
-                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addUri}
-                className="text-sm text-primary hover:text-primary font-medium hover:underline"
-              >
-                + Add URI
-              </button>
-            </div>
+            <label htmlFor="callback_url" className="block text-sm font-medium text-muted-foreground mb-1">Callback URL</label>
+            <input
+              type="url"
+              id="callback_url"
+              name="callback_url"
+              value={formData.callback_url}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent outline-none font-mono text-sm"
+              placeholder="https://your-app.com/auth/callback"
+            />
+          </div>
+
+          {/* Scopes */}
+          <div>
+            <label htmlFor="scopes" className="block text-sm font-medium text-muted-foreground mb-1">Scopes</label>
+            <input
+              type="text"
+              id="scopes"
+              name="scopes"
+              value={formData.scopes}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent outline-none font-mono text-sm"
+              placeholder="openid, email, profile"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Comma-separated list of OAuth scopes</p>
           </div>
 
           {/* Status */}
@@ -240,14 +225,14 @@ const OAuthProviderEdit: React.FC = () => {
              <div className="flex items-center gap-3">
                <input
                   type="checkbox"
-                  id="is_enabled"
-                  name="is_enabled"
-                  checked={formData.is_enabled}
+                  id="is_active"
+                  name="is_active"
+                  checked={formData.is_active}
                   onChange={handleChange}
                   className="w-5 h-5 text-primary rounded focus:ring-ring border-input"
                />
                <div>
-                 <label htmlFor="is_enabled" className="font-medium text-foreground block">{t('oauth.enable')}</label>
+                 <label htmlFor="is_active" className="font-medium text-foreground block">{t('oauth.enable')}</label>
                </div>
              </div>
           </div>
