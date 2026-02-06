@@ -311,18 +311,23 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           <div className="flex items-center gap-4">
             {/* Application Selector */}
             {applications.length > 0 && (
-              <select
-                value={currentApplicationId ?? ''}
-                onChange={(e) => setCurrentApplicationId(e.target.value || null)}
-                className="text-sm border rounded-md px-2 py-1.5 bg-card border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 max-w-[200px]"
-              >
-                <option value="">{t('apps.all_applications') || 'All Applications'}</option>
-                {applications.map((app) => (
-                  <option key={app.id} value={app.id}>
-                    {app.display_name || app.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <select
+                  value={currentApplicationId ?? ''}
+                  onChange={(e) => setCurrentApplicationId(e.target.value || null)}
+                  className="text-sm border rounded-md px-2 py-1.5 bg-card border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 max-w-[200px]"
+                >
+                  <option value="">{t('apps.all_applications') || 'All Applications'}</option>
+                  {applications.map((app) => (
+                    <option key={app.id} value={app.id}>
+                      {app.display_name || app.name}
+                    </option>
+                  ))}
+                </select>
+                <Link to="/applications" className="text-xs text-primary hover:underline whitespace-nowrap">
+                  {t('apps.manage') || 'Manage'}
+                </Link>
+              </div>
             )}
 
             {/* Theme Switcher */}

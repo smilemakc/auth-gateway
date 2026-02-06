@@ -41,6 +41,24 @@ func NewWebhookHandler(webhookService *service.WebhookService, log *logger.Logge
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/webhooks [get]
 func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
+	appID, _ := utils.GetApplicationIDFromContext(c)
+	if appID != nil {
+		webhooks, err := h.webhookService.ListWebhooksByApp(c.Request.Context(), *appID)
+		if err != nil {
+			h.logger.Error("Failed to list webhooks", map[string]interface{}{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to list webhooks"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"webhooks":    webhooks,
+			"total":       len(webhooks),
+			"page":        1,
+			"per_page":    len(webhooks),
+			"total_pages": 1,
+		})
+		return
+	}
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
 

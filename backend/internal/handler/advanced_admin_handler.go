@@ -9,6 +9,7 @@ import (
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -63,7 +64,15 @@ func NewAdvancedAdminHandler(
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/rbac/permissions [get]
 func (h *AdvancedAdminHandler) ListPermissions(c *gin.Context) {
-	permissions, err := h.rbacService.ListPermissions(c.Request.Context())
+	appID, _ := utils.GetApplicationIDFromContext(c)
+
+	var permissions []models.Permission
+	var err error
+	if appID != nil {
+		permissions, err = h.rbacService.ListPermissionsByApp(c.Request.Context(), appID)
+	} else {
+		permissions, err = h.rbacService.ListPermissions(c.Request.Context())
+	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
@@ -191,7 +200,15 @@ func (h *AdvancedAdminHandler) DeletePermission(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/rbac/roles [get]
 func (h *AdvancedAdminHandler) ListRoles(c *gin.Context) {
-	roles, err := h.rbacService.ListRoles(c.Request.Context())
+	appID, _ := utils.GetApplicationIDFromContext(c)
+
+	var roles []models.Role
+	var err error
+	if appID != nil {
+		roles, err = h.rbacService.ListRolesByApp(c.Request.Context(), appID)
+	} else {
+		roles, err = h.rbacService.ListRoles(c.Request.Context())
+	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
@@ -220,7 +237,15 @@ func (h *AdvancedAdminHandler) CreateRole(c *gin.Context) {
 		return
 	}
 
-	role, err := h.rbacService.CreateRole(c.Request.Context(), &req)
+	appID, _ := utils.GetApplicationIDFromContext(c)
+
+	var role *models.Role
+	var err error
+	if appID != nil {
+		role, err = h.rbacService.CreateRoleInApp(c.Request.Context(), req.Name, req.DisplayName, req.Description, appID)
+	} else {
+		role, err = h.rbacService.CreateRole(c.Request.Context(), &req)
+	}
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
@@ -528,6 +553,26 @@ func (h *AdvancedAdminHandler) ListAllSessions(c *gin.Context) {
 	}
 	if perPage < 1 || perPage > 100 {
 		perPage = 50
+	}
+
+	appID, _ := utils.GetApplicationIDFromContext(c)
+
+	if appID != nil {
+		sessions, total, err := h.sessionService.GetAppSessionsPaginated(c.Request.Context(), *appID, page, perPage)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+			return
+		}
+
+		totalPages := (total + perPage - 1) / perPage
+		c.JSON(http.StatusOK, gin.H{
+			"sessions":    sessions,
+			"total":       total,
+			"page":        page,
+			"per_page":    perPage,
+			"total_pages": totalPages,
+		})
+		return
 	}
 
 	sessions, err := h.sessionService.GetAllSessions(c.Request.Context(), page, perPage)

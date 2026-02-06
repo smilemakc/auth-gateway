@@ -384,6 +384,26 @@ func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
 		userID = &id
 	}
 
+	appID, _ := utils.GetApplicationIDFromContext(c)
+	if appID != nil {
+		offset := (page - 1) * pageSize
+		logs, total, err := h.auditService.ListByApp(c.Request.Context(), *appID, pageSize, offset)
+		if err != nil {
+			h.logger.Error("Failed to list audit logs", map[string]interface{}{
+				"error": err.Error(),
+			})
+			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"logs":      logs,
+			"total":     total,
+			"page":      page,
+			"page_size": pageSize,
+		})
+		return
+	}
+
 	logs, err := h.adminService.ListAuditLogs(c.Request.Context(), page, pageSize, userID)
 	if err != nil {
 		h.logger.Error("Failed to list audit logs", map[string]interface{}{

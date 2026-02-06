@@ -11,11 +11,13 @@ const API_BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api
 
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const token = localStorage.getItem('auth_gateway_access_token');
+  const appId = localStorage.getItem('auth_gateway_current_app_id');
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(appId ? { 'X-Application-ID': appId } : {}),
       ...options.headers,
     },
   });

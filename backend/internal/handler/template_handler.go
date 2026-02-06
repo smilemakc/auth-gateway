@@ -38,7 +38,15 @@ func NewTemplateHandler(templateService *service.TemplateService, log *logger.Lo
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/templates [get]
 func (h *TemplateHandler) ListEmailTemplates(c *gin.Context) {
-	templates, err := h.templateService.ListEmailTemplates(c.Request.Context())
+	appID, _ := utils.GetApplicationIDFromContext(c)
+
+	var templates []models.EmailTemplate
+	var err error
+	if appID != nil {
+		templates, err = h.templateService.ListEmailTemplatesForApp(c.Request.Context(), *appID)
+	} else {
+		templates, err = h.templateService.ListEmailTemplates(c.Request.Context())
+	}
 	if err != nil {
 		h.logger.Error("Failed to list templates", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to list templates"})
