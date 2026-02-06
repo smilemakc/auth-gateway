@@ -174,5 +174,15 @@ export const queryKeys = {
     users: (id: string, page: number, pageSize: number) => ['applications', 'users', id, { page, pageSize }] as const,
     templates: (id: string) => ['applications', 'templates', id] as const,
     templateDetail: (appId: string, templateId: string) => ['applications', 'templates', appId, templateId] as const,
+    oauthProviders: (appId: string) => ['applications', 'oauthProviders', appId] as const,
+    oauthProvider: (appId: string, providerId: string) => ['applications', 'oauthProviders', appId, providerId] as const,
+    telegramBots: (appId: string) => ['applications', 'telegramBots', appId] as const,
+    telegramBot: (appId: string, botId: string) => ['applications', 'telegramBots', appId, botId] as const,
+  },
+
+  // User Telegram
+  userTelegram: {
+    accounts: (userId: string) => ['userTelegram', 'accounts', userId] as const,
+    botAccess: (userId: string, appId?: string) => ['userTelegram', 'botAccess', userId, appId] as const,
   },
 };

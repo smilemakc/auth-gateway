@@ -59,6 +59,8 @@ import ApplicationUsersTab from './components/ApplicationUsersTab';
 import ApplicationTemplateEditor from './components/ApplicationTemplateEditor';
 import EmailProviders from './components/EmailProviders';
 import EmailProviderEdit from './components/EmailProviderEdit';
+import ApplicationOAuthProviderEdit from './components/ApplicationOAuthProviderEdit';
+import TelegramBotEdit from './components/TelegramBotEdit';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, isLoading, logout } = useAuth();
@@ -145,6 +147,10 @@ const AppRoutes: React.FC = () => {
           <Route path="/applications/:id" element={<ApplicationDetails />} />
           <Route path="/applications/:id/edit" element={<ApplicationEdit />} />
           <Route path="/applications/:appId/email-templates/:templateId" element={<ApplicationTemplateEditor />} />
+          <Route path="/applications/:applicationId/oauth/new" element={<ApplicationOAuthProviderEdit />} />
+          <Route path="/applications/:applicationId/oauth/:providerId" element={<ApplicationOAuthProviderEdit />} />
+          <Route path="/applications/:applicationId/telegram-bots/new" element={<TelegramBotEdit />} />
+          <Route path="/applications/:applicationId/telegram-bots/:botId" element={<TelegramBotEdit />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

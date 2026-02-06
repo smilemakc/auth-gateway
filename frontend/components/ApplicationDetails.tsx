@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Edit2, Boxes, Users, Palette, Settings, Copy, Check, ExternalLink, Mail } from 'lucide-react';
+import { ArrowLeft, Edit2, Boxes, Users, Palette, Settings, Copy, Check, ExternalLink, Mail, Globe, Bot } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useApplicationDetail, useApplicationBranding } from '../hooks/useApplications';
 import ApplicationBrandingTab from './ApplicationBrandingTab';
 import ApplicationUsersTab from './ApplicationUsersTab';
 import ApplicationEmailTemplatesTab from './ApplicationEmailTemplatesTab';
+import ApplicationOAuthProviders from './ApplicationOAuthProviders';
+import TelegramBots from './TelegramBots';
 
-type Tab = 'overview' | 'branding' | 'users' | 'templates';
+type Tab = 'overview' | 'branding' | 'users' | 'templates' | 'oauth' | 'telegram';
 
 const ApplicationDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,6 +47,8 @@ const ApplicationDetails: React.FC = () => {
     { id: 'branding' as Tab, label: t('apps.tab_branding') || 'Branding', icon: Palette },
     { id: 'users' as Tab, label: t('apps.tab_users') || 'Users', icon: Users },
     { id: 'templates' as Tab, label: t('apps.tab_templates') || 'Email Templates', icon: Mail },
+    { id: 'oauth' as Tab, label: t('apps.tab_oauth') || 'OAuth Providers', icon: Globe },
+    { id: 'telegram' as Tab, label: t('apps.tab_telegram') || 'Telegram Bots', icon: Bot },
   ];
 
   return (
@@ -254,6 +258,8 @@ const ApplicationDetails: React.FC = () => {
       {activeTab === 'branding' && <ApplicationBrandingTab applicationId={id!} />}
       {activeTab === 'users' && <ApplicationUsersTab applicationId={id!} />}
       {activeTab === 'templates' && <ApplicationEmailTemplatesTab applicationId={id!} />}
+      {activeTab === 'oauth' && <ApplicationOAuthProviders applicationId={id!} />}
+      {activeTab === 'telegram' && <TelegramBots applicationId={id!} />}
     </div>
   );
 };
