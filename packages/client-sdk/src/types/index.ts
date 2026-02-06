@@ -13,3 +13,5 @@ export * from './sms';
 export * from './rbac';
 export * from './session';
 export * from './admin';
+export * from './app-oauth-provider';
+export * from './telegram';

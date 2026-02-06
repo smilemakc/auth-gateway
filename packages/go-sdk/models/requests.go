@@ -225,3 +225,46 @@ type ListSessionsParams struct {
 	Limit  int    `url:"limit,omitempty"`
 	UserID string `url:"user_id,omitempty"`
 }
+
+// CreateAppOAuthProviderRequest creates a per-app OAuth provider
+type CreateAppOAuthProviderRequest struct {
+	Provider     string   `json:"provider"`
+	ClientID     string   `json:"client_id"`
+	ClientSecret string   `json:"client_secret"`
+	CallbackURL  string   `json:"callback_url"`
+	Scopes       []string `json:"scopes,omitempty"`
+	AuthURL      string   `json:"auth_url,omitempty"`
+	TokenURL     string   `json:"token_url,omitempty"`
+	UserInfoURL  string   `json:"user_info_url,omitempty"`
+	IsActive     *bool    `json:"is_active,omitempty"`
+}
+
+// UpdateAppOAuthProviderRequest updates a per-app OAuth provider
+type UpdateAppOAuthProviderRequest struct {
+	ClientID     *string  `json:"client_id,omitempty"`
+	ClientSecret *string  `json:"client_secret,omitempty"`
+	CallbackURL  *string  `json:"callback_url,omitempty"`
+	Scopes       []string `json:"scopes,omitempty"`
+	AuthURL      *string  `json:"auth_url,omitempty"`
+	TokenURL     *string  `json:"token_url,omitempty"`
+	UserInfoURL  *string  `json:"user_info_url,omitempty"`
+	IsActive     *bool    `json:"is_active,omitempty"`
+}
+
+// CreateTelegramBotRequest creates a Telegram bot for an app
+type CreateTelegramBotRequest struct {
+	BotToken    string `json:"bot_token"`
+	BotUsername string `json:"bot_username"`
+	DisplayName string `json:"display_name"`
+	IsAuthBot   *bool  `json:"is_auth_bot,omitempty"`
+	IsActive    *bool  `json:"is_active,omitempty"`
+}
+
+// UpdateTelegramBotRequest updates a Telegram bot
+type UpdateTelegramBotRequest struct {
+	BotToken    *string `json:"bot_token,omitempty"`
+	BotUsername *string `json:"bot_username,omitempty"`
+	DisplayName *string `json:"display_name,omitempty"`
+	IsAuthBot   *bool   `json:"is_auth_bot,omitempty"`
+	IsActive    *bool   `json:"is_active,omitempty"`
+}

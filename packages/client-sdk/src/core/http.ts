@@ -83,6 +83,9 @@ export class HttpClient {
       'Content-Type': 'application/json',
       ...config.headers,
     };
+    if (config.applicationId) {
+      this.defaultHeaders['X-Application-ID'] = config.applicationId;
+    }
     this.timeout = config.timeout ?? DEFAULT_CONFIG.timeout;
     this.retryConfig = { ...DEFAULT_CONFIG.retry, ...config.retry };
     this.tokenStorage = config.tokenStorage ?? new MemoryTokenStorage();

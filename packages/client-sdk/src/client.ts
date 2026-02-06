@@ -34,6 +34,9 @@ import {
   AdminSAMLService,
   AdminBulkService,
   AdminSCIMService,
+  AdminAppOAuthProvidersService,
+  AdminTelegramBotsService,
+  AdminUserTelegramService,
 } from './services';
 
 /** Admin services container */
@@ -74,6 +77,12 @@ export interface AdminServices {
   bulk: AdminBulkService;
   /** SCIM configuration */
   scim: AdminSCIMService;
+  /** Application OAuth providers management */
+  appOAuthProviders: AdminAppOAuthProvidersService;
+  /** Telegram bots management */
+  telegramBots: AdminTelegramBotsService;
+  /** User Telegram accounts management */
+  userTelegram: AdminUserTelegramService;
 }
 
 /**
@@ -186,6 +195,9 @@ export class AuthGatewayClient {
       saml: new AdminSAMLService(this.http),
       bulk: new AdminBulkService(this.http),
       scim: new AdminSCIMService(this.http),
+      appOAuthProviders: new AdminAppOAuthProvidersService(this.http),
+      telegramBots: new AdminTelegramBotsService(this.http),
+      userTelegram: new AdminUserTelegramService(this.http),
     };
   }
 

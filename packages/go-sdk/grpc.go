@@ -527,3 +527,33 @@ func (c *GRPCClient) GetOAuthClient(ctx context.Context, clientID string) (*prot
 
 	return resp.Client, nil
 }
+
+// GetUserApplicationProfile returns user's profile for a specific application
+func (c *GRPCClient) GetUserApplicationProfile(ctx context.Context, userID, applicationID string) (*proto.UserAppProfileResponse, error) {
+	resp, err := c.client.GetUserApplicationProfile(c.withMetadata(ctx), &proto.GetUserAppProfileRequest{
+		UserId:        userID,
+		ApplicationId: applicationID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get user application profile: %w", err)
+	}
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{Code: "GRPC_ERROR", Message: resp.ErrorMessage}
+	}
+	return resp, nil
+}
+
+// GetUserTelegramBots returns user's Telegram bot access for an application
+func (c *GRPCClient) GetUserTelegramBots(ctx context.Context, userID, applicationID string) (*proto.UserTelegramBotsResponse, error) {
+	resp, err := c.client.GetUserTelegramBots(c.withMetadata(ctx), &proto.GetUserTelegramBotsRequest{
+		UserId:        userID,
+		ApplicationId: applicationID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get user telegram bots: %w", err)
+	}
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{Code: "GRPC_ERROR", Message: resp.ErrorMessage}
+	}
+	return resp, nil
+}

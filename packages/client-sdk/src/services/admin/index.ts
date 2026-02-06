@@ -20,3 +20,6 @@ export { AdminLDAPService } from './ldap';
 export { AdminSAMLService } from './saml';
 export { AdminBulkService } from './bulk';
 export { AdminSCIMService } from './scim';
+export { AdminAppOAuthProvidersService } from './app-oauth-providers';
+export { AdminTelegramBotsService } from './telegram-bots';
+export { AdminUserTelegramService } from './user-telegram';

@@ -80,6 +80,8 @@ export interface ClientConfig {
   autoRefreshTokens?: boolean;
   /** API key for server-to-server communication */
   apiKey?: string;
+  /** Application ID for multi-tenant environments */
+  applicationId?: string;
   /** Enable debug logging */
   debug?: boolean;
 }

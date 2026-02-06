@@ -120,6 +120,9 @@ export {
   AdminSAMLService,
   AdminBulkService,
   AdminSCIMService,
+  AdminAppOAuthProvidersService,
+  AdminTelegramBotsService,
+  AdminUserTelegramService,
   type AuditLogQueryOptions,
   type ListClientsParams,
 } from './services';
