@@ -73,6 +73,13 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 		c.Set(utils.UserRolesKey, claims.Roles)
 		c.Set(utils.TokenKey, token)
 
+		// Set application ID from JWT claims if not already set by header/query
+		if claims.ApplicationID != nil {
+			if _, exists := utils.GetApplicationIDFromContext(c); !exists {
+				c.Set(utils.ApplicationIDKey, *claims.ApplicationID)
+			}
+		}
+
 		c.Next()
 	}
 }

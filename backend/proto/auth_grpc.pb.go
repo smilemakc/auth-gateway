@@ -36,6 +36,8 @@ const (
 	AuthService_IntrospectOAuthToken_FullMethodName             = "/auth.AuthService/IntrospectOAuthToken"
 	AuthService_ValidateOAuthClient_FullMethodName              = "/auth.AuthService/ValidateOAuthClient"
 	AuthService_GetOAuthClient_FullMethodName                   = "/auth.AuthService/GetOAuthClient"
+	AuthService_GetUserApplicationProfile_FullMethodName        = "/auth.AuthService/GetUserApplicationProfile"
+	AuthService_GetUserTelegramBots_FullMethodName              = "/auth.AuthService/GetUserTelegramBots"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -78,6 +80,10 @@ type AuthServiceClient interface {
 	ValidateOAuthClient(ctx context.Context, in *ValidateOAuthClientRequest, opts ...grpc.CallOption) (*ValidateOAuthClientResponse, error)
 	// GetOAuthClient retrieves OAuth client information by client_id
 	GetOAuthClient(ctx context.Context, in *GetOAuthClientRequest, opts ...grpc.CallOption) (*GetOAuthClientResponse, error)
+	// GetUserApplicationProfile returns user's profile for a specific application
+	GetUserApplicationProfile(ctx context.Context, in *GetUserAppProfileRequest, opts ...grpc.CallOption) (*UserAppProfileResponse, error)
+	// GetUserTelegramBots returns user's Telegram bot access for an application
+	GetUserTelegramBots(ctx context.Context, in *GetUserTelegramBotsRequest, opts ...grpc.CallOption) (*UserTelegramBotsResponse, error)
 }
 
 type authServiceClient struct {
@@ -258,6 +264,26 @@ func (c *authServiceClient) GetOAuthClient(ctx context.Context, in *GetOAuthClie
 	return out, nil
 }
 
+func (c *authServiceClient) GetUserApplicationProfile(ctx context.Context, in *GetUserAppProfileRequest, opts ...grpc.CallOption) (*UserAppProfileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserAppProfileResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetUserApplicationProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) GetUserTelegramBots(ctx context.Context, in *GetUserTelegramBotsRequest, opts ...grpc.CallOption) (*UserTelegramBotsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserTelegramBotsResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetUserTelegramBots_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -298,6 +324,10 @@ type AuthServiceServer interface {
 	ValidateOAuthClient(context.Context, *ValidateOAuthClientRequest) (*ValidateOAuthClientResponse, error)
 	// GetOAuthClient retrieves OAuth client information by client_id
 	GetOAuthClient(context.Context, *GetOAuthClientRequest) (*GetOAuthClientResponse, error)
+	// GetUserApplicationProfile returns user's profile for a specific application
+	GetUserApplicationProfile(context.Context, *GetUserAppProfileRequest) (*UserAppProfileResponse, error)
+	// GetUserTelegramBots returns user's Telegram bot access for an application
+	GetUserTelegramBots(context.Context, *GetUserTelegramBotsRequest) (*UserTelegramBotsResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -358,6 +388,12 @@ func (UnimplementedAuthServiceServer) ValidateOAuthClient(context.Context, *Vali
 }
 func (UnimplementedAuthServiceServer) GetOAuthClient(context.Context, *GetOAuthClientRequest) (*GetOAuthClientResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetOAuthClient not implemented")
+}
+func (UnimplementedAuthServiceServer) GetUserApplicationProfile(context.Context, *GetUserAppProfileRequest) (*UserAppProfileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUserApplicationProfile not implemented")
+}
+func (UnimplementedAuthServiceServer) GetUserTelegramBots(context.Context, *GetUserTelegramBotsRequest) (*UserTelegramBotsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUserTelegramBots not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -686,6 +722,42 @@ func _AuthService_GetOAuthClient_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_GetUserApplicationProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserAppProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetUserApplicationProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GetUserApplicationProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetUserApplicationProfile(ctx, req.(*GetUserAppProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_GetUserTelegramBots_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserTelegramBotsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetUserTelegramBots(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GetUserTelegramBots_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetUserTelegramBots(ctx, req.(*GetUserTelegramBotsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -760,6 +832,14 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOAuthClient",
 			Handler:    _AuthService_GetOAuthClient_Handler,
+		},
+		{
+			MethodName: "GetUserApplicationProfile",
+			Handler:    _AuthService_GetUserApplicationProfile_Handler,
+		},
+		{
+			MethodName: "GetUserTelegramBots",
+			Handler:    _AuthService_GetUserTelegramBots_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

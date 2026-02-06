@@ -60,11 +60,20 @@ service AuthService {
 
   // GetOAuthClient retrieves OAuth client information by client_id
   rpc GetOAuthClient(GetOAuthClientRequest) returns (GetOAuthClientResponse);
+
+  // ========== Multi-Application Methods ==========
+
+  // GetUserApplicationProfile returns user's profile for a specific application
+  rpc GetUserApplicationProfile(GetUserAppProfileRequest) returns (UserAppProfileResponse);
+
+  // GetUserTelegramBots returns user's Telegram bot access for an application
+  rpc GetUserTelegramBots(GetUserTelegramBotsRequest) returns (UserTelegramBotsResponse);
 }
 
 // ValidateTokenRequest contains the token to validate
 message ValidateTokenRequest {
   string access_token = 1;
+  string application_id = 2; // Optional: validate token against specific application
 }
 
 // ValidateTokenResponse contains validation result and user info
@@ -77,11 +86,14 @@ message ValidateTokenResponse {
   string error_message = 6;
   int64 expires_at = 7; // Unix timestamp
   bool is_active = 8;
+  string application_id = 9;    // Application ID from token claims
+  repeated string app_roles = 10; // Per-application roles
 }
 
 // GetUserRequest contains the user ID to retrieve
 message GetUserRequest {
   string user_id = 1;
+  string application_id = 2; // Optional: include app-specific profile
 }
 
 // User represents user information
@@ -109,6 +121,7 @@ message CheckPermissionRequest {
   string user_id = 1;
   string resource = 2; // e.g., "users", "products", "orders"
   string action = 3;   // e.g., "read", "write", "delete"
+  string application_id = 4; // Optional: check per-app permission
 }
 
 // CheckPermissionResponse contains permission check result
@@ -372,5 +385,51 @@ message OAuthClient {
 // GetOAuthClientResponse contains OAuth client information
 message GetOAuthClientResponse {
   OAuthClient client = 1;
+  string error_message = 2;
+}
+
+// ========== Multi-Application Messages ==========
+
+// GetUserAppProfileRequest contains user and application IDs
+message GetUserAppProfileRequest {
+  string user_id = 1;
+  string application_id = 2;
+}
+
+// UserAppProfileResponse contains user's application-specific profile
+message UserAppProfileResponse {
+  string user_id = 1;
+  string application_id = 2;
+  string display_name = 3;
+  string avatar_url = 4;
+  string locale = 5;
+  string timezone = 6;
+  repeated string app_roles = 7;
+  bool is_active = 8;
+  int64 created_at = 9;
+  string error_message = 10;
+}
+
+// GetUserTelegramBotsRequest contains user and application IDs
+message GetUserTelegramBotsRequest {
+  string user_id = 1;
+  string application_id = 2;
+}
+
+// TelegramBotAccess represents user's access to a Telegram bot
+message TelegramBotAccess {
+  string bot_id = 1;
+  string bot_username = 2;
+  string display_name = 3;
+  string telegram_user_id = 4;
+  string telegram_username = 5;
+  bool is_active = 6;
+  int64 first_interaction_at = 7;
+  int64 last_interaction_at = 8;
+}
+
+// UserTelegramBotsResponse contains user's Telegram bot access records
+message UserTelegramBotsResponse {
+  repeated TelegramBotAccess bots = 1;
   string error_message = 2;
 }

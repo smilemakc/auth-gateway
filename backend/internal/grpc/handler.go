@@ -299,16 +299,28 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *pb.ValidateToken
 			}, nil
 		}
 
-		// Return successful validation
-		return &pb.ValidateTokenResponse{
+		response := &pb.ValidateTokenResponse{
 			Valid:     user.IsActive,
 			UserId:    userWithRoles.ID.String(),
 			Email:     userWithRoles.Email,
 			Username:  userWithRoles.Username,
 			Roles:     extractRoleNames(userWithRoles.Roles),
-			ExpiresAt: 0, // API keys don't have JWT expiration
+			ExpiresAt: 0,
 			IsActive:  user.IsActive,
-		}, nil
+		}
+
+		if req.ApplicationId != "" {
+			appID, parseErr := uuid.Parse(req.ApplicationId)
+			if parseErr == nil {
+				response.ApplicationId = req.ApplicationId
+				appRoles, roleErr := h.rbacRepo.GetUserRolesInApp(ctx, user.ID, &appID)
+				if roleErr == nil {
+					response.AppRoles = extractRoleNames(appRoles)
+				}
+			}
+		}
+
+		return response, nil
 	}
 
 	// Validate JWT token
@@ -328,7 +340,6 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *pb.ValidateToken
 	tokenHash := utils.HashToken(req.AccessToken)
 	blacklisted, err := h.redis.IsBlacklisted(ctx, tokenHash)
 	if err != nil {
-		// Log error but check database as fallback
 		h.logger.Warn("Redis blacklist check failed", map[string]interface{}{
 			"error": err.Error(),
 		})
@@ -342,15 +353,51 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *pb.ValidateToken
 		}, nil
 	}
 
-	// Return successful validation
-	return &pb.ValidateTokenResponse{
+	response := &pb.ValidateTokenResponse{
 		Valid:     claims.IsActive,
 		UserId:    claims.UserID.String(),
 		Email:     claims.Email,
 		Username:  claims.Username,
 		Roles:     claims.Roles,
 		ExpiresAt: claims.ExpiresAt.Unix(),
-	}, nil
+		IsActive:  claims.IsActive,
+	}
+
+	if claims.ApplicationID != nil {
+		response.ApplicationId = claims.ApplicationID.String()
+
+		appRoles, roleErr := h.rbacRepo.GetUserRolesInApp(ctx, claims.UserID, claims.ApplicationID)
+		if roleErr == nil {
+			response.AppRoles = extractRoleNames(appRoles)
+		}
+	}
+
+	if req.ApplicationId != "" {
+		reqAppID, parseErr := uuid.Parse(req.ApplicationId)
+		if parseErr != nil {
+			return &pb.ValidateTokenResponse{
+				Valid:        false,
+				ErrorMessage: "invalid application_id format",
+			}, nil
+		}
+
+		if claims.ApplicationID != nil && *claims.ApplicationID != reqAppID {
+			return &pb.ValidateTokenResponse{
+				Valid:        false,
+				ErrorMessage: "token application_id does not match requested application_id",
+			}, nil
+		}
+
+		if claims.ApplicationID == nil {
+			response.ApplicationId = req.ApplicationId
+			appRoles, roleErr := h.rbacRepo.GetUserRolesInApp(ctx, claims.UserID, &reqAppID)
+			if roleErr == nil {
+				response.AppRoles = extractRoleNames(appRoles)
+			}
+		}
+	}
+
+	return response, nil
 }
 
 // GetUser retrieves user information by ID
@@ -359,13 +406,11 @@ func (h *AuthHandlerV2) GetUser(ctx context.Context, req *pb.GetUserRequest) (*p
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
 
-	// Parse user ID
 	userID, err := uuid.Parse(req.UserId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
 	}
 
-	// Get user from repository with roles
 	user, err := h.userRepo.GetByIDWithRoles(ctx, userID, nil)
 	if err != nil {
 		if errors.Is(err, models.ErrUserNotFound) {
@@ -378,7 +423,6 @@ func (h *AuthHandlerV2) GetUser(ctx context.Context, req *pb.GetUserRequest) (*p
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
-	// Convert to proto user
 	return &pb.GetUserResponse{
 		User: &pb.User{
 			Id:                user.ID.String(),
@@ -401,14 +445,22 @@ func (h *AuthHandlerV2) CheckPermission(ctx context.Context, req *pb.CheckPermis
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
 
-	// Parse user ID
 	userID, err := uuid.Parse(req.UserId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
 	}
 
-	// Get user roles with permissions
-	roles, err := h.rbacRepo.GetUserRoles(ctx, userID)
+	var roles []models.Role
+	if req.ApplicationId != "" {
+		appID, parseErr := uuid.Parse(req.ApplicationId)
+		if parseErr != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+		}
+		roles, err = h.rbacRepo.GetUserRolesInApp(ctx, userID, &appID)
+	} else {
+		roles, err = h.rbacRepo.GetUserRoles(ctx, userID)
+	}
+
 	if err != nil {
 		h.logger.Error("Failed to get user roles", map[string]interface{}{
 			"user_id": req.UserId,
@@ -424,7 +476,6 @@ func (h *AuthHandlerV2) CheckPermission(ctx context.Context, req *pb.CheckPermis
 		}, nil
 	}
 
-	// Check if any role has the required permission
 	for _, role := range roles {
 		for _, permission := range role.Permissions {
 			if permission.Resource == req.Resource && permission.Action == req.Action {
@@ -436,7 +487,6 @@ func (h *AuthHandlerV2) CheckPermission(ctx context.Context, req *pb.CheckPermis
 		}
 	}
 
-	// Permission denied
 	return &pb.CheckPermissionResponse{
 		Allowed: false,
 	}, nil
@@ -1368,4 +1418,28 @@ func (h *AuthHandlerV2) VerifyRegistrationOTP(ctx context.Context, req *pb.Verif
 		RefreshToken: authResp.RefreshToken,
 		ExpiresIn:    authResp.ExpiresIn,
 	}, nil
+}
+
+// GetUserApplicationProfile returns user's profile for a specific application
+func (h *AuthHandlerV2) GetUserApplicationProfile(ctx context.Context, req *pb.GetUserAppProfileRequest) (*pb.UserAppProfileResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+	if req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "application_id is required")
+	}
+
+	return nil, status.Errorf(codes.Unimplemented, "GetUserApplicationProfile not implemented - handler requires ApplicationRepository dependency")
+}
+
+// GetUserTelegramBots returns user's Telegram bot access for an application
+func (h *AuthHandlerV2) GetUserTelegramBots(ctx context.Context, req *pb.GetUserTelegramBotsRequest) (*pb.UserTelegramBotsResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+	if req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "application_id is required")
+	}
+
+	return nil, status.Errorf(codes.Unimplemented, "GetUserTelegramBots not implemented - handler requires UserTelegramRepository dependency")
 }
