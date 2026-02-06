@@ -4,6 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from './services/queryClient';
 import { AuthProvider, useAuth } from './services/authContext';
+import { ApplicationProvider } from './services/appContext';
 import { LanguageProvider } from './services/i18n';
 import { ThemeProvider } from './lib/theme';
 import Layout from './components/Layout';
@@ -157,7 +158,9 @@ const App: React.FC = () => {
       <QueryClientProvider client={queryClient}>
         <LanguageProvider>
           <AuthProvider>
-            <AppRoutes />
+            <ApplicationProvider>
+              <AppRoutes />
+            </ApplicationProvider>
           </AuthProvider>
         </LanguageProvider>
         {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../services/i18n';
 import { useTheme } from '../lib/theme';
+import { useApplication } from '../services/appContext';
 import {
   LayoutDashboard,
   Users,
@@ -55,6 +56,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { mode, setMode, isDark } = useTheme();
+  const { currentApplicationId, applications, setCurrentApplicationId } = useApplication();
 
   const navGroups: NavGroup[] = [
     {
@@ -307,6 +309,22 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Application Selector */}
+            {applications.length > 0 && (
+              <select
+                value={currentApplicationId ?? ''}
+                onChange={(e) => setCurrentApplicationId(e.target.value || null)}
+                className="text-sm border rounded-md px-2 py-1.5 bg-card border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 max-w-[200px]"
+              >
+                <option value="">{t('apps.all_applications') || 'All Applications'}</option>
+                {applications.map((app) => (
+                  <option key={app.id} value={app.id}>
+                    {app.display_name || app.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
             {/* Theme Switcher */}
             <div className="flex items-center border rounded-md overflow-hidden border-border bg-card">
               <button
