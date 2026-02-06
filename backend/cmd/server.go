@@ -138,6 +138,7 @@ type serviceSet struct {
 	Application      *service.ApplicationService
 	AppOAuthProvider *service.AppOAuthProviderService
 	Telegram         *service.TelegramService
+	Migration        *service.MigrationService
 }
 
 type handlerSet struct {
@@ -164,6 +165,7 @@ type handlerSet struct {
 	Application      *handler.ApplicationHandler
 	AppOAuthProvider *handler.AppOAuthProviderHandler
 	Telegram         *handler.TelegramHandler
+	Migration        *handler.MigrationHandler
 }
 
 type middlewareSet struct {
@@ -550,6 +552,9 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	// Telegram Service
 	telegramService := service.NewTelegramService(repos.TelegramBot, repos.UserTelegram, repos.Application, deps.log)
 
+	// Migration Service
+	migrationService := service.NewMigrationService(repos.User, repos.OAuth, repos.RBAC, repos.Application, repos.Application)
+
 	return &serviceSet{
 		Geo:             geoService,
 		Audit:           auditService,
@@ -578,6 +583,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 		Application:      applicationService,
 		AppOAuthProvider: appOAuthProviderService,
 		Telegram:         telegramService,
+		Migration:        migrationService,
 	}
 }
 
@@ -611,6 +617,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	applicationHandler := handler.NewApplicationHandler(services.Application, deps.log)
 	appOAuthProviderHandler := handler.NewAppOAuthProviderHandler(services.AppOAuthProvider, deps.log)
 	telegramHandler := handler.NewTelegramHandler(services.Telegram, deps.log)
+	migrationHandler := handler.NewMigrationHandler(services.Migration, deps.log)
 
 	return &handlerSet{
 		Auth:          authHandler,
@@ -636,6 +643,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 		Application:      applicationHandler,
 		AppOAuthProvider: appOAuthProviderHandler,
 		Telegram:         telegramHandler,
+		Migration:        migrationHandler,
 	}
 }
 
@@ -1059,6 +1067,14 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 				applicationsGroup.GET("/:id/email-templates/:templateId", handlers.Template.GetApplicationEmailTemplate)
 				applicationsGroup.PUT("/:id/email-templates/:templateId", handlers.Template.UpdateApplicationEmailTemplate)
 				applicationsGroup.DELETE("/:id/email-templates/:templateId", handlers.Template.DeleteApplicationEmailTemplate)
+			}
+
+			// Migration / Import
+			migrationGroup := adminGroup.Group("/migration")
+			{
+				migrationGroup.POST("/users", handlers.Migration.ImportUsers)
+				migrationGroup.POST("/oauth-accounts", handlers.Migration.ImportOAuthAccounts)
+				migrationGroup.POST("/roles", handlers.Migration.ImportRoles)
 			}
 		}
 

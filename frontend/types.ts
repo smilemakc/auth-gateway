@@ -44,6 +44,16 @@ import type {
   UserConsent,
   GrantType,
   ClientType,
+  // Application OAuth Provider types
+  ApplicationOAuthProvider,
+  CreateAppOAuthProviderRequest,
+  UpdateAppOAuthProviderRequest,
+  // Telegram types
+  TelegramBot,
+  CreateTelegramBotRequest,
+  UpdateTelegramBotRequest,
+  UserTelegramAccount,
+  UserTelegramBotAccess,
 } from '@auth-gateway/client-sdk';
 
 // Re-export common SDK types for convenience
@@ -79,6 +89,14 @@ export type {
   UserConsent,
   GrantType,
   ClientType,
+  ApplicationOAuthProvider,
+  CreateAppOAuthProviderRequest,
+  UpdateAppOAuthProviderRequest,
+  TelegramBot,
+  CreateTelegramBotRequest,
+  UpdateTelegramBotRequest,
+  UserTelegramAccount,
+  UserTelegramBotAccess,
 } from '@auth-gateway/client-sdk';
 
 // ============================================
