@@ -14,7 +14,7 @@ import (
 func main() {
 	// Create a new client
 	client := authgateway.NewClient(authgateway.Config{
-		BaseURL:     "http://localhost:3000",
+		BaseURL:     "http://localhost:8811",
 		Timeout:     30 * time.Second,
 		AutoRefresh: true, // Automatically refresh tokens when they expire
 	})

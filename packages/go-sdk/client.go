@@ -49,7 +49,7 @@ type Client struct {
 
 // Config contains client configuration options.
 type Config struct {
-	// BaseURL is the Auth Gateway server URL (e.g., "http://localhost:3000")
+	// BaseURL is the Auth Gateway server URL (e.g., "http://localhost:8811")
 	BaseURL string
 
 	// HTTPClient is an optional custom HTTP client
@@ -72,7 +72,7 @@ type Config struct {
 // NewClient creates a new Auth Gateway client.
 func NewClient(config Config) *Client {
 	if config.BaseURL == "" {
-		config.BaseURL = "http://localhost:3000"
+		config.BaseURL = "http://localhost:8811"
 	}
 
 	// Remove trailing slash

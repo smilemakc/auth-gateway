@@ -84,7 +84,7 @@ import (
 func main() {
     // Create a client
     client := authgateway.NewClient(authgateway.Config{
-        BaseURL:     "http://localhost:3000",
+        BaseURL:     "http://localhost:8811",
         AutoRefresh: true,
     })
 
@@ -145,7 +145,7 @@ func main() {
 
 ```go
 client := authgateway.NewClient(authgateway.Config{
-    BaseURL: "http://localhost:3000",
+    BaseURL: "http://localhost:8811",
     APIKey:  "agw_your_api_key_here",
 })
 ```
@@ -378,7 +378,7 @@ if err != nil {
 ```go
 client := authgateway.NewClient(authgateway.Config{
     // Base URL of the Auth Gateway server
-    BaseURL: "http://localhost:3000",
+    BaseURL: "http://localhost:8811",
 
     // Custom HTTP client (optional)
     HTTPClient: &http.Client{},
@@ -409,7 +409,7 @@ All SDK clients support custom headers/metadata for multi-tenant environments an
 ```go
 // Set headers at creation time
 client := authgateway.NewClient(authgateway.Config{
-    BaseURL: "http://localhost:3000",
+    BaseURL: "http://localhost:8811",
     Headers: map[string]string{
         "X-Application-ID": "my-app-id",
     },

@@ -14,7 +14,7 @@ func main() {
 	// Create a client with API key authentication
 	// API keys are useful for server-to-server communication
 	client := authgateway.NewClient(authgateway.Config{
-		BaseURL: "http://localhost:3000",
+		BaseURL: "http://localhost:8811",
 		APIKey:  "agw_your_api_key_here", // Replace with your actual API key
 		Timeout: 30 * time.Second,
 	})

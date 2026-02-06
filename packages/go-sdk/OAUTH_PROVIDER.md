@@ -454,7 +454,7 @@ For testing, you can point to a local Auth Gateway instance:
 
 ```go
 client := authgateway.NewOAuthProviderClient(authgateway.OAuthProviderConfig{
-    Issuer:      "http://localhost:3000",
+    Issuer:      "http://localhost:8811",
     ClientID:    "test-client",
     RedirectURI: "http://localhost:8080/callback",
 })

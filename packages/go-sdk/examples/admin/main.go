@@ -14,7 +14,7 @@ import (
 func main() {
 	// Create client and authenticate as admin
 	client := authgateway.NewClient(authgateway.Config{
-		BaseURL: "http://localhost:3000",
+		BaseURL: "http://localhost:8811",
 		Timeout: 30 * time.Second,
 	})
 
