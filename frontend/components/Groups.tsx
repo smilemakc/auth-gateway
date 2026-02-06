@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Trash2, Users, Eye } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Users, Eye, FolderTree } from 'lucide-react';
 import type { Group } from '@auth-gateway/client-sdk';
 import { useLanguage } from '../services/i18n';
 import { useGroups, useDeleteGroup } from '../hooks/useGroups';
@@ -168,7 +168,20 @@ const Groups: React.FC = () => {
           </table>
 
           {filteredGroups.length === 0 && (
-            <div className="p-12 text-center text-muted-foreground">{t('groups.no_groups')}</div>
+            <tr>
+              <td colSpan={6} className="p-0">
+                <div className="text-center py-12">
+                  <FolderTree className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <h3 className="mt-2 text-sm font-semibold text-foreground">{t('groups.no_groups_title')}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{t('groups.no_groups_desc')}</p>
+                  <div className="mt-6">
+                    <Link to="/groups/new" className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90">
+                      {t('groups.create_group')}
+                    </Link>
+                  </div>
+                </div>
+              </td>
+            </tr>
           )}
         </div>
 

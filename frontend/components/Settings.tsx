@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Save, Lock, Mail, Globe, Shield, ExternalLink, ChevronRight, ShieldAlert, Palette, Key, MessageSquare, Activity, Server, Sliders } from 'lucide-react';
+import { Save, Lock, Globe, Shield, ExternalLink, ChevronRight, ShieldAlert, Palette, Key, Activity, Server, Sliders } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useSystemStatus, usePasswordPolicy, useUpdatePasswordPolicy, useMaintenanceMode, useMaintenanceModeStatus } from '../hooks/useSettings';
 import { PasswordPolicy } from '../types';
@@ -192,7 +192,7 @@ const Settings: React.FC = () => {
             </div>
           </div>
           <Link
-            to="/settings/security/ip-rules"
+            to="/ip-security"
             className="text-sm bg-card border border-input text-foreground hover:bg-accent px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
           >
             {t('oauth.configure')} <ChevronRight size={16} />
@@ -291,47 +291,6 @@ const Settings: React.FC = () => {
         )}
       </section>
 
-      {/* Email Settings */}
-      <section className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-        <div className="p-6 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-success/10 text-success rounded-lg">
-               <Mail size={20} />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">{t('settings.email_smtp')}</h2>
-              <p className="text-sm text-muted-foreground">{t('email.providers_desc')}</p>
-            </div>
-          </div>
-          <Link
-            to="/settings/email"
-            className="text-sm bg-card border border-input text-foreground hover:bg-accent px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
-          >
-            {t('oauth.configure')} <ChevronRight size={16} />
-          </Link>
-        </div>
-      </section>
-
-      {/* SMS Settings */}
-      <section className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-        <div className="p-6 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-muted text-muted-foreground rounded-lg">
-               <MessageSquare size={20} />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">{t('sms.title')}</h2>
-              <p className="text-sm text-muted-foreground">{t('sms.desc')}</p>
-            </div>
-          </div>
-          <Link
-            to="/settings/sms"
-            className="text-sm bg-card border border-input text-foreground hover:bg-accent px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
-          >
-            {t('oauth.configure')} <ChevronRight size={16} />
-          </Link>
-        </div>
-      </section>
     </div>
   );
 };

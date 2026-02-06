@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Shield, ShieldOff, Check, X, Filter, Eye, Edit } from 'lucide-react';
+import { Search, Shield, ShieldOff, Check, X, Filter, Eye, Edit, Users as UsersIcon } from 'lucide-react';
 import type { AdminUserResponse } from '@auth-gateway/client-sdk';
 import { useLanguage } from '../services/i18n';
 import { useUsers, useUpdateUser } from '../hooks/useUsers';
@@ -10,13 +10,19 @@ import { useApplication } from '../services/appContext';
 const Users: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { currentApplication } = useApplication();
 
   // Fetch users with React Query
-  const { data, isLoading, error } = useUsers(1, 50, searchTerm, roleFilter);
+  const { data, isLoading, error } = useUsers(page, pageSize, searchTerm, roleFilter);
   const updateUserMutation = useUpdateUser();
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, roleFilter]);
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
     try {
@@ -47,6 +53,8 @@ const Users: React.FC = () => {
   }
 
   const users = data?.users || [];
+  const total = data?.total || 0;
+  const totalPages = Math.ceil(total / pageSize);
 
   const filterUsersByRole = (userList: AdminUserResponse[]) => {
     if (roleFilter === 'all') return userList;
@@ -182,6 +190,7 @@ const Users: React.FC = () => {
                         onClick={() => toggleStatus(user.id, user.is_active)}
                         className={`p-1 rounded-md hover:bg-accent ${user.is_active ? 'text-muted-foreground hover:text-destructive' : 'text-muted-foreground hover:text-success'}`}
                         disabled={updateUserMutation.isPending}
+                        title={user.is_active ? t('users.block_user') : t('users.unblock_user')}
                       >
                         {user.is_active ? <ShieldOff size={18} /> : <Shield size={18} />}
                       </button>
@@ -192,12 +201,45 @@ const Users: React.FC = () => {
             </tbody>
           </table>
 
-          {filteredUsers.length === 0 && (
-             <div className="p-12 text-center text-muted-foreground">
-                No users found.
-             </div>
+          {filteredUsers.length === 0 && !isLoading && (
+            <div className="text-center py-12 bg-card rounded-xl border border-border">
+              <UsersIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-2 text-sm font-semibold text-foreground">{t('users.no_users')}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{t('users.no_users_desc')}</p>
+              <div className="mt-6">
+                <Link to="/users/new" className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90">
+                  {t('users.create_user')}
+                </Link>
+              </div>
+            </div>
           )}
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between bg-card px-4 py-3 rounded-lg border border-border mt-4">
+            <div className="text-sm text-muted-foreground">
+              {t('common.showing')} <span className="font-medium">{(page - 1) * pageSize + 1}</span> {t('common.to')}{' '}
+              <span className="font-medium">{Math.min(page * pageSize, total)}</span> {t('common.of')}{' '}
+              <span className="font-medium">{total}</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 border border-input rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
+              >
+                {t('common.previous')}
+              </button>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 border border-input rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
+              >
+                {t('common.next')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

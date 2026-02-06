@@ -124,7 +124,7 @@ const EmailProviders: React.FC<EmailProvidersProps> = ({ embedded = false }) => 
             </p>
           </div>
           <Link
-            to="/settings/email-providers/new"
+            to="/email/providers/new"
             className="flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             <Plus size={18} />
@@ -135,7 +135,7 @@ const EmailProviders: React.FC<EmailProvidersProps> = ({ embedded = false }) => 
       {embedded && (
         <div className="flex justify-end">
           <Link
-            to="/settings/email-providers/new"
+            to="/email/providers/new"
             className="flex items-center gap-2 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             <Plus size={18} />
@@ -178,7 +178,7 @@ const EmailProviders: React.FC<EmailProvidersProps> = ({ embedded = false }) => 
             {t('email.no_providers_desc')}
           </p>
           <Link
-            to="/settings/email-providers/new"
+            to="/email/providers/new"
             className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg text-sm font-medium transition-colors"
           >
             <Plus size={18} />
@@ -271,7 +271,7 @@ const EmailProviders: React.FC<EmailProvidersProps> = ({ embedded = false }) => 
                     {t('common.test')}
                   </button>
                   <Link
-                    to={`/settings/email-providers/${provider.id}`}
+                    to={`/email/providers/${provider.id}`}
                     className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
                   >
                     <Edit2 size={18} />

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Trash2, Ban, Copy, CheckCircle, X, Plus } from 'lucide-react';
+import { Trash2, Ban, Copy, CheckCircle, X, Plus, Key } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useApiKeys, useRevokeApiKey, useDeleteApiKey, useCreateApiKey } from '../hooks/useApiKeys';
 
@@ -249,69 +249,79 @@ const ApiKeys: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {keys.map((apiKey) => (
-          <div key={apiKey.id} className="bg-card rounded-xl shadow-sm border border-border p-6 flex flex-col">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${apiKey.is_active ? 'bg-amber-50 text-amber-600' : 'bg-muted text-muted-foreground'}`}>
-                  <div className="font-mono text-xl font-bold">K</div>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{apiKey.name}</h3>
-                  <p className="text-sm text-muted-foreground">{t('keys.owner')}: {apiKey.user_email || apiKey.user_name || 'N/A'}</p>
-                </div>
-              </div>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                apiKey.is_active
-                  ? 'bg-success/10 text-success'
-                  : 'bg-destructive/10 text-destructive'
-              }`}>
-                {apiKey.is_active ? t('users.active') : t('keys.revoked')}
-              </span>
-            </div>
+      {keys.length === 0 && !isLoading && (
+        <div className="text-center py-12 bg-card rounded-xl border border-border">
+          <Key className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-2 text-sm font-semibold text-foreground">{t('keys.no_keys')}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">{t('keys.no_keys_desc')}</p>
+        </div>
+      )}
 
-            <div className="bg-muted rounded-md p-3 mb-4 flex items-center justify-between group">
-              <code className="text-sm text-muted-foreground font-mono">
-                {apiKey.key_prefix}****************
-              </code>
-              <button
-                onClick={() => handleCopy(apiKey.key_prefix, apiKey.id)}
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                {copiedId === apiKey.id ? <CheckCircle size={16} className="text-success" /> : <Copy size={16} />}
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-6">
-              {apiKey.scopes.map(scope => (
-                <span key={scope} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded border border-border">
-                  {scope}
+      {keys.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {keys.map((apiKey) => (
+            <div key={apiKey.id} className="bg-card rounded-xl shadow-sm border border-border p-6 flex flex-col">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${apiKey.is_active ? 'bg-amber-50 text-amber-600' : 'bg-muted text-muted-foreground'}`}>
+                    <div className="font-mono text-xl font-bold">K</div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">{apiKey.name}</h3>
+                    <p className="text-sm text-muted-foreground">{t('keys.owner')}: {apiKey.user_email || apiKey.user_name || 'N/A'}</p>
+                  </div>
+                </div>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  apiKey.is_active
+                    ? 'bg-success/10 text-success'
+                    : 'bg-destructive/10 text-destructive'
+                }`}>
+                  {apiKey.is_active ? t('users.active') : t('keys.revoked')}
                 </span>
-              ))}
-            </div>
+              </div>
 
-            <div className="mt-auto pt-4 border-t border-border flex items-center justify-between text-sm">
-               <span className="text-muted-foreground">{t('common.created')}: {new Date(apiKey.created_at).toLocaleDateString()}</span>
+              <div className="bg-muted rounded-md p-3 mb-4 flex items-center justify-between group">
+                <code className="text-sm text-muted-foreground font-mono">
+                  {apiKey.key_prefix}****************
+                </code>
+                <button
+                  onClick={() => handleCopy(apiKey.key_prefix, apiKey.id)}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {copiedId === apiKey.id ? <CheckCircle size={16} className="text-success" /> : <Copy size={16} />}
+                </button>
+              </div>
 
-               <div className="flex gap-2">
-                 {apiKey.is_active && (
+              <div className="flex flex-wrap gap-2 mb-6">
+                {apiKey.scopes.map(scope => (
+                  <span key={scope} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded border border-border">
+                    {scope}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-auto pt-4 border-t border-border flex items-center justify-between text-sm">
+                 <span className="text-muted-foreground">{t('common.created')}: {new Date(apiKey.created_at).toLocaleDateString()}</span>
+
+                 <div className="flex gap-2">
+                   {apiKey.is_active && (
+                     <button
+                      onClick={() => handleRevoke(apiKey.id)}
+                      className="p-1.5 text-muted-foreground hover:text-orange-600 hover:bg-orange-50 rounded transition-colors" title={t('user.revoke')}>
+                       <Ban size={18} />
+                     </button>
+                   )}
                    <button
-                    onClick={() => handleRevoke(apiKey.id)}
-                    className="p-1.5 text-muted-foreground hover:text-orange-600 hover:bg-orange-50 rounded transition-colors" title={t('user.revoke')}>
-                     <Ban size={18} />
+                     onClick={() => handleDelete(apiKey.id)}
+                     className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors" title={t('common.delete')}>
+                     <Trash2 size={18} />
                    </button>
-                 )}
-                 <button
-                   onClick={() => handleDelete(apiKey.id)}
-                   className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors" title={t('common.delete')}>
-                   <Trash2 size={18} />
-                 </button>
-               </div>
+                 </div>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

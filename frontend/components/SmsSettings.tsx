@@ -1,12 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, AlertTriangle, Send, Loader2 } from 'lucide-react';
+import { Save, AlertTriangle, Send, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useSmsSettingsActive, useUpdateSmsSettings, useCreateSmsSettings } from '../hooks/useSettings';
 
 const SmsSettings: React.FC = () => {
-  const navigate = useNavigate();
   const { t } = useLanguage();
 
   const { data: activeSettings, isLoading: loadingSettings } = useSmsSettingsActive();
@@ -90,17 +88,9 @@ const SmsSettings: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate('/settings')}
-          className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
-        >
-          <ArrowLeft size={24} />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('sms.title')}</h1>
-          <p className="text-muted-foreground mt-1">{t('sms.desc')}</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">{t('sms.title')}</h1>
+        <p className="text-muted-foreground mt-1">{t('sms.desc')}</p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">

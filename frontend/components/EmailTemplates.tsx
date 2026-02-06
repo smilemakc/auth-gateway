@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Edit2, Calendar, FileText, ArrowLeft, Loader2, ChevronDown, ChevronRight, KeyRound, ShieldCheck } from 'lucide-react';
+import { Mail, Edit2, Calendar, FileText, Loader2, ChevronDown, ChevronRight, KeyRound, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useEmailTemplates } from '../hooks/useEmailTemplates';
 
@@ -99,16 +99,8 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({ embedded = false }) => 
   return (
     <div className="space-y-6">
       {!embedded && (
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/settings/email')}
-            className="p-2 hover:bg-card rounded-lg transition-colors text-muted-foreground"
-          >
-            <ArrowLeft size={24} />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{t('email.templates')}</h1>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{t('email.templates')}</h1>
         </div>
       )}
 
@@ -166,7 +158,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({ embedded = false }) => 
                                 <Mail size={20} />
                               </div>
                               <Link
-                                to={`/settings/email-templates/${template.id}`}
+                                to={`/email/templates/${template.id}`}
                                 className="text-muted-foreground hover:text-primary transition-colors"
                               >
                                 <Edit2 size={18} />

@@ -30,7 +30,8 @@ import {
   UserCog,
   Lock,
   Mail,
-  Boxes
+  Boxes,
+  MessageSquare
 } from 'lucide-react';
 
 interface NavItem {
@@ -53,7 +54,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['users', 'auth', 'security']));
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['users', 'auth', 'security', 'messaging']));
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { mode, setMode, isDark } = useTheme();
@@ -91,6 +92,16 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
         { path: '/saml', label: 'SAML', icon: Shield },
         { path: '/ip-security', label: t('nav.ip_security'), icon: ShieldAlert },
         { path: '/audit-logs', label: t('nav.audit_logs'), icon: ShieldAlert },
+      ],
+    },
+    {
+      id: 'messaging',
+      label: t('nav.messaging'),
+      icon: Mail,
+      items: [
+        { path: '/email/templates', label: t('nav.email_templates'), icon: Mail },
+        { path: '/email/providers', label: t('nav.email_providers'), icon: Server },
+        { path: '/sms/providers', label: t('nav.sms_providers'), icon: MessageSquare },
       ],
     },
   ];
@@ -266,23 +277,6 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                 </Link>
               );
             })}
-          </nav>
-
-          {/* Email - standalone item */}
-          <nav className="mb-4">
-            <Link
-              to="/settings/email"
-              onClick={() => setIsSidebarOpen(false)}
-              className={`
-                flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors
-                ${location.pathname.startsWith('/settings/email')
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
-                  : 'text-sidebar-foreground/80 hover:bg-sidebar-muted hover:text-sidebar-foreground'}
-              `}
-            >
-              <Mail className="mr-3 h-5 w-5" />
-              {t('nav.email')}
-            </Link>
           </nav>
 
           {/* Settings - standalone item */}

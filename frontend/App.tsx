@@ -105,22 +105,28 @@ const AppRoutes: React.FC = () => {
           <Route path="/audit-logs" element={<AuditLogs />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/branding" element={<Branding />} />
-          <Route path="/settings/email" element={<EmailSettings />} />
-          <Route path="/settings/email-templates" element={<EmailTemplates />} />
-          <Route path="/settings/email-templates/:id" element={<EmailTemplateEditor />} />
-          <Route path="/settings/roles" element={<Roles />} />
-          <Route path="/settings/roles/:id" element={<RoleEditor />} />
-          <Route path="/settings/permissions" element={<Permissions />} />
-          <Route path="/settings/permissions/:id" element={<PermissionEdit />} />
           <Route path="/settings/access-control" element={<AccessControl />} />
           <Route path="/settings/access-control/roles/new" element={<RoleEditor />} />
           <Route path="/settings/access-control/roles/:id" element={<RoleEditor />} />
           <Route path="/settings/access-control/permissions/new" element={<PermissionEdit />} />
           <Route path="/settings/access-control/permissions/:id" element={<PermissionEdit />} />
-          <Route path="/settings/security/ip-rules" element={<IpSecurity />} />
-          <Route path="/settings/sms" element={<SmsSettings />} />
-          <Route path="/settings/email-providers" element={<EmailProviders />} />
-          <Route path="/settings/email-providers/:id" element={<EmailProviderEdit />} />
+
+          {/* New canonical routes */}
+          <Route path="/email/templates" element={<EmailTemplates />} />
+          <Route path="/email/templates/:id" element={<EmailTemplateEditor />} />
+          <Route path="/email/providers" element={<EmailProviders />} />
+          <Route path="/email/providers/new" element={<EmailProviderEdit />} />
+          <Route path="/email/providers/:id" element={<EmailProviderEdit />} />
+          <Route path="/sms/providers" element={<SmsSettings />} />
+
+          {/* Redirects from old routes */}
+          <Route path="/settings/email" element={<Navigate to="/email/templates" replace />} />
+          <Route path="/settings/email-templates" element={<Navigate to="/email/templates" replace />} />
+          <Route path="/settings/email-providers" element={<Navigate to="/email/providers" replace />} />
+          <Route path="/settings/sms" element={<Navigate to="/sms/providers" replace />} />
+          <Route path="/settings/security/ip-rules" element={<Navigate to="/ip-security" replace />} />
+          <Route path="/roles" element={<Navigate to="/settings/access-control" replace />} />
+          <Route path="/permissions" element={<Navigate to="/settings/access-control" replace />} />
           <Route path="/developers/webhooks" element={<Webhooks />} />
           <Route path="/developers/webhooks/:id" element={<WebhookEdit />} />
           <Route path="/developers/service-accounts" element={<ServiceAccounts />} />

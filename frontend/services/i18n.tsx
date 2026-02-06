@@ -618,6 +618,42 @@ const translations: Record<Language, Record<string, string>> = {
     'email.ses_secret_key': 'Secret Access Key',
     'email.mailgun_settings': 'Настройки Mailgun',
     'email.mailgun_domain': 'Домен',
+
+    // Navigation - messaging group
+    'nav.messaging': 'Рассылки',
+    'nav.email_templates': 'Email-шаблоны',
+    'nav.sms_providers': 'SMS-провайдеры',
+
+    // Audit - additional
+    'audit.no_logs': 'Нет записей аудита',
+    'audit.no_logs_desc': 'Записей, соответствующих выбранным фильтрам, не найдено.',
+    'audit.filter_action': 'Все действия',
+    'audit.filter_status': 'Все статусы',
+
+    // Users - additional
+    'users.no_users': 'Пользователи не найдены',
+    'users.no_users_desc': 'Нет пользователей, соответствующих условиям поиска.',
+    'users.create_user': 'Создать пользователя',
+    'users.block_user': 'Заблокировать пользователя',
+    'users.unblock_user': 'Разблокировать пользователя',
+
+    // Sessions - additional
+    'sessions.no_sessions': 'Нет активных сессий',
+    'sessions.no_sessions_desc': 'Активные сессии пользователей не найдены.',
+
+    // API Keys - additional
+    'keys.no_keys': 'Нет API-ключей',
+    'keys.no_keys_desc': 'API-ключи ещё не созданы.',
+
+    // Groups - additional
+    'groups.no_groups_title': 'Нет групп',
+    'groups.no_groups_desc': 'Группы ещё не созданы.',
+    'groups.create_group': 'Создать группу',
+
+    // Webhooks - additional
+    'hooks.no_webhooks_title': 'Нет вебхуков',
+    'hooks.no_webhooks_desc': 'Вебхуки ещё не настроены.',
+    'hooks.add_endpoint': 'Добавить эндпоинт',
   },
   en: {
     // Common
@@ -1228,6 +1264,42 @@ const translations: Record<Language, Record<string, string>> = {
     'email.ses_secret_key': 'Secret Access Key',
     'email.mailgun_settings': 'Mailgun Settings',
     'email.mailgun_domain': 'Domain',
+
+    // Navigation - messaging group
+    'nav.messaging': 'Messaging',
+    'nav.email_templates': 'Email Templates',
+    'nav.sms_providers': 'SMS Providers',
+
+    // Audit - additional
+    'audit.no_logs': 'No audit logs',
+    'audit.no_logs_desc': 'No audit log entries match your filters.',
+    'audit.filter_action': 'All Actions',
+    'audit.filter_status': 'All Statuses',
+
+    // Users - additional
+    'users.no_users': 'No users found',
+    'users.no_users_desc': 'No users match your search criteria.',
+    'users.create_user': 'Create User',
+    'users.block_user': 'Block user',
+    'users.unblock_user': 'Unblock user',
+
+    // Sessions - additional
+    'sessions.no_sessions': 'No active sessions',
+    'sessions.no_sessions_desc': 'No active user sessions found.',
+
+    // API Keys - additional
+    'keys.no_keys': 'No API keys',
+    'keys.no_keys_desc': 'No API keys have been created yet.',
+
+    // Groups - additional
+    'groups.no_groups_title': 'No groups',
+    'groups.no_groups_desc': 'No groups have been created yet.',
+    'groups.create_group': 'Create Group',
+
+    // Webhooks - additional
+    'hooks.no_webhooks_title': 'No webhooks',
+    'hooks.no_webhooks_desc': 'No webhooks have been configured yet.',
+    'hooks.add_endpoint': 'Add Endpoint',
   }
 };
 
