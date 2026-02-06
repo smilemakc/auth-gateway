@@ -3,13 +3,18 @@ import {Clock, Key, MapPin, Monitor, Trash2, User} from 'lucide-react';
 import {useRevokeSession, useSessions} from '../hooks/useSessions';
 import { useLanguage } from '../services/i18n';
 import { formatRelative } from '../lib/date';
+import { useSort } from '../hooks/useSort';
+import SortableHeader from './SortableHeader';
+import { confirm } from '../services/confirm';
 
 const Sessions: React.FC = () => {
     const {data, isLoading, error} = useSessions(1, 100);
     const revokeSession = useRevokeSession();
     const { t } = useLanguage();
+    const { sortState, requestSort, sortData } = useSort<any>();
 
     const sessions = data?.sessions || [];
+    const sortedSessions = sortData(sessions);
 
     if (isLoading) {
         return (
@@ -28,8 +33,9 @@ const Sessions: React.FC = () => {
         );
     }
 
-    const handleRevoke = (sessionId: string) => {
-        if (confirm(t('sessions.revoke_confirm'))) {
+    const handleRevoke = async (sessionId: string) => {
+        const ok = await confirm({ description: t('sessions.revoke_confirm'), variant: 'danger' });
+        if (ok) {
             revokeSession.mutate(sessionId);
         }
     };
@@ -54,15 +60,15 @@ const Sessions: React.FC = () => {
                     <table className="min-w-full text-left text-sm whitespace-nowrap">
                         <thead className="uppercase tracking-wider border-b border-border bg-muted">
                         <tr>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('sessions.col_user')}</th>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('sessions.col_device')}</th>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('sessions.col_ip')}</th>
-                            <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('sessions.col_last_active')}</th>
+                            <SortableHeader label={t('sessions.col_user')} sortKey="user_email" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} className="px-6 py-4 font-semibold text-foreground cursor-pointer select-none hover:text-foreground transition-colors" />
+                            <SortableHeader label={t('sessions.col_device')} sortKey="browser" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} className="px-6 py-4 font-semibold text-foreground cursor-pointer select-none hover:text-foreground transition-colors" />
+                            <SortableHeader label={t('sessions.col_ip')} sortKey="ip_address" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} className="px-6 py-4 font-semibold text-foreground cursor-pointer select-none hover:text-foreground transition-colors" />
+                            <SortableHeader label={t('sessions.col_last_active')} sortKey="last_active_at" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} className="px-6 py-4 font-semibold text-foreground cursor-pointer select-none hover:text-foreground transition-colors" />
                             <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('common.actions')}</th>
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                        {sessions.map((session: any) => (
+                        {sortedSessions.map((session: any) => (
                             <tr key={session.id} className="hover:bg-accent">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-2 text-muted-foreground">

@@ -5,6 +5,7 @@ import type { BulkOperationResult, AdminUserResponse, Role } from '@auth-gateway
 import { useBulkAssignRoles } from '../hooks/useBulkOperations';
 import { useUsers } from '../hooks/useUsers';
 import { useRoles } from '../hooks/useRBAC';
+import { toast } from '../services/toast';
 
 const BulkAssignRoles: React.FC = () => {
   const navigate = useNavigate();
@@ -53,11 +54,11 @@ const BulkAssignRoles: React.FC = () => {
 
   const handleSubmit = async () => {
     if (selectedUserIds.length === 0) {
-      alert('Please select at least one user');
+      toast.warning('Please select at least one user');
       return;
     }
     if (selectedRoleIds.length === 0) {
-      alert('Please select at least one role');
+      toast.warning('Please select at least one role');
       return;
     }
 
@@ -69,7 +70,7 @@ const BulkAssignRoles: React.FC = () => {
       setResult(result);
     } catch (error) {
       console.error('Bulk assign roles failed:', error);
-      alert('Failed to assign roles');
+      toast.error('Failed to assign roles');
     }
   };
 

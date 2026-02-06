@@ -473,6 +473,7 @@ const translations: Record<Language, Record<string, string>> = {
     'oauth_clients.no_clients_desc': 'Начните с создания нового OAuth клиента.',
     'oauth_clients.showing': 'результатов',
     'oauth_clients.load_error': 'Не удалось загрузить OAuth клиентов. Попробуйте снова.',
+    'oauth_clients.filter_status': 'Все статусы',
 
     // Dashboard - additional
     'dash.new_today': 'новых сегодня',
@@ -661,6 +662,22 @@ const translations: Record<Language, Record<string, string>> = {
     'hooks.no_webhooks_title': 'Нет вебхуков',
     'hooks.no_webhooks_desc': 'Вебхуки ещё не настроены.',
     'hooks.add_endpoint': 'Добавить эндпоинт',
+
+    // Settings tabs
+    'settings.tab_general': 'Основные',
+    'settings.tab_security': 'Безопасность',
+
+    // Sorting
+    'sort.asc': 'По возрастанию',
+    'sort.desc': 'По убыванию',
+    'sort.none': 'Без сортировки',
+
+    // Confirm Dialog
+    'confirm.title': 'Подтверждение',
+    'confirm.delete_title': 'Удаление',
+    'confirm.cancel': 'Отмена',
+    'confirm.confirm': 'Подтвердить',
+    'confirm.delete': 'Удалить',
   },
   en: {
     // Common
@@ -1126,6 +1143,7 @@ const translations: Record<Language, Record<string, string>> = {
     'oauth_clients.no_clients_desc': 'Get started by creating a new OAuth client.',
     'oauth_clients.showing': 'results',
     'oauth_clients.load_error': 'Failed to load OAuth clients. Please try again.',
+    'oauth_clients.filter_status': 'All Statuses',
 
     // Dashboard - additional
     'dash.new_today': 'new today',
@@ -1314,6 +1332,22 @@ const translations: Record<Language, Record<string, string>> = {
     'hooks.no_webhooks_title': 'No webhooks',
     'hooks.no_webhooks_desc': 'No webhooks have been configured yet.',
     'hooks.add_endpoint': 'Add Endpoint',
+
+    // Settings tabs
+    'settings.tab_general': 'General',
+    'settings.tab_security': 'Security',
+
+    // Sorting
+    'sort.asc': 'Ascending',
+    'sort.desc': 'Descending',
+    'sort.none': 'No sorting',
+
+    // Confirm Dialog
+    'confirm.title': 'Confirmation',
+    'confirm.delete_title': 'Delete',
+    'confirm.cancel': 'Cancel',
+    'confirm.confirm': 'Confirm',
+    'confirm.delete': 'Delete',
   }
 };
 

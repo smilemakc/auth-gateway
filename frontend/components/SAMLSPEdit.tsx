@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Save, X, Loader, Download, FileText } from 'lucide-react';
 import type { CreateSAMLSPRequest, UpdateSAMLSPRequest, SAMLServiceProvider } from '@auth-gateway/client-sdk';
 import { useSAMLSP, useCreateSAMLSP, useUpdateSAMLSP } from '../hooks/useSAML';
+import { toast } from '../services/toast';
 
 const SAMLSPEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -87,7 +88,7 @@ const SAMLSPEdit: React.FC = () => {
       navigate('/saml');
     } catch (error) {
       console.error('Failed to save SAML SP:', error);
-      alert('Failed to save SAML Service Provider');
+      toast.error('Failed to save SAML Service Provider');
     }
   };
 

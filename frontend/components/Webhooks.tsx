@@ -5,6 +5,7 @@ import { Plus, Trash2, Edit2, Activity, CheckCircle, XCircle, Eye, EyeOff, Loade
 import { useLanguage } from '../services/i18n';
 import { useWebhooks, useDeleteWebhook } from '../hooks/useWebhooks';
 import { formatRelative } from '../lib/date';
+import { confirm } from '../services/confirm';
 
 const Webhooks: React.FC = () => {
   const [revealedSecrets, setRevealedSecrets] = useState<string[]>([]);
@@ -16,7 +17,12 @@ const Webhooks: React.FC = () => {
   const webhooks = webhooksResponse?.webhooks || [];
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      description: t('common.confirm_delete'),
+      title: t('confirm.delete_title'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteWebhookMutation.mutateAsync(id);
       } catch (err) {

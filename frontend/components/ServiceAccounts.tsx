@@ -5,6 +5,8 @@ import { Plus, Trash2, Edit2, Bot, CheckCircle, XCircle, Copy, Loader2 } from 'l
 import { useLanguage } from '../services/i18n';
 import { useOAuthClients, useDeleteOAuthClient } from '../hooks/useOAuthClients';
 import { formatDate } from '../lib/date';
+import { toast } from '../services/toast';
+import { confirm } from '../services/confirm';
 
 const ServiceAccounts: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -19,12 +21,17 @@ const ServiceAccounts: React.FC = () => {
   );
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      description: t('common.confirm_delete'),
+      title: t('confirm.delete_title'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteClientMutation.mutateAsync(id);
       } catch (err: any) {
         console.error('Failed to delete service account:', err);
-        alert(err?.message || 'Failed to delete service account');
+        toast.error(err?.message || 'Failed to delete service account');
       }
     }
   };

@@ -9,6 +9,8 @@ import {
 } from '../hooks/useApplications';
 import type { UserApplicationProfile } from '../types';
 import { formatRelative } from '../lib/date';
+import { toast } from '../services/toast';
+import { confirm } from '../services/confirm';
 
 interface ApplicationUsersTabProps {
   applicationId: string;
@@ -27,7 +29,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
 
   const handleBan = async (profile: UserApplicationProfile) => {
     if (!banReason.trim()) {
-      alert(t('apps.ban_reason_required'));
+      toast.warning(t('apps.ban_reason_required'));
       return;
     }
     try {
@@ -44,7 +46,11 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
   };
 
   const handleUnban = async (profile: UserApplicationProfile) => {
-    if (window.confirm(t('apps.confirm_unban'))) {
+    const ok = await confirm({
+      description: t('apps.confirm_unban'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await unbanUser.mutateAsync({
           applicationId,

@@ -4,9 +4,13 @@ import { ArrowLeft, Loader, AlertTriangle, Search } from 'lucide-react';
 import type { BulkOperationResult, AdminUserResponse } from '@auth-gateway/client-sdk';
 import { useBulkDeleteUsers } from '../hooks/useBulkOperations';
 import { useUsers } from '../hooks/useUsers';
+import { toast } from '../services/toast';
+import { confirm } from '../services/confirm';
+import { useLanguage } from '../services/i18n';
 
 const BulkDeleteUsers: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const bulkDelete = useBulkDeleteUsers();
   const { data: usersData } = useUsers(1, 1000);
 
@@ -41,15 +45,17 @@ const BulkDeleteUsers: React.FC = () => {
 
   const handleSubmit = async () => {
     if (selectedUserIds.length === 0) {
-      alert('Please select at least one user');
+      toast.warning('Please select at least one user');
       return;
     }
 
-    if (
-      !window.confirm(
-        `Are you sure you want to delete ${selectedUserIds.length} user(s)? This action cannot be undone.`
-      )
-    ) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: `Are you sure you want to delete ${selectedUserIds.length} user(s)? This action cannot be undone.`,
+      variant: 'danger',
+    });
+
+    if (!ok) {
       return;
     }
 
@@ -58,7 +64,7 @@ const BulkDeleteUsers: React.FC = () => {
       setResult(result);
     } catch (error) {
       console.error('Bulk delete failed:', error);
-      alert('Failed to delete users');
+      toast.error('Failed to delete users');
     }
   };
 

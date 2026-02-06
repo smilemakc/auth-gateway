@@ -5,6 +5,7 @@ import { useLanguage } from '../services/i18n';
 import { useApplications, useDeleteApplication, useUpdateApplication } from '../hooks/useApplications';
 import type { Application } from '../types';
 import { formatDate } from '../lib/date';
+import { confirm } from '../services/confirm';
 
 const Applications: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -23,7 +24,12 @@ const Applications: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: t('common.confirm_delete'),
+      variant: 'danger'
+    });
+    if (ok) {
       await deleteApplication.mutateAsync(id);
     }
   };
@@ -175,14 +181,14 @@ const Applications: React.FC = () => {
                   <Edit2 size={18} />
                 </Link>
                 <Link
-                  to={`/applications/${app.id}/branding`}
+                  to={`/applications/${app.id}?tab=branding`}
                   className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
                   title={t('apps.branding')}
                 >
                   <Palette size={18} />
                 </Link>
                 <Link
-                  to={`/applications/${app.id}/users`}
+                  to={`/applications/${app.id}?tab=users`}
                   className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
                   title={t('apps.users')}
                 >

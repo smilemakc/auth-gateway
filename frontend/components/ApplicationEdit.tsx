@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, Plus, X, Boxes } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, X, Boxes, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import {
   useApplicationDetail,
@@ -8,6 +8,7 @@ import {
   useUpdateApplication,
   useDeleteApplication,
 } from '../hooks/useApplications';
+import { confirm } from '../services/confirm';
 
 const ApplicationEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -98,7 +99,12 @@ const ApplicationEdit: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: t('common.confirm_delete'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteApplication.mutateAsync(id!);
         navigate('/applications');
@@ -278,15 +284,13 @@ const ApplicationEdit: React.FC = () => {
         {isEditMode && (
           <div className="bg-card rounded-xl shadow-sm border border-border p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">{t('apps.status')}</h2>
-            <label className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={formData.is_active}
-                onChange={e => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-                className="w-4 h-4 rounded border-input text-primary focus:ring-primary"
-              />
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
+                className={`transition-colors ${formData.is_active ? 'text-success' : 'text-muted-foreground'}`}>
+                {formData.is_active ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+              </button>
               <span className="text-sm text-foreground">{t('apps.active')}</span>
-            </label>
+            </div>
             <p className="text-xs text-muted-foreground mt-2">
               {t('apps.active_hint')}
             </p>

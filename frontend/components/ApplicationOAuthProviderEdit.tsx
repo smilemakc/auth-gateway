@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Trash2, HelpCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, HelpCircle, Eye, EyeOff, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import {
   useApplicationOAuthProviderDetail,
@@ -9,6 +9,7 @@ import {
   useUpdateApplicationOAuthProvider,
   useDeleteApplicationOAuthProvider
 } from '../hooks/useApplicationOAuthProviders';
+import { confirm } from '../services/confirm';
 
 const ApplicationOAuthProviderEdit: React.FC = () => {
   const { applicationId, providerId } = useParams<{ applicationId: string; providerId: string }>();
@@ -116,12 +117,19 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (isEditMode && applicationId && providerId && window.confirm(t('common.confirm_delete'))) {
-      try {
-        await deleteMutation.mutateAsync({ appId: applicationId, id: providerId });
-        navigate(`/applications/${applicationId}`);
-      } catch (err) {
-        console.error('Failed to delete provider:', err);
+    if (isEditMode && applicationId && providerId) {
+      const ok = await confirm({
+        title: t('confirm.delete_title'),
+        description: t('common.confirm_delete'),
+        variant: 'danger'
+      });
+      if (ok) {
+        try {
+          await deleteMutation.mutateAsync({ appId: applicationId, id: providerId });
+          navigate(`/applications/${applicationId}`);
+        } catch (err) {
+          console.error('Failed to delete provider:', err);
+        }
       }
     }
   };
@@ -306,16 +314,15 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
           {/* Status */}
           <div className="pt-6 border-t border-border">
              <div className="flex items-center gap-3">
-               <input
-                  type="checkbox"
-                  id="is_active"
-                  name="is_active"
-                  checked={formData.is_active}
-                  onChange={handleChange}
-                  className="w-5 h-5 text-primary rounded focus:ring-ring border-input"
-               />
+               <button
+                 type="button"
+                 onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
+                 className={`transition-colors ${formData.is_active ? 'text-success' : 'text-muted-foreground'}`}
+               >
+                 {formData.is_active ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+               </button>
                <div>
-                 <label htmlFor="is_active" className="font-medium text-foreground block">Enable this provider</label>
+                 <span className="font-medium text-foreground block">Enable this provider</span>
                  <p className="text-xs text-muted-foreground">When enabled, users can authenticate using this OAuth provider</p>
                </div>
              </div>

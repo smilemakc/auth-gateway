@@ -5,6 +5,8 @@ import type { AdminUserResponse } from '@auth-gateway/client-sdk';
 import { useGroup, useDeleteGroup, useGroupMembers, useAddGroupMembers, useRemoveGroupMember } from '../hooks/useGroups';
 import { useUsers } from '../hooks/useUsers';
 import { formatDate } from '../lib/date';
+import { toast } from '../services/toast';
+import { confirm } from '../services/confirm';
 
 const GroupDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,13 +26,17 @@ const GroupDetails: React.FC = () => {
 
   const handleDelete = async () => {
     if (!group) return;
-    if (window.confirm(`Are you sure you want to delete group "${group.display_name}"?`)) {
+    const ok = await confirm({
+      description: `Are you sure you want to delete group "${group.display_name}"?`,
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteGroup.mutateAsync(group.id);
         navigate('/groups');
       } catch (error) {
         console.error('Failed to delete group:', error);
-        alert('Failed to delete group');
+        toast.error('Failed to delete group');
       }
     }
   };
@@ -46,18 +52,22 @@ const GroupDetails: React.FC = () => {
       setSelectedUserIds([]);
     } catch (error) {
       console.error('Failed to add members:', error);
-      alert('Failed to add members');
+      toast.error('Failed to add members');
     }
   };
 
   const handleRemoveMember = async (userId: string) => {
     if (!id) return;
-    if (window.confirm('Are you sure you want to remove this member from the group?')) {
+    const ok = await confirm({
+      description: 'Are you sure you want to remove this member from the group?',
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await removeMember.mutateAsync({ groupId: id, userId });
       } catch (error) {
         console.error('Failed to remove member:', error);
-        alert('Failed to remove member');
+        toast.error('Failed to remove member');
       }
     }
   };

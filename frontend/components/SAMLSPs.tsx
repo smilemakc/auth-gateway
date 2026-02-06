@@ -5,6 +5,8 @@ import type { SAMLServiceProvider } from '@auth-gateway/client-sdk';
 import { useSAMLSPs, useDeleteSAMLSP } from '../hooks/useSAML';
 import { useLanguage } from '../services/i18n';
 import { formatDate } from '../lib/date';
+import { toast } from '../services/toast';
+import { confirm } from '../services/confirm';
 
 const SAMLSPs: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -16,12 +18,17 @@ const SAMLSPs: React.FC = () => {
   const deleteSP = useDeleteSAMLSP();
 
   const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`${t('saml.delete_confirm')} "${name}"?`)) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: `${t('saml.delete_confirm')} "${name}"?`,
+      variant: 'danger',
+    });
+    if (ok) {
       try {
         await deleteSP.mutateAsync(id);
       } catch (error) {
         console.error('Failed to delete SAML SP:', error);
-        alert(t('common.failed_to_load'));
+        toast.error(t('common.failed_to_load'));
       }
     }
   };

@@ -5,6 +5,8 @@ import type { LDAPConfig } from '@auth-gateway/client-sdk';
 import { useLDAPConfigs, useDeleteLDAPConfig, useSyncLDAP, useTestLDAPConnection } from '../hooks/useLDAP';
 import { useLanguage } from '../services/i18n';
 import { formatRelative } from '../lib/date';
+import { toast } from '../services/toast';
+import { confirm } from '../services/confirm';
 
 const LDAPConfigs: React.FC = () => {
   const navigate = useNavigate();
@@ -18,12 +20,17 @@ const LDAPConfigs: React.FC = () => {
   const testConnection = useTestLDAPConnection();
 
   const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`${t('ldap.delete_confirm')} "${name}"?`)) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: `${t('ldap.delete_confirm')} "${name}"?`,
+      variant: 'danger',
+    });
+    if (ok) {
       try {
         await deleteConfig.mutateAsync(id);
       } catch (error) {
         console.error('Failed to delete LDAP config:', error);
-        alert(t('common.failed_to_load'));
+        toast.error(t('common.failed_to_load'));
       }
     }
   };
@@ -42,12 +49,12 @@ const LDAPConfigs: React.FC = () => {
         base_dn: config.base_dn,
       });
       if (result.success) {
-        alert(`${t('ldap.connection_success')}\nUsers: ${result.user_count || 0}\nGroups: ${result.group_count || 0}`);
+        toast.success(`${t('ldap.connection_success')}\nUsers: ${result.user_count || 0}\nGroups: ${result.group_count || 0}`);
       } else {
-        alert(`${t('ldap.connection_failed')}: ${result.error || result.message}`);
+        toast.error(`${t('ldap.connection_failed')}: ${result.error || result.message}`);
       }
     } catch (error) {
-      alert(`${t('ldap.connection_failed')}: ${(error as Error).message}`);
+      toast.error(`${t('ldap.connection_failed')}: ${(error as Error).message}`);
     } finally {
       setTestingId(null);
     }
@@ -57,10 +64,10 @@ const LDAPConfigs: React.FC = () => {
     setSyncingId(id);
     try {
       await syncLDAP.mutateAsync({ id, data: { sync_users: true, sync_groups: true } });
-      alert(t('ldap.sync_started'));
+      toast.success(t('ldap.sync_started'));
     } catch (error) {
       console.error('Failed to start sync:', error);
-      alert(t('common.failed_to_load'));
+      toast.error(t('common.failed_to_load'));
     } finally {
       setSyncingId(null);
     }

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, FileText, Loader, CheckCircle, XCircle, Download } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, Loader, CheckCircle, XCircle, Download, ToggleLeft, ToggleRight } from 'lucide-react';
 import type { BulkUserCreate, BulkOperationResult } from '@auth-gateway/client-sdk';
 import { useBulkCreateUsers } from '../hooks/useBulkOperations';
+import { toast } from '../services/toast';
 
 const BulkCreateUsers: React.FC = () => {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ const BulkCreateUsers: React.FC = () => {
   const parseCSV = (content: string) => {
     const lines = content.split('\n').filter((line) => line.trim());
     if (lines.length < 2) {
-      alert('CSV must have at least a header row and one data row');
+      toast.warning('CSV must have at least a header row and one data row');
       return;
     }
 
@@ -91,7 +92,7 @@ const BulkCreateUsers: React.FC = () => {
       const parsedUsers: BulkUserCreate[] = Array.isArray(data) ? data : data.users || [];
       setUsers(parsedUsers);
     } catch (error) {
-      alert('Invalid JSON format');
+      toast.error('Invalid JSON format');
     }
   };
 
@@ -121,13 +122,13 @@ const BulkCreateUsers: React.FC = () => {
 
   const handleSubmit = async () => {
     if (users.length === 0) {
-      alert('Please add at least one user');
+      toast.warning('Please add at least one user');
       return;
     }
 
     const validUsers = users.filter((u) => u.email && u.username && u.password);
     if (validUsers.length === 0) {
-      alert('Please fill in email, username, and password for at least one user');
+      toast.warning('Please fill in email, username, and password for at least one user');
       return;
     }
 
@@ -136,7 +137,7 @@ const BulkCreateUsers: React.FC = () => {
       setResult(result);
     } catch (error) {
       console.error('Bulk create failed:', error);
-      alert('Failed to create users');
+      toast.error('Failed to create users');
     }
   };
 
@@ -265,24 +266,26 @@ const BulkCreateUsers: React.FC = () => {
                       />
                     </div>
                     <div className="flex items-center gap-4">
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={user.is_active}
-                          onChange={(e) => handleUserChange(index, 'is_active', e.target.checked)}
-                          className="rounded border-input text-primary focus:ring-ring"
-                        />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleUserChange(index, 'is_active', !user.is_active)}
+                          className={`transition-colors ${user.is_active ? 'text-success' : 'text-muted-foreground'}`}
+                        >
+                          {user.is_active ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+                        </button>
                         <span className="text-xs text-foreground">Active</span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={user.email_verified}
-                          onChange={(e) => handleUserChange(index, 'email_verified', e.target.checked)}
-                          className="rounded border-input text-primary focus:ring-ring"
-                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleUserChange(index, 'email_verified', !user.email_verified)}
+                          className={`transition-colors ${user.email_verified ? 'text-success' : 'text-muted-foreground'}`}
+                        >
+                          {user.email_verified ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+                        </button>
                         <span className="text-xs text-foreground">Email Verified</span>
-                      </label>
+                      </div>
                     </div>
                   </div>
                 </div>

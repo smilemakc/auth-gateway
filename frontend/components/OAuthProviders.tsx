@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Globe, Github, Send, Inst
 import { useLanguage } from '../services/i18n';
 import { useOAuthProviders, useDeleteOAuthProvider, useToggleOAuthProvider } from '../hooks/useOAuth';
 import { formatDate } from '../lib/date';
+import { confirm } from '../services/confirm';
 
 // Icon mapper
 const getProviderIcon = (provider: string) => {
@@ -36,7 +37,12 @@ const OAuthProviders: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: t('common.confirm_delete'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteProviderMutation.mutateAsync(id);
       } catch (err) {

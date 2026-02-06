@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Download, Copy, Check } from 'lucide-react';
 import { useSAMLMetadata } from '../hooks/useSAML';
+import { toast } from '../services/toast';
 
 const SAMLMetadata: React.FC = () => {
   const { data, isLoading, error } = useSAMLMetadata();
@@ -30,7 +31,7 @@ const SAMLMetadata: React.FC = () => {
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy:', error);
-      alert('Failed to copy metadata to clipboard');
+      toast.error('Failed to copy metadata to clipboard');
     }
   };
 

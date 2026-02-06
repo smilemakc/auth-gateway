@@ -62,6 +62,8 @@ import EmailProviderEdit from './components/EmailProviderEdit';
 import EmailSettings from './components/EmailSettings';
 import ApplicationOAuthProviderEdit from './components/ApplicationOAuthProviderEdit';
 import TelegramBotEdit from './components/TelegramBotEdit';
+import { ToastContainer } from './components/Toast';
+import { ConfirmDialog } from './components/ConfirmDialog';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, isLoading, logout } = useAuth();
@@ -174,6 +176,8 @@ const App: React.FC = () => {
           <AuthProvider>
             <ApplicationProvider>
               <AppRoutes />
+              <ToastContainer />
+              <ConfirmDialog />
             </ApplicationProvider>
           </AuthProvider>
         </LanguageProvider>

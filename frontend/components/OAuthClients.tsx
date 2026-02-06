@@ -11,15 +11,18 @@ import {
 } from '../hooks/useOAuthClients';
 import type { OAuthClient } from '@auth-gateway/client-sdk';
 import { formatDate } from '../lib/date';
+import { confirm } from '../services/confirm';
 
 const OAuthClients: React.FC = () => {
   const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<string>('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [newSecret, setNewSecret] = useState<{ clientId: string; secret: string } | null>(null);
   const pageSize = 20;
   const { t } = useLanguage();
 
-  const { data, isLoading, error } = useOAuthClients(page, pageSize);
+  const isActive = statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined;
+  const { data, isLoading, error } = useOAuthClients(page, pageSize, isActive);
   const deleteClient = useDeleteOAuthClient();
   const activateClient = useActivateOAuthClient();
   const deactivateClient = useDeactivateOAuthClient();
@@ -34,13 +37,22 @@ const OAuthClients: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: t('common.confirm_delete'),
+      variant: 'danger'
+    });
+    if (ok) {
       await deleteClient.mutateAsync(id);
     }
   };
 
   const handleRotateSecret = async (clientId: string) => {
-    if (window.confirm(t('oauth_clients.rotate_confirm'))) {
+    const ok = await confirm({
+      description: t('oauth_clients.rotate_confirm'),
+      variant: 'danger'
+    });
+    if (ok) {
       const result = await rotateSecret.mutateAsync(clientId);
       setNewSecret({ clientId, secret: result.client_secret });
     }
@@ -93,6 +105,18 @@ const OAuthClients: React.FC = () => {
           <Plus size={18} />
           {t('oauth_clients.add')}
         </Link>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          className="border border-input rounded-lg px-3 py-2 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+        >
+          <option value="">{t('oauth_clients.filter_status')}</option>
+          <option value="active">{t('common.active')}</option>
+          <option value="inactive">{t('common.inactive')}</option>
+        </select>
       </div>
 
       {/* New Secret Alert */}

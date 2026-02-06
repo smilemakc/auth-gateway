@@ -4,6 +4,7 @@ import { Permission } from '../types';
 import { ArrowLeft, Plus, Edit2, Trash2, Lock } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { usePermissions, useDeletePermission } from '../hooks/useRBAC';
+import { confirm } from '../services/confirm';
 
 const Permissions: React.FC = () => {
   const navigate = useNavigate();
@@ -14,7 +15,12 @@ const Permissions: React.FC = () => {
   const deleteMutation = useDeletePermission();
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: t('common.confirm_delete'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteMutation.mutateAsync(id);
       } catch (err) {

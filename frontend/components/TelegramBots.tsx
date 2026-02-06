@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2, Send, Loader2, Shield, ShieldOff } from 'lucide-re
 import { useLanguage } from '../services/i18n';
 import { useTelegramBots, useDeleteTelegramBot } from '../hooks/useTelegramBots';
 import { formatDate } from '../lib/date';
+import { confirm } from '../services/confirm';
 
 interface TelegramBotsProps {
   applicationId: string;
@@ -18,7 +19,12 @@ const TelegramBots: React.FC<TelegramBotsProps> = ({ applicationId }) => {
   const bots = Array.isArray(botsResponse) ? botsResponse : [];
 
   const handleDelete = async (botId: string) => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: t('common.confirm_delete'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteBotMutation.mutateAsync({ appId: applicationId, id: botId });
       } catch (err) {

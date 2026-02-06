@@ -7,6 +7,7 @@ import { useLanguage } from '../services/i18n';
 import { useRoles, useDeleteRole } from '../hooks/useRBAC';
 import { useApplication } from '../services/appContext';
 import { formatDate } from '../lib/date';
+import { confirm } from '../services/confirm';
 
 const Roles: React.FC = () => {
   const navigate = useNavigate();
@@ -16,7 +17,12 @@ const Roles: React.FC = () => {
   const deleteRoleMutation = useDeleteRole();
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: t('common.confirm_delete'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteRoleMutation.mutateAsync(id);
       } catch (err) {

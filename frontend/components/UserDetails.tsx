@@ -32,6 +32,8 @@ import { useUserAuditLogs } from '../hooks/useAuditLogs';
 import { useApplication } from '../services/appContext';
 import { useUserApplicationProfile } from '../hooks/useApplications';
 import { formatDate, formatDateTime, formatRelative } from '../lib/date';
+import { toast } from '../services/toast';
+import { confirm } from '../services/confirm';
 
 const UserDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -61,35 +63,38 @@ const UserDetails: React.FC = () => {
   const oauthAccounts = oauthAccountsData || [];
 
   const handleRevokeSession = async (sessionId: string) => {
-    if (window.confirm(t('user.revoke_confirm'))) {
+    const ok = await confirm({ description: t('user.revoke_confirm'), variant: 'danger' });
+    if (ok) {
       try {
         await revokeSessionMutation.mutateAsync(sessionId);
-        alert(t('user.revoked_success'));
+        toast.success(t('user.revoked_success'));
       } catch (error) {
         console.error('Failed to revoke session:', error);
-        alert('Failed to revoke session');
+        toast.error('Failed to revoke session');
       }
     }
   };
 
   const handleReset2FA = async () => {
-    if (confirm(t('user.reset_2fa_confirm'))) {
+    const ok = await confirm({ description: t('user.reset_2fa_confirm'), variant: 'danger' });
+    if (ok) {
       try {
         await reset2FAMutation.mutateAsync(id!);
-        alert(t('user.reset_2fa_success'));
+        toast.success(t('user.reset_2fa_success'));
       } catch (error) {
-        alert('Failed to reset 2FA: ' + (error as Error).message);
+        toast.error('Failed to reset 2FA: ' + (error as Error).message);
       }
     }
   };
 
   const handleSendPasswordReset = async () => {
-    if (confirm(t('user.reset_password_confirm'))) {
+    const ok = await confirm({ description: t('user.reset_password_confirm') });
+    if (ok) {
       try {
         const result = await sendPasswordResetMutation.mutateAsync(id!);
-        alert(`Password reset email sent to ${result.email}`);
+        toast.success(`Password reset email sent to ${result.email}`);
       } catch (error) {
-        alert('Failed to send password reset: ' + (error as Error).message);
+        toast.error('Failed to send password reset: ' + (error as Error).message);
       }
     }
   };

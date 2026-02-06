@@ -5,6 +5,7 @@ import { ArrowLeft, ShieldAlert, ShieldCheck, Plus, Trash2, Search, Info, Loader
 import { useLanguage } from '../services/i18n';
 import { useWhitelistFilters, useBlacklistFilters, useCreateIpFilter, useDeleteIpFilter } from '../hooks/useIpFilters';
 import { formatDate } from '../lib/date';
+import { confirm } from '../services/confirm';
 
 const IpSecurity: React.FC = () => {
   const navigate = useNavigate();
@@ -48,7 +49,12 @@ const IpSecurity: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      description: t('common.confirm_delete'),
+      title: t('confirm.delete_title'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteFilterMutation.mutateAsync(id);
       } catch (err) {

@@ -4,6 +4,8 @@ import { Trash2, Ban, Copy, CheckCircle, X, Plus, Key } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useApiKeys, useRevokeApiKey, useDeleteApiKey, useCreateApiKey } from '../hooks/useApiKeys';
 import { formatDate } from '../lib/date';
+import { toast } from '../services/toast';
+import { confirm } from '../services/confirm';
 
 const AVAILABLE_SCOPES = [
   'users:read',
@@ -39,34 +41,43 @@ const ApiKeys: React.FC = () => {
   };
 
   const handleRevoke = async (id: string) => {
-    if (window.confirm(t('keys.revoke_confirm'))) {
+    const ok = await confirm({
+      description: t('keys.revoke_confirm'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await revokeApiKeyMutation.mutateAsync(id);
       } catch (error) {
         console.error('Failed to revoke API key:', error);
-        alert('Failed to revoke API key');
+        toast.error('Failed to revoke API key');
       }
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: t('common.confirm_delete'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteApiKeyMutation.mutateAsync(id);
       } catch (error) {
         console.error('Failed to delete API key:', error);
-        alert('Failed to delete API key');
+        toast.error('Failed to delete API key');
       }
     }
   };
 
   const handleCreateKey = async () => {
     if (!newKeyName.trim()) {
-      alert(t('keys.name_required'));
+      toast.warning(t('keys.name_required'));
       return;
     }
     if (newKeyScopes.length === 0) {
-      alert(t('keys.scopes_required'));
+      toast.warning(t('keys.scopes_required'));
       return;
     }
 
@@ -80,7 +91,7 @@ const ApiKeys: React.FC = () => {
       setGeneratedKey(result.key);
     } catch (error) {
       console.error('Failed to create API key:', error);
-      alert('Failed to create API key: ' + (error as Error).message);
+      toast.error('Failed to create API key: ' + (error as Error).message);
     }
   };
 

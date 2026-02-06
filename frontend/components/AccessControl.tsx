@@ -27,6 +27,7 @@ import {
   useCreatePermission
 } from '../hooks/useRBAC';
 import type { Permission, RoleDefinition } from '../types';
+import { confirm } from '../services/confirm';
 
 const AccessControl: React.FC = () => {
   const navigate = useNavigate();
@@ -147,7 +148,12 @@ const AccessControl: React.FC = () => {
   };
 
   const handleDeleteRole = async (id: string) => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      description: t('common.confirm_delete'),
+      title: t('confirm.delete_title'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteRoleMutation.mutateAsync(id);
       } catch (err) {
@@ -672,8 +678,13 @@ const AccessControl: React.FC = () => {
                       >
                         <span className="font-medium capitalize">{perm.action}</span>
                         <button
-                          onClick={() => {
-                            if (window.confirm(`Delete permission "${perm.name}"?`)) {
+                          onClick={async () => {
+                            const ok = await confirm({
+                              description: `Delete permission "${perm.name}"?`,
+                              title: t('confirm.delete_title'),
+                              variant: 'danger'
+                            });
+                            if (ok) {
                               deletePermissionMutation.mutate(perm.id);
                             }
                           }}

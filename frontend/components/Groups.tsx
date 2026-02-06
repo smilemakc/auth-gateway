@@ -5,6 +5,10 @@ import type { Group } from '@auth-gateway/client-sdk';
 import { useLanguage } from '../services/i18n';
 import { useGroups, useDeleteGroup } from '../hooks/useGroups';
 import { formatDate } from '../lib/date';
+import { useSort } from '../hooks/useSort';
+import SortableHeader from './SortableHeader';
+import { toast } from '../services/toast';
+import { confirm } from '../services/confirm';
 
 const Groups: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -16,13 +20,20 @@ const Groups: React.FC = () => {
   const { data, isLoading, error } = useGroups(page, pageSize);
   const deleteGroup = useDeleteGroup();
 
+  const { sortState, requestSort, sortData } = useSort<Group>();
+
   const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`${t('groups.delete_confirm')} "${name}"?`)) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: `${t('groups.delete_confirm')} "${name}"?`,
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteGroup.mutateAsync(id);
       } catch (error) {
         console.error('Failed to delete group:', error);
-        alert(t('common.failed_to_load'));
+        toast.error(t('common.failed_to_load'));
       }
     }
   };
@@ -51,6 +62,8 @@ const Groups: React.FC = () => {
           g.display_name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : groups;
+
+  const sortedGroups = sortData(filteredGroups);
 
   return (
     <div className="space-y-6">
@@ -89,28 +102,22 @@ const Groups: React.FC = () => {
           <table className="min-w-full divide-y divide-border">
             <thead className="bg-muted">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {t('groups.col_name')}
-                </th>
+                <SortableHeader label={t('groups.col_name')} sortKey="name" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} />
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   {t('groups.col_display_name')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   {t('groups.col_description')}
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {t('groups.col_members')}
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {t('groups.col_created')}
-                </th>
+                <SortableHeader label={t('groups.col_members')} sortKey="member_count" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} />
+                <SortableHeader label={t('groups.col_created')} sortKey="created_at" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} />
                 <th scope="col" className="relative px-6 py-3">
                   <span className="sr-only">{t('groups.col_actions')}</span>
                 </th>
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-border">
-              {filteredGroups.map((group) => (
+              {sortedGroups.map((group) => (
                 <tr key={group.id} className="hover:bg-accent transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-foreground">{group.name}</div>
@@ -169,20 +176,16 @@ const Groups: React.FC = () => {
           </table>
 
           {filteredGroups.length === 0 && (
-            <tr>
-              <td colSpan={6} className="p-0">
-                <div className="text-center py-12">
-                  <FolderTree className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-2 text-sm font-semibold text-foreground">{t('groups.no_groups_title')}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{t('groups.no_groups_desc')}</p>
-                  <div className="mt-6">
-                    <Link to="/groups/new" className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90">
-                      {t('groups.create_group')}
-                    </Link>
-                  </div>
-                </div>
-              </td>
-            </tr>
+            <div className="text-center py-12">
+              <FolderTree className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-2 text-sm font-semibold text-foreground">{t('groups.no_groups_title')}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{t('groups.no_groups_desc')}</p>
+              <div className="mt-6">
+                <Link to="/groups/new" className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90">
+                  {t('groups.create_group')}
+                </Link>
+              </div>
+            </div>
           )}
         </div>
 

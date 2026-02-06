@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Save, X, Loader } from 'lucide-react';
 import type { CreateGroupRequest, UpdateGroupRequest, Group } from '@auth-gateway/client-sdk';
 import { useGroup, useCreateGroup, useUpdateGroup, useGroups } from '../hooks/useGroups';
+import { toast } from '../services/toast';
 
 const GroupEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -79,7 +80,7 @@ const GroupEdit: React.FC = () => {
     } catch (error: any) {
       console.error('Failed to save group:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to save group';
-      alert(`Error: ${errorMessage}`);
+      toast.error(`Error: ${errorMessage}`);
     }
   };
 

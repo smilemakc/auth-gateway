@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Trash2, HelpCircle, Eye, EyeOff, Loader2, Send } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, HelpCircle, Eye, EyeOff, Loader2, Send, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useTelegramBotDetail, useCreateTelegramBot, useUpdateTelegramBot, useDeleteTelegramBot } from '../hooks/useTelegramBots';
+import { confirm } from '../services/confirm';
 
 const TelegramBotEdit: React.FC = () => {
   const { applicationId, botId } = useParams<{ applicationId: string; botId: string }>();
@@ -91,12 +92,19 @@ const TelegramBotEdit: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (isEditMode && botId && applicationId && window.confirm(t('common.confirm_delete'))) {
-      try {
-        await deleteMutation.mutateAsync({ appId: applicationId, id: botId });
-        navigate(`/applications/${applicationId}/telegram-bots`);
-      } catch (err) {
-        console.error('Failed to delete bot:', err);
+    if (isEditMode && botId && applicationId) {
+      const ok = await confirm({
+        title: t('confirm.delete_title'),
+        description: t('common.confirm_delete'),
+        variant: 'danger'
+      });
+      if (ok) {
+        try {
+          await deleteMutation.mutateAsync({ appId: applicationId, id: botId });
+          navigate(`/applications/${applicationId}/telegram-bots`);
+        } catch (err) {
+          console.error('Failed to delete bot:', err);
+        }
       }
     }
   };
@@ -215,18 +223,17 @@ const TelegramBotEdit: React.FC = () => {
           {/* Bot Settings */}
           <div className="pt-6 border-t border-border space-y-4">
             <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                id="is_auth_bot"
-                name="is_auth_bot"
-                checked={formData.is_auth_bot}
-                onChange={handleChange}
-                className="w-5 h-5 text-primary rounded focus:ring-ring border-input mt-0.5"
-              />
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, is_auth_bot: !prev.is_auth_bot }))}
+                className={`transition-colors mt-0.5 ${formData.is_auth_bot ? 'text-success' : 'text-muted-foreground'}`}
+              >
+                {formData.is_auth_bot ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+              </button>
               <div>
-                <label htmlFor="is_auth_bot" className="font-medium text-foreground block">
+                <span className="font-medium text-foreground block">
                   Authentication Bot
-                </label>
+                </span>
                 <p className="text-sm text-muted-foreground mt-1">
                   Use this bot for user authentication via Telegram
                 </p>
@@ -234,18 +241,17 @@ const TelegramBotEdit: React.FC = () => {
             </div>
 
             <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                id="is_active"
-                name="is_active"
-                checked={formData.is_active}
-                onChange={handleChange}
-                className="w-5 h-5 text-primary rounded focus:ring-ring border-input mt-0.5"
-              />
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
+                className={`transition-colors mt-0.5 ${formData.is_active ? 'text-success' : 'text-muted-foreground'}`}
+              >
+                {formData.is_active ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+              </button>
               <div>
-                <label htmlFor="is_active" className="font-medium text-foreground block">
+                <span className="font-medium text-foreground block">
                   Active
-                </label>
+                </span>
                 <p className="text-sm text-muted-foreground mt-1">
                   Inactive bots cannot be used for authentication
                 </p>

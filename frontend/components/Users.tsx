@@ -7,6 +7,9 @@ import { useLanguage } from '../services/i18n';
 import { useUsers, useUpdateUser } from '../hooks/useUsers';
 import { useApplication } from '../services/appContext';
 import { formatDate } from '../lib/date';
+import { useSort } from '../hooks/useSort';
+import SortableHeader from './SortableHeader';
+import { toast } from '../services/toast';
 
 const Users: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,12 +21,13 @@ const Users: React.FC = () => {
   const { currentApplication } = useApplication();
 
   // Fetch users with React Query
-  const { data, isLoading, error } = useUsers(page, pageSize, searchTerm, roleFilter);
+  const { data, isLoading, error } = useUsers(page, pageSize);
   const updateUserMutation = useUpdateUser();
+  const { sortState, requestSort, sortData } = useSort<AdminUserResponse>();
 
   useEffect(() => {
     setPage(1);
-  }, [searchTerm, roleFilter]);
+  }, [roleFilter]);
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
     try {
@@ -33,7 +37,7 @@ const Users: React.FC = () => {
       });
     } catch (error) {
       console.error('Failed to toggle user status:', error);
-      alert('Failed to update user status');
+      toast.error('Failed to update user status');
     }
   };
 
@@ -57,14 +61,26 @@ const Users: React.FC = () => {
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / pageSize);
 
-  const filterUsersByRole = (userList: AdminUserResponse[]) => {
-    if (roleFilter === 'all') return userList;
-    return userList.filter((u) =>
-      u.roles?.some((r) => r.name === roleFilter)
-    );
+  const filterUsers = (userList: AdminUserResponse[]) => {
+    let filtered = userList;
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter((u) =>
+        u.username?.toLowerCase().includes(term) ||
+        u.email?.toLowerCase().includes(term) ||
+        u.full_name?.toLowerCase().includes(term)
+      );
+    }
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter((u) =>
+        u.roles?.some((r) => r.name === roleFilter)
+      );
+    }
+    return filtered;
   };
 
-  const filteredUsers = filterUsersByRole(users);
+  const filteredUsers = filterUsers(users);
+  const sortedUsers = sortData(filteredUsers);
 
   return (
     <div className="space-y-6">
@@ -119,16 +135,16 @@ const Users: React.FC = () => {
           <table className="min-w-full divide-y divide-border">
             <thead className="bg-muted">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('users.col_user')}</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('users.col_role')}</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('users.col_status')}</th>
+                <SortableHeader label={t('users.col_user')} sortKey="email" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} />
+                <SortableHeader label={t('users.col_role')} sortKey="roles" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} />
+                <SortableHeader label={t('users.col_status')} sortKey="is_active" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} />
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('users.col_2fa')}</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('users.col_created')}</th>
+                <SortableHeader label={t('users.col_created')} sortKey="created_at" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} />
                 <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-border">
-              {filteredUsers.map((user) => (
+              {sortedUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-accent transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">

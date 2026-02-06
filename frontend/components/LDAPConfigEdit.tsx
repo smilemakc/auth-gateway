@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Save, X, TestTube, Loader, AlertCircle, CheckCircle } from 'lucide-react';
+import { Save, X, TestTube, Loader, AlertCircle, CheckCircle, ToggleLeft, ToggleRight } from 'lucide-react';
 import type { CreateLDAPConfigRequest, UpdateLDAPConfigRequest, LDAPConfig } from '@auth-gateway/client-sdk';
 import { useLDAPConfig, useCreateLDAPConfig, useUpdateLDAPConfig, useTestLDAPConnection } from '../hooks/useLDAP';
+import { toast } from '../services/toast';
 
 const LDAPConfigEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -150,7 +151,7 @@ const LDAPConfigEdit: React.FC = () => {
       navigate('/ldap');
     } catch (error) {
       console.error('Failed to save LDAP config:', error);
-      alert('Failed to save LDAP configuration');
+      toast.error('Failed to save LDAP configuration');
     }
   };
 
@@ -291,33 +292,36 @@ const LDAPConfigEdit: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.use_tls}
-                  onChange={(e) => setFormData({ ...formData, use_tls: e.target.checked })}
-                  className="rounded border-input text-primary focus:ring-ring"
-                />
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, use_tls: !prev.use_tls }))}
+                  className={`transition-colors ${formData.use_tls ? 'text-success' : 'text-muted-foreground'}`}
+                >
+                  {formData.use_tls ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                </button>
                 <span className="text-sm text-foreground">Use TLS</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.use_ssl}
-                  onChange={(e) => setFormData({ ...formData, use_ssl: e.target.checked })}
-                  className="rounded border-input text-primary focus:ring-ring"
-                />
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, use_ssl: !prev.use_ssl }))}
+                  className={`transition-colors ${formData.use_ssl ? 'text-success' : 'text-muted-foreground'}`}
+                >
+                  {formData.use_ssl ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                </button>
                 <span className="text-sm text-foreground">Use SSL</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.insecure}
-                  onChange={(e) => setFormData({ ...formData, insecure: e.target.checked })}
-                  className="rounded border-input text-primary focus:ring-ring"
-                />
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, insecure: !prev.insecure }))}
+                  className={`transition-colors ${formData.insecure ? 'text-success' : 'text-muted-foreground'}`}
+                >
+                  {formData.insecure ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                </button>
                 <span className="text-sm text-foreground">Skip certificate verification</span>
-              </label>
+              </div>
             </div>
           </div>
 
@@ -460,15 +464,16 @@ const LDAPConfigEdit: React.FC = () => {
         <div>
           <h2 className="text-lg font-semibold text-foreground mb-4">Synchronization Settings</h2>
           <div className="space-y-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={formData.sync_enabled}
-                onChange={(e) => setFormData({ ...formData, sync_enabled: e.target.checked })}
-                className="rounded border-input text-primary focus:ring-ring"
-              />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, sync_enabled: !prev.sync_enabled }))}
+                className={`transition-colors ${formData.sync_enabled ? 'text-success' : 'text-muted-foreground'}`}
+              >
+                {formData.sync_enabled ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+              </button>
               <span className="text-sm text-foreground">Enable automatic synchronization</span>
-            </label>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">Sync Interval (seconds)</label>

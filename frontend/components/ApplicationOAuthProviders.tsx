@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2, Globe, Github, Send, Instagram, Loader2, CheckCirc
 import { useLanguage } from '../services/i18n';
 import { useApplicationOAuthProviders, useDeleteApplicationOAuthProvider } from '../hooks/useApplicationOAuthProviders';
 import { formatDate } from '../lib/date';
+import { confirm } from '../services/confirm';
 
 interface ApplicationOAuthProvidersProps {
   applicationId: string;
@@ -34,7 +35,12 @@ const ApplicationOAuthProviders: React.FC<ApplicationOAuthProvidersProps> = ({ a
   const providers = Array.isArray(providersResponse) ? providersResponse : [];
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(t('common.confirm_delete'))) {
+    const ok = await confirm({
+      title: t('confirm.delete_title'),
+      description: t('common.confirm_delete'),
+      variant: 'danger'
+    });
+    if (ok) {
       try {
         await deleteProviderMutation.mutateAsync({ appId: applicationId, id });
       } catch (err) {

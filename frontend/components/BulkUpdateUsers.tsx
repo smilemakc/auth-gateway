@@ -4,6 +4,7 @@ import { ArrowLeft, Loader, CheckCircle, XCircle, Search } from 'lucide-react';
 import type { BulkUserUpdate, BulkOperationResult, AdminUserResponse } from '@auth-gateway/client-sdk';
 import { useBulkUpdateUsers } from '../hooks/useBulkOperations';
 import { useUsers } from '../hooks/useUsers';
+import { toast } from '../services/toast';
 
 const BulkUpdateUsers: React.FC = () => {
   const navigate = useNavigate();
@@ -47,7 +48,7 @@ const BulkUpdateUsers: React.FC = () => {
 
   const handleSubmit = async () => {
     if (selectedUserIds.length === 0) {
-      alert('Please select at least one user');
+      toast.warning('Please select at least one user');
       return;
     }
 
@@ -64,7 +65,7 @@ const BulkUpdateUsers: React.FC = () => {
       setResult(result);
     } catch (error) {
       console.error('Bulk update failed:', error);
-      alert('Failed to update users');
+      toast.error('Failed to update users');
     }
   };
 

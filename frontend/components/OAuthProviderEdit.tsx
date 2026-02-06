@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, HelpCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, HelpCircle, Eye, EyeOff, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useOAuthProviderDetail, useCreateOAuthProvider, useUpdateOAuthProvider, useDeleteOAuthProvider } from '../hooks/useOAuth';
+import { confirm } from '../services/confirm';
 
 const OAuthProviderEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -85,12 +86,19 @@ const OAuthProviderEdit: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (isEditMode && id && window.confirm(t('common.confirm_delete'))) {
-      try {
-        await deleteMutation.mutateAsync(id);
-        navigate('/oauth');
-      } catch (err) {
-        console.error('Failed to delete provider:', err);
+    if (isEditMode && id) {
+      const ok = await confirm({
+        title: t('confirm.delete_title'),
+        description: t('common.confirm_delete'),
+        variant: 'danger'
+      });
+      if (ok) {
+        try {
+          await deleteMutation.mutateAsync(id);
+          navigate('/oauth');
+        } catch (err) {
+          console.error('Failed to delete provider:', err);
+        }
       }
     }
   };
@@ -223,16 +231,15 @@ const OAuthProviderEdit: React.FC = () => {
           {/* Status */}
           <div className="pt-6 border-t border-border">
              <div className="flex items-center gap-3">
-               <input
-                  type="checkbox"
-                  id="is_active"
-                  name="is_active"
-                  checked={formData.is_active}
-                  onChange={handleChange}
-                  className="w-5 h-5 text-primary rounded focus:ring-ring border-input"
-               />
+               <button
+                 type="button"
+                 onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
+                 className={`transition-colors ${formData.is_active ? 'text-success' : 'text-muted-foreground'}`}
+               >
+                 {formData.is_active ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+               </button>
                <div>
-                 <label htmlFor="is_active" className="font-medium text-foreground block">{t('oauth.enable')}</label>
+                 <span className="font-medium text-foreground block">{t('oauth.enable')}</span>
                </div>
              </div>
           </div>
