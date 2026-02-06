@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/queryopt"
 )
 
 type OAuthProviderRepository struct {
@@ -97,10 +98,8 @@ func (r *OAuthProviderRepository) UpdateClient(ctx context.Context, client *mode
 }
 
 func (r *OAuthProviderRepository) DeleteClient(ctx context.Context, id uuid.UUID) error {
-	result, err := r.db.NewUpdate().
+	result, err := r.db.NewDelete().
 		Model((*models.OAuthClient)(nil)).
-		Set("is_active = ?", false).
-		Set("updated_at = ?", time.Now()).
 		Where("id = ?", id).
 		Exec(ctx)
 
@@ -142,15 +141,19 @@ func (r *OAuthProviderRepository) HardDeleteClient(ctx context.Context, id uuid.
 	return nil
 }
 
-func (r *OAuthProviderRepository) ListClients(ctx context.Context, ownerID *uuid.UUID, page, perPage int) ([]*models.OAuthClient, int, error) {
+func (r *OAuthProviderRepository) ListClients(ctx context.Context, page, perPage int, opts ...queryopt.OAuthClientListOption) ([]*models.OAuthClient, int, error) {
+	o := queryopt.BuildOAuthClientListOptions(opts)
 	clients := make([]*models.OAuthClient, 0)
 
 	query := r.db.NewSelect().
-		Model(&clients).
-		Where("o_auth_client.is_active = ?", true)
+		Model(&clients)
 
-	if ownerID != nil {
-		query = query.Where("owner_id = ?", *ownerID)
+	if o.IsActive != nil {
+		query = query.Where("o_auth_client.is_active = ?", *o.IsActive)
+	}
+
+	if o.OwnerID != nil {
+		query = query.Where("owner_id = ?", *o.OwnerID)
 	}
 
 	total, err := query.Count(ctx)

@@ -4,31 +4,13 @@ import { queryKeys } from '../services/queryClient';
 import type { AdminCreateUserRequest, AdminUpdateUserRequest } from '@auth-gateway/client-sdk';
 import { useCurrentAppId } from './useAppAwareQuery';
 
-export function useUsers(page: number = 1, pageSize: number = 50, search?: string, role?: string) {
+export function useUsers(page: number = 1, pageSize: number = 50) {
   const appId = useCurrentAppId();
   return useQuery({
-    queryKey: [...queryKeys.users.list(page, pageSize, search, role), appId],
+    queryKey: [...queryKeys.users.list(page, pageSize), appId],
     queryFn: async () => {
       const response = await apiClient.admin.users.list(page, pageSize);
-      const { users, total } = response;
-
-      // Client-side filtering for search and role (if SDK doesn't support it)
-      let filtered = users;
-      if (search) {
-        filtered = filtered.filter(
-          (u: any) =>
-            u.username?.toLowerCase().includes(search.toLowerCase()) ||
-            u.email?.toLowerCase().includes(search.toLowerCase()) ||
-            u.full_name?.toLowerCase().includes(search.toLowerCase())
-        );
-      }
-      if (role && role !== 'all') {
-        filtered = filtered.filter((u: any) =>
-          u.roles?.some((r: any) => r.name === role)
-        );
-      }
-
-      return { users: filtered, total };
+      return { users: response.users, total: response.total };
     },
   });
 }

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Palette, Image as ImageIcon, Layout, Lock, Github, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Palette, Image as ImageIcon, Layout, Lock, Github, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useBranding, useUpdateBranding } from '../hooks/useSettings';
 
@@ -232,16 +232,13 @@ const Branding: React.FC = () => {
                 />
               </div>
                <div className="pt-2">
-                  <label className="flex items-center text-sm text-muted-foreground">
-                    <input
-                      type="checkbox"
-                      name="showSocialLogins"
-                      checked={config.showSocialLogins}
-                      onChange={handleChange}
-                      className="rounded border-input text-primary focus:ring-ring mr-2"
-                    />
-                    {t('brand.socials')}
-                  </label>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => setConfig(prev => ({ ...prev, showSocialLogins: !prev.showSocialLogins }))}
+                      className={`transition-colors ${config.showSocialLogins ? 'text-success' : 'text-muted-foreground'}`}>
+                      {config.showSocialLogins ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                    </button>
+                    <span className="text-sm text-muted-foreground">{t('brand.socials')}</span>
+                  </div>
                </div>
             </div>
 

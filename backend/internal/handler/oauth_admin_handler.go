@@ -68,6 +68,7 @@ func (h *OAuthAdminHandler) CreateClient(c *gin.Context) {
 // @Param page query int false "Page number" default(1)
 // @Param per_page query int false "Items per page" default(20)
 // @Param owner_id query string false "Filter by owner ID"
+// @Param is_active query bool false "Filter by active status"
 // @Success 200 {object} map[string]interface{} "Response with clients, total, page, per_page"
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -77,7 +78,8 @@ func (h *OAuthAdminHandler) ListClients(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
 
-	var ownerID *uuid.UUID
+	var opts []service.OAuthClientListOption
+
 	if ownerIDStr := c.Query("owner_id"); ownerIDStr != "" {
 		id, err := uuid.Parse(ownerIDStr)
 		if err != nil {
@@ -86,10 +88,15 @@ func (h *OAuthAdminHandler) ListClients(c *gin.Context) {
 			))
 			return
 		}
-		ownerID = &id
+		opts = append(opts, service.OAuthClientListOwner(id))
 	}
 
-	clients, total, err := h.service.ListClients(c.Request.Context(), ownerID, page, perPage)
+	if isActiveStr := c.Query("is_active"); isActiveStr != "" {
+		val := isActiveStr == "true"
+		opts = append(opts, service.OAuthClientListActive(&val))
+	}
+
+	clients, total, err := h.service.ListClients(c.Request.Context(), page, perPage, opts...)
 	if err != nil {
 		h.logger.Error("Failed to list OAuth clients", map[string]interface{}{
 			"error": err.Error(),

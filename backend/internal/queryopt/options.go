@@ -70,6 +70,35 @@ func BuildUserListOptions(opts []UserListOption) UserListOptions {
 	return o
 }
 
+// --- OAuthClientStore options ---
+
+// OAuthClientListOptions holds options for OAuthProviderStore ListClients method.
+type OAuthClientListOptions struct {
+	IsActive *bool
+	OwnerID  *uuid.UUID
+}
+
+// OAuthClientListOption configures OAuthClientListOptions.
+type OAuthClientListOption func(*OAuthClientListOptions)
+
+// OAuthClientListActive filters by is_active status.
+func OAuthClientListActive(v *bool) OAuthClientListOption {
+	return func(o *OAuthClientListOptions) { o.IsActive = v }
+}
+
+// OAuthClientListOwner filters by owner ID.
+func OAuthClientListOwner(id uuid.UUID) OAuthClientListOption {
+	return func(o *OAuthClientListOptions) { o.OwnerID = &id }
+}
+
+func BuildOAuthClientListOptions(opts []OAuthClientListOption) OAuthClientListOptions {
+	var o OAuthClientListOptions
+	for _, fn := range opts {
+		fn(&o)
+	}
+	return o
+}
+
 // --- APIKeyStore options ---
 
 // APIKeyGetOptions holds options for APIKeyStore Get/Count methods.

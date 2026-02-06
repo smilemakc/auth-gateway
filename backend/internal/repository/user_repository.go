@@ -130,7 +130,7 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string, isA
 func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
 	result, err := r.db.NewUpdate().
 		Model(user).
-		Column("full_name", "profile_picture_url", "updated_at").
+		Column("email", "username", "full_name", "phone", "profile_picture_url", "email_verified", "updated_at", "is_active").
 		WherePK().
 		Returning("updated_at").
 		Exec(ctx)

@@ -2,7 +2,7 @@
  * Base service class for all API services
  */
 
-import type { HttpClient } from '../core/http';
+import type { HttpClient } from '@/core';
 
 /** Base service that all API services extend */
 export abstract class BaseService {

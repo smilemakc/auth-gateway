@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useWebhookDetail, useCreateWebhook, useUpdateWebhook } from '../hooks/useWebhooks';
 
@@ -160,21 +160,18 @@ const WebhookEdit: React.FC = () => {
             </div>
 
             <div className="pt-4 border-t border-border">
-              <label className="flex items-center cursor-pointer">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={formData.is_active}
-                    onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-                  />
-                  <div className={`block w-10 h-6 rounded-full transition-colors ${formData.is_active ? 'bg-primary' : 'bg-muted'}`}></div>
-                  <div className={`dot absolute left-1 top-1 bg-primary-foreground w-4 h-4 rounded-full transition-transform ${formData.is_active ? 'transform translate-x-4' : ''}`}></div>
-                </div>
-                <div className="ml-3 text-sm font-medium text-foreground">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
+                  className={`transition-colors ${formData.is_active ? 'text-success' : 'text-muted-foreground'}`}
+                >
+                  {formData.is_active ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                </button>
+                <span className="text-sm font-medium text-foreground">
                   {t('oauth.enable')}
-                </div>
-              </label>
+                </span>
+              </div>
             </div>
           </div>
         </div>

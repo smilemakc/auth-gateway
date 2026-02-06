@@ -4,6 +4,8 @@ import { Clock, Shield, Globe, User, ShieldAlert } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useAuditLogs } from '../hooks/useAuditLogs';
 import { formatDateTime } from '../lib/date';
+import { useSort } from '../hooks/useSort';
+import SortableHeader from './SortableHeader';
 
 const AuditLogs: React.FC = () => {
   const { t } = useLanguage();
@@ -19,7 +21,10 @@ const AuditLogs: React.FC = () => {
     status: (statusFilter as 'success' | 'failure') || undefined,
   });
 
+  const { sortState, requestSort, sortData } = useSort<any>();
+
   const logs = data?.logs || [];
+  const sortedLogs = sortData(logs);
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / pageSize);
 
@@ -84,15 +89,15 @@ const AuditLogs: React.FC = () => {
             <table className="min-w-full text-left text-sm whitespace-nowrap">
             <thead className="uppercase tracking-wider border-b border-border bg-muted">
               <tr>
-                <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('common.actions')}</th>
-                <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('users.col_user')}</th>
+                <SortableHeader label={t('common.actions')} sortKey="action" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} className="px-6 py-4 font-semibold text-foreground cursor-pointer select-none hover:text-foreground transition-colors" />
+                <SortableHeader label={t('users.col_user')} sortKey="user_email" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} className="px-6 py-4 font-semibold text-foreground cursor-pointer select-none hover:text-foreground transition-colors" />
                 <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('ip.address')}</th>
-                <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('common.status')}</th>
-                <th scope="col" className="px-6 py-4 font-semibold text-foreground">{t('audit.col_time')}</th>
+                <SortableHeader label={t('common.status')} sortKey="status" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} className="px-6 py-4 font-semibold text-foreground cursor-pointer select-none hover:text-foreground transition-colors" />
+                <SortableHeader label={t('audit.col_time')} sortKey="created_at" currentSortKey={sortState.key} currentDirection={sortState.direction} onSort={requestSort} className="px-6 py-4 font-semibold text-foreground cursor-pointer select-none hover:text-foreground transition-colors" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {logs.map((log: any) => (
+              {sortedLogs.map((log: any) => (
                 <tr key={log.id} className="hover:bg-accent">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">

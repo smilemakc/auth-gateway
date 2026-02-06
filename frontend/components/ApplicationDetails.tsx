@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Edit2, Boxes, Users, Palette, Settings, Copy, Check, ExternalLink, Mail, Globe, Bot } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useApplicationDetail, useApplicationBranding } from '../hooks/useApplications';
@@ -15,7 +15,11 @@ type Tab = 'overview' | 'branding' | 'users' | 'templates' | 'oauth' | 'telegram
 const ApplicationDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get('tab') as Tab) || 'overview';
+  const setActiveTab = (tab: Tab) => {
+    setSearchParams(tab === 'overview' ? {} : { tab });
+  };
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const { data: application, isLoading, error } = useApplicationDetail(id || '');

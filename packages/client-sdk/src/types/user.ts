@@ -56,6 +56,11 @@ export interface AdminUserResponse extends User {
 export interface AdminUpdateUserRequest {
   role_ids?: string[];
   is_active?: boolean;
+  email?: string;
+  username?: string;
+  full_name?: string;
+  phone?: string;
+  email_verified?: boolean;
 }
 
 /** Admin user create request (snake_case for backend API) */

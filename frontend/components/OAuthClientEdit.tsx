@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, X, Copy, Check, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Save, Plus, X, Copy, Check, Eye, EyeOff, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import {
   useOAuthClientDetail,
@@ -473,42 +473,45 @@ const OAuthClientEdit: React.FC = () => {
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4">Security Settings</h2>
           <div className="space-y-4">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.require_pkce}
-                onChange={e => setFormData(prev => ({ ...prev, require_pkce: e.target.checked }))}
-                className="w-5 h-5 rounded border-input text-primary focus:ring-ring"
-              />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, require_pkce: !prev.require_pkce }))}
+                className={`transition-colors ${formData.require_pkce ? 'text-success' : 'text-muted-foreground'}`}
+              >
+                {formData.require_pkce ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+              </button>
               <div>
                 <div className="font-medium text-foreground">Require PKCE</div>
                 <div className="text-sm text-muted-foreground">Require Proof Key for Code Exchange (recommended)</div>
               </div>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.require_consent}
-                onChange={e => setFormData(prev => ({ ...prev, require_consent: e.target.checked }))}
-                className="w-5 h-5 rounded border-input text-primary focus:ring-ring"
-              />
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, require_consent: !prev.require_consent }))}
+                className={`transition-colors ${formData.require_consent ? 'text-success' : 'text-muted-foreground'}`}
+              >
+                {formData.require_consent ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+              </button>
               <div>
                 <div className="font-medium text-foreground">Require User Consent</div>
                 <div className="text-sm text-muted-foreground">Show consent screen to users before granting access</div>
               </div>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.first_party}
-                onChange={e => setFormData(prev => ({ ...prev, first_party: e.target.checked }))}
-                className="w-5 h-5 rounded border-input text-primary focus:ring-ring"
-              />
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, first_party: !prev.first_party }))}
+                className={`transition-colors ${formData.first_party ? 'text-success' : 'text-muted-foreground'}`}
+              >
+                {formData.first_party ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+              </button>
               <div>
                 <div className="font-medium text-foreground">First Party Application</div>
                 <div className="text-sm text-muted-foreground">Skip consent for trusted first-party applications</div>
               </div>
-            </label>
+            </div>
           </div>
         </div>
 

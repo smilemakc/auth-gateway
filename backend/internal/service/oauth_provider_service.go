@@ -303,7 +303,7 @@ func (s *OAuthProviderService) DeleteClient(ctx context.Context, id uuid.UUID) e
 	return nil
 }
 
-func (s *OAuthProviderService) ListClients(ctx context.Context, ownerID *uuid.UUID, page, perPage int) ([]*models.OAuthClient, int, error) {
+func (s *OAuthProviderService) ListClients(ctx context.Context, page, perPage int, opts ...OAuthClientListOption) ([]*models.OAuthClient, int, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -311,7 +311,7 @@ func (s *OAuthProviderService) ListClients(ctx context.Context, ownerID *uuid.UU
 		perPage = 20
 	}
 
-	clients, total, err := s.repo.ListClients(ctx, ownerID, page, perPage)
+	clients, total, err := s.repo.ListClients(ctx, page, perPage, opts...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list oauth clients: %w", err)
 	}

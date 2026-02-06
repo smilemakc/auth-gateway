@@ -60,7 +60,7 @@ export class AdminSessionsService extends BaseService {
     perPage = 20
   ): Promise<SessionListResponse> {
     const response = await this.http.get<SessionListResponse>(
-      `/admin/users/${userId}/sessions`,
+      `/api/admin/users/${userId}/sessions`,
       { query: { page, per_page: perPage } }
     );
     return response.data;
@@ -73,7 +73,7 @@ export class AdminSessionsService extends BaseService {
    */
   async revokeSession(sessionId: string): Promise<MessageResponse> {
     const response = await this.http.delete<MessageResponse>(
-      `/admin/sessions/${sessionId}`
+      `/api/admin/sessions/${sessionId}`
     );
     return response.data;
   }
@@ -85,7 +85,7 @@ export class AdminSessionsService extends BaseService {
    */
   async revokeUserSessions(userId: string): Promise<MessageResponse> {
     const response = await this.http.post<MessageResponse>(
-      `/admin/users/${userId}/sessions/revoke-all`
+      `/api/admin/users/${userId}/sessions/revoke-all`
     );
     return response.data;
   }

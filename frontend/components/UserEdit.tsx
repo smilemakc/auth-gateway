@@ -6,7 +6,9 @@ import {
   Save,
   AlertCircle,
   Shield,
-  Check
+  Check,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 import type {
   AdminUserResponse,
@@ -96,10 +98,15 @@ const UserEdit: React.FC = () => {
 
     try {
       if (isEditMode) {
-        // For update, send only updatable fields in snake_case
+        // For update, send all editable fields in snake_case
         const updateData: AdminUpdateUserRequest = {
+          email: formData.email,
+          username: formData.username,
+          full_name: formData.full_name,
+          phone: formData.phone || undefined,
           role_ids: formData.role_ids,
-          is_active: formData.is_active
+          is_active: formData.is_active,
+          email_verified: formData.email_verified,
         };
         await updateUserMutation.mutateAsync({ id: id!, data: updateData });
         navigate(`/users/${id}`);
@@ -343,52 +350,43 @@ const UserEdit: React.FC = () => {
           <div className="pt-6 border-t border-border">
             <h3 className="text-sm font-medium text-foreground mb-4">{t('settings.roles')} & {t('common.status')}</h3>
             <div className="space-y-4">
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    id="is_active"
-                    name="is_active"
-                    type="checkbox"
-                    checked={formData.is_active}
-                    onChange={handleChange}
-                    className="focus:ring-ring h-4 w-4 text-primary border-input rounded"
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="is_active" className="font-medium text-foreground">{t('user.form.active')}</label>
+              <div className="flex items-start gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
+                  className={`transition-colors mt-0.5 ${formData.is_active ? 'text-success' : 'text-muted-foreground'}`}
+                >
+                  {formData.is_active ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                </button>
+                <div className="text-sm">
+                  <span className="font-medium text-foreground">{t('user.form.active')}</span>
                   <p className="text-muted-foreground">{t('user.form.active_desc')}</p>
                 </div>
               </div>
 
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    id="email_verified"
-                    name="email_verified"
-                    type="checkbox"
-                    checked={formData.email_verified}
-                    onChange={handleChange}
-                    className="focus:ring-ring h-4 w-4 text-primary border-input rounded"
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="email_verified" className="font-medium text-foreground">{t('user.email_verified')}</label>
+              <div className="flex items-start gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, email_verified: !prev.email_verified }))}
+                  className={`transition-colors mt-0.5 ${formData.email_verified ? 'text-success' : 'text-muted-foreground'}`}
+                >
+                  {formData.email_verified ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                </button>
+                <div className="text-sm">
+                  <span className="font-medium text-foreground">{t('user.email_verified')}</span>
                 </div>
               </div>
 
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    id="totp_enabled"
-                    name="totp_enabled"
-                    type="checkbox"
-                    checked={formData.totp_enabled}
-                    onChange={handleChange}
-                    className="focus:ring-ring h-4 w-4 text-primary border-input rounded"
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="totp_enabled" className="font-medium text-foreground">{t('user.form.2fa_force')}</label>
+              <div className="flex items-start gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, totp_enabled: !prev.totp_enabled }))}
+                  className={`transition-colors mt-0.5 ${formData.totp_enabled ? 'text-success' : 'text-muted-foreground'}`}
+                >
+                  {formData.totp_enabled ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                </button>
+                <div className="text-sm">
+                  <span className="font-medium text-foreground">{t('user.form.2fa_force')}</span>
                 </div>
               </div>
             </div>

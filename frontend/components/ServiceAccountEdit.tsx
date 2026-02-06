@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Bot, Copy, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Bot, Copy, AlertTriangle, CheckCircle, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useOAuthClientDetail, useCreateOAuthClient, useUpdateOAuthClient } from '../hooks/useOAuthClients';
 
@@ -175,17 +175,16 @@ const ServiceAccountEdit: React.FC = () => {
           </div>
 
           <div className="pt-2 border-t border-border">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only"
-                checked={formData.is_active}
-                onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-              />
-              <div className={`block w-10 h-6 rounded-full transition-colors ${formData.is_active ? 'bg-success' : 'bg-muted'}`}></div>
-              <div className={`dot absolute bg-card w-4 h-4 rounded-full transition-transform transform ${formData.is_active ? 'translate-x-5' : 'translate-x-1'} mt-1 ml-0.5`}></div>
-              <span className="ml-3 text-sm font-medium text-foreground">{t('users.active')}</span>
-            </label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
+                className={`transition-colors ${formData.is_active ? 'text-success' : 'text-muted-foreground'}`}
+              >
+                {formData.is_active ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+              </button>
+              <span className="text-sm font-medium text-foreground">{t('users.active')}</span>
+            </div>
           </div>
         </div>
 

@@ -27,6 +27,17 @@ var (
 	BuildUserListOptions = queryopt.BuildUserListOptions
 )
 
+// --- OAuthClientStore options ---
+
+type OAuthClientListOptions = queryopt.OAuthClientListOptions
+type OAuthClientListOption = queryopt.OAuthClientListOption
+
+var (
+	OAuthClientListActive        = queryopt.OAuthClientListActive
+	OAuthClientListOwner         = queryopt.OAuthClientListOwner
+	BuildOAuthClientListOptions  = queryopt.BuildOAuthClientListOptions
+)
+
 // --- APIKeyStore options ---
 
 type APIKeyGetOptions = queryopt.APIKeyGetOptions

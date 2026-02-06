@@ -240,7 +240,7 @@ type OAuthProviderStore interface {
 	UpdateClient(ctx context.Context, client *models.OAuthClient) error
 	DeleteClient(ctx context.Context, id uuid.UUID) error
 	HardDeleteClient(ctx context.Context, id uuid.UUID) error
-	ListClients(ctx context.Context, ownerID *uuid.UUID, page, perPage int) ([]*models.OAuthClient, int, error)
+	ListClients(ctx context.Context, page, perPage int, opts ...OAuthClientListOption) ([]*models.OAuthClient, int, error)
 	ListActiveClients(ctx context.Context) ([]*models.OAuthClient, error)
 
 	// Authorization code operations

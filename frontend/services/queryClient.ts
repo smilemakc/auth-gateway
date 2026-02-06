@@ -32,8 +32,8 @@ export const queryKeys = {
   // Users
   users: {
     all: ['users'] as const,
-    list: (page: number, pageSize: number, search?: string, role?: string) =>
-      ['users', 'list', { page, pageSize, search, role }] as const,
+    list: (page: number, pageSize: number) =>
+      ['users', 'list', { page, pageSize }] as const,
     detail: (id: string) => ['users', 'detail', id] as const,
     stats: ['users', 'stats'] as const,
   },

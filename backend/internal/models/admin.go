@@ -62,6 +62,16 @@ type AdminUpdateUserRequest struct {
 	RoleIDs *[]uuid.UUID `json:"role_ids,omitempty" example:"123e4567-e89b-12d3-a456-426614174000,223e4567-e89b-12d3-a456-426614174001"`
 	// Whether the account should be active
 	IsActive *bool `json:"is_active,omitempty" example:"true"`
+	// User's email address
+	Email *string `json:"email,omitempty" example:"user@example.com"`
+	// Unique username
+	Username *string `json:"username,omitempty" example:"johndoe"`
+	// User's full name
+	FullName *string `json:"full_name,omitempty" example:"John Doe"`
+	// User's phone number
+	Phone *string `json:"phone,omitempty" example:"+1234567890"`
+	// Whether email has been verified
+	EmailVerified *bool `json:"email_verified,omitempty" example:"true"`
 }
 
 // AdminCreateUserRequest represents admin user creation request

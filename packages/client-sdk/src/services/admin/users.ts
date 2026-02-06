@@ -48,7 +48,7 @@ export class AdminUsersService extends BaseService {
    * @returns User details
    */
   async get(id: string): Promise<AdminUserResponse> {
-    const response = await this.http.get<AdminUserResponse>(`/admin/users/${id}`);
+    const response = await this.http.get<AdminUserResponse>(`/api/admin/users/${id}`);
     return response.data;
   }
 
@@ -70,7 +70,7 @@ export class AdminUsersService extends BaseService {
    */
   async update(id: string, data: AdminUpdateUserRequest): Promise<AdminUserResponse> {
     const response = await this.http.put<AdminUserResponse>(
-      `/admin/users/${id}`,
+      `/api/admin/users/${id}`,
       data
     );
     return response.data;
@@ -82,7 +82,7 @@ export class AdminUsersService extends BaseService {
    * @returns Success message
    */
   async delete(id: string): Promise<MessageResponse> {
-    const response = await this.http.delete<MessageResponse>(`/admin/users/${id}`);
+    const response = await this.http.delete<MessageResponse>(`/api/admin/users/${id}`);
     return response.data;
   }
 
@@ -133,7 +133,7 @@ export class AdminUsersService extends BaseService {
    */
   async assignRole(id: string, roleId: string): Promise<MessageResponse> {
     const response = await this.http.post<MessageResponse>(
-      `/admin/users/${id}/roles`,
+      `/api/admin/users/${id}/roles`,
       { role_id: roleId }
     );
     return response.data;
@@ -147,7 +147,7 @@ export class AdminUsersService extends BaseService {
    */
   async removeRole(id: string, roleId: string): Promise<MessageResponse> {
     const response = await this.http.delete<MessageResponse>(
-      `/admin/users/${id}/roles/${roleId}`
+      `/api/admin/users/${id}/roles/${roleId}`
     );
     return response.data;
   }
@@ -191,7 +191,7 @@ export class AdminUsersService extends BaseService {
    */
   async reset2FA(userId: string): Promise<{ message: string; user_id: string }> {
     const response = await this.http.post<{ message: string; user_id: string }>(
-      `/admin/users/${userId}/reset-2fa`
+      `/api/admin/users/${userId}/reset-2fa`
     );
     return response.data;
   }
@@ -204,7 +204,7 @@ export class AdminUsersService extends BaseService {
    */
   async sendPasswordReset(userId: string): Promise<{ message: string; email: string }> {
     const response = await this.http.post<{ message: string; email: string }>(
-      `/admin/users/${userId}/send-password-reset`
+      `/api/admin/users/${userId}/send-password-reset`
     );
     return response.data;
   }

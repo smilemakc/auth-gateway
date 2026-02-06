@@ -315,6 +315,31 @@ func (s *AdminService) UpdateUser(ctx context.Context, userID uuid.UUID, req *mo
 		user.IsActive = *req.IsActive
 	}
 
+	// Update email if provided
+	if req.Email != nil && *req.Email != "" {
+		user.Email = *req.Email
+	}
+
+	// Update username if provided
+	if req.Username != nil && *req.Username != "" {
+		user.Username = *req.Username
+	}
+
+	// Update full name if provided
+	if req.FullName != nil {
+		user.FullName = *req.FullName
+	}
+
+	// Update phone if provided
+	if req.Phone != nil {
+		user.Phone = req.Phone
+	}
+
+	// Update email verified status if provided
+	if req.EmailVerified != nil {
+		user.EmailVerified = *req.EmailVerified
+	}
+
 	if err := s.userRepo.Update(ctx, user); err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}

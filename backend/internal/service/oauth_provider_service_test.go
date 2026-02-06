@@ -25,7 +25,7 @@ type mockOAuthProviderStore struct {
 	UpdateClientFunc        func(ctx context.Context, client *models.OAuthClient) error
 	DeleteClientFunc        func(ctx context.Context, id uuid.UUID) error
 	HardDeleteClientFunc    func(ctx context.Context, id uuid.UUID) error
-	ListClientsFunc         func(ctx context.Context, ownerID *uuid.UUID, page, perPage int) ([]*models.OAuthClient, int, error)
+	ListClientsFunc         func(ctx context.Context, page, perPage int, opts ...OAuthClientListOption) ([]*models.OAuthClient, int, error)
 	ListActiveClientsFunc   func(ctx context.Context) ([]*models.OAuthClient, error)
 
 	// Authorization code operations
@@ -117,9 +117,9 @@ func (m *mockOAuthProviderStore) HardDeleteClient(ctx context.Context, id uuid.U
 	return nil
 }
 
-func (m *mockOAuthProviderStore) ListClients(ctx context.Context, ownerID *uuid.UUID, page, perPage int) ([]*models.OAuthClient, int, error) {
+func (m *mockOAuthProviderStore) ListClients(ctx context.Context, page, perPage int, opts ...OAuthClientListOption) ([]*models.OAuthClient, int, error) {
 	if m.ListClientsFunc != nil {
-		return m.ListClientsFunc(ctx, ownerID, page, perPage)
+		return m.ListClientsFunc(ctx, page, perPage, opts...)
 	}
 	return nil, 0, nil
 }
@@ -932,12 +932,12 @@ func TestListClients_ShouldReturnClients_WhenClientsExist(t *testing.T) {
 		createTestClient(string(models.ClientTypePublic)),
 	}
 
-	mRepo.ListClientsFunc = func(ctx context.Context, ownerID *uuid.UUID, page, perPage int) ([]*models.OAuthClient, int, error) {
+	mRepo.ListClientsFunc = func(ctx context.Context, page, perPage int, opts ...OAuthClientListOption) ([]*models.OAuthClient, int, error) {
 		return expectedClients, 2, nil
 	}
 
 	// Act
-	clients, total, err := svc.ListClients(ctx, nil, 1, 10)
+	clients, total, err := svc.ListClients(ctx, 1, 10)
 
 	// Assert
 	require.NoError(t, err)
@@ -950,14 +950,14 @@ func TestListClients_ShouldNormalizePagination_WhenInvalidValuesProvided(t *test
 	svc, mRepo, _, _ := setupOAuthProviderService()
 	ctx := context.Background()
 
-	mRepo.ListClientsFunc = func(ctx context.Context, ownerID *uuid.UUID, page, perPage int) ([]*models.OAuthClient, int, error) {
+	mRepo.ListClientsFunc = func(ctx context.Context, page, perPage int, opts ...OAuthClientListOption) ([]*models.OAuthClient, int, error) {
 		assert.Equal(t, 1, page)     // Should be normalized to 1
 		assert.Equal(t, 20, perPage) // Should be normalized to default 20
 		return []*models.OAuthClient{}, 0, nil
 	}
 
 	// Act
-	_, _, err := svc.ListClients(ctx, nil, -5, 500) // Invalid values
+	_, _, err := svc.ListClients(ctx, -5, 500) // Invalid values
 
 	// Assert
 	assert.NoError(t, err)
@@ -969,14 +969,15 @@ func TestListClients_ShouldFilterByOwner_WhenOwnerIDProvided(t *testing.T) {
 	ctx := context.Background()
 
 	ownerID := uuid.New()
-	mRepo.ListClientsFunc = func(ctx context.Context, owner *uuid.UUID, page, perPage int) ([]*models.OAuthClient, int, error) {
-		assert.NotNil(t, owner)
-		assert.Equal(t, ownerID, *owner)
+	mRepo.ListClientsFunc = func(ctx context.Context, page, perPage int, opts ...OAuthClientListOption) ([]*models.OAuthClient, int, error) {
+		o := BuildOAuthClientListOptions(opts)
+		assert.NotNil(t, o.OwnerID)
+		assert.Equal(t, ownerID, *o.OwnerID)
 		return []*models.OAuthClient{}, 0, nil
 	}
 
 	// Act
-	_, _, err := svc.ListClients(ctx, &ownerID, 1, 10)
+	_, _, err := svc.ListClients(ctx, 1, 10, OAuthClientListOwner(ownerID))
 
 	// Assert
 	assert.NoError(t, err)

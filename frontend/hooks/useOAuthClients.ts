@@ -8,11 +8,11 @@ import type {
 import { useCurrentAppId } from './useAppAwareQuery';
 
 // OAuth Clients
-export function useOAuthClients(page: number = 1, pageSize: number = 20) {
+export function useOAuthClients(page: number = 1, pageSize: number = 20, isActive?: boolean) {
   const appId = useCurrentAppId();
   return useQuery({
-    queryKey: [...queryKeys.oauthClients.list(page, pageSize), appId],
-    queryFn: () => apiClient.admin.oauthClients.list({ page, per_page: pageSize }),
+    queryKey: [...queryKeys.oauthClients.list(page, pageSize), appId, isActive],
+    queryFn: () => apiClient.admin.oauthClients.list({ page, per_page: pageSize, is_active: isActive }),
   });
 }
 

@@ -18,10 +18,11 @@ import type {
 import { BaseService } from '../base';
 
 /** List clients query parameters */
-export interface ListClientsParams extends Record<string, string | number | undefined> {
+export interface ListClientsParams extends Record<string, string | number | boolean | undefined> {
   page?: number;
   per_page?: number;
   owner_id?: string;
+  is_active?: boolean;
 }
 
 /** Admin OAuth Clients service for OAuth client management */

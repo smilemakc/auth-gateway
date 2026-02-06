@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, Server, Cloud, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Server, Cloud, Eye, EyeOff, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import {
   useEmailProvider,
@@ -217,16 +217,13 @@ const EmailProviderEdit: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="is_active"
-                checked={formData.is_active}
-                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="w-4 h-4 text-primary bg-background border-input rounded focus:ring-primary"
-              />
-              <label htmlFor="is_active" className="text-sm font-medium text-foreground">
+              <button type="button" onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
+                className={`transition-colors ${formData.is_active ? 'text-success' : 'text-muted-foreground'}`}>
+                {formData.is_active ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+              </button>
+              <span className="text-sm font-medium text-foreground">
                 {t('email.provider_active')}
-              </label>
+              </span>
             </div>
           </div>
         </div>
@@ -309,16 +306,13 @@ const EmailProviderEdit: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="smtp_use_tls"
-                  checked={formData.smtp_use_tls}
-                  onChange={(e) => setFormData({ ...formData, smtp_use_tls: e.target.checked })}
-                  className="w-4 h-4 text-primary bg-background border-input rounded focus:ring-primary"
-                />
-                <label htmlFor="smtp_use_tls" className="text-sm font-medium text-foreground">
+                <button type="button" onClick={() => setFormData(prev => ({ ...prev, smtp_use_tls: !prev.smtp_use_tls }))}
+                  className={`transition-colors ${formData.smtp_use_tls ? 'text-success' : 'text-muted-foreground'}`}>
+                  {formData.smtp_use_tls ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                </button>
+                <span className="text-sm font-medium text-foreground">
                   {t('email.smtp_use_tls')}
-                </label>
+                </span>
               </div>
             </div>
           </div>
