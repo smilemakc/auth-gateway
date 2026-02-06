@@ -55,6 +55,7 @@ export class MemoryTokenStorage implements TokenStorage {
 /** HTTP client with full features */
 export class HttpClient {
   private baseUrl: string;
+  private rootUrl: string;
   private defaultHeaders: Record<string, string>;
   private timeout: number;
   private retryConfig: RetryConfig;
@@ -79,6 +80,7 @@ export class HttpClient {
 
   constructor(config: ClientConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
+    this.rootUrl = new URL(this.baseUrl).origin;
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       ...config.headers,
@@ -111,6 +113,7 @@ export class HttpClient {
   configure(config: Partial<ClientConfig>): void {
     if (config.baseUrl) {
       this.baseUrl = config.baseUrl.replace(/\/$/, '');
+      this.rootUrl = new URL(this.baseUrl).origin;
     }
     if (config.headers) {
       this.defaultHeaders = { ...this.defaultHeaders, ...config.headers };
@@ -252,7 +255,8 @@ export class HttpClient {
     }
 
     // Build URL
-    const url = `${this.baseUrl}${config.url}${this.buildQueryString(config.query)}`;
+    const base = config.useRootUrl ? this.rootUrl : this.baseUrl;
+    const url = `${base}${config.url}${this.buildQueryString(config.query)}`;
 
     // Build headers
     const headers: Record<string, string> = {

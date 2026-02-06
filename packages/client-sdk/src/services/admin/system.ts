@@ -35,7 +35,7 @@ export class AdminSystemService extends BaseService {
   async getMaintenanceMode(): Promise<MaintenanceModeResponse> {
     const response = await this.http.get<MaintenanceModeResponse>(
       '/system/maintenance',
-      { skipAuth: true }
+      { skipAuth: true, useRootUrl: true }
     );
     return response.data;
   }

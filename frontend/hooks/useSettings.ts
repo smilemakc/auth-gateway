@@ -95,7 +95,7 @@ export function useUpdateBranding() {
 export function useMaintenanceModeStatus() {
   return useQuery({
     queryKey: queryKeys.settings.maintenance,
-    queryFn: () => apiClient.admin.system.getMaintenanceMode(),
+    queryFn: () => apiClient.health.isMaintenanceMode(),
     refetchInterval: 10000, // Refresh every 10 seconds
   });
 }

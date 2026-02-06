@@ -22,8 +22,9 @@ export class HealthService extends BaseService {
    * @returns Health status of all services
    */
   async check(): Promise<HealthResponse> {
-    const response = await this.http.get<HealthResponse>('/auth/health', {
+    const response = await this.http.get<HealthResponse>('/health', {
       skipAuth: true,
+      useRootUrl: true,
     });
     return response.data;
   }
@@ -34,8 +35,9 @@ export class HealthService extends BaseService {
    */
   async ready(): Promise<boolean> {
     try {
-      const response = await this.http.get<StatusResponse>('/auth/ready', {
+      const response = await this.http.get<StatusResponse>('/ready', {
         skipAuth: true,
+        useRootUrl: true,
       });
       return response.data.status === 'ready';
     } catch {
@@ -49,8 +51,9 @@ export class HealthService extends BaseService {
    */
   async live(): Promise<boolean> {
     try {
-      const response = await this.http.get<StatusResponse>('/auth/live', {
+      const response = await this.http.get<StatusResponse>('/live', {
         skipAuth: true,
+        useRootUrl: true,
       });
       return response.data.status === 'alive';
     } catch {
@@ -65,7 +68,7 @@ export class HealthService extends BaseService {
   async isMaintenanceMode(): Promise<MaintenanceModeResponse> {
     const response = await this.http.get<MaintenanceModeResponse>(
       '/system/maintenance',
-      { skipAuth: true }
+      { skipAuth: true, useRootUrl: true }
     );
     return response.data;
   }
