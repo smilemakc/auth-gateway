@@ -160,8 +160,10 @@ type handlerSet struct {
 	Bulk          *handler.BulkHandler
 	SAML          *handler.SAMLHandler
 	Token         *handler.TokenHandler
-	EmailProfile  *handler.EmailProfileHandler
-	Application   *handler.ApplicationHandler
+	EmailProfile     *handler.EmailProfileHandler
+	Application      *handler.ApplicationHandler
+	AppOAuthProvider *handler.AppOAuthProviderHandler
+	Telegram         *handler.TelegramHandler
 }
 
 type middlewareSet struct {
@@ -607,6 +609,8 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	tokenHandler := handler.NewTokenHandler(deps.jwtService, services.APIKey, deps.redis, deps.log)
 	emailProfileHandler := handler.NewEmailProfileHandler(services.EmailProfile, deps.log)
 	applicationHandler := handler.NewApplicationHandler(services.Application, deps.log)
+	appOAuthProviderHandler := handler.NewAppOAuthProviderHandler(services.AppOAuthProvider, deps.log)
+	telegramHandler := handler.NewTelegramHandler(services.Telegram, deps.log)
 
 	return &handlerSet{
 		Auth:          authHandler,
@@ -629,7 +633,9 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 		SAML:          samlHandler,
 		Token:         tokenHandler,
 		EmailProfile:  emailProfileHandler,
-		Application:   applicationHandler,
+		Application:      applicationHandler,
+		AppOAuthProvider: appOAuthProviderHandler,
+		Telegram:         telegramHandler,
 	}
 }
 
@@ -860,6 +866,8 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			adminGroup.POST("/users/:id/send-password-reset", handlers.Admin.SendPasswordReset)
 			adminGroup.GET("/users/:id/oauth-accounts", handlers.Admin.GetUserOAuthAccounts)
 			adminGroup.POST("/users/:id/reset-2fa", handlers.Admin.Reset2FA)
+			adminGroup.GET("/users/:id/telegram-accounts", handlers.Telegram.ListUserTelegramAccounts)
+			adminGroup.GET("/users/:id/telegram-bot-access", handlers.Telegram.ListUserTelegramBotAccess)
 			adminGroup.GET("/api-keys", handlers.Admin.ListAPIKeys)
 			adminGroup.POST("/api-keys/:id/revoke", handlers.Admin.RevokeAPIKey)
 			adminGroup.GET("/audit-logs", handlers.Admin.ListAuditLogs)
@@ -1029,6 +1037,20 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 				applicationsGroup.GET("/:id/users", handlers.Application.ListApplicationUsers)
 				applicationsGroup.POST("/:id/users/:user_id/ban", handlers.Application.BanUser)
 				applicationsGroup.POST("/:id/users/:user_id/unban", handlers.Application.UnbanUser)
+
+				// OAuth Providers
+				applicationsGroup.GET("/:id/oauth-providers", handlers.AppOAuthProvider.ListProviders)
+				applicationsGroup.POST("/:id/oauth-providers", handlers.AppOAuthProvider.CreateProvider)
+				applicationsGroup.GET("/:id/oauth-providers/:providerId", handlers.AppOAuthProvider.GetProvider)
+				applicationsGroup.PUT("/:id/oauth-providers/:providerId", handlers.AppOAuthProvider.UpdateProvider)
+				applicationsGroup.DELETE("/:id/oauth-providers/:providerId", handlers.AppOAuthProvider.DeleteProvider)
+
+				// Telegram Bots
+				applicationsGroup.GET("/:id/telegram-bots", handlers.Telegram.ListBots)
+				applicationsGroup.POST("/:id/telegram-bots", handlers.Telegram.CreateBot)
+				applicationsGroup.GET("/:id/telegram-bots/:botId", handlers.Telegram.GetBot)
+				applicationsGroup.PUT("/:id/telegram-bots/:botId", handlers.Telegram.UpdateBot)
+				applicationsGroup.DELETE("/:id/telegram-bots/:botId", handlers.Telegram.DeleteBot)
 
 				// Application Email Templates
 				applicationsGroup.GET("/:id/email-templates", handlers.Template.ListApplicationEmailTemplates)
