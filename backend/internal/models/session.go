@@ -10,6 +10,7 @@ import (
 type Session struct {
 	ID              uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
 	UserID          uuid.UUID  `json:"user_id" bun:"user_id,type:uuid,notnull"`
+	ApplicationID   *uuid.UUID `bun:"application_id,type:uuid" json:"application_id,omitempty"`
 	TokenHash       string     `json:"-" bun:"token_hash,notnull"`              // Hash of refresh token - never expose
 	AccessTokenHash string     `json:"-" bun:"access_token_hash"`               // Hash of current access token for revocation
 	DeviceType      string     `json:"device_type,omitempty" bun:"device_type"` // "mobile", "desktop", "tablet"
@@ -24,7 +25,8 @@ type Session struct {
 	RevokedAt       *time.Time `json:"revoked_at,omitempty" bun:"revoked_at"`
 
 	// Relation to User
-	User *User `json:"user,omitempty" bun:"rel:belongs-to,join:user_id=id"`
+	User        *User        `json:"user,omitempty" bun:"rel:belongs-to,join:user_id=id"`
+	Application *Application `bun:"rel:belongs-to,join:application_id=id" json:"application,omitempty"`
 }
 
 // ActiveSessionResponse is returned to the user

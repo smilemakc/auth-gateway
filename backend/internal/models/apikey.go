@@ -8,9 +8,10 @@ import (
 
 // APIKey represents an API key for external service integration
 type APIKey struct {
-	ID          uuid.UUID  `json:"id" bun:"id"`
-	UserID      uuid.UUID  `json:"user_id" bun:"user_id"`
-	Name        string     `json:"name" bun:"name"`
+	ID            uuid.UUID  `json:"id" bun:"id"`
+	UserID        uuid.UUID  `json:"user_id" bun:"user_id"`
+	ApplicationID *uuid.UUID `bun:"application_id,type:uuid" json:"application_id,omitempty"`
+	Name          string     `json:"name" bun:"name"`
 	Description string     `json:"description,omitempty" bun:"description"`
 	KeyHash     string     `json:"-" bun:"key_hash"`            // Never expose key hash
 	KeyPrefix   string     `json:"key_prefix" bun:"key_prefix"` // First 8 chars for identification
@@ -142,16 +143,17 @@ func (k *APIKey) IsValid() bool {
 // PublicAPIKey returns API key without sensitive information
 func (k *APIKey) PublicAPIKey() *APIKey {
 	return &APIKey{
-		ID:          k.ID,
-		UserID:      k.UserID,
-		Name:        k.Name,
-		Description: k.Description,
-		KeyPrefix:   k.KeyPrefix,
-		Scopes:      k.Scopes,
-		IsActive:    k.IsActive,
-		LastUsedAt:  k.LastUsedAt,
-		ExpiresAt:   k.ExpiresAt,
-		CreatedAt:   k.CreatedAt,
-		UpdatedAt:   k.UpdatedAt,
+		ID:            k.ID,
+		UserID:        k.UserID,
+		ApplicationID: k.ApplicationID,
+		Name:          k.Name,
+		Description:   k.Description,
+		KeyPrefix:     k.KeyPrefix,
+		Scopes:        k.Scopes,
+		IsActive:      k.IsActive,
+		LastUsedAt:    k.LastUsedAt,
+		ExpiresAt:     k.ExpiresAt,
+		CreatedAt:     k.CreatedAt,
+		UpdatedAt:     k.UpdatedAt,
 	}
 }

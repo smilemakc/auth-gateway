@@ -11,7 +11,8 @@ type Permission struct {
 	// Permission unique identifier
 	ID uuid.UUID `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()" example:"123e4567-e89b-12d3-a456-426614174000"`
 	// Permission name (e.g., "users.delete", "api_keys.view")
-	Name string `json:"name" bun:"name,notnull,unique" binding:"required" example:"users.delete"`
+	Name          string     `json:"name" bun:"name,notnull" binding:"required" example:"users.delete"`
+	ApplicationID *uuid.UUID `bun:"application_id,type:uuid" json:"application_id,omitempty"`
 	// Resource the permission applies to (e.g., "users", "api_keys")
 	Resource string `json:"resource" bun:"resource,notnull" binding:"required" example:"users"`
 	// Action allowed on the resource (e.g., "create", "read", "update", "delete")
@@ -27,7 +28,8 @@ type Role struct {
 	// Role unique identifier
 	ID uuid.UUID `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()" example:"123e4567-e89b-12d3-a456-426614174000"`
 	// System name for the role
-	Name string `json:"name" bun:"name,notnull,unique" binding:"required" example:"admin"`
+	Name          string     `json:"name" bun:"name,notnull" binding:"required" example:"admin"`
+	ApplicationID *uuid.UUID `bun:"application_id,type:uuid" json:"application_id,omitempty"`
 	// Human-readable display name
 	DisplayName string `json:"display_name" bun:"display_name,notnull" binding:"required" example:"Administrator"`
 	// Role description
@@ -56,9 +58,10 @@ type RolePermission struct {
 
 // UserRole represents the many-to-many relationship between users and roles
 type UserRole struct {
-	UserID     uuid.UUID  `json:"user_id" bun:"user_id,pk,type:uuid"`
-	RoleID     uuid.UUID  `json:"role_id" bun:"role_id,pk,type:uuid"`
-	AssignedAt time.Time  `json:"assigned_at" bun:"assigned_at,nullzero,notnull,default:current_timestamp"`
+	UserID        uuid.UUID  `json:"user_id" bun:"user_id,pk,type:uuid"`
+	RoleID        uuid.UUID  `json:"role_id" bun:"role_id,pk,type:uuid"`
+	ApplicationID *uuid.UUID `bun:"application_id,type:uuid" json:"application_id,omitempty"`
+	AssignedAt    time.Time  `json:"assigned_at" bun:"assigned_at,nullzero,notnull,default:current_timestamp"`
 	AssignedBy *uuid.UUID `json:"assigned_by,omitempty" bun:"assigned_by,type:uuid"`
 
 	// Belongs-to relations

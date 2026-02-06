@@ -9,8 +9,9 @@ import (
 
 // Webhook represents a webhook configuration
 type Webhook struct {
-	ID              uuid.UUID       `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
-	Name            string          `json:"name" bun:"name" binding:"required,max=100"`
+	ID            uuid.UUID       `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	ApplicationID *uuid.UUID      `bun:"application_id,type:uuid" json:"application_id,omitempty"`
+	Name          string          `json:"name" bun:"name" binding:"required,max=100"`
 	URL             string          `json:"url" bun:"url" binding:"required,url,max=500"`
 	SecretKey       string          `json:"secret_key,omitempty" bun:"secret_key"`      // Only sent on creation
 	Events          json.RawMessage `json:"events" bun:"events,type:jsonb"`             // JSON array of event types

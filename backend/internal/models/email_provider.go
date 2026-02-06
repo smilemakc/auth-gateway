@@ -8,8 +8,9 @@ import (
 
 // EmailProvider represents an email provider configuration in the database
 type EmailProvider struct {
-	ID        uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
-	Name      string     `json:"name" bun:"name"`
+	ID            uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	ApplicationID *uuid.UUID `bun:"application_id,type:uuid" json:"application_id,omitempty"`
+	Name          string     `json:"name" bun:"name"`
 	Type      string     `json:"type" bun:"type"`
 	IsActive  bool       `json:"is_active" bun:"is_active"`
 	CreatedAt time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
@@ -38,8 +39,9 @@ type EmailProvider struct {
 
 // EmailProfile represents an email sending profile with from address configuration
 type EmailProfile struct {
-	ID         uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
-	Name       string     `json:"name" bun:"name"`
+	ID            uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	ApplicationID *uuid.UUID `bun:"application_id,type:uuid" json:"application_id,omitempty"`
+	Name          string     `json:"name" bun:"name"`
 	ProviderID uuid.UUID  `json:"provider_id" bun:"provider_id,type:uuid"`
 	FromEmail  string     `json:"from_email" bun:"from_email"`
 	FromName   string     `json:"from_name" bun:"from_name"`

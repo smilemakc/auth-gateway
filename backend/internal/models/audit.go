@@ -8,9 +8,10 @@ import (
 
 // AuditLog represents an audit log entry
 type AuditLog struct {
-	ID           uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
-	UserID       *uuid.UUID `json:"user_id,omitempty" bun:"user_id,type:uuid"`
-	Action       string     `json:"action" bun:"action"`
+	ID            uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	UserID        *uuid.UUID `json:"user_id,omitempty" bun:"user_id,type:uuid"`
+	ApplicationID *uuid.UUID `bun:"application_id,type:uuid" json:"application_id,omitempty"`
+	Action        string     `json:"action" bun:"action"`
 	ResourceType string     `json:"resource_type,omitempty" bun:"resource_type"`
 	ResourceID   string     `json:"resource_id,omitempty" bun:"resource_id"`
 	IPAddress    string     `json:"ip_address,omitempty" bun:"ip_address"`
