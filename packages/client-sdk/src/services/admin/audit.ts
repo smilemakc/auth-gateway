@@ -31,7 +31,7 @@ export class AdminAuditService extends BaseService {
    */
   async list(options: AuditLogQueryOptions = {}): Promise<AuditLogListResponse> {
     const response = await this.http.get<AuditLogEntry[] | AuditLogListResponse>(
-      '/admin/audit-logs',
+      '/api/admin/audit-logs',
       {
         headers: {},
         query: {

@@ -5,7 +5,7 @@ import {
 } from '@auth-gateway/client-sdk';
 
 // Get base URL from environment
-const baseUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api`;
+const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 // Custom event for auth failure - allows React components to react to auth failures
 export const AUTH_FAILURE_EVENT = 'auth:failure';

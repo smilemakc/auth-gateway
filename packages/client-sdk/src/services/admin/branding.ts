@@ -21,7 +21,7 @@ export class AdminBrandingService extends BaseService {
    * @returns Public branding configuration
    */
   async getPublic(): Promise<PublicBrandingResponse> {
-    const response = await this.http.get<PublicBrandingResponse>('/branding', {
+    const response = await this.http.get<PublicBrandingResponse>('/api/branding', {
       skipAuth: true,
     });
     return response.data;
@@ -32,7 +32,7 @@ export class AdminBrandingService extends BaseService {
    * @returns Complete branding configuration
    */
   async get(): Promise<BrandingSettings> {
-    const response = await this.http.get<BrandingSettings>('/admin/branding');
+    const response = await this.http.get<BrandingSettings>('/api/admin/branding');
     return response.data;
   }
 
@@ -43,7 +43,7 @@ export class AdminBrandingService extends BaseService {
    */
   async update(data: UpdateBrandingRequest): Promise<BrandingSettings> {
     const response = await this.http.put<BrandingSettings>(
-      '/admin/branding',
+      '/api/admin/branding',
       data
     );
     return response.data;

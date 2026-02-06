@@ -26,7 +26,7 @@ export class APIKeysService extends BaseService {
    */
   async create(data: CreateAPIKeyRequest): Promise<CreateAPIKeyResponse> {
     const response = await this.http.post<CreateAPIKeyResponse>(
-      '/api-keys',
+      '/api/api-keys',
       data
     );
     return response.data;
@@ -37,7 +37,7 @@ export class APIKeysService extends BaseService {
    * @returns List of API keys (without plain key values)
    */
   async list(): Promise<ListAPIKeysResponse> {
-    const response = await this.http.get<ListAPIKeysResponse>('/api-keys');
+    const response = await this.http.get<ListAPIKeysResponse>('/api/api-keys');
     return response.data;
   }
 

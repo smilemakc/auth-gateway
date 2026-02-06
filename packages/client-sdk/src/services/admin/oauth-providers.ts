@@ -25,7 +25,7 @@ export class AdminOAuthProvidersService extends BaseService {
    */
   async list(): Promise<OAuthProviderConfig[]> {
     const response = await this.http.get<OAuthProviderListResponse>(
-      '/admin/oauth/providers'
+      '/api/admin/oauth/providers'
     );
     return response.data.providers;
   }
@@ -37,7 +37,7 @@ export class AdminOAuthProvidersService extends BaseService {
    */
   async get(id: string): Promise<OAuthProviderConfig> {
     const response = await this.http.get<OAuthProviderConfig>(
-      `/admin/oauth/providers/${id}`
+      `/api/admin/oauth/providers/${id}`
     );
     return response.data;
   }
@@ -61,7 +61,7 @@ export class AdminOAuthProvidersService extends BaseService {
    */
   async create(data: CreateOAuthProviderRequest): Promise<OAuthProviderConfig> {
     const response = await this.http.post<OAuthProviderConfig>(
-      '/admin/oauth/providers',
+      '/api/admin/oauth/providers',
       data
     );
     return response.data;
@@ -78,7 +78,7 @@ export class AdminOAuthProvidersService extends BaseService {
     data: UpdateOAuthProviderRequest
   ): Promise<OAuthProviderConfig> {
     const response = await this.http.put<OAuthProviderConfig>(
-      `/admin/oauth/providers/${id}`,
+      `/api/admin/oauth/providers/${id}`,
       data
     );
     return response.data;
@@ -91,7 +91,7 @@ export class AdminOAuthProvidersService extends BaseService {
    */
   async delete(id: string): Promise<MessageResponse> {
     const response = await this.http.delete<MessageResponse>(
-      `/admin/oauth/providers/${id}`
+      `/api/admin/oauth/providers/${id}`
     );
     return response.data;
   }

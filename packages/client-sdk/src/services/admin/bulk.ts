@@ -24,7 +24,7 @@ export class AdminBulkService extends BaseService {
    * @returns Operation result
    */
   async bulkCreateUsers(data: BulkCreateUsersRequest): Promise<BulkOperationResult> {
-    const response = await this.http.post<BulkOperationResult>('/admin/users/bulk-create', data);
+    const response = await this.http.post<BulkOperationResult>('/api/admin/users/bulk-create', data);
     return response.data;
   }
 
@@ -34,7 +34,7 @@ export class AdminBulkService extends BaseService {
    * @returns Operation result
    */
   async bulkUpdateUsers(data: BulkUpdateUsersRequest): Promise<BulkOperationResult> {
-    const response = await this.http.put<BulkOperationResult>('/admin/users/bulk-update', data);
+    const response = await this.http.put<BulkOperationResult>('/api/admin/users/bulk-update', data);
     return response.data;
   }
 
@@ -44,7 +44,7 @@ export class AdminBulkService extends BaseService {
    * @returns Operation result
    */
   async bulkDeleteUsers(data: BulkDeleteUsersRequest): Promise<BulkOperationResult> {
-    const response = await this.http.post<BulkOperationResult>('/admin/users/bulk-delete', data);
+    const response = await this.http.post<BulkOperationResult>('/api/admin/users/bulk-delete', data);
     return response.data;
   }
 
@@ -54,8 +54,7 @@ export class AdminBulkService extends BaseService {
    * @returns Operation result
    */
   async bulkAssignRoles(data: BulkAssignRolesRequest): Promise<BulkOperationResult> {
-    const response = await this.http.post<BulkOperationResult>('/admin/users/bulk-assign-roles', data);
+    const response = await this.http.post<BulkOperationResult>('/api/admin/users/bulk-assign-roles', data);
     return response.data;
   }
 }
-

@@ -20,7 +20,7 @@ export class PasswordlessService extends BaseService {
    */
   async request(email: string): Promise<EmailMessageResponse> {
     const response = await this.http.post<EmailMessageResponse>(
-      '/auth/passwordless/request',
+      '/api/auth/passwordless/request',
       { email } satisfies PasswordlessRequestRequest,
       { skipAuth: true }
     );
@@ -35,7 +35,7 @@ export class PasswordlessService extends BaseService {
    */
   async verify(email: string, code: string): Promise<AuthResponse> {
     const response = await this.http.post<AuthResponse>(
-      '/auth/passwordless/verify',
+      '/api/auth/passwordless/verify',
       { email, code } satisfies PasswordlessVerifyRequest,
       { skipAuth: true }
     );

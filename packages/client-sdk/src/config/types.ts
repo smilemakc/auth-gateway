@@ -96,8 +96,6 @@ export interface RequestConfig {
   timeout?: number;
   skipAuth?: boolean;
   retryConfig?: Partial<RetryConfig>;
-  /** Use rootUrl (base URL origin without path) instead of baseUrl */
-  useRootUrl?: boolean;
 }
 
 /** API response wrapper */

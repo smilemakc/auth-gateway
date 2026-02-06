@@ -27,7 +27,7 @@ export class SMSService extends BaseService {
    */
   async send(phone: string, type: OTPType): Promise<SendSMSResponse> {
     const response = await this.http.post<SendSMSResponse>(
-      '/sms/send',
+      '/api/sms/send',
       { phone, type } satisfies SendSMSRequest,
       { skipAuth: true }
     );
@@ -42,7 +42,7 @@ export class SMSService extends BaseService {
    */
   async verify(phone: string, code: string): Promise<VerifySMSResponse> {
     const response = await this.http.post<VerifySMSResponse>(
-      '/sms/verify',
+      '/api/sms/verify',
       { phone, code } satisfies VerifySMSRequest,
       { skipAuth: true }
     );
@@ -62,7 +62,7 @@ export class SMSService extends BaseService {
    * @returns SMS statistics including delivery rates
    */
   async getStats(): Promise<SMSStatsResponse> {
-    const response = await this.http.get<SMSStatsResponse>('/sms/stats');
+    const response = await this.http.get<SMSStatsResponse>('/api/sms/stats');
     return response.data;
   }
 }

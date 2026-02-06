@@ -24,7 +24,7 @@ export class AdminUsersService extends BaseService {
    * @returns System statistics
    */
   async getStats(): Promise<AdminStatsResponse> {
-    const response = await this.http.get<AdminStatsResponse>('/admin/stats');
+    const response = await this.http.get<AdminStatsResponse>('/api/admin/stats');
     return response.data;
   }
 
@@ -35,7 +35,7 @@ export class AdminUsersService extends BaseService {
    * @returns Paginated list of users
    */
   async list(page = 1, pageSize = 20): Promise<AdminUserListResponse> {
-    const response = await this.http.get<AdminUserListResponse>('/admin/users', {
+    const response = await this.http.get<AdminUserListResponse>('/api/admin/users', {
       headers: {},
       query: { page, page_size: pageSize },
     });
@@ -58,7 +58,7 @@ export class AdminUsersService extends BaseService {
    * @returns Created user
    */
   async create(data: AdminCreateUserRequest): Promise<AdminUserResponse> {
-    const response = await this.http.post<AdminUserResponse>('/admin/users', data);
+    const response = await this.http.post<AdminUserResponse>('/api/admin/users', data);
     return response.data;
   }
 

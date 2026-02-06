@@ -39,7 +39,7 @@ export class AdminOAuthClientsService extends BaseService {
    */
   async create(data: CreateOAuthClientRequest): Promise<CreateOAuthClientResponse> {
     const response = await this.http.post<CreateOAuthClientResponse>(
-      '/admin/oauth/clients',
+      '/api/admin/oauth/clients',
       data
     );
     return response.data;
@@ -52,7 +52,7 @@ export class AdminOAuthClientsService extends BaseService {
    */
   async list(params?: ListClientsParams): Promise<OAuthClientListResponse> {
     const response = await this.http.get<OAuthClientListResponse>(
-      '/admin/oauth/clients',
+      '/api/admin/oauth/clients',
       { query: params }
     );
     return response.data;
@@ -64,7 +64,7 @@ export class AdminOAuthClientsService extends BaseService {
    * @returns Client details
    */
   async get(id: string): Promise<OAuthClient> {
-    const response = await this.http.get<OAuthClient>(`/admin/oauth/clients/${id}`);
+    const response = await this.http.get<OAuthClient>(`/api/admin/oauth/clients/${id}`);
     return response.data;
   }
 
@@ -76,7 +76,7 @@ export class AdminOAuthClientsService extends BaseService {
    */
   async update(id: string, data: UpdateOAuthClientRequest): Promise<OAuthClient> {
     const response = await this.http.put<OAuthClient>(
-      `/admin/oauth/clients/${id}`,
+      `/api/admin/oauth/clients/${id}`,
       data
     );
     return response.data;
@@ -87,7 +87,7 @@ export class AdminOAuthClientsService extends BaseService {
    * @param id Client ID
    */
   async delete(id: string): Promise<void> {
-    await this.http.delete(`/admin/oauth/clients/${id}`);
+    await this.http.delete(`/api/admin/oauth/clients/${id}`);
   }
 
   /**
@@ -97,7 +97,7 @@ export class AdminOAuthClientsService extends BaseService {
    */
   async rotateSecret(id: string): Promise<RotateSecretResponse> {
     const response = await this.http.post<RotateSecretResponse>(
-      `/admin/oauth/clients/${id}/rotate-secret`
+      `/api/admin/oauth/clients/${id}/rotate-secret`
     );
     return response.data;
   }
@@ -127,7 +127,7 @@ export class AdminOAuthClientsService extends BaseService {
    * @returns List of available scopes
    */
   async listScopes(): Promise<OAuthScopeListResponse> {
-    const response = await this.http.get<OAuthScopeListResponse>('/admin/oauth/scopes');
+    const response = await this.http.get<OAuthScopeListResponse>('/api/admin/oauth/scopes');
     return response.data;
   }
 
@@ -137,7 +137,7 @@ export class AdminOAuthClientsService extends BaseService {
    * @returns Created scope
    */
   async createScope(data: CreateScopeRequest): Promise<OAuthScope> {
-    const response = await this.http.post<OAuthScope>('/admin/oauth/scopes', data);
+    const response = await this.http.post<OAuthScope>('/api/admin/oauth/scopes', data);
     return response.data;
   }
 
@@ -146,7 +146,7 @@ export class AdminOAuthClientsService extends BaseService {
    * @param id Scope ID
    */
   async deleteScope(id: string): Promise<void> {
-    await this.http.delete(`/admin/oauth/scopes/${id}`);
+    await this.http.delete(`/api/admin/oauth/scopes/${id}`);
   }
 
   // ============= Consent Management =============
@@ -158,7 +158,7 @@ export class AdminOAuthClientsService extends BaseService {
    */
   async listClientConsents(clientId: string): Promise<UserConsentListResponse> {
     const response = await this.http.get<UserConsentListResponse>(
-      `/admin/oauth/clients/${clientId}/consents`
+      `/api/admin/oauth/clients/${clientId}/consents`
     );
     return response.data;
   }
@@ -169,6 +169,6 @@ export class AdminOAuthClientsService extends BaseService {
    * @param userId User ID
    */
   async revokeUserConsent(clientId: string, userId: string): Promise<void> {
-    await this.http.delete(`/admin/oauth/clients/${clientId}/consents/${userId}`);
+    await this.http.delete(`/api/admin/oauth/clients/${clientId}/consents/${userId}`);
   }
 }

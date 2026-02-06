@@ -21,7 +21,7 @@ export class AdminSessionsService extends BaseService {
    */
   async list(page = 1, perPage = 50): Promise<SessionListResponse> {
     const response = await this.http.get<Session[] | SessionListResponse>(
-      '/admin/sessions',
+      '/api/admin/sessions',
       { query: { page, per_page: perPage } }
     );
 
@@ -43,7 +43,7 @@ export class AdminSessionsService extends BaseService {
    * @returns Session statistics
    */
   async getStats(): Promise<SessionStats> {
-    const response = await this.http.get<SessionStats>('/admin/sessions/stats');
+    const response = await this.http.get<SessionStats>('/api/admin/sessions/stats');
     return response.data;
   }
 

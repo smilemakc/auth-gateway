@@ -26,7 +26,7 @@ export class AdminSAMLService extends BaseService {
    * @returns Paginated list of SAML SPs
    */
   async listSPs(page = 1, pageSize = 20): Promise<SAMLSPListResponse> {
-    const response = await this.http.get<SAMLSPListResponse>('/admin/saml/sp', {
+    const response = await this.http.get<SAMLSPListResponse>('/api/admin/saml/sp', {
       headers: {},
       query: { page, page_size: pageSize },
     });
@@ -39,7 +39,7 @@ export class AdminSAMLService extends BaseService {
    * @returns SAML SP details
    */
   async getSP(id: string): Promise<SAMLServiceProvider> {
-    const response = await this.http.get<SAMLServiceProvider>(`/admin/saml/sp/${id}`);
+    const response = await this.http.get<SAMLServiceProvider>(`/api/admin/saml/sp/${id}`);
     return response.data;
   }
 
@@ -49,7 +49,7 @@ export class AdminSAMLService extends BaseService {
    * @returns Created SP
    */
   async createSP(data: CreateSAMLSPRequest): Promise<SAMLServiceProvider> {
-    const response = await this.http.post<SAMLServiceProvider>('/admin/saml/sp', data);
+    const response = await this.http.post<SAMLServiceProvider>('/api/admin/saml/sp', data);
     return response.data;
   }
 
@@ -60,7 +60,7 @@ export class AdminSAMLService extends BaseService {
    * @returns Updated SP
    */
   async updateSP(id: string, data: UpdateSAMLSPRequest): Promise<SAMLServiceProvider> {
-    const response = await this.http.put<SAMLServiceProvider>(`/admin/saml/sp/${id}`, data);
+    const response = await this.http.put<SAMLServiceProvider>(`/api/admin/saml/sp/${id}`, data);
     return response.data;
   }
 
@@ -70,7 +70,7 @@ export class AdminSAMLService extends BaseService {
    * @returns Success message
    */
   async deleteSP(id: string): Promise<MessageResponse> {
-    const response = await this.http.delete<MessageResponse>(`/admin/saml/sp/${id}`);
+    const response = await this.http.delete<MessageResponse>(`/api/admin/saml/sp/${id}`);
     return response.data;
   }
 
@@ -87,4 +87,3 @@ export class AdminSAMLService extends BaseService {
     return response.data;
   }
 }
-

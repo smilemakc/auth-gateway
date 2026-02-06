@@ -23,7 +23,7 @@ export class AdminSystemService extends BaseService {
    */
   async getHealth(): Promise<SystemHealthResponse> {
     const response = await this.http.get<SystemHealthResponse>(
-      '/admin/system/health'
+      '/api/admin/system/health'
     );
     return response.data;
   }
@@ -35,7 +35,7 @@ export class AdminSystemService extends BaseService {
   async getMaintenanceMode(): Promise<MaintenanceModeResponse> {
     const response = await this.http.get<MaintenanceModeResponse>(
       '/system/maintenance',
-      { skipAuth: true, useRootUrl: true }
+      { skipAuth: true }
     );
     return response.data;
   }
@@ -49,7 +49,7 @@ export class AdminSystemService extends BaseService {
     data: UpdateMaintenanceModeRequest
   ): Promise<MaintenanceModeResponse> {
     const response = await this.http.put<MaintenanceModeResponse>(
-      '/admin/system/maintenance',
+      '/api/admin/system/maintenance',
       data
     );
     return response.data;
@@ -81,7 +81,7 @@ export class AdminSystemService extends BaseService {
    */
   async getGeoDistribution(days = 30): Promise<GeoDistributionResponse> {
     const response = await this.http.get<GeoDistributionResponse>(
-      '/admin/analytics/geo-distribution',
+      '/api/admin/analytics/geo-distribution',
       { query: { days } }
     );
     return response.data;

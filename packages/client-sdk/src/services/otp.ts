@@ -24,7 +24,7 @@ export class OTPService extends BaseService {
     type: SendOTPRequest['type']
   ): Promise<EmailMessageResponse> {
     const response = await this.http.post<EmailMessageResponse>(
-      '/otp/send',
+      '/api/otp/send',
       { email, type } satisfies SendOTPRequest,
       { skipAuth: true }
     );
@@ -42,7 +42,7 @@ export class OTPService extends BaseService {
     type: SendOTPRequest['type']
   ): Promise<PhoneMessageResponse> {
     const response = await this.http.post<PhoneMessageResponse>(
-      '/otp/send',
+      '/api/otp/send',
       { phone, type } satisfies SendOTPRequest,
       { skipAuth: true }
     );
@@ -62,7 +62,7 @@ export class OTPService extends BaseService {
     type: VerifyOTPRequest['type']
   ): Promise<VerifyOTPResponse> {
     const response = await this.http.post<VerifyOTPResponse>(
-      '/otp/verify',
+      '/api/otp/verify',
       { email, code, type } satisfies VerifyOTPRequest,
       { skipAuth: true }
     );
@@ -90,7 +90,7 @@ export class OTPService extends BaseService {
     type: VerifyOTPRequest['type']
   ): Promise<VerifyOTPResponse> {
     const response = await this.http.post<VerifyOTPResponse>(
-      '/otp/verify',
+      '/api/otp/verify',
       { phone, code, type } satisfies VerifyOTPRequest,
       { skipAuth: true }
     );

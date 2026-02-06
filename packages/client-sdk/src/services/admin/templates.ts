@@ -29,7 +29,7 @@ export class AdminTemplatesService extends BaseService {
    */
   async list(): Promise<EmailTemplateListResponse> {
     const response = await this.http.get<EmailTemplateListResponse>(
-      '/admin/templates'
+      '/api/admin/templates'
     );
     return response.data;
   }
@@ -41,7 +41,7 @@ export class AdminTemplatesService extends BaseService {
    */
   async get(id: string): Promise<EmailTemplate> {
     const response = await this.http.get<EmailTemplate>(
-      `/admin/templates/${id}`
+      `/api/admin/templates/${id}`
     );
     return response.data;
   }
@@ -53,7 +53,7 @@ export class AdminTemplatesService extends BaseService {
    */
   async create(data: CreateEmailTemplateRequest): Promise<EmailTemplate> {
     const response = await this.http.post<EmailTemplate>(
-      '/admin/templates',
+      '/api/admin/templates',
       data
     );
     return response.data;
@@ -70,7 +70,7 @@ export class AdminTemplatesService extends BaseService {
     data: UpdateEmailTemplateRequest
   ): Promise<EmailTemplate> {
     const response = await this.http.put<EmailTemplate>(
-      `/admin/templates/${id}`,
+      `/api/admin/templates/${id}`,
       data
     );
     return response.data;
@@ -83,7 +83,7 @@ export class AdminTemplatesService extends BaseService {
    */
   async delete(id: string): Promise<MessageResponse> {
     const response = await this.http.delete<MessageResponse>(
-      `/admin/templates/${id}`
+      `/api/admin/templates/${id}`
     );
     return response.data;
   }
@@ -97,7 +97,7 @@ export class AdminTemplatesService extends BaseService {
     data: PreviewEmailTemplateRequest
   ): Promise<PreviewEmailTemplateResponse> {
     const response = await this.http.post<PreviewEmailTemplateResponse>(
-      '/admin/templates/preview',
+      '/api/admin/templates/preview',
       data
     );
     return response.data;
@@ -109,7 +109,7 @@ export class AdminTemplatesService extends BaseService {
    */
   async getTypes(): Promise<EmailTemplateType[]> {
     const response = await this.http.get<EmailTemplateTypesResponse>(
-      '/admin/templates/types'
+      '/api/admin/templates/types'
     );
     return response.data.types;
   }
@@ -121,7 +121,7 @@ export class AdminTemplatesService extends BaseService {
    */
   async getVariables(type: EmailTemplateType): Promise<string[]> {
     const response = await this.http.get<EmailTemplateVariablesResponse>(
-      `/admin/templates/variables/${type}`
+      `/api/admin/templates/variables/${type}`
     );
     return response.data.variables;
   }

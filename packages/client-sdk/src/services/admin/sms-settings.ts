@@ -18,7 +18,7 @@ export class AdminSMSSettingsService extends BaseService {
    * @returns List of SMS provider configurations
    */
   async list(): Promise<SMSSettings[]> {
-    const response = await this.http.get<SMSSettings[]>('/admin/sms/settings');
+    const response = await this.http.get<SMSSettings[]>('/api/admin/sms/settings');
     return response.data;
   }
 
@@ -40,7 +40,7 @@ export class AdminSMSSettingsService extends BaseService {
    */
   async getActive(): Promise<SMSSettings> {
     const response = await this.http.get<SMSSettings>(
-      '/admin/sms/settings/active'
+      '/api/admin/sms/settings/active'
     );
     return response.data;
   }
@@ -52,7 +52,7 @@ export class AdminSMSSettingsService extends BaseService {
    */
   async create(data: SMSSettingsRequest): Promise<SMSSettings> {
     const response = await this.http.post<SMSSettings>(
-      '/admin/sms/settings',
+      '/api/admin/sms/settings',
       data
     );
     return response.data;

@@ -17,7 +17,7 @@ export class AdminSCIMService extends BaseService {
    * @returns SCIM configuration
    */
   async getConfig(): Promise<SCIMConfig> {
-    const response = await this.http.get<SCIMConfig>('/admin/scim/config');
+    const response = await this.http.get<SCIMConfig>('/api/admin/scim/config');
     return response.data;
   }
 
@@ -30,4 +30,3 @@ export class AdminSCIMService extends BaseService {
     return response.data;
   }
 }
-

@@ -27,7 +27,7 @@ export class AdminRBACService extends BaseService {
    * @returns List of permissions
    */
   async listPermissions(): Promise<Permission[]> {
-    const response = await this.http.get<Permission[]>('/admin/rbac/permissions');
+    const response = await this.http.get<Permission[]>('/api/admin/rbac/permissions');
     return response.data;
   }
 
@@ -38,7 +38,7 @@ export class AdminRBACService extends BaseService {
    */
   async createPermission(data: CreatePermissionRequest): Promise<Permission> {
     const response = await this.http.post<Permission>(
-      '/admin/rbac/permissions',
+      '/api/admin/rbac/permissions',
       data
     );
     return response.data;
@@ -73,7 +73,7 @@ export class AdminRBACService extends BaseService {
    * @returns List of roles with their permissions
    */
   async listRoles(): Promise<Role[]> {
-    const response = await this.http.get<Role[]>('/admin/rbac/roles');
+    const response = await this.http.get<Role[]>('/api/admin/rbac/roles');
     return response.data;
   }
 
@@ -93,7 +93,7 @@ export class AdminRBACService extends BaseService {
    * @returns Created role
    */
   async createRole(data: CreateRoleRequest): Promise<Role> {
-    const response = await this.http.post<Role>('/admin/rbac/roles', data);
+    const response = await this.http.post<Role>('/api/admin/rbac/roles', data);
     return response.data;
   }
 
@@ -165,7 +165,7 @@ export class AdminRBACService extends BaseService {
    */
   async getPermissionMatrix(): Promise<PermissionMatrix> {
     const response = await this.http.get<PermissionMatrix>(
-      '/admin/rbac/permission-matrix'
+      '/api/admin/rbac/permission-matrix'
     );
     return response.data;
   }

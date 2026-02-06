@@ -29,7 +29,7 @@ export class AdminAPIKeysService extends BaseService {
    */
   async list(page = 1, pageSize = 50): Promise<AdminAPIKeyListResponse> {
     const response = await this.http.get<AdminAPIKeyListResponse>(
-      '/admin/api-keys',
+      '/api/admin/api-keys',
       { query: { page, page_size: pageSize } }
     );
     return response.data;

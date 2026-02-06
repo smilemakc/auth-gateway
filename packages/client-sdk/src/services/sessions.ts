@@ -20,7 +20,7 @@ export class SessionsService extends BaseService {
    * @returns List of sessions
    */
   async list(page = 1, perPage = 20): Promise<SessionListResponse> {
-    const response = await this.http.get<SessionListResponse>('/sessions', {
+    const response = await this.http.get<SessionListResponse>('/api/sessions', {
       query: { page, per_page: perPage },
     });
     return response.data;
@@ -51,7 +51,7 @@ export class SessionsService extends BaseService {
    * @returns Success message
    */
   async revoke(id: string): Promise<MessageResponse> {
-    const response = await this.http.delete<MessageResponse>(`/sessions/${id}`);
+    const response = await this.http.delete<MessageResponse>(`/api/sessions/${id}`);
     return response.data;
   }
 
@@ -61,7 +61,7 @@ export class SessionsService extends BaseService {
    */
   async revokeAll(): Promise<MessageResponse> {
     const response = await this.http.post<MessageResponse>(
-      '/sessions/revoke-all'
+      '/api/sessions/revoke-all'
     );
     return response.data;
   }

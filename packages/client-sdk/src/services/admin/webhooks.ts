@@ -29,7 +29,7 @@ export class AdminWebhooksService extends BaseService {
    */
   async list(page = 1, perPage = 20): Promise<WebhookListResponse> {
     const response = await this.http.get<WebhookListResponse>(
-      '/admin/webhooks',
+      '/api/admin/webhooks',
       { query: { page, per_page: perPage } }
     );
     return response.data;
@@ -41,7 +41,7 @@ export class AdminWebhooksService extends BaseService {
    * @returns Webhook details
    */
   async get(id: string): Promise<Webhook> {
-    const response = await this.http.get<Webhook>(`/admin/webhooks/${id}`);
+    const response = await this.http.get<Webhook>(`/api/admin/webhooks/${id}`);
     return response.data;
   }
 
@@ -52,7 +52,7 @@ export class AdminWebhooksService extends BaseService {
    */
   async create(data: CreateWebhookRequest): Promise<CreateWebhookResponse> {
     const response = await this.http.post<CreateWebhookResponse>(
-      '/admin/webhooks',
+      '/api/admin/webhooks',
       data
     );
     return response.data;
@@ -66,7 +66,7 @@ export class AdminWebhooksService extends BaseService {
    */
   async update(id: string, data: UpdateWebhookRequest): Promise<Webhook> {
     const response = await this.http.put<Webhook>(
-      `/admin/webhooks/${id}`,
+      `/api/admin/webhooks/${id}`,
       data
     );
     return response.data;
@@ -79,7 +79,7 @@ export class AdminWebhooksService extends BaseService {
    */
   async delete(id: string): Promise<MessageResponse> {
     const response = await this.http.delete<MessageResponse>(
-      `/admin/webhooks/${id}`
+      `/api/admin/webhooks/${id}`
     );
     return response.data;
   }
@@ -92,7 +92,7 @@ export class AdminWebhooksService extends BaseService {
    */
   async test(id: string, data: TestWebhookRequest): Promise<MessageResponse> {
     const response = await this.http.post<MessageResponse>(
-      `/admin/webhooks/${id}/test`,
+      `/api/admin/webhooks/${id}/test`,
       data
     );
     return response.data;
@@ -111,7 +111,7 @@ export class AdminWebhooksService extends BaseService {
     perPage = 20
   ): Promise<WebhookDeliveryListResponse> {
     const response = await this.http.get<WebhookDeliveryListResponse>(
-      `/admin/webhooks/${id}/deliveries`,
+      `/api/admin/webhooks/${id}/deliveries`,
       { query: { page, per_page: perPage } }
     );
     return response.data;
@@ -123,7 +123,7 @@ export class AdminWebhooksService extends BaseService {
    */
   async getAvailableEvents(): Promise<string[]> {
     const response = await this.http.get<{ events: string[] }>(
-      '/admin/webhooks/events'
+      '/api/admin/webhooks/events'
     );
     return response.data.events;
   }

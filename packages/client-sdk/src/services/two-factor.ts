@@ -32,7 +32,7 @@ export class TwoFactorService extends BaseService {
    */
   async setup(data: TwoFactorSetupRequest): Promise<TwoFactorSetupResponse> {
     const response = await this.http.post<TwoFactorSetupResponse>(
-      '/auth/2fa/setup',
+      '/api/auth/2fa/setup',
       data
     );
     return response.data;
@@ -45,7 +45,7 @@ export class TwoFactorService extends BaseService {
    */
   async verify(data: TwoFactorVerifyRequest): Promise<MessageResponse> {
     const response = await this.http.post<MessageResponse>(
-      '/auth/2fa/verify',
+      '/api/auth/2fa/verify',
       data
     );
     return response.data;
@@ -60,7 +60,7 @@ export class TwoFactorService extends BaseService {
     data: TwoFactorLoginVerifyRequest
   ): Promise<TwoFactorLoginVerifyResponse> {
     const response = await this.http.post<AuthResponse>(
-      '/auth/2fa/login/verify',
+      '/api/auth/2fa/login/verify',
       data,
       { skipAuth: true }
     );
@@ -80,7 +80,7 @@ export class TwoFactorService extends BaseService {
    */
   async disable(data: TwoFactorDisableRequest): Promise<MessageResponse> {
     const response = await this.http.post<MessageResponse>(
-      '/auth/2fa/disable',
+      '/api/auth/2fa/disable',
       data
     );
     return response.data;
@@ -92,7 +92,7 @@ export class TwoFactorService extends BaseService {
    */
   async getStatus(): Promise<TwoFactorStatusResponse> {
     const response = await this.http.get<TwoFactorStatusResponse>(
-      '/auth/2fa/status'
+      '/api/auth/2fa/status'
     );
     return response.data;
   }
@@ -106,7 +106,7 @@ export class TwoFactorService extends BaseService {
     data: RegenerateBackupCodesRequest
   ): Promise<RegenerateBackupCodesResponse> {
     const response = await this.http.post<RegenerateBackupCodesResponse>(
-      '/auth/2fa/backup-codes/regenerate',
+      '/api/auth/2fa/backup-codes/regenerate',
       data
     );
     return response.data;

@@ -26,7 +26,7 @@ export class OAuthService extends BaseService {
    */
   async getProviders(): Promise<OAuthProviderInfo[]> {
     const response = await this.http.get<OAuthProviderInfo[]>(
-      '/auth/providers',
+      '/api/auth/providers',
       { skipAuth: true }
     );
     return response.data;
@@ -48,7 +48,7 @@ export class OAuthService extends BaseService {
    * @returns Authorization URL
    */
   getAuthorizationUrl(provider: OAuthProvider): string {
-    return `${this.baseUrl}/auth/${provider}`;
+    return `${this.baseUrl}/api/auth/${provider}`;
   }
 
   /**
@@ -136,7 +136,7 @@ export class OAuthService extends BaseService {
     state: string
   ): Promise<OAuthLoginResponse> {
     const response = await this.http.get<OAuthLoginResponse>(
-      `/auth/${provider}/callback`,
+      `/api/auth/${provider}/callback`,
       {
         query: {
           code,
@@ -166,7 +166,7 @@ export class OAuthService extends BaseService {
     data: TelegramCallbackData
   ): Promise<OAuthLoginResponse> {
     const response = await this.http.post<OAuthLoginResponse>(
-      '/auth/telegram/callback',
+      '/api/auth/telegram/callback',
       data,
       { skipAuth: true }
     );

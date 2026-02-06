@@ -30,7 +30,7 @@ export class AdminIPFiltersService extends BaseService {
     perPage = 20
   ): Promise<IPFilterListResponse> {
     const response = await this.http.get<IPFilterListResponse>(
-      '/admin/ip-filters',
+      '/api/admin/ip-filters',
       { query: { type, page, per_page: perPage } }
     );
     return response.data;
@@ -42,7 +42,7 @@ export class AdminIPFiltersService extends BaseService {
    * @returns Created IP filter
    */
   async create(data: CreateIPFilterRequest): Promise<IPFilter> {
-    const response = await this.http.post<IPFilter>('/admin/ip-filters', data);
+    const response = await this.http.post<IPFilter>('/api/admin/ip-filters', data);
     return response.data;
   }
 

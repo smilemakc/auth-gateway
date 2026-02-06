@@ -27,7 +27,7 @@ export class AdminGroupsService extends BaseService {
    * @returns Paginated list of groups
    */
   async list(page = 1, pageSize = 20): Promise<GroupListResponse> {
-    const response = await this.http.get<GroupListResponse>('/admin/groups', {
+    const response = await this.http.get<GroupListResponse>('/api/admin/groups', {
       headers: {},
       query: { page, page_size: pageSize },
     });
@@ -40,7 +40,7 @@ export class AdminGroupsService extends BaseService {
    * @returns Group details
    */
   async get(id: string): Promise<Group> {
-    const response = await this.http.get<Group>(`/admin/groups/${id}`);
+    const response = await this.http.get<Group>(`/api/admin/groups/${id}`);
     return response.data;
   }
 
@@ -50,7 +50,7 @@ export class AdminGroupsService extends BaseService {
    * @returns Created group
    */
   async create(data: CreateGroupRequest): Promise<Group> {
-    const response = await this.http.post<Group>('/admin/groups', data);
+    const response = await this.http.post<Group>('/api/admin/groups', data);
     return response.data;
   }
 
@@ -61,7 +61,7 @@ export class AdminGroupsService extends BaseService {
    * @returns Updated group
    */
   async update(id: string, data: UpdateGroupRequest): Promise<Group> {
-    const response = await this.http.put<Group>(`/admin/groups/${id}`, data);
+    const response = await this.http.put<Group>(`/api/admin/groups/${id}`, data);
     return response.data;
   }
 
@@ -71,7 +71,7 @@ export class AdminGroupsService extends BaseService {
    * @returns Success message
    */
   async delete(id: string): Promise<MessageResponse> {
-    const response = await this.http.delete<MessageResponse>(`/admin/groups/${id}`);
+    const response = await this.http.delete<MessageResponse>(`/api/admin/groups/${id}`);
     return response.data;
   }
 
@@ -83,7 +83,7 @@ export class AdminGroupsService extends BaseService {
    * @returns Paginated list of group members
    */
   async getMembers(id: string, page = 1, pageSize = 20): Promise<GroupMembersResponse> {
-    const response = await this.http.get<GroupMembersResponse>(`/admin/groups/${id}/members`, {
+    const response = await this.http.get<GroupMembersResponse>(`/api/admin/groups/${id}/members`, {
       headers: {},
       query: { page, page_size: pageSize },
     });
@@ -97,7 +97,7 @@ export class AdminGroupsService extends BaseService {
    * @returns Success message
    */
   async addMembers(id: string, data: AddGroupMembersRequest): Promise<MessageResponse> {
-    const response = await this.http.post<MessageResponse>(`/admin/groups/${id}/members`, data);
+    const response = await this.http.post<MessageResponse>(`/api/admin/groups/${id}/members`, data);
     return response.data;
   }
 
@@ -108,8 +108,7 @@ export class AdminGroupsService extends BaseService {
    * @returns Success message
    */
   async removeMember(id: string, userId: string): Promise<MessageResponse> {
-    const response = await this.http.delete<MessageResponse>(`/admin/groups/${id}/members/${userId}`);
+    const response = await this.http.delete<MessageResponse>(`/api/admin/groups/${id}/members/${userId}`);
     return response.data;
   }
 }
-

@@ -37,7 +37,7 @@ export class AuthService extends BaseService {
    * @returns Authentication response with tokens and user
    */
   async signUp(data: SignUpRequest): Promise<AuthResponse> {
-    const response = await this.http.post<AuthResponse>('/auth/signup', data, {
+    const response = await this.http.post<AuthResponse>('/api/auth/signup', data, {
       skipAuth: true,
     });
 
@@ -54,7 +54,7 @@ export class AuthService extends BaseService {
    * @throws TwoFactorRequiredError if 2FA is required
    */
   async signIn(data: SignInRequest): Promise<AuthResponse> {
-    const response = await this.http.post<AuthResponse>('/auth/signin', data, {
+    const response = await this.http.post<AuthResponse>('/api/auth/signin', data, {
       skipAuth: true,
     });
 
@@ -83,7 +83,7 @@ export class AuthService extends BaseService {
     }
 
     const response = await this.http.post<AuthResponse>(
-      '/auth/refresh',
+      '/api/auth/refresh',
       { refresh_token: token } satisfies RefreshTokenRequest,
       { skipAuth: true }
     );
@@ -111,7 +111,7 @@ export class AuthService extends BaseService {
    * @returns Success message
    */
   async logout(): Promise<MessageResponse> {
-    const response = await this.http.post<MessageResponse>('/auth/logout');
+    const response = await this.http.post<MessageResponse>('/api/auth/logout');
 
     // Clear stored tokens
     const tokenStorage = this.http.getTokenStorage();
@@ -125,7 +125,7 @@ export class AuthService extends BaseService {
    * @returns User profile
    */
   async getProfile(): Promise<User> {
-    const response = await this.http.get<User>('/auth/profile');
+    const response = await this.http.get<User>('/api/auth/profile');
     return response.data;
   }
 
@@ -135,7 +135,7 @@ export class AuthService extends BaseService {
    * @returns Updated user profile
    */
   async updateProfile(data: UpdateProfileRequest): Promise<User> {
-    const response = await this.http.put<User>('/auth/profile', data);
+    const response = await this.http.put<User>('/api/auth/profile', data);
     return response.data;
   }
 
@@ -146,7 +146,7 @@ export class AuthService extends BaseService {
    */
   async changePassword(data: ChangePasswordRequest): Promise<MessageResponse> {
     const response = await this.http.post<MessageResponse>(
-      '/auth/change-password',
+      '/api/auth/change-password',
       data
     );
     return response.data;
@@ -159,7 +159,7 @@ export class AuthService extends BaseService {
    */
   async verifyEmail(data: VerifyEmailRequest): Promise<ValidationResponse> {
     const response = await this.http.post<ValidationResponse>(
-      '/auth/verify/email',
+      '/api/auth/verify/email',
       data,
       { skipAuth: true }
     );
@@ -175,7 +175,7 @@ export class AuthService extends BaseService {
     data: ResendVerificationRequest
   ): Promise<EmailMessageResponse> {
     const response = await this.http.post<EmailMessageResponse>(
-      '/auth/verify/resend',
+      '/api/auth/verify/resend',
       data,
       { skipAuth: true }
     );
@@ -191,7 +191,7 @@ export class AuthService extends BaseService {
     data: PasswordResetRequestRequest
   ): Promise<EmailMessageResponse> {
     const response = await this.http.post<EmailMessageResponse>(
-      '/auth/password/reset/request',
+      '/api/auth/password/reset/request',
       data,
       { skipAuth: true }
     );
@@ -207,7 +207,7 @@ export class AuthService extends BaseService {
     data: PasswordResetCompleteRequest
   ): Promise<MessageResponse> {
     const response = await this.http.post<MessageResponse>(
-      '/auth/password/reset/complete',
+      '/api/auth/password/reset/complete',
       data,
       { skipAuth: true }
     );
@@ -257,7 +257,7 @@ export class AuthService extends BaseService {
    */
   async validateToken(accessToken: string): Promise<TokenValidationResponse> {
     const response = await this.http.post<TokenValidationResponse>(
-      '/v1/token/validate',
+      '/api/v1/token/validate',
       { access_token: accessToken },
       { skipAuth: true }
     );

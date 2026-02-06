@@ -28,7 +28,7 @@ export class AdminLDAPService extends BaseService {
    * @returns List of LDAP configurations
    */
   async listConfigs(): Promise<LDAPConfigListResponse> {
-    const response = await this.http.get<LDAPConfigListResponse>('/admin/ldap/configs');
+    const response = await this.http.get<LDAPConfigListResponse>('/api/admin/ldap/configs');
     return response.data;
   }
 
@@ -37,7 +37,7 @@ export class AdminLDAPService extends BaseService {
    * @returns Active LDAP configuration
    */
   async getActiveConfig(): Promise<LDAPConfig> {
-    const response = await this.http.get<LDAPConfig>('/admin/ldap/config');
+    const response = await this.http.get<LDAPConfig>('/api/admin/ldap/config');
     return response.data;
   }
 
@@ -47,7 +47,7 @@ export class AdminLDAPService extends BaseService {
    * @returns LDAP configuration details
    */
   async getConfig(id: string): Promise<LDAPConfig> {
-    const response = await this.http.get<LDAPConfig>(`/admin/ldap/config/${id}`);
+    const response = await this.http.get<LDAPConfig>(`/api/admin/ldap/config/${id}`);
     return response.data;
   }
 
@@ -57,7 +57,7 @@ export class AdminLDAPService extends BaseService {
    * @returns Created configuration
    */
   async createConfig(data: CreateLDAPConfigRequest): Promise<LDAPConfig> {
-    const response = await this.http.post<LDAPConfig>('/admin/ldap/config', data);
+    const response = await this.http.post<LDAPConfig>('/api/admin/ldap/config', data);
     return response.data;
   }
 
@@ -68,7 +68,7 @@ export class AdminLDAPService extends BaseService {
    * @returns Updated configuration
    */
   async updateConfig(id: string, data: UpdateLDAPConfigRequest): Promise<LDAPConfig> {
-    const response = await this.http.put<LDAPConfig>(`/admin/ldap/config/${id}`, data);
+    const response = await this.http.put<LDAPConfig>(`/api/admin/ldap/config/${id}`, data);
     return response.data;
   }
 
@@ -78,7 +78,7 @@ export class AdminLDAPService extends BaseService {
    * @returns Success message
    */
   async deleteConfig(id: string): Promise<MessageResponse> {
-    const response = await this.http.delete<MessageResponse>(`/admin/ldap/config/${id}`);
+    const response = await this.http.delete<MessageResponse>(`/api/admin/ldap/config/${id}`);
     return response.data;
   }
 
@@ -88,7 +88,7 @@ export class AdminLDAPService extends BaseService {
    * @returns Test result
    */
   async testConnection(data: LDAPTestConnectionRequest): Promise<LDAPTestConnectionResponse> {
-    const response = await this.http.post<LDAPTestConnectionResponse>('/admin/ldap/test-connection', data);
+    const response = await this.http.post<LDAPTestConnectionResponse>('/api/admin/ldap/test-connection', data);
     return response.data;
   }
 
@@ -99,7 +99,7 @@ export class AdminLDAPService extends BaseService {
    * @returns Sync result
    */
   async sync(id: string, data?: LDAPSyncRequest): Promise<LDAPSyncResponse> {
-    const response = await this.http.post<LDAPSyncResponse>(`/admin/ldap/config/${id}/sync`, data || {});
+    const response = await this.http.post<LDAPSyncResponse>(`/api/admin/ldap/config/${id}/sync`, data || {});
     return response.data;
   }
 
@@ -109,8 +109,7 @@ export class AdminLDAPService extends BaseService {
    * @returns Sync logs
    */
   async getSyncLogs(id: string): Promise<LDAPSyncLogsResponse> {
-    const response = await this.http.get<LDAPSyncLogsResponse>(`/admin/ldap/config/${id}/sync-logs`);
+    const response = await this.http.get<LDAPSyncLogsResponse>(`/api/admin/ldap/config/${id}/sync-logs`);
     return response.data;
   }
 }
-
