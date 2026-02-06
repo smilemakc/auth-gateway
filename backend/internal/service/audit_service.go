@@ -23,12 +23,13 @@ func NewAuditService(auditRepo *repository.AuditRepository, geoService *GeoServi
 }
 
 type AuditLogParams struct {
-	UserID    *uuid.UUID
-	Action    models.AuditAction
-	Status    models.AuditStatus
-	IP        string
-	UserAgent string
-	Details   map[string]interface{}
+	UserID        *uuid.UUID
+	ApplicationID *uuid.UUID
+	Action        models.AuditAction
+	Status        models.AuditStatus
+	IP            string
+	UserAgent     string
+	Details       map[string]interface{}
 }
 
 func (s *AuditService) Log(params AuditLogParams) {
@@ -67,14 +68,15 @@ func (s *AuditService) buildAuditLog(params AuditLogParams) *models.AuditLog {
 	}
 
 	return &models.AuditLog{
-		ID:        uuid.New(),
-		UserID:    params.UserID,
-		Action:    string(params.Action),
-		IPAddress: params.IP,
-		UserAgent: params.UserAgent,
-		Status:    string(params.Status),
-		Details:   detailsJSON,
-		CreatedAt: time.Now(),
+		ID:            uuid.New(),
+		UserID:        params.UserID,
+		ApplicationID: params.ApplicationID,
+		Action:        string(params.Action),
+		IPAddress:     params.IP,
+		UserAgent:     params.UserAgent,
+		Status:        string(params.Status),
+		Details:       detailsJSON,
+		CreatedAt:     time.Now(),
 	}
 }
 
@@ -120,4 +122,8 @@ func (s *AuditService) CountByActionSince(ctx context.Context, action models.Aud
 
 func (s *AuditService) DeleteOlderThan(ctx context.Context, days int) error {
 	return s.auditRepo.DeleteOlderThan(ctx, days)
+}
+
+func (s *AuditService) ListByApp(ctx context.Context, appID uuid.UUID, limit, offset int) ([]*models.AuditLog, int, error) {
+	return s.auditRepo.ListByApp(ctx, appID, limit, offset)
 }

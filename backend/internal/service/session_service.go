@@ -431,3 +431,17 @@ func (s *SessionService) UpdateSessionName(ctx context.Context, sessionID uuid.U
 func (s *SessionService) CleanupExpiredSessions(ctx context.Context) error {
 	return s.sessionRepo.DeleteExpiredSessions(ctx, 7*24*time.Hour) // Delete sessions older than 7 days
 }
+
+// =============================================================================
+// App-Aware Session Methods
+// =============================================================================
+
+// GetUserSessionsByApp retrieves all sessions for a specific user in a specific application
+func (s *SessionService) GetUserSessionsByApp(ctx context.Context, userID, appID uuid.UUID) ([]models.Session, error) {
+	return s.sessionRepo.GetUserSessionsByApp(ctx, userID, appID)
+}
+
+// GetAppSessionsPaginated retrieves paginated sessions for a specific application
+func (s *SessionService) GetAppSessionsPaginated(ctx context.Context, appID uuid.UUID, page, perPage int) ([]models.Session, int, error) {
+	return s.sessionRepo.GetAppSessionsPaginated(ctx, appID, page, perPage)
+}

@@ -372,3 +372,8 @@ func (s *WebhookService) TestWebhook(ctx context.Context, id uuid.UUID, req *mod
 func (s *WebhookService) GetAvailableEvents() []string {
 	return models.GetAvailableEvents()
 }
+
+// ListWebhooksByApp retrieves webhooks for a specific application
+func (s *WebhookService) ListWebhooksByApp(ctx context.Context, appID uuid.UUID) ([]*models.Webhook, error) {
+	return s.repo.ListByApp(ctx, appID)
+}

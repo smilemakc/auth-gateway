@@ -314,3 +314,96 @@ func (s *RBACService) GetUserRoles(ctx context.Context, userID uuid.UUID) ([]mod
 	}
 	return roles, nil
 }
+
+// ============================================================
+// Application-Scoped RBAC Methods
+// ============================================================
+
+// CreateRoleInApp creates a new role scoped to a specific application
+func (s *RBACService) CreateRoleInApp(ctx context.Context, name, displayName, description string, appID *uuid.UUID) (*models.Role, error) {
+	existing, err := s.rbacRepo.GetRoleByNameAndApp(ctx, name, appID)
+	if err == nil && existing != nil {
+		return nil, fmt.Errorf("role with name %s already exists in this application", name)
+	}
+
+	role := &models.Role{
+		Name:          name,
+		DisplayName:   displayName,
+		Description:   description,
+		IsSystemRole:  false,
+		ApplicationID: appID,
+	}
+
+	err = s.rbacRepo.CreateRole(ctx, role)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.rbacRepo.GetRoleByID(ctx, role.ID)
+}
+
+// ListRolesByApp retrieves all roles for a specific application
+func (s *RBACService) ListRolesByApp(ctx context.Context, appID *uuid.UUID) ([]models.Role, error) {
+	return s.rbacRepo.ListRolesByApp(ctx, appID)
+}
+
+// ListPermissionsByApp retrieves all permissions for a specific application
+func (s *RBACService) ListPermissionsByApp(ctx context.Context, appID *uuid.UUID) ([]models.Permission, error) {
+	return s.rbacRepo.ListPermissionsByApp(ctx, appID)
+}
+
+// HasPermissionInApp checks if a user has a specific permission in an application context
+func (s *RBACService) HasPermissionInApp(ctx context.Context, userID uuid.UUID, permissionName string, appID *uuid.UUID) (bool, error) {
+	hasGlobal, err := s.rbacRepo.HasPermission(ctx, userID, permissionName)
+	if err != nil {
+		return false, err
+	}
+
+	if hasGlobal {
+		return true, nil
+	}
+
+	if appID != nil {
+		return s.rbacRepo.HasPermissionInApp(ctx, userID, permissionName, appID)
+	}
+
+	return false, nil
+}
+
+// GetUserRolesInApp returns all roles for a user in a specific application
+func (s *RBACService) GetUserRolesInApp(ctx context.Context, userID uuid.UUID, appID *uuid.UUID) ([]models.Role, error) {
+	return s.rbacRepo.GetUserRolesInApp(ctx, userID, appID)
+}
+
+// AssignRoleToUserInApp assigns a role to a user in an application context
+func (s *RBACService) AssignRoleToUserInApp(ctx context.Context, userID, roleID, assignedBy uuid.UUID, appID *uuid.UUID) error {
+	role, err := s.rbacRepo.GetRoleByID(ctx, roleID)
+	if err != nil {
+		return fmt.Errorf("role not found: %w", err)
+	}
+
+	if err := s.rbacRepo.AssignRoleToUserInApp(ctx, userID, roleID, assignedBy, appID); err != nil {
+		return fmt.Errorf("failed to assign role: %w", err)
+	}
+
+	details := map[string]interface{}{
+		"user_id":       userID.String(),
+		"role_id":       roleID.String(),
+		"role_name":     role.Name,
+		"assigned_by":   assignedBy.String(),
+		"resource_type": "user_role",
+		"resource_id":   userID.String(),
+	}
+	if appID != nil {
+		details["application_id"] = appID.String()
+	}
+
+	s.auditService.Log(AuditLogParams{
+		UserID:  &userID,
+		Action:  models.ActionRoleAssigned,
+		Status:  models.StatusSuccess,
+		Details: details,
+	})
+
+	return nil
+}

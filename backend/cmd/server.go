@@ -134,8 +134,10 @@ type serviceSet struct {
 	Bulk            *service.BulkService
 	SCIM            *service.SCIMService
 	SAML            *service.SAMLService
-	EmailProfile    *service.EmailProfileService
-	Application     *service.ApplicationService
+	EmailProfile     *service.EmailProfileService
+	Application      *service.ApplicationService
+	AppOAuthProvider *service.AppOAuthProviderService
+	Telegram         *service.TelegramService
 }
 
 type handlerSet struct {
@@ -540,6 +542,12 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	// Application Service
 	applicationService := service.NewApplicationService(repos.Application, deps.log)
 
+	// App OAuth Provider Service
+	appOAuthProviderService := service.NewAppOAuthProviderService(repos.AppOAuthProvider, repos.Application, deps.log)
+
+	// Telegram Service
+	telegramService := service.NewTelegramService(repos.TelegramBot, repos.UserTelegram, repos.Application, deps.log)
+
 	return &serviceSet{
 		Geo:             geoService,
 		Audit:           auditService,
@@ -564,8 +572,10 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 		Bulk:            bulkService,
 		SCIM:            scimService,
 		SAML:            samlService,
-		EmailProfile:    emailProfileService,
-		Application:     applicationService,
+		EmailProfile:     emailProfileService,
+		Application:      applicationService,
+		AppOAuthProvider: appOAuthProviderService,
+		Telegram:         telegramService,
 	}
 }
 
