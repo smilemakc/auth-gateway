@@ -56,7 +56,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const location = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { mode, setMode, isDark } = useTheme();
-  const { currentApplicationId, applications, setCurrentApplicationId } = useApplication();
+  const { currentApplicationId, currentApplication, applications, setCurrentApplicationId } = useApplication();
 
   const navGroups: NavGroup[] = [
     {
@@ -391,6 +391,15 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          {currentApplication && (
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-sm text-primary">
+              <Boxes className="h-4 w-4" />
+              <span>
+                {t('apps.filtering_by') || 'Filtering by'}:{' '}
+                <strong>{currentApplication.display_name || currentApplication.name}</strong>
+              </span>
+            </div>
+          )}
           {children}
         </main>
       </div>
