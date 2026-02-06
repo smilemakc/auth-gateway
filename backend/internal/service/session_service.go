@@ -258,7 +258,7 @@ func (s *SessionService) GetUserSessions(ctx context.Context, userID uuid.UUID, 
 
 	var responseSessions []models.ActiveSessionResponse
 	for _, session := range sessions {
-		responseSessions = append(responseSessions, models.ActiveSessionResponse{
+		resp := models.ActiveSessionResponse{
 			ID:           session.ID,
 			UserID:       session.UserID,
 			DeviceType:   session.DeviceType,
@@ -271,7 +271,12 @@ func (s *SessionService) GetUserSessions(ctx context.Context, userID uuid.UUID, 
 			CreatedAt:    session.CreatedAt,
 			ExpiresAt:    session.ExpiresAt,
 			IsCurrent:    false, // This should be set by the handler
-		})
+		}
+		if session.User != nil {
+			resp.UserEmail = session.User.Email
+			resp.UserName = session.User.Username
+		}
+		responseSessions = append(responseSessions, resp)
 	}
 
 	totalPages := (total + perPage - 1) / perPage
@@ -294,7 +299,7 @@ func (s *SessionService) GetAllSessions(ctx context.Context, page, perPage int) 
 
 	var responseSessions []models.ActiveSessionResponse
 	for _, session := range sessions {
-		responseSessions = append(responseSessions, models.ActiveSessionResponse{
+		resp := models.ActiveSessionResponse{
 			ID:           session.ID,
 			UserID:       session.UserID,
 			DeviceType:   session.DeviceType,
@@ -307,7 +312,12 @@ func (s *SessionService) GetAllSessions(ctx context.Context, page, perPage int) 
 			CreatedAt:    session.CreatedAt,
 			ExpiresAt:    session.ExpiresAt,
 			IsCurrent:    false,
-		})
+		}
+		if session.User != nil {
+			resp.UserEmail = session.User.Email
+			resp.UserName = session.User.Username
+		}
+		responseSessions = append(responseSessions, resp)
 	}
 
 	totalPages := (total + perPage - 1) / perPage

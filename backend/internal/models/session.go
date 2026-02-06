@@ -35,6 +35,10 @@ type ActiveSessionResponse struct {
 	ID uuid.UUID `json:"id" example:"123e4567-e89b-12d3-a456-426614174000"`
 	// User unique identifier
 	UserID uuid.UUID `json:"user_id" example:"123e4567-e89b-12d3-a456-426614174000"`
+	// User email address
+	UserEmail string `json:"user_email,omitempty" example:"user@example.com"`
+	// User username
+	UserName string `json:"user_name,omitempty" example:"john_doe"`
 	// Device type (mobile, desktop, tablet)
 	DeviceType string `json:"device_type,omitempty" example:"desktop"`
 	// Operating system with version

@@ -30,6 +30,7 @@ export interface IPFilterListResponse {
 export interface AuditLogEntry {
   id: string;
   user_id: string;
+  user_email?: string;
   action: string;
   resource: string;
   status: 'success' | 'failure';
@@ -245,6 +246,7 @@ export interface EmailTemplate extends TimestampedEntity {
   variables: string[];
   is_active: boolean;
   application_id?: string;
+  application?: { id: string; name: string; display_name?: string };
 }
 
 /** Create email template request */

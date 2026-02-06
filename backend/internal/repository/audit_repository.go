@@ -40,6 +40,7 @@ func (r *AuditRepository) GetByUserID(ctx context.Context, userID uuid.UUID, lim
 
 	err := r.db.NewSelect().
 		Model(&logs).
+		Relation("User").
 		Where("user_id = ?", userID).
 		Order("created_at DESC").
 		Limit(limit).
@@ -98,6 +99,7 @@ func (r *AuditRepository) List(ctx context.Context, limit, offset int) ([]*model
 
 	err := r.db.NewSelect().
 		Model(&logs).
+		Relation("User").
 		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).
@@ -166,6 +168,7 @@ func (r *AuditRepository) ListByApp(ctx context.Context, appID uuid.UUID, limit,
 	}
 
 	err = query.
+		Relation("User").
 		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).

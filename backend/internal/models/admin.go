@@ -132,6 +132,8 @@ type AdminAuditLogResponse struct {
 	ID uuid.UUID `json:"id" example:"123e4567-e89b-12d3-a456-426614174000"`
 	// User ID who performed the action
 	UserID *uuid.UUID `json:"user_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174000"`
+	// User email who performed the action
+	UserEmail string `json:"user_email,omitempty" example:"admin@example.com"`
 	// Action performed
 	Action string `json:"action" example:"signin"`
 	// Action status

@@ -98,6 +98,7 @@ func (r *SessionRepository) GetUserSessionsPaginated(ctx context.Context, userID
 
 	total, err := r.db.NewSelect().
 		Model(&sessions).
+		Relation("User").
 		Where("user_id = ?", userID).
 		Where("revoked_at IS NULL").
 		Where("expires_at > ?", bun.Safe("NOW()")).
@@ -121,6 +122,7 @@ func (r *SessionRepository) GetAllActiveSessionsPaginated(ctx context.Context, p
 
 	total, err := r.db.NewSelect().
 		Model(&sessions).
+		Relation("User").
 		Where("revoked_at IS NULL").
 		Where("expires_at > ?", bun.Safe("NOW()")).
 		Order("last_active_at DESC").

@@ -104,7 +104,7 @@ const AuditLogs: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <User size={16} />
-                      {log.user_id || t('audit.system')}
+                      {log.user_email || log.user_id || t('audit.system')}
                     </div>
                   </td>
                   <td className="px-6 py-4">

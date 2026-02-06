@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Globe, Github, Send, Instagram, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Globe, Github, Send, Instagram, Loader2, Copy } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useOAuthProviders, useDeleteOAuthProvider, useToggleOAuthProvider } from '../hooks/useOAuth';
 
@@ -107,9 +107,20 @@ const OAuthProviders: React.FC = () => {
               <div className="space-y-3 mt-6">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">{t('oauth.client_id')}</label>
-                  <code className="block bg-muted rounded px-3 py-2 text-sm text-muted-foreground font-mono truncate border border-border">
-                    {provider.client_id}
-                  </code>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 bg-muted rounded px-3 py-2 text-sm text-muted-foreground font-mono truncate border border-border">
+                      {provider.client_id
+                        ? `${provider.client_id.slice(0, 4)}${'*'.repeat(Math.max(0, provider.client_id.length - 8))}${provider.client_id.slice(-4)}`
+                        : '—'}
+                    </code>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(provider.client_id)}
+                      className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
+                      title={t('common.copy') || 'Copy'}
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Callback URL</label>

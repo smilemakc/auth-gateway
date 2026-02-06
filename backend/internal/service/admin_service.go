@@ -450,7 +450,7 @@ func (s *AdminService) ListAuditLogs(ctx context.Context, page, pageSize int, us
 			json.Unmarshal(log.Details, &details)
 		}
 
-		adminLogs = append(adminLogs, &models.AdminAuditLogResponse{
+		resp := &models.AdminAuditLogResponse{
 			ID:        log.ID,
 			UserID:    log.UserID,
 			Action:    string(log.Action),
@@ -459,7 +459,13 @@ func (s *AdminService) ListAuditLogs(ctx context.Context, page, pageSize int, us
 			UserAgent: log.UserAgent,
 			Details:   details,
 			CreatedAt: log.CreatedAt,
-		})
+		}
+
+		if log.User != nil {
+			resp.UserEmail = log.User.Email
+		}
+
+		adminLogs = append(adminLogs, resp)
 	}
 
 	return adminLogs, nil

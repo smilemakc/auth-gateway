@@ -24,6 +24,7 @@ type AuditLog struct {
 	Latitude     float64    `json:"latitude,omitempty" bun:"latitude"`
 	Longitude    float64    `json:"longitude,omitempty" bun:"longitude"`
 	CreatedAt    time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	User         *User      `bun:"rel:belongs-to,join:user_id=id" json:"-"`
 }
 
 // AuditAction represents the type of action being logged

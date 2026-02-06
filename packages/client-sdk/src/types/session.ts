@@ -6,6 +6,8 @@
 export interface Session {
   id: string;
   user_id: string;
+  user_email?: string;
+  user_name?: string;
   device_type: string;
   os: string;
   browser: string;

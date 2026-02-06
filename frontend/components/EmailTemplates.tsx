@@ -165,10 +165,20 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({ embedded = false }) => 
                               </Link>
                             </div>
 
-                            <div className="mb-2">
+                            <div className="mb-2 flex flex-wrap gap-2">
                               <span className={`inline-block px-2 py-1 rounded text-xs font-semibold border ${getTemplateTypeColor(template.type)}`}>
                                 {getTemplateTypeLabel(template.type)}
                               </span>
+                              {template.application && (
+                                <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-muted text-muted-foreground border border-border">
+                                  {template.application.display_name || template.application.name}
+                                </span>
+                              )}
+                              {!template.application && (
+                                <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                                  Global
+                                </span>
+                              )}
                             </div>
 
                             <h3 className="text-base font-bold text-foreground mb-1">{template.name}</h3>
