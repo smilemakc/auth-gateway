@@ -4,6 +4,7 @@ import { Search, Plus, Edit, Trash2, Users, Eye, FolderTree } from 'lucide-react
 import type { Group } from '@auth-gateway/client-sdk';
 import { useLanguage } from '../services/i18n';
 import { useGroups, useDeleteGroup } from '../hooks/useGroups';
+import { formatDate } from '../lib/date';
 
 const Groups: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -132,7 +133,7 @@ const Groups: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                    {new Date(group.created_at).toLocaleDateString()}
+                    {formatDate(group.created_at)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Trash2, Edit2, Bot, CheckCircle, XCircle, Copy, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useOAuthClients, useDeleteOAuthClient } from '../hooks/useOAuthClients';
+import { formatDate } from '../lib/date';
 
 const ServiceAccounts: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -104,7 +105,7 @@ const ServiceAccounts: React.FC = () => {
             </div>
 
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-border">
-               <span className="text-xs text-muted-foreground">{account.created_at ? new Date(account.created_at).toLocaleDateString() : '-'}</span>
+               <span className="text-xs text-muted-foreground">{account.created_at ? formatDate(account.created_at) : '-'}</span>
                <div className="flex gap-2">
                  <Link
                    to={`/developers/service-accounts/${account.id}`}

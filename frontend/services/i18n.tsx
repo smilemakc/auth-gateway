@@ -67,6 +67,10 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.logout': 'Выйти',
     'nav.menu': 'Меню',
 
+    // Breadcrumbs
+    'breadcrumb.home': 'Главная',
+    'breadcrumb.details': 'Детали',
+
     // Dashboard
     'dash.title': 'Обзор системы',
     'dash.total_users': 'Всего пользователей',
@@ -481,6 +485,9 @@ const translations: Record<Language, Record<string, string>> = {
     'dash.new_users': 'Новые пользователи',
     'dash.failed_logins': 'Неудачные входы',
     'dash.error_loading': 'Ошибка загрузки дашборда',
+    'dash.quick_actions': 'Быстрые действия',
+    'dash.recent_activity': 'Последние события',
+    'dash.view_all': 'Показать все',
 
     // User Details - additional
     'user.login': 'Вход',
@@ -711,6 +718,10 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.token_inspector': 'Token Inspector',
     'nav.logout': 'Sign Out',
     'nav.menu': 'Menu',
+
+    // Breadcrumbs
+    'breadcrumb.home': 'Home',
+    'breadcrumb.details': 'Details',
 
     // Dashboard
     'dash.title': 'System Overview',
@@ -1127,6 +1138,9 @@ const translations: Record<Language, Record<string, string>> = {
     'dash.new_users': 'New Users',
     'dash.failed_logins': 'Failed Logins',
     'dash.error_loading': 'Error loading dashboard',
+    'dash.quick_actions': 'Quick Actions',
+    'dash.recent_activity': 'Recent Activity',
+    'dash.view_all': 'View All',
 
     // User Details - additional
     'user.login': 'Login',
@@ -1321,7 +1335,11 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const t = (key: string): string => {
-    return translations[language][key] || key;
+    const value = translations[language][key];
+    if (!value && import.meta.env.DEV) {
+      console.warn(`[i18n] Missing translation key: "${key}" for language: "${language}"`);
+    }
+    return value || key;
   };
 
   return (

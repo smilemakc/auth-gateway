@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../services/i18n';
 import { useTheme } from '../lib/theme';
 import { useApplication } from '../services/appContext';
+import Breadcrumb from './Breadcrumb';
 import {
   LayoutDashboard,
   Users,
@@ -316,14 +317,14 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
             <Menu size={24} />
           </button>
 
-          <div className="flex-1 px-4">
-            {/* Breadcrumb or Search could go here */}
+          <div className="flex-1 px-4 hidden sm:block">
+            <Breadcrumb />
           </div>
 
           <div className="flex items-center gap-4">
             {/* Application Selector */}
             {applications.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2">
                 <select
                   value={currentApplicationId ?? ''}
                   onChange={(e) => setCurrentApplicationId(e.target.value || null)}
@@ -368,7 +369,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
             </div>
 
             {/* Language Switcher */}
-            <div className="flex items-center border rounded-md overflow-hidden border-border bg-card">
+            <div className="hidden sm:flex items-center border rounded-md overflow-hidden border-border bg-card">
               <button
                 onClick={() => setLanguage('en')}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors ${language === 'en' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent'}`}

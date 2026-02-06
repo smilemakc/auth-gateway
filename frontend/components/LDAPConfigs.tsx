@@ -4,6 +4,7 @@ import { Plus, Edit, Trash2, TestTube, RefreshCw, FileText, CheckCircle, XCircle
 import type { LDAPConfig } from '@auth-gateway/client-sdk';
 import { useLDAPConfigs, useDeleteLDAPConfig, useSyncLDAP, useTestLDAPConnection } from '../hooks/useLDAP';
 import { useLanguage } from '../services/i18n';
+import { formatRelative } from '../lib/date';
 
 const LDAPConfigs: React.FC = () => {
   const navigate = useNavigate();
@@ -157,7 +158,7 @@ const LDAPConfigs: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                    {config.last_sync_at ? new Date(config.last_sync_at).toLocaleString() : t('common.never')}
+                    {config.last_sync_at ? formatRelative(config.last_sync_at) : t('common.never')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-1">

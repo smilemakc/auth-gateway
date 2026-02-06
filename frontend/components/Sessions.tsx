@@ -2,6 +2,7 @@ import React from 'react';
 import {Clock, Key, MapPin, Monitor, Trash2, User} from 'lucide-react';
 import {useRevokeSession, useSessions} from '../hooks/useSessions';
 import { useLanguage } from '../services/i18n';
+import { formatRelative } from '../lib/date';
 
 const Sessions: React.FC = () => {
     const {data, isLoading, error} = useSessions(1, 100);
@@ -84,7 +85,7 @@ const Sessions: React.FC = () => {
                                 <td className="px-6 py-4 text-muted-foreground">
                                     <div className="flex items-center gap-2">
                                         <Clock size={14}/>
-                                        {new Date(session.last_active_at || session.updated_at).toLocaleString()}
+                                        {formatRelative(session.last_active_at || session.updated_at)}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">

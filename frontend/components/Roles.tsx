@@ -6,6 +6,7 @@ import { ArrowLeft, Shield, Plus, Edit2, Trash2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useRoles, useDeleteRole } from '../hooks/useRBAC';
 import { useApplication } from '../services/appContext';
+import { formatDate } from '../lib/date';
 
 const Roles: React.FC = () => {
   const navigate = useNavigate();
@@ -103,7 +104,7 @@ const Roles: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                    {role.created_at ? new Date(role.created_at).toLocaleDateString() : '-'}
+                    {role.created_at ? formatDate(role.created_at) : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Clock, Shield, Globe, User, ShieldAlert } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useAuditLogs } from '../hooks/useAuditLogs';
+import { formatDateTime } from '../lib/date';
 
 const AuditLogs: React.FC = () => {
   const { t } = useLanguage();
@@ -123,7 +124,7 @@ const AuditLogs: React.FC = () => {
                   <td className="px-6 py-4 text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Clock size={14} />
-                      {new Date(log.created_at).toLocaleString()}
+                      {formatDateTime(log.created_at)}
                     </div>
                   </td>
                 </tr>

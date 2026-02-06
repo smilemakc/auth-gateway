@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShieldAlert, ShieldCheck, Plus, Trash2, Search, Info, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useWhitelistFilters, useBlacklistFilters, useCreateIpFilter, useDeleteIpFilter } from '../hooks/useIpFilters';
+import { formatDate } from '../lib/date';
 
 const IpSecurity: React.FC = () => {
   const navigate = useNavigate();
@@ -158,7 +159,7 @@ const IpSecurity: React.FC = () => {
                         {rule.created_by || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {rule.created_at ? new Date(rule.created_at).toLocaleDateString() : '-'}
+                        {rule.created_at ? formatDate(rule.created_at) : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button

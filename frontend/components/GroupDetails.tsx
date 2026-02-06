@@ -4,6 +4,7 @@ import { Edit, Trash2, Users, Plus, X, Loader } from 'lucide-react';
 import type { AdminUserResponse } from '@auth-gateway/client-sdk';
 import { useGroup, useDeleteGroup, useGroupMembers, useAddGroupMembers, useRemoveGroupMember } from '../hooks/useGroups';
 import { useUsers } from '../hooks/useUsers';
+import { formatDate } from '../lib/date';
 
 const GroupDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -128,7 +129,7 @@ const GroupDetails: React.FC = () => {
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <div className="text-sm text-muted-foreground">Created</div>
           <div className="text-lg font-semibold text-foreground mt-1">
-            {new Date(group.created_at).toLocaleDateString()}
+            {formatDate(group.created_at)}
           </div>
         </div>
       </div>

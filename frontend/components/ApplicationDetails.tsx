@@ -8,6 +8,7 @@ import ApplicationUsersTab from './ApplicationUsersTab';
 import ApplicationEmailTemplatesTab from './ApplicationEmailTemplatesTab';
 import ApplicationOAuthProviders from './ApplicationOAuthProviders';
 import TelegramBots from './TelegramBots';
+import { formatDateTime } from '../lib/date';
 
 type Tab = 'overview' | 'branding' | 'users' | 'templates' | 'oauth' | 'telegram';
 
@@ -193,7 +194,7 @@ const ApplicationDetails: React.FC = () => {
                   {t('common.created')}
                 </dt>
                 <dd className="text-sm text-foreground">
-                  {new Date(application.created_at).toLocaleString()}
+                  {formatDateTime(application.created_at)}
                 </dd>
               </div>
 
@@ -202,7 +203,7 @@ const ApplicationDetails: React.FC = () => {
                   {t('common.updated')}
                 </dt>
                 <dd className="text-sm text-foreground">
-                  {new Date(application.updated_at).toLocaleString()}
+                  {formatDateTime(application.updated_at)}
                 </dd>
               </div>
             </dl>

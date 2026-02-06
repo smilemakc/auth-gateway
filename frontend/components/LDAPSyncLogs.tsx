@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 import { useLDAPSyncLogs } from '../hooks/useLDAP';
+import { formatDateTime } from '../lib/date';
 
 const LDAPSyncLogs: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -97,11 +98,11 @@ const LDAPSyncLogs: React.FC = () => {
                 <tr key={log.id} className="hover:bg-accent transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-foreground">
-                      {new Date(log.started_at).toLocaleString()}
+                      {formatDateTime(log.started_at)}
                     </div>
                     {log.completed_at && (
                       <div className="text-xs text-muted-foreground">
-                        Completed: {new Date(log.completed_at).toLocaleString()}
+                        Completed: {formatDateTime(log.completed_at)}
                       </div>
                     )}
                   </td>

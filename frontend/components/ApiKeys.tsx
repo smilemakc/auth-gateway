@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Trash2, Ban, Copy, CheckCircle, X, Plus, Key } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useApiKeys, useRevokeApiKey, useDeleteApiKey, useCreateApiKey } from '../hooks/useApiKeys';
+import { formatDate } from '../lib/date';
 
 const AVAILABLE_SCOPES = [
   'users:read',
@@ -301,7 +302,7 @@ const ApiKeys: React.FC = () => {
               </div>
 
               <div className="mt-auto pt-4 border-t border-border flex items-center justify-between text-sm">
-                 <span className="text-muted-foreground">{t('common.created')}: {new Date(apiKey.created_at).toLocaleDateString()}</span>
+                 <span className="text-muted-foreground">{t('common.created')}: {formatDate(apiKey.created_at)}</span>
 
                  <div className="flex gap-2">
                    {apiKey.is_active && (

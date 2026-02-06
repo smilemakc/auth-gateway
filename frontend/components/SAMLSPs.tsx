@@ -4,6 +4,7 @@ import { Plus, Edit, Trash2, FileText, CheckCircle, XCircle } from 'lucide-react
 import type { SAMLServiceProvider } from '@auth-gateway/client-sdk';
 import { useSAMLSPs, useDeleteSAMLSP } from '../hooks/useSAML';
 import { useLanguage } from '../services/i18n';
+import { formatDate } from '../lib/date';
 
 const SAMLSPs: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -119,7 +120,7 @@ const SAMLSPs: React.FC = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                    {new Date(sp.created_at).toLocaleDateString()}
+                    {formatDate(sp.created_at)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">

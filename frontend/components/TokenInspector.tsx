@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Search, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../services/i18n';
+import { formatDateTime } from '../lib/date';
 
 const TokenInspector: React.FC = () => {
   const navigate = useNavigate();
@@ -89,7 +90,7 @@ const TokenInspector: React.FC = () => {
                <div>
                   <p className="font-medium">{isExpired ? 'Token Expired' : 'Token Active'}</p>
                   {decoded.payload.exp && (
-                    <p className="text-xs mt-1">Expires: {new Date(decoded.payload.exp * 1000).toLocaleString()}</p>
+                    <p className="text-xs mt-1">Expires: {formatDateTime(new Date(decoded.payload.exp * 1000).toISOString())}</p>
                   )}
                </div>
              </div>

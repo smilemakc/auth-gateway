@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Trash2, Edit2, Activity, CheckCircle, XCircle, Eye, EyeOff, Loader2, Network } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useWebhooks, useDeleteWebhook } from '../hooks/useWebhooks';
+import { formatRelative } from '../lib/date';
 
 const Webhooks: React.FC = () => {
   const [revealedSecrets, setRevealedSecrets] = useState<string[]>([]);
@@ -140,7 +141,7 @@ const Webhooks: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                      {webhook.last_triggered_at ? new Date(webhook.last_triggered_at).toLocaleString() : '-'}
+                      {webhook.last_triggered_at ? formatRelative(webhook.last_triggered_at) : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Edit2, Calendar, FileText, Loader2, ChevronDown, ChevronRight, KeyRound, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useEmailTemplates } from '../hooks/useEmailTemplates';
+import { formatDate } from '../lib/date';
 
 interface EmailTemplatesProps {
   embedded?: boolean;
@@ -203,7 +204,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({ embedded = false }) => 
                             </div>
                             <div className="flex items-center gap-1.5">
                               <Calendar size={12} />
-                              <span>{template.updated_at ? new Date(template.updated_at).toLocaleDateString() : '-'}</span>
+                              <span>{template.updated_at ? formatDate(template.updated_at) : '-'}</span>
                             </div>
                           </div>
                         </div>

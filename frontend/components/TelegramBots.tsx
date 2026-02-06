@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Send, Loader2, Shield, ShieldOff } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useTelegramBots, useDeleteTelegramBot } from '../hooks/useTelegramBots';
+import { formatDate } from '../lib/date';
 
 interface TelegramBotsProps {
   applicationId: string;
@@ -104,7 +105,7 @@ const TelegramBots: React.FC<TelegramBotsProps> = ({ applicationId }) => {
 
             <div className="bg-muted px-6 py-4 border-t border-border flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
-                {bot.created_at ? new Date(bot.created_at).toLocaleDateString() : '-'}
+                {bot.created_at ? formatDate(bot.created_at) : '-'}
               </span>
               <div className="flex items-center gap-2">
                 <Link

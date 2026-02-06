@@ -31,6 +31,7 @@ import { useApiKeys } from '../hooks/useApiKeys';
 import { useUserAuditLogs } from '../hooks/useAuditLogs';
 import { useApplication } from '../services/appContext';
 import { useUserApplicationProfile } from '../hooks/useApplications';
+import { formatDate, formatDateTime, formatRelative } from '../lib/date';
 
 const UserDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -227,14 +228,14 @@ const UserDetails: React.FC = () => {
                   <span className="text-muted-foreground flex items-center gap-2">
                     <Calendar size={16} /> {t('users.col_created')}
                   </span>
-                  <span className="text-foreground">{new Date(user.created_at).toLocaleDateString()}</span>
+                  <span className="text-foreground">{formatDate(user.created_at)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground flex items-center gap-2">
                     <Clock size={16} /> {t('user.login')}
                   </span>
                   <span className="text-foreground">
-                    {user.last_login ? new Date(user.last_login).toLocaleDateString() : '-'}
+                    {user.last_login ? formatRelative(user.last_login) : '-'}
                   </span>
                 </div>
               </div>
@@ -330,7 +331,7 @@ const UserDetails: React.FC = () => {
                               <Globe size={12} /> {session.ip_address}
                             </span>
                             <span className="flex items-center gap-1">
-                              • Active {new Date(session.last_active_at).toLocaleDateString()}
+                              • Active {formatRelative(session.last_active_at)}
                             </span>
                           </div>
                         </div>
@@ -409,7 +410,7 @@ const UserDetails: React.FC = () => {
                         <p className="text-sm text-destructive">{appProfile.ban_reason}</p>
                         {appProfile.banned_at && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            {t('user.banned_on')} {new Date(appProfile.banned_at).toLocaleDateString()}
+                            {t('user.banned_on')} {formatDate(appProfile.banned_at)}
                           </p>
                         )}
                       </div>
@@ -418,7 +419,7 @@ const UserDetails: React.FC = () => {
                       <div className="flex items-center justify-between pt-3 border-t border-border">
                         <span className="text-sm text-muted-foreground">{t('apps.last_access')}</span>
                         <span className="text-sm text-foreground">
-                          {new Date(appProfile.last_access_at).toLocaleString()}
+                          {formatRelative(appProfile.last_access_at)}
                         </span>
                       </div>
                     )}
@@ -451,7 +452,7 @@ const UserDetails: React.FC = () => {
                         </div>
                         <div>
                           <p className="text-sm font-medium capitalize">{acc.provider}</p>
-                          <p className="text-xs text-muted-foreground">{t('user.connected')} {new Date(acc.created_at).toLocaleDateString()}</p>
+                          <p className="text-xs text-muted-foreground">{t('user.connected')} {formatDate(acc.created_at)}</p>
                         </div>
                       </div>
                     </div>
@@ -494,7 +495,7 @@ const UserDetails: React.FC = () => {
                             {key.is_active ? t('common.active') : t('common.inactive')}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-muted-foreground">{new Date(key.created_at).toLocaleDateString()}</td>
+                        <td className="px-6 py-4 text-sm text-muted-foreground">{formatDate(key.created_at)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -526,7 +527,7 @@ const UserDetails: React.FC = () => {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-foreground capitalize">{log.action.replace(/_/g, ' ')}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{formatRelative(log.created_at)}</p>
                       </div>
                     </div>
                     <div className="text-right">

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Globe, Github, Send, Instagram, Loader2, Copy } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useOAuthProviders, useDeleteOAuthProvider, useToggleOAuthProvider } from '../hooks/useOAuth';
+import { formatDate } from '../lib/date';
 
 // Icon mapper
 const getProviderIcon = (provider: string) => {
@@ -133,7 +134,7 @@ const OAuthProviders: React.FC = () => {
 
             <div className="bg-muted px-6 py-4 border-t border-border flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
-                {provider.created_at ? new Date(provider.created_at).toLocaleDateString() : '-'}
+                {provider.created_at ? formatDate(provider.created_at) : '-'}
               </span>
               <div className="flex items-center gap-2">
                 <Link

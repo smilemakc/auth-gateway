@@ -10,6 +10,7 @@ import {
   useRotateOAuthClientSecret,
 } from '../hooks/useOAuthClients';
 import type { OAuthClient } from '@auth-gateway/client-sdk';
+import { formatDate } from '../lib/date';
 
 const OAuthClients: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -200,7 +201,7 @@ const OAuthClients: React.FC = () => {
 
             <div className="bg-muted px-6 py-4 border-t border-border flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
-                {new Date(client.created_at).toLocaleDateString()}
+                {formatDate(client.created_at)}
               </span>
               <div className="flex items-center gap-1">
                 <button

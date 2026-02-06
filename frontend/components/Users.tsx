@@ -6,6 +6,7 @@ import type { AdminUserResponse } from '@auth-gateway/client-sdk';
 import { useLanguage } from '../services/i18n';
 import { useUsers, useUpdateUser } from '../hooks/useUsers';
 import { useApplication } from '../services/appContext';
+import { formatDate } from '../lib/date';
 
 const Users: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -168,7 +169,7 @@ const Users: React.FC = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                    {new Date(user.created_at).toLocaleDateString()}
+                    {formatDate(user.created_at)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">

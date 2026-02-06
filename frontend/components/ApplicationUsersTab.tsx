@@ -8,6 +8,7 @@ import {
   useUnbanUserFromApplication,
 } from '../hooks/useApplications';
 import type { UserApplicationProfile } from '../types';
+import { formatRelative } from '../lib/date';
 
 interface ApplicationUsersTabProps {
   applicationId: string;
@@ -209,7 +210,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {profile.last_access_at
-                        ? new Date(profile.last_access_at).toLocaleString()
+                        ? formatRelative(profile.last_access_at)
                         : t('apps.never')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">

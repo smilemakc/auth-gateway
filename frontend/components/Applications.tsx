@@ -4,6 +4,7 @@ import { Plus, Edit2, Trash2, Eye, ToggleLeft, ToggleRight, Boxes, Users, Palett
 import { useLanguage } from '../services/i18n';
 import { useApplications, useDeleteApplication, useUpdateApplication } from '../hooks/useApplications';
 import type { Application } from '../types';
+import { formatDate } from '../lib/date';
 
 const Applications: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -156,7 +157,7 @@ const Applications: React.FC = () => {
 
             <div className="bg-muted px-6 py-4 border-t border-border flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
-                {new Date(app.created_at).toLocaleDateString()}
+                {formatDate(app.created_at)}
               </span>
               <div className="flex items-center gap-1">
                 <Link
