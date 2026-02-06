@@ -25,6 +25,9 @@ func newMockSAMLSPRepository() *mockSAMLSPRepository {
 }
 
 func (m *mockSAMLSPRepository) Create(ctx context.Context, sp *models.SAMLServiceProvider) error {
+	if _, exists := m.spsByEntity[sp.EntityID]; exists {
+		return models.ErrAlreadyExists
+	}
 	if sp.ID == uuid.Nil {
 		sp.ID = uuid.New()
 	}
@@ -115,16 +118,16 @@ func TestSAMLService_CreateSP(t *testing.T) {
 	t.Run("fail on duplicate entity ID", func(t *testing.T) {
 		req := &models.CreateSAMLSPRequest{
 			Name:     "First SP",
-			EntityID: "https://sp.example.com/saml",
-			ACSURL:   "https://sp.example.com/saml/acs",
+			EntityID: "https://sp-dup.example.com/saml",
+			ACSURL:   "https://sp-dup.example.com/saml/acs",
 		}
 		_, err := svc.CreateSP(ctx, req)
 		require.NoError(t, err)
 
 		req2 := &models.CreateSAMLSPRequest{
 			Name:     "Second SP",
-			EntityID: "https://sp.example.com/saml", // Same entity ID
-			ACSURL:   "https://sp.example.com/saml/acs",
+			EntityID: "https://sp-dup.example.com/saml", // Same entity ID
+			ACSURL:   "https://sp-dup.example.com/saml/acs",
 		}
 		sp, err := svc.CreateSP(ctx, req2)
 		assert.Error(t, err)

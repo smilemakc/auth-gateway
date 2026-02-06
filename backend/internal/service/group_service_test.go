@@ -32,6 +32,9 @@ func (m *mockGroupStore) Create(ctx context.Context, group *models.Group) error 
 	if m.createFunc != nil {
 		return m.createFunc(ctx, group)
 	}
+	if _, exists := m.groupsByName[group.Name]; exists {
+		return models.ErrAlreadyExists
+	}
 	if group.ID == uuid.Nil {
 		group.ID = uuid.New()
 	}
@@ -133,7 +136,7 @@ func (m *mockGroupStore) GetGroupMemberCount(ctx context.Context, groupID uuid.U
 }
 
 func setupGroupService() (*GroupService, *mockGroupStore, *mockUserStore) {
-	mGroup := &mockGroupStore{}
+	mGroup := newMockGroupStore()
 	mUser := &mockUserStore{}
 	log := logger.New("test", logger.InfoLevel, false)
 	svc := NewGroupService(mGroup, mUser, log)
