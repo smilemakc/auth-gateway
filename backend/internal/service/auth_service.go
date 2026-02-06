@@ -188,7 +188,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 	}
 
 	// Reload user with roles for token generation
-	user, err = s.userRepo.GetByIDWithRoles(ctx, user.ID, utils.Ptr(true))
+	user, err = s.userRepo.GetByID(ctx, user.ID, utils.Ptr(true), UserGetWithRoles())
 	if err != nil {
 		return nil, fmt.Errorf("failed to reload user with roles: %w", err)
 	}
@@ -231,7 +231,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	// Get user by email or phone
 	if req.Email != "" {
 		email := utils.NormalizeEmail(req.Email)
-		user, err = s.userRepo.GetByEmailWithRoles(ctx, email, nil)
+		user, err = s.userRepo.GetByEmail(ctx, email, nil, UserGetWithRoles())
 		if err != nil {
 			// User not found - use dummy hash to prevent timing attacks
 			passwordHash = utils.GetDummyPasswordHash()
@@ -240,17 +240,11 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 		}
 	} else if req.Phone != nil && *req.Phone != "" {
 		phone := utils.NormalizePhone(*req.Phone)
-		user, err = s.userRepo.GetByPhone(ctx, phone, nil)
+		user, err = s.userRepo.GetByPhone(ctx, phone, nil, UserGetWithRoles())
 		if err != nil {
-			// User not found - use dummy hash to prevent timing attacks
 			passwordHash = utils.GetDummyPasswordHash()
 		} else {
 			passwordHash = user.PasswordHash
-			// Load roles for phone-based login
-			roles, roleErr := s.rbacRepo.GetUserRoles(ctx, user.ID)
-			if roleErr == nil {
-				user.Roles = roles
-			}
 		}
 	}
 
@@ -313,7 +307,7 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 	}
 
 	// Get user with roles
-	user, err := s.userRepo.GetByIDWithRoles(ctx, claims.UserID, utils.Ptr(true))
+	user, err := s.userRepo.GetByID(ctx, claims.UserID, utils.Ptr(true), UserGetWithRoles())
 	if err != nil {
 		return nil, err
 	}
@@ -390,7 +384,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	}
 
 	// Get user with roles (before transaction to avoid deadlocks)
-	user, err := s.userRepo.GetByIDWithRoles(ctx, claims.UserID, utils.Ptr(true))
+	user, err := s.userRepo.GetByID(ctx, claims.UserID, utils.Ptr(true), UserGetWithRoles())
 	if err != nil {
 		return nil, err
 	}
@@ -810,7 +804,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 	}
 
 	// Reload user with roles for token generation
-	user, err = s.userRepo.GetByIDWithRoles(ctx, user.ID, utils.Ptr(true))
+	user, err = s.userRepo.GetByID(ctx, user.ID, utils.Ptr(true), UserGetWithRoles())
 	if err != nil {
 		return nil, fmt.Errorf("failed to reload user with roles: %w", err)
 	}

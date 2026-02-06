@@ -54,7 +54,7 @@ func TestAPIKeyService_Create(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: userID}, nil
 		}
 		mockApiKeyStore.CreateFunc = func(ctx context.Context, apiKey *models.APIKey) error {
@@ -79,7 +79,7 @@ func TestAPIKeyService_Create(t *testing.T) {
 	})
 
 	t.Run("UserNotFound", func(t *testing.T) {
-		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return nil, errors.New("user not found")
 		}
 
@@ -107,7 +107,7 @@ func TestAPIKeyService_ValidateAPIKey(t *testing.T) {
 				IsActive: true,
 			}, nil
 		}
-		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: userID}, nil
 		}
 		mockApiKeyStore.UpdateLastUsedFunc = func(ctx context.Context, id uuid.UUID) error {

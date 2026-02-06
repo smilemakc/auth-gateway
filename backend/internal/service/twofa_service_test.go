@@ -25,7 +25,7 @@ func TestTwoFactorService_SetupTOTP(t *testing.T) {
 		password := "password123"
 		hashedPassword, _ := utils.HashPassword(password, 10)
 
-		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{
 				ID:           userID,
 				Email:        "test@example.com",
@@ -65,7 +65,7 @@ func TestTwoFactorService_VerifyTOTPSetup(t *testing.T) {
 		key, _ := totp.Generate(totp.GenerateOpts{Issuer: issuer, AccountName: "test@example.com"})
 		secret := key.Secret()
 
-		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{
 				ID:         userID,
 				TOTPSecret: &secret,
@@ -95,7 +95,7 @@ func TestTwoFactorService_VerifyTOTP(t *testing.T) {
 		key, _ := totp.Generate(totp.GenerateOpts{Issuer: issuer, AccountName: "test@example.com"})
 		secret := key.Secret()
 
-		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{
 				ID:          userID,
 				TOTPEnabled: true,
@@ -118,7 +118,7 @@ func TestTwoFactorService_VerifyTOTP(t *testing.T) {
 		key, _ := totp.Generate(totp.GenerateOpts{Issuer: issuer, AccountName: "test@example.com"})
 		secret := key.Secret()
 
-		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{
 				ID:          userID,
 				TOTPEnabled: true,
@@ -158,7 +158,7 @@ func TestTwoFactorService_DisableTOTP(t *testing.T) {
 		key, _ := totp.Generate(totp.GenerateOpts{Issuer: issuer, AccountName: "test@example.com"})
 		secret := key.Secret()
 
-		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{
 				ID:           userID,
 				PasswordHash: hashedPassword,
@@ -193,7 +193,7 @@ func TestTwoFactorService_GetStatus(t *testing.T) {
 		userID := uuid.New()
 		now := time.Now()
 
-		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{
 				ID:            userID,
 				TOTPEnabled:   true,
@@ -226,7 +226,7 @@ func TestTwoFactorService_RegenerateBackupCodes(t *testing.T) {
 		password := "password123"
 		hashedPassword, _ := utils.HashPassword(password, 10)
 
-		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{
 				ID:           userID,
 				PasswordHash: hashedPassword,

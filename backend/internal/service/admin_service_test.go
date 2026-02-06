@@ -28,7 +28,7 @@ func TestAdminService_GetStats(t *testing.T) {
 		mockUser.CountFunc = func(ctx context.Context, isActive *bool) (int, error) {
 			return 10, nil
 		}
-		mockUser.ListFunc = func(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error) {
+		mockUser.ListFunc = func(ctx context.Context, opts ...UserListOption) ([]*models.User, error) {
 			return []*models.User{
 				{ID: uuid.New(), IsActive: true, EmailVerified: true},
 				{ID: uuid.New(), IsActive: false},
@@ -82,13 +82,13 @@ func TestAdminService_ListUsers(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		userID := uuid.New()
-		mockUser.ListWithRolesFunc = func(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error) {
+		mockUser.ListFunc = func(ctx context.Context, opts ...UserListOption) ([]*models.User, error) {
 			return []*models.User{{ID: userID, Username: "test"}}, nil
 		}
 		mockUser.CountFunc = func(ctx context.Context, isActive *bool) (int, error) {
 			return 1, nil
 		}
-		mockAPIKey.GetByUserIDFunc = func(ctx context.Context, uid uuid.UUID) ([]*models.APIKey, error) {
+		mockAPIKey.GetByUserIDFunc = func(ctx context.Context, uid uuid.UUID, opts ...APIKeyGetOption) ([]*models.APIKey, error) {
 			return []*models.APIKey{{}}, nil
 		}
 		mockOAuth.GetByUserIDFunc = func(ctx context.Context, uid uuid.UUID) ([]*models.OAuthAccount, error) {
@@ -120,11 +120,13 @@ func TestAdminService_UpdateUser(t *testing.T) {
 		adminID := uuid.New()
 		roleID := uuid.New()
 
-		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, includeRoles *bool) (*models.User, error) {
-			return &models.User{ID: id, IsActive: true}, nil
-		}
-		mockUser.GetByIDWithRolesFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
-			return &models.User{ID: id, IsActive: false}, nil // Return updated state simulation
+		callCount := 0
+		mockUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+			callCount++
+			if callCount == 1 {
+				return &models.User{ID: id, IsActive: true}, nil
+			}
+			return &models.User{ID: id, IsActive: false}, nil
 		}
 
 		mockRBAC.SetUserRolesFunc = func(ctx context.Context, uid uuid.UUID, rIDs []uuid.UUID, assignedBy uuid.UUID) error {
@@ -140,7 +142,7 @@ func TestAdminService_UpdateUser(t *testing.T) {
 		}
 
 		// Mock APIKey/OAuth calls in GetUser
-		mockAPIKey.GetByUserIDFunc = func(ctx context.Context, uid uuid.UUID) ([]*models.APIKey, error) { return nil, nil }
+		mockAPIKey.GetByUserIDFunc = func(ctx context.Context, uid uuid.UUID, opts ...APIKeyGetOption) ([]*models.APIKey, error) { return nil, nil }
 		mockOAuth.GetByUserIDFunc = func(ctx context.Context, uid uuid.UUID) ([]*models.OAuthAccount, error) { return nil, nil }
 
 		req := &models.AdminUpdateUserRequest{

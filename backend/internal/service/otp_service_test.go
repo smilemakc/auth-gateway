@@ -102,7 +102,7 @@ func TestOTPService_VerifyOTP(t *testing.T) {
 			}, nil
 		}
 		mOTP.MarkAsUsedFunc = func(ctx context.Context, id uuid.UUID) error { return nil }
-		mUser.GetByEmailFunc = func(ctx context.Context, email string, isActive *bool) (*models.User, error) {
+		mUser.GetByEmailFunc = func(ctx context.Context, email string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: uuid.New(), Email: email}, nil
 		}
 		mUser.MarkEmailVerifiedFunc = func(ctx context.Context, userID uuid.UUID) error { return nil }

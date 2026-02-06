@@ -59,7 +59,7 @@ func TestAuthService_SignUp(t *testing.T) {
 			return nil
 		}
 		mRBAC.AssignRoleToUserFunc = func(ctx context.Context, userID, roleID, assignedBy uuid.UUID) error { return nil }
-		mUser.GetByIDWithRolesFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: id, Email: validReq.Email, Roles: []models.Role{{Name: "user"}}}, nil
 		}
 		mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "access_token", nil }
@@ -118,7 +118,7 @@ func TestAuthService_SignIn(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		mUser.GetByEmailWithRolesFunc = func(ctx context.Context, email string, isActive *bool) (*models.User, error) {
+		mUser.GetByEmailFunc = func(ctx context.Context, email string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{
 				ID:           userID,
 				Email:        req.Email,
@@ -144,7 +144,7 @@ func TestAuthService_SignIn(t *testing.T) {
 	})
 
 	t.Run("InvalidCredentials", func(t *testing.T) {
-		mUser.GetByEmailWithRolesFunc = func(ctx context.Context, email string, isActive *bool) (*models.User, error) {
+		mUser.GetByEmailFunc = func(ctx context.Context, email string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{
 				ID:           userID,
 				Email:        req.Email,
@@ -165,7 +165,7 @@ func TestAuthService_SignIn(t *testing.T) {
 	})
 
 	t.Run("UserNotFound", func(t *testing.T) {
-		mUser.GetByEmailWithRolesFunc = func(ctx context.Context, email string, isActive *bool) (*models.User, error) {
+		mUser.GetByEmailFunc = func(ctx context.Context, email string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return nil, errors.New("not found")
 		}
 
@@ -177,7 +177,7 @@ func TestAuthService_SignIn(t *testing.T) {
 	})
 
 	t.Run("TOTPRequired", func(t *testing.T) {
-		mUser.GetByEmailWithRolesFunc = func(ctx context.Context, email string, isActive *bool) (*models.User, error) {
+		mUser.GetByEmailFunc = func(ctx context.Context, email string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{
 				ID:           userID,
 				Email:        req.Email,
@@ -214,7 +214,7 @@ func TestAuthService_RefreshToken(t *testing.T) {
 				ExpiresAt: time.Now().Add(time.Hour),
 			}, nil
 		}
-		mUser.GetByIDWithRolesFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: userID}, nil
 		}
 		mToken.RevokeRefreshTokenFunc = func(ctx context.Context, tokenHash string) error { return nil }
@@ -290,7 +290,7 @@ func TestAuthService_ChangePassword(t *testing.T) {
 	hash, _ := utils.HashPassword(oldPwd, 10)
 
 	t.Run("Success", func(t *testing.T) {
-		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: userID, PasswordHash: hash, IsActive: true}, nil
 		}
 		mUser.UpdatePasswordFunc = func(ctx context.Context, id uuid.UUID, hash string) error { return nil }
@@ -305,7 +305,7 @@ func TestAuthService_ChangePassword(t *testing.T) {
 	})
 
 	t.Run("WrongPassword", func(t *testing.T) {
-		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: userID, PasswordHash: hash, IsActive: true}, nil
 		}
 
@@ -446,7 +446,7 @@ func TestAuthService_CompletePasswordlessRegistration(t *testing.T) {
 			return nil
 		}
 		mRBAC.AssignRoleToUserFunc = func(ctx context.Context, userID, roleID, assignedBy uuid.UUID) error { return nil }
-		mUser.GetByIDWithRolesFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: id, Email: email, Username: "newuser", Roles: []models.Role{{Name: "user"}}}, nil
 		}
 
@@ -493,7 +493,7 @@ func TestAuthService_CompletePasswordlessRegistration(t *testing.T) {
 			return nil
 		}
 		mRBAC.AssignRoleToUserFunc = func(ctx context.Context, userID, roleID, assignedBy uuid.UUID) error { return nil }
-		mUser.GetByIDWithRolesFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: id, Phone: &phone, Roles: []models.Role{{Name: "user"}}}, nil
 		}
 

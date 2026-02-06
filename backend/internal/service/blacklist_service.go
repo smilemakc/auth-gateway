@@ -16,7 +16,7 @@ import (
 type BlacklistService struct {
 	redis       CacheService
 	tokenRepo   TokenStore
-	jwtService  JWTService
+	jwtService  TokenService
 	logger      *logger.Logger
 	auditLogger AuditLogger
 	syncStats   SyncStats // Statistics for monitoring sync discrepancies
@@ -33,7 +33,7 @@ type SyncStats struct {
 }
 
 // NewBlacklistService creates a new blacklist service
-func NewBlacklistService(redis CacheService, tokenRepo TokenStore, jwtService JWTService, logger *logger.Logger, auditLogger AuditLogger) *BlacklistService {
+func NewBlacklistService(redis CacheService, tokenRepo TokenStore, jwtService TokenService, logger *logger.Logger, auditLogger AuditLogger) *BlacklistService {
 	return &BlacklistService{
 		redis:       redis,
 		tokenRepo:   tokenRepo,

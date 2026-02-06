@@ -19,7 +19,7 @@ func TestUserService_GetProfile(t *testing.T) {
 	userID := uuid.New()
 
 	t.Run("Success", func(t *testing.T) {
-		mockUserStore.GetByIDWithRolesFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			assert.Equal(t, userID, id)
 			assert.Nil(t, isActive)
 			return &models.User{
@@ -36,7 +36,7 @@ func TestUserService_GetProfile(t *testing.T) {
 	})
 
 	t.Run("NotFound", func(t *testing.T) {
-		mockUserStore.GetByIDWithRolesFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return nil, errors.New("user not found")
 		}
 
@@ -59,7 +59,7 @@ func TestUserService_UpdateProfile(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// Mock GetByID
-		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{
 				ID:       userID,
 				FullName: "Old Name",
@@ -73,7 +73,7 @@ func TestUserService_UpdateProfile(t *testing.T) {
 		}
 
 		// Mock GetByIDWithRoles (reload)
-		mockUserStore.GetByIDWithRolesFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{
 				ID:       userID,
 				FullName: "Updated Name",
@@ -93,7 +93,7 @@ func TestUserService_UpdateProfile(t *testing.T) {
 	})
 
 	t.Run("UserNotFound", func(t *testing.T) {
-		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return nil, errors.New("user not found")
 		}
 
@@ -103,7 +103,7 @@ func TestUserService_UpdateProfile(t *testing.T) {
 	})
 
 	t.Run("UpdateFailure", func(t *testing.T) {
-		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mockUserStore.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: userID}, nil
 		}
 

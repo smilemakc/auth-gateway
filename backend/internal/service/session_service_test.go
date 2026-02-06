@@ -12,12 +12,12 @@ import (
 )
 
 // setupSessionService creates a SessionService with mocks for testing
-func setupSessionService() (*SessionService, *mockSessionStore, *mockTokenStore, *mockCacheService, *mockJWTService, *BlacklistService) {
+func setupSessionService() (*SessionService, *mockSessionStore, *mockTokenStore, *mockCacheService, *mockTokenService, *BlacklistService) {
 	mockSession := &mockSessionStore{}
 	mockToken := &mockTokenStore{}
 	mockCache := &mockCacheService{}
 	mAudit := &mockAuditLogger{}
-	mockJWT := &mockJWTService{
+	mockJWT := &mockTokenService{
 		GetAccessTokenExpirationFunc:  func() time.Duration { return 15 * time.Minute },
 		GetRefreshTokenExpirationFunc: func() time.Duration { return 7 * 24 * time.Hour },
 	}

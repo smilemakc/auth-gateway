@@ -29,7 +29,7 @@ func TestSCIMService_GetUsers(t *testing.T) {
 			{ID: uuid.New(), Email: "user2@example.com", Username: "user2"},
 		}
 
-		mUser.ListFunc = func(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error) {
+		mUser.ListFunc = func(ctx context.Context, opts ...UserListOption) ([]*models.User, error) {
 			return users, nil
 		}
 		mUser.CountFunc = func(ctx context.Context, isActive *bool) (int, error) {
@@ -56,7 +56,7 @@ func TestSCIMService_GetUser(t *testing.T) {
 			Username: "user",
 		}
 
-		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			if id == userID {
 				return user, nil
 			}
@@ -69,7 +69,7 @@ func TestSCIMService_GetUser(t *testing.T) {
 	})
 
 	t.Run("get non-existent user", func(t *testing.T) {
-		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return nil, models.ErrNotFound
 		}
 
@@ -122,7 +122,7 @@ func TestSCIMService_UpdateUser(t *testing.T) {
 			Username: "user",
 		}
 
-		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			if id == userID {
 				return user, nil
 			}
@@ -157,7 +157,7 @@ func TestSCIMService_DeleteUser(t *testing.T) {
 			IsActive: true,
 		}
 
-		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			if id == userID {
 				return user, nil
 			}

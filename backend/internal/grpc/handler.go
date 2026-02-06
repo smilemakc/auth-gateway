@@ -287,7 +287,7 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *pb.ValidateToken
 		}
 
 		// Load user with roles
-		userWithRoles, err := h.userRepo.GetByIDWithRoles(ctx, user.ID, nil)
+		userWithRoles, err := h.userRepo.GetByID(ctx, user.ID, nil, service.UserGetWithRoles())
 		if err != nil {
 			h.logger.Error("Failed to load user roles", map[string]interface{}{
 				"user_id": user.ID.String(),
@@ -411,7 +411,7 @@ func (h *AuthHandlerV2) GetUser(ctx context.Context, req *pb.GetUserRequest) (*p
 		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
 	}
 
-	user, err := h.userRepo.GetByIDWithRoles(ctx, userID, nil)
+	user, err := h.userRepo.GetByID(ctx, userID, nil, service.UserGetWithRoles())
 	if err != nil {
 		if errors.Is(err, models.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, "user not found")
@@ -1175,23 +1175,11 @@ func (h *AuthHandlerV2) VerifyLoginOTP(ctx context.Context, req *pb.VerifyLoginO
 		}, nil
 	}
 
-	// Get user and generate tokens
-	user, err := h.userRepo.GetByEmail(ctx, req.Email, nil)
-	if err != nil || user == nil {
+	// Get user with roles and generate tokens
+	userWithRoles, err := h.userRepo.GetByEmail(ctx, req.Email, nil, service.UserGetWithRoles())
+	if err != nil || userWithRoles == nil {
 		return &pb.VerifyLoginOTPResponse{
 			ErrorMessage: "user not found",
-		}, nil
-	}
-
-	// Load user with roles
-	userWithRoles, err := h.userRepo.GetByIDWithRoles(ctx, user.ID, nil)
-	if err != nil {
-		h.logger.Error("Failed to load user roles", map[string]interface{}{
-			"user_id": user.ID.String(),
-			"error":   err.Error(),
-		})
-		return &pb.VerifyLoginOTPResponse{
-			ErrorMessage: "failed to load user",
 		}, nil
 	}
 
@@ -1199,7 +1187,7 @@ func (h *AuthHandlerV2) VerifyLoginOTP(ctx context.Context, req *pb.VerifyLoginO
 	accessToken, err := h.jwtService.GenerateAccessToken(userWithRoles)
 	if err != nil {
 		h.logger.Error("Failed to generate access token", map[string]interface{}{
-			"user_id": user.ID.String(),
+			"user_id": userWithRoles.ID.String(),
 			"error":   err.Error(),
 		})
 		return &pb.VerifyLoginOTPResponse{
@@ -1210,7 +1198,7 @@ func (h *AuthHandlerV2) VerifyLoginOTP(ctx context.Context, req *pb.VerifyLoginO
 	refreshToken, err := h.jwtService.GenerateRefreshToken(userWithRoles)
 	if err != nil {
 		h.logger.Error("Failed to generate refresh token", map[string]interface{}{
-			"user_id": user.ID.String(),
+			"user_id": userWithRoles.ID.String(),
 			"error":   err.Error(),
 		})
 		return &pb.VerifyLoginOTPResponse{

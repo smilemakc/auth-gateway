@@ -24,7 +24,7 @@ type OAuthService struct {
 	tokenRepo            TokenStore
 	auditRepo            AuditStore
 	rbacRepo             RBACStore
-	jwtService           JWTService
+	jwtService           TokenService
 	sessionService       *SessionService
 	httpClient           HTTPClient
 	providers            map[models.OAuthProvider]*OAuthProviderConfig
@@ -51,7 +51,7 @@ func NewOAuthService(
 	tokenRepo TokenStore,
 	auditRepo AuditStore,
 	rbacRepo RBACStore,
-	jwtService JWTService,
+	jwtService TokenService,
 	sessionService *SessionService,
 	httpClient HTTPClient,
 	appOAuthProviderRepo AppOAuthProviderStore,

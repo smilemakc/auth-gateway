@@ -95,7 +95,7 @@ func TestOAuthService_HandleCallback(t *testing.T) {
 	mockOAuthRepo := &mockOAuthStore{}
 	mockTokenRepo := &mockTokenStore{}
 	mockRBACRepo := &mockRBACStore{}
-	mockJWT := &mockJWTService{}
+	mockJWT := &mockTokenService{}
 	mockHTTP := &mockHTTPClient{}
 	// mockAudit := &mockAuditStore{} // Not used in current logic apparently
 
@@ -156,7 +156,7 @@ func TestOAuthService_HandleCallback(t *testing.T) {
 		}
 
 		// 4. GetUser (called after creation/update to get fresh user for token gen)
-		mockUserRepo.GetByIDFunc = func(ctx context.Context, id uuid.UUID, includeRoles *bool) (*models.User, error) {
+		mockUserRepo.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: id, Email: "new@example.com", Roles: []models.Role{{Name: "user"}}}, nil
 		}
 
@@ -203,7 +203,7 @@ func TestOAuthService_HandleCallback(t *testing.T) {
 		}
 
 		// 3. GetUser
-		mockUserRepo.GetByIDFunc = func(ctx context.Context, id uuid.UUID, includeRoles *bool) (*models.User, error) {
+		mockUserRepo.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: id, Email: "new@example.com"}, nil
 		}
 

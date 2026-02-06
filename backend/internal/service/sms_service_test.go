@@ -61,7 +61,7 @@ func TestSMSService_SendOTP(t *testing.T) {
 			return nil
 		}
 
-		mockUser.GetByPhoneFunc = func(ctx context.Context, phone string, isActive *bool) (*models.User, error) {
+		mockUser.GetByPhoneFunc = func(ctx context.Context, phone string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return nil, assert.AnError // Simulate user not found, which is fine
 		}
 
@@ -140,7 +140,7 @@ func TestSMSService_VerifyOTP(t *testing.T) {
 			return nil
 		}
 
-		mockUser.GetByPhoneFunc = func(ctx context.Context, phone string, isActive *bool) (*models.User, error) {
+		mockUser.GetByPhoneFunc = func(ctx context.Context, phone string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: uuid.New()}, nil
 		}
 

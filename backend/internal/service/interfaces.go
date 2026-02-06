@@ -12,22 +12,19 @@ import (
 
 // UserStore defines the interface for user storage
 type UserStore interface {
-	GetByID(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error)
-	GetByEmail(ctx context.Context, email string, isActive *bool) (*models.User, error)
-	GetByUsername(ctx context.Context, username string, isActive *bool) (*models.User, error)
+	GetByID(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error)
+	GetByEmail(ctx context.Context, email string, isActive *bool, opts ...UserGetOption) (*models.User, error)
+	GetByUsername(ctx context.Context, username string, isActive *bool, opts ...UserGetOption) (*models.User, error)
+	GetByPhone(ctx context.Context, phone string, isActive *bool, opts ...UserGetOption) (*models.User, error)
 	Create(ctx context.Context, user *models.User) error
 	Update(ctx context.Context, user *models.User) error
 	UpdatePassword(ctx context.Context, userID uuid.UUID, passwordHash string) error
 	EmailExists(ctx context.Context, email string) (bool, error)
 	UsernameExists(ctx context.Context, username string) (bool, error)
 	PhoneExists(ctx context.Context, phone string) (bool, error)
-	GetByIDWithRoles(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error)
-	GetByEmailWithRoles(ctx context.Context, email string, isActive *bool) (*models.User, error)
-	GetByPhone(ctx context.Context, phone string, isActive *bool) (*models.User, error)
 	MarkEmailVerified(ctx context.Context, userID uuid.UUID) error
 	MarkPhoneVerified(ctx context.Context, userID uuid.UUID) error
-	List(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error)
-	ListWithRoles(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error)
+	List(ctx context.Context, opts ...UserListOption) ([]*models.User, error)
 	Count(ctx context.Context, isActive *bool) (int, error)
 	// 2FA methods
 	UpdateTOTPSecret(ctx context.Context, userID uuid.UUID, secret string) error
@@ -171,7 +168,6 @@ type IPFilterStore interface {
 type OAuthStore interface {
 	CreateOAuthAccount(ctx context.Context, account *models.OAuthAccount) error
 	GetOAuthAccount(ctx context.Context, provider, providerUserID string) (*models.OAuthAccount, error)
-	GetOAuthAccountsByUserID(ctx context.Context, userID uuid.UUID) ([]*models.OAuthAccount, error)
 	UpdateOAuthAccount(ctx context.Context, account *models.OAuthAccount) error
 	DeleteOAuthAccount(ctx context.Context, id uuid.UUID) error
 	DeleteOAuthAccountsByProvider(ctx context.Context, userID uuid.UUID, provider string) error
@@ -192,15 +188,6 @@ type AuditStore interface {
 	ListByApp(ctx context.Context, appID uuid.UUID, limit, offset int) ([]*models.AuditLog, int, error)
 }
 
-// JWTService defines the interface for JWT token operations
-type JWTService interface {
-	GenerateAccessToken(user *models.User, applicationID ...*uuid.UUID) (string, error)
-	GenerateRefreshToken(user *models.User, applicationID ...*uuid.UUID) (string, error)
-	GetAccessTokenExpiration() time.Duration
-	GetRefreshTokenExpiration() time.Duration
-	ValidateAccessToken(tokenString string) (*jwt.Claims, error)
-	ValidateRefreshToken(tokenString string) (*jwt.Claims, error)
-}
 
 // HTTPClient defines the interface for HTTP client
 type HTTPClient interface {
@@ -212,15 +199,13 @@ type APIKeyStore interface {
 	Create(ctx context.Context, apiKey *models.APIKey) error
 	GetByID(ctx context.Context, id uuid.UUID) (*models.APIKey, error)
 	GetByKeyHash(ctx context.Context, keyHash string) (*models.APIKey, error)
-	GetByUserID(ctx context.Context, userID uuid.UUID) ([]*models.APIKey, error)
-	GetActiveByUserID(ctx context.Context, userID uuid.UUID) ([]*models.APIKey, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID, opts ...APIKeyGetOption) ([]*models.APIKey, error)
 	Update(ctx context.Context, apiKey *models.APIKey) error
 	UpdateLastUsed(ctx context.Context, id uuid.UUID) error
 	Revoke(ctx context.Context, id uuid.UUID) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	DeleteExpired(ctx context.Context) error
-	Count(ctx context.Context, userID uuid.UUID) (int, error)
-	CountActive(ctx context.Context, userID uuid.UUID) (int, error)
+	Count(ctx context.Context, userID uuid.UUID, opts ...APIKeyGetOption) (int, error)
 	ListAll(ctx context.Context) ([]*models.APIKey, error)
 	ListByApp(ctx context.Context, appID uuid.UUID) ([]*models.APIKey, error)
 	GetByUserIDAndApp(ctx context.Context, userID, appID uuid.UUID) ([]*models.APIKey, error)

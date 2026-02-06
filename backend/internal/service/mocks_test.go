@@ -14,45 +14,47 @@ import (
 // Manual mocks
 
 type mockUserStore struct {
-	GetByIDFunc             func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error)
-	GetByEmailFunc          func(ctx context.Context, email string, isActive *bool) (*models.User, error)
-	GetByUsernameFunc       func(ctx context.Context, username string, isActive *bool) (*models.User, error)
-	CreateFunc              func(ctx context.Context, user *models.User) error
-	UpdateFunc              func(ctx context.Context, user *models.User) error
-	UpdatePasswordFunc      func(ctx context.Context, userID uuid.UUID, passwordHash string) error
-	EmailExistsFunc         func(ctx context.Context, email string) (bool, error)
-	UsernameExistsFunc      func(ctx context.Context, username string) (bool, error)
-	PhoneExistsFunc         func(ctx context.Context, phone string) (bool, error)
-	GetByIDWithRolesFunc    func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error)
-	GetByEmailWithRolesFunc func(ctx context.Context, email string, isActive *bool) (*models.User, error)
-	GetByPhoneFunc          func(ctx context.Context, phone string, isActive *bool) (*models.User, error)
-	MarkEmailVerifiedFunc   func(ctx context.Context, userID uuid.UUID) error
-	MarkPhoneVerifiedFunc   func(ctx context.Context, userID uuid.UUID) error
-	ListFunc                func(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error)
-	ListWithRolesFunc       func(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error)
-	CountFunc               func(ctx context.Context, isActive *bool) (int, error)
-
+	GetByIDFunc           func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error)
+	GetByEmailFunc        func(ctx context.Context, email string, isActive *bool, opts ...UserGetOption) (*models.User, error)
+	GetByUsernameFunc     func(ctx context.Context, username string, isActive *bool, opts ...UserGetOption) (*models.User, error)
+	GetByPhoneFunc        func(ctx context.Context, phone string, isActive *bool, opts ...UserGetOption) (*models.User, error)
+	CreateFunc            func(ctx context.Context, user *models.User) error
+	UpdateFunc            func(ctx context.Context, user *models.User) error
+	UpdatePasswordFunc    func(ctx context.Context, userID uuid.UUID, passwordHash string) error
+	EmailExistsFunc       func(ctx context.Context, email string) (bool, error)
+	UsernameExistsFunc    func(ctx context.Context, username string) (bool, error)
+	PhoneExistsFunc       func(ctx context.Context, phone string) (bool, error)
+	MarkEmailVerifiedFunc func(ctx context.Context, userID uuid.UUID) error
+	MarkPhoneVerifiedFunc func(ctx context.Context, userID uuid.UUID) error
+	ListFunc              func(ctx context.Context, opts ...UserListOption) ([]*models.User, error)
+	CountFunc             func(ctx context.Context, isActive *bool) (int, error)
 	// 2FA methods
 	UpdateTOTPSecretFunc func(ctx context.Context, userID uuid.UUID, secret string) error
 	EnableTOTPFunc       func(ctx context.Context, userID uuid.UUID) error
 	DisableTOTPFunc      func(ctx context.Context, userID uuid.UUID) error
 }
 
-func (m *mockUserStore) GetByID(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+func (m *mockUserStore) GetByID(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 	if m.GetByIDFunc != nil {
-		return m.GetByIDFunc(ctx, id, isActive)
+		return m.GetByIDFunc(ctx, id, isActive, opts...)
 	}
 	return nil, nil
 }
-func (m *mockUserStore) GetByEmail(ctx context.Context, email string, isActive *bool) (*models.User, error) {
+func (m *mockUserStore) GetByEmail(ctx context.Context, email string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 	if m.GetByEmailFunc != nil {
-		return m.GetByEmailFunc(ctx, email, isActive)
+		return m.GetByEmailFunc(ctx, email, isActive, opts...)
 	}
 	return nil, nil
 }
-func (m *mockUserStore) GetByUsername(ctx context.Context, username string, isActive *bool) (*models.User, error) {
+func (m *mockUserStore) GetByUsername(ctx context.Context, username string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 	if m.GetByUsernameFunc != nil {
-		return m.GetByUsernameFunc(ctx, username, isActive)
+		return m.GetByUsernameFunc(ctx, username, isActive, opts...)
+	}
+	return nil, nil
+}
+func (m *mockUserStore) GetByPhone(ctx context.Context, phone string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+	if m.GetByPhoneFunc != nil {
+		return m.GetByPhoneFunc(ctx, phone, isActive, opts...)
 	}
 	return nil, nil
 }
@@ -92,24 +94,6 @@ func (m *mockUserStore) PhoneExists(ctx context.Context, phone string) (bool, er
 	}
 	return false, nil
 }
-func (m *mockUserStore) GetByIDWithRoles(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
-	if m.GetByIDWithRolesFunc != nil {
-		return m.GetByIDWithRolesFunc(ctx, id, isActive)
-	}
-	return nil, nil
-}
-func (m *mockUserStore) GetByEmailWithRoles(ctx context.Context, email string, isActive *bool) (*models.User, error) {
-	if m.GetByEmailWithRolesFunc != nil {
-		return m.GetByEmailWithRolesFunc(ctx, email, isActive)
-	}
-	return nil, nil
-}
-func (m *mockUserStore) GetByPhone(ctx context.Context, phone string, isActive *bool) (*models.User, error) {
-	if m.GetByPhoneFunc != nil {
-		return m.GetByPhoneFunc(ctx, phone, isActive)
-	}
-	return nil, nil
-}
 func (m *mockUserStore) MarkEmailVerified(ctx context.Context, userID uuid.UUID) error {
 	if m.MarkEmailVerifiedFunc != nil {
 		return m.MarkEmailVerifiedFunc(ctx, userID)
@@ -122,15 +106,9 @@ func (m *mockUserStore) MarkPhoneVerified(ctx context.Context, userID uuid.UUID)
 	}
 	return nil
 }
-func (m *mockUserStore) List(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error) {
+func (m *mockUserStore) List(ctx context.Context, opts ...UserListOption) ([]*models.User, error) {
 	if m.ListFunc != nil {
-		return m.ListFunc(ctx, limit, offset, isActive)
-	}
-	return nil, nil
-}
-func (m *mockUserStore) ListWithRoles(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error) {
-	if m.ListWithRolesFunc != nil {
-		return m.ListWithRolesFunc(ctx, limit, offset, isActive)
+		return m.ListFunc(ctx, opts...)
 	}
 	return nil, nil
 }
@@ -733,7 +711,6 @@ func (m *mockIPFilterStore) GetActiveIPFilters(ctx context.Context) ([]models.IP
 type mockOAuthStore struct {
 	CreateOAuthAccountFunc            func(ctx context.Context, account *models.OAuthAccount) error
 	GetOAuthAccountFunc               func(ctx context.Context, provider, providerUserID string) (*models.OAuthAccount, error)
-	GetOAuthAccountsByUserIDFunc      func(ctx context.Context, userID uuid.UUID) ([]*models.OAuthAccount, error)
 	UpdateOAuthAccountFunc            func(ctx context.Context, account *models.OAuthAccount) error
 	DeleteOAuthAccountFunc            func(ctx context.Context, id uuid.UUID) error
 	DeleteOAuthAccountsByProviderFunc func(ctx context.Context, userID uuid.UUID, provider string) error
@@ -750,12 +727,6 @@ func (m *mockOAuthStore) CreateOAuthAccount(ctx context.Context, account *models
 func (m *mockOAuthStore) GetOAuthAccount(ctx context.Context, provider, providerUserID string) (*models.OAuthAccount, error) {
 	if m.GetOAuthAccountFunc != nil {
 		return m.GetOAuthAccountFunc(ctx, provider, providerUserID)
-	}
-	return nil, nil
-}
-func (m *mockOAuthStore) GetOAuthAccountsByUserID(ctx context.Context, userID uuid.UUID) ([]*models.OAuthAccount, error) {
-	if m.GetOAuthAccountsByUserIDFunc != nil {
-		return m.GetOAuthAccountsByUserIDFunc(ctx, userID)
 	}
 	return nil, nil
 }
@@ -857,51 +828,6 @@ func (m *mockAuditStore) ListByApp(ctx context.Context, appID uuid.UUID, limit, 
 	return nil, 0, nil
 }
 
-type mockJWTService struct {
-	GenerateAccessTokenFunc       func(user *models.User, applicationID ...*uuid.UUID) (string, error)
-	GenerateRefreshTokenFunc      func(user *models.User, applicationID ...*uuid.UUID) (string, error)
-	GetAccessTokenExpirationFunc  func() time.Duration
-	GetRefreshTokenExpirationFunc func() time.Duration
-	ValidateAccessTokenFunc       func(tokenString string) (*jwt.Claims, error)
-	ValidateRefreshTokenFunc      func(tokenString string) (*jwt.Claims, error)
-}
-
-func (m *mockJWTService) GenerateAccessToken(user *models.User, applicationID ...*uuid.UUID) (string, error) {
-	if m.GenerateAccessTokenFunc != nil {
-		return m.GenerateAccessTokenFunc(user, applicationID...)
-	}
-	return "", nil
-}
-func (m *mockJWTService) GenerateRefreshToken(user *models.User, applicationID ...*uuid.UUID) (string, error) {
-	if m.GenerateRefreshTokenFunc != nil {
-		return m.GenerateRefreshTokenFunc(user, applicationID...)
-	}
-	return "", nil
-}
-func (m *mockJWTService) GetAccessTokenExpiration() time.Duration {
-	if m.GetAccessTokenExpirationFunc != nil {
-		return m.GetAccessTokenExpirationFunc()
-	}
-	return time.Hour
-}
-func (m *mockJWTService) GetRefreshTokenExpiration() time.Duration {
-	if m.GetRefreshTokenExpirationFunc != nil {
-		return m.GetRefreshTokenExpirationFunc()
-	}
-	return time.Hour * 24
-}
-func (m *mockJWTService) ValidateAccessToken(tokenString string) (*jwt.Claims, error) {
-	if m.ValidateAccessTokenFunc != nil {
-		return m.ValidateAccessTokenFunc(tokenString)
-	}
-	return nil, nil
-}
-func (m *mockJWTService) ValidateRefreshToken(tokenString string) (*jwt.Claims, error) {
-	if m.ValidateRefreshTokenFunc != nil {
-		return m.ValidateRefreshTokenFunc(tokenString)
-	}
-	return nil, nil
-}
 
 type mockHTTPClient struct {
 	DoFunc func(req *http.Request) (*http.Response, error)
@@ -918,15 +844,13 @@ type mockAPIKeyStore struct {
 	CreateFunc            func(ctx context.Context, apiKey *models.APIKey) error
 	GetByIDFunc           func(ctx context.Context, id uuid.UUID) (*models.APIKey, error)
 	GetByKeyHashFunc      func(ctx context.Context, keyHash string) (*models.APIKey, error)
-	GetByUserIDFunc       func(ctx context.Context, userID uuid.UUID) ([]*models.APIKey, error)
-	GetActiveByUserIDFunc func(ctx context.Context, userID uuid.UUID) ([]*models.APIKey, error)
+	GetByUserIDFunc       func(ctx context.Context, userID uuid.UUID, opts ...APIKeyGetOption) ([]*models.APIKey, error)
 	UpdateFunc            func(ctx context.Context, apiKey *models.APIKey) error
 	UpdateLastUsedFunc    func(ctx context.Context, id uuid.UUID) error
 	RevokeFunc            func(ctx context.Context, id uuid.UUID) error
 	DeleteFunc            func(ctx context.Context, id uuid.UUID) error
 	DeleteExpiredFunc     func(ctx context.Context) error
-	CountFunc             func(ctx context.Context, userID uuid.UUID) (int, error)
-	CountActiveFunc       func(ctx context.Context, userID uuid.UUID) (int, error)
+	CountFunc             func(ctx context.Context, userID uuid.UUID, opts ...APIKeyGetOption) (int, error)
 	ListAllFunc           func(ctx context.Context) ([]*models.APIKey, error)
 	GetByUserIDAndAppFunc func(ctx context.Context, userID, appID uuid.UUID) ([]*models.APIKey, error)
 	ListByAppFunc         func(ctx context.Context, appID uuid.UUID) ([]*models.APIKey, error)
@@ -950,15 +874,9 @@ func (m *mockAPIKeyStore) GetByKeyHash(ctx context.Context, keyHash string) (*mo
 	}
 	return nil, nil
 }
-func (m *mockAPIKeyStore) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*models.APIKey, error) {
+func (m *mockAPIKeyStore) GetByUserID(ctx context.Context, userID uuid.UUID, opts ...APIKeyGetOption) ([]*models.APIKey, error) {
 	if m.GetByUserIDFunc != nil {
-		return m.GetByUserIDFunc(ctx, userID)
-	}
-	return nil, nil
-}
-func (m *mockAPIKeyStore) GetActiveByUserID(ctx context.Context, userID uuid.UUID) ([]*models.APIKey, error) {
-	if m.GetActiveByUserIDFunc != nil {
-		return m.GetActiveByUserIDFunc(ctx, userID)
+		return m.GetByUserIDFunc(ctx, userID, opts...)
 	}
 	return nil, nil
 }
@@ -1031,15 +949,9 @@ func (m *mockAPIKeyStore) DeleteExpired(ctx context.Context) error {
 	}
 	return nil
 }
-func (m *mockAPIKeyStore) Count(ctx context.Context, userID uuid.UUID) (int, error) {
+func (m *mockAPIKeyStore) Count(ctx context.Context, userID uuid.UUID, opts ...APIKeyGetOption) (int, error) {
 	if m.CountFunc != nil {
-		return m.CountFunc(ctx, userID)
-	}
-	return 0, nil
-}
-func (m *mockAPIKeyStore) CountActive(ctx context.Context, userID uuid.UUID) (int, error) {
-	if m.CountActiveFunc != nil {
-		return m.CountActiveFunc(ctx, userID)
+		return m.CountFunc(ctx, userID, opts...)
 	}
 	return 0, nil
 }

@@ -61,23 +61,6 @@ func (r *OAuthRepository) GetOAuthAccount(ctx context.Context, provider, provide
 	return account, nil
 }
 
-// GetOAuthAccountsByUserID retrieves all OAuth accounts for a user
-func (r *OAuthRepository) GetOAuthAccountsByUserID(ctx context.Context, userID uuid.UUID) ([]*models.OAuthAccount, error) {
-	accounts := make([]*models.OAuthAccount, 0)
-
-	err := r.db.NewSelect().
-		Model(&accounts).
-		Where("user_id = ?", userID).
-		Order("created_at DESC").
-		Scan(ctx)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to get oauth accounts by user id: %w", err)
-	}
-
-	return accounts, nil
-}
-
 // UpdateOAuthAccount updates an OAuth account
 func (r *OAuthRepository) UpdateOAuthAccount(ctx context.Context, account *models.OAuthAccount) error {
 	result, err := r.db.NewUpdate().

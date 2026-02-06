@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/queryopt"
 	"github.com/uptrace/bun"
 )
 
@@ -69,41 +70,31 @@ func (r *APIKeyRepository) GetByKeyHash(ctx context.Context, keyHash string) (*m
 	return apiKey, nil
 }
 
-// GetByUserID retrieves all API keys for a user
-func (r *APIKeyRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*models.APIKey, error) {
+// GetByUserID retrieves API keys for a user, optionally filtering for active only
+func (r *APIKeyRepository) GetByUserID(ctx context.Context, userID uuid.UUID, opts ...queryopt.APIKeyGetOption) ([]*models.APIKey, error) {
+	o := queryopt.BuildAPIKeyGetOptions(opts)
 	apiKeys := make([]*models.APIKey, 0)
 
-	err := r.db.NewSelect().
+	query := r.db.NewSelect().
 		Model(&apiKeys).
-		Where("user_id = ?", userID).
+		Where("user_id = ?", userID)
+
+	if o.ActiveOnly {
+		query = query.
+			Where("is_active = ?", true).
+			WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
+				return q.
+					Where("expires_at IS NULL").
+					WhereOr("expires_at > ?", bun.Safe("NOW()"))
+			})
+	}
+
+	err := query.
 		Order("created_at DESC").
 		Scan(ctx)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get API keys: %w", err)
-	}
-
-	return apiKeys, nil
-}
-
-// GetActiveByUserID retrieves active API keys for a user
-func (r *APIKeyRepository) GetActiveByUserID(ctx context.Context, userID uuid.UUID) ([]*models.APIKey, error) {
-	apiKeys := make([]*models.APIKey, 0)
-
-	err := r.db.NewSelect().
-		Model(&apiKeys).
-		Where("user_id = ?", userID).
-		Where("is_active = ?", true).
-		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
-			return q.
-				Where("expires_at IS NULL").
-				WhereOr("expires_at > ?", bun.Safe("NOW()"))
-		}).
-		Order("created_at DESC").
-		Scan(ctx)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to get active API keys: %w", err)
 	}
 
 	return apiKeys, nil
@@ -225,35 +216,28 @@ func (r *APIKeyRepository) DeleteExpired(ctx context.Context) error {
 	return nil
 }
 
-// Count returns the total number of API keys for a user
-func (r *APIKeyRepository) Count(ctx context.Context, userID uuid.UUID) (int, error) {
-	count, err := r.db.NewSelect().
+// Count returns the number of API keys for a user, optionally counting only active ones
+func (r *APIKeyRepository) Count(ctx context.Context, userID uuid.UUID, opts ...queryopt.APIKeyGetOption) (int, error) {
+	o := queryopt.BuildAPIKeyGetOptions(opts)
+
+	query := r.db.NewSelect().
 		Model((*models.APIKey)(nil)).
-		Where("user_id = ?", userID).
-		Count(ctx)
+		Where("user_id = ?", userID)
+
+	if o.ActiveOnly {
+		query = query.
+			Where("is_active = ?", true).
+			WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
+				return q.
+					Where("expires_at IS NULL").
+					WhereOr("expires_at > ?", bun.Safe("CURRENT_TIMESTAMP"))
+			})
+	}
+
+	count, err := query.Count(ctx)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to count API keys: %w", err)
-	}
-
-	return count, nil
-}
-
-// CountActive returns the number of active API keys for a user
-func (r *APIKeyRepository) CountActive(ctx context.Context, userID uuid.UUID) (int, error) {
-	count, err := r.db.NewSelect().
-		Model((*models.APIKey)(nil)).
-		Where("user_id = ?", userID).
-		Where("is_active = ?", true).
-		WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
-			return q.
-				Where("expires_at IS NULL").
-				WhereOr("expires_at > ?", bun.Safe("CURRENT_TIMESTAMP"))
-		}).
-		Count(ctx)
-
-	if err != nil {
-		return 0, fmt.Errorf("failed to count active API keys: %w", err)
 	}
 
 	return count, nil

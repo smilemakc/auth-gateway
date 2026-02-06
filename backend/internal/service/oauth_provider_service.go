@@ -550,7 +550,7 @@ func (s *OAuthProviderService) ExchangeCode(ctx context.Context, req *models.Tok
 
 	user := authCode.User
 	if user == nil {
-		user, err = s.userRepo.GetByID(ctx, authCode.UserID, nil)
+		user, err = s.userRepo.GetByID(ctx, authCode.UserID, nil, UserGetWithRoles())
 		if err != nil {
 			return nil, ErrServerError
 		}
@@ -656,7 +656,7 @@ func (s *OAuthProviderService) RefreshToken(ctx context.Context, req *models.Tok
 
 	user := refreshToken.User
 	if user == nil {
-		user, err = s.userRepo.GetByID(ctx, refreshToken.UserID, nil)
+		user, err = s.userRepo.GetByID(ctx, refreshToken.UserID, nil, UserGetWithRoles())
 		if err != nil {
 			return nil, ErrServerError
 		}
@@ -801,7 +801,7 @@ func (s *OAuthProviderService) PollDeviceToken(ctx context.Context, req *models.
 			return nil, ErrServerError
 		}
 
-		user, err := s.userRepo.GetByID(ctx, *deviceCode.UserID, nil)
+		user, err := s.userRepo.GetByID(ctx, *deviceCode.UserID, nil, UserGetWithRoles())
 		if err != nil {
 			return nil, ErrServerError
 		}
@@ -957,7 +957,7 @@ func (s *OAuthProviderService) GetUserInfo(ctx context.Context, accessToken stri
 			return nil, ErrInvalidGrant
 		}
 
-		user, err := s.userRepo.GetByID(ctx, userID, nil)
+		user, err := s.userRepo.GetByID(ctx, userID, nil, UserGetWithRoles())
 		if err != nil {
 			return nil, ErrServerError
 		}
@@ -976,7 +976,7 @@ func (s *OAuthProviderService) GetUserInfo(ctx context.Context, accessToken stri
 
 	user := tokenRecord.User
 	if user == nil {
-		user, err = s.userRepo.GetByID(ctx, *tokenRecord.UserID, nil)
+		user, err = s.userRepo.GetByID(ctx, *tokenRecord.UserID, nil, UserGetWithRoles())
 		if err != nil {
 			return nil, ErrServerError
 		}

@@ -322,8 +322,8 @@ type ldapUserRepoAdapter struct {
 	repo UserStore
 }
 
-func (a *ldapUserRepoAdapter) GetByEmail(ctx context.Context, email string, isActive *bool) (*models.User, error) {
-	return a.repo.GetByEmail(ctx, email, isActive)
+func (a *ldapUserRepoAdapter) GetByEmail(ctx context.Context, email string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+	return a.repo.GetByEmail(ctx, email, isActive, opts...)
 }
 
 func (a *ldapUserRepoAdapter) Create(ctx context.Context, user *models.User) error {
@@ -334,8 +334,8 @@ func (a *ldapUserRepoAdapter) Update(ctx context.Context, user *models.User) err
 	return a.repo.Update(ctx, user)
 }
 
-func (a *ldapUserRepoAdapter) List(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error) {
-	return a.repo.List(ctx, limit, offset, isActive)
+func (a *ldapUserRepoAdapter) List(ctx context.Context, opts ...UserListOption) ([]*models.User, error) {
+	return a.repo.List(ctx, opts...)
 }
 
 type ldapGroupRepoAdapter struct {

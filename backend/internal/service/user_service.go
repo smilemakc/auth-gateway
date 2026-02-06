@@ -21,7 +21,7 @@ func NewUserService(userRepo UserStore, auditService AuditLogger) *UserService {
 
 // GetProfile retrieves a user's profile
 func (s *UserService) GetProfile(ctx context.Context, userID uuid.UUID) (*models.User, error) {
-	user, err := s.userRepo.GetByIDWithRoles(ctx, userID, nil)
+	user, err := s.userRepo.GetByID(ctx, userID, nil, UserGetWithRoles())
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 	}
 
 	// Reload user with roles before returning
-	user, err = s.userRepo.GetByIDWithRoles(ctx, userID, nil)
+	user, err = s.userRepo.GetByID(ctx, userID, nil, UserGetWithRoles())
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (s *UserService) GetByEmail(ctx context.Context, email string) (*models.Use
 
 // List retrieves a list of users with pagination
 func (s *UserService) List(ctx context.Context, limit, offset int) ([]*models.User, error) {
-	users, err := s.userRepo.List(ctx, limit, offset, nil)
+	users, err := s.userRepo.List(ctx, UserListLimit(limit), UserListOffset(offset))
 	if err != nil {
 		return nil, err
 	}

@@ -116,7 +116,7 @@ func TestBulkService_BulkUpdateUsers(t *testing.T) {
 			},
 		}
 
-		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: id, Email: "test@example.com"}, nil
 		}
 		mUser.UpdateFunc = func(ctx context.Context, user *models.User) error {
@@ -140,7 +140,7 @@ func TestBulkService_BulkDeleteUsers(t *testing.T) {
 			UserIDs: []uuid.UUID{uuid.New(), uuid.New()},
 		}
 
-		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: id, IsActive: true}, nil
 		}
 		mUser.UpdateFunc = func(ctx context.Context, user *models.User) error {
@@ -170,7 +170,7 @@ func TestBulkService_BulkAssignRoles(t *testing.T) {
 			RoleIDs: []uuid.UUID{roleID},
 		}
 
-		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
 			return &models.User{ID: id}, nil
 		}
 		mRBAC.GetRoleByIDFunc = func(ctx context.Context, id uuid.UUID) (*models.Role, error) {

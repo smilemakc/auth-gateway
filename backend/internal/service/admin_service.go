@@ -65,7 +65,7 @@ func (s *AdminService) GetStats(ctx context.Context) (*models.AdminStatsResponse
 	stats.TotalUsers = totalUsers
 
 	// Get all users for detailed stats
-	users, err := s.userRepo.List(ctx, 10000, 0, nil) // Get all users
+	users, err := s.userRepo.List(ctx, UserListLimit(10000), UserListOffset(0))
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
@@ -156,7 +156,7 @@ func (s *AdminService) ListUsers(ctx context.Context, appID *uuid.UUID, page, pa
 		}
 	} else {
 		offset := (page - 1) * pageSize
-		users, err = s.userRepo.ListWithRoles(ctx, pageSize, offset, nil)
+		users, err = s.userRepo.List(ctx, UserListLimit(pageSize), UserListOffset(offset), UserListWithRoles())
 		if err != nil {
 			return nil, fmt.Errorf("failed to list users: %w", err)
 		}
@@ -196,7 +196,7 @@ func (s *AdminService) ListUsers(ctx context.Context, appID *uuid.UUID, page, pa
 
 // GetUser returns detailed user information
 func (s *AdminService) GetUser(ctx context.Context, userID uuid.UUID) (*models.AdminUserResponse, error) {
-	user, err := s.userRepo.GetByIDWithRoles(ctx, userID, nil)
+	user, err := s.userRepo.GetByID(ctx, userID, nil, UserGetWithRoles())
 	if err != nil {
 		return nil, err
 	}
@@ -467,7 +467,7 @@ func (s *AdminService) ListAuditLogs(ctx context.Context, page, pageSize int, us
 
 // AssignRole assigns a role to a user
 func (s *AdminService) AssignRole(ctx context.Context, userID, roleID, adminID uuid.UUID) (*models.AdminUserResponse, error) {
-	user, err := s.userRepo.GetByIDWithRoles(ctx, userID, nil)
+	user, err := s.userRepo.GetByID(ctx, userID, nil, UserGetWithRoles())
 	if err != nil {
 		return nil, err
 	}
@@ -490,7 +490,7 @@ func (s *AdminService) AssignRole(ctx context.Context, userID, roleID, adminID u
 
 // RemoveRole removes a role from a user
 func (s *AdminService) RemoveRole(ctx context.Context, userID, roleID uuid.UUID) (*models.AdminUserResponse, error) {
-	user, err := s.userRepo.GetByIDWithRoles(ctx, userID, nil)
+	user, err := s.userRepo.GetByID(ctx, userID, nil, UserGetWithRoles())
 	if err != nil {
 		return nil, err
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/go-ldap/ldap/v3"
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/queryopt"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
@@ -22,10 +23,10 @@ type SyncService struct {
 
 // UserRepository defines interface for user operations
 type UserRepository interface {
-	GetByEmail(ctx context.Context, email string, isActive *bool) (*models.User, error)
+	GetByEmail(ctx context.Context, email string, isActive *bool, opts ...queryopt.UserGetOption) (*models.User, error)
 	Create(ctx context.Context, user *models.User) error
 	Update(ctx context.Context, user *models.User) error
-	List(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error)
+	List(ctx context.Context, opts ...queryopt.UserListOption) ([]*models.User, error)
 }
 
 // GroupRepository defines interface for group operations

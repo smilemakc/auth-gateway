@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/queryopt"
 	"github.com/uptrace/bun"
 )
 
@@ -42,7 +43,8 @@ func (r *UserRepository) CreateWithTx(ctx context.Context, tx bun.Tx, user *mode
 }
 
 // GetByID retrieves a user by ID
-func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
+func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID, isActive *bool, opts ...queryopt.UserGetOption) (*models.User, error) {
+	o := queryopt.BuildUserGetOptions(opts)
 	user := new(models.User)
 
 	query := r.db.NewSelect().
@@ -51,6 +53,9 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID, isActive *bo
 
 	if isActive != nil {
 		query = query.Where("is_active = ?", *isActive)
+	}
+	if o.WithRoles {
+		query = query.Relation("Roles")
 	}
 
 	err := query.Scan(ctx)
@@ -66,7 +71,8 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID, isActive *bo
 }
 
 // GetByEmail retrieves a user by email
-func (r *UserRepository) GetByEmail(ctx context.Context, email string, isActive *bool) (*models.User, error) {
+func (r *UserRepository) GetByEmail(ctx context.Context, email string, isActive *bool, opts ...queryopt.UserGetOption) (*models.User, error) {
+	o := queryopt.BuildUserGetOptions(opts)
 	user := new(models.User)
 
 	query := r.db.NewSelect().
@@ -75,6 +81,9 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string, isActive 
 
 	if isActive != nil {
 		query = query.Where("is_active = ?", *isActive)
+	}
+	if o.WithRoles {
+		query = query.Relation("Roles")
 	}
 
 	err := query.Scan(ctx)
@@ -90,7 +99,8 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string, isActive 
 }
 
 // GetByUsername retrieves a user by username
-func (r *UserRepository) GetByUsername(ctx context.Context, username string, isActive *bool) (*models.User, error) {
+func (r *UserRepository) GetByUsername(ctx context.Context, username string, isActive *bool, opts ...queryopt.UserGetOption) (*models.User, error) {
+	o := queryopt.BuildUserGetOptions(opts)
 	user := new(models.User)
 
 	query := r.db.NewSelect().
@@ -99,6 +109,9 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string, isA
 
 	if isActive != nil {
 		query = query.Where("is_active = ?", *isActive)
+	}
+	if o.WithRoles {
+		query = query.Relation("Roles")
 	}
 
 	err := query.Scan(ctx)
@@ -243,127 +256,28 @@ func (r *UserRepository) MarkEmailVerified(ctx context.Context, userID uuid.UUID
 }
 
 // List retrieves a list of users with pagination
-func (r *UserRepository) List(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error) {
+func (r *UserRepository) List(ctx context.Context, opts ...queryopt.UserListOption) ([]*models.User, error) {
+	o := queryopt.BuildUserListOptions(opts)
 	users := make([]*models.User, 0)
 
 	query := r.db.NewSelect().
 		Model(&users)
 
-	if isActive != nil {
-		query = query.Where("is_active = ?", *isActive)
+	if o.IsActive != nil {
+		query = query.Where("is_active = ?", *o.IsActive)
+	}
+	if o.WithRoles {
+		query = query.Relation("Roles")
 	}
 
 	err := query.
 		Order("created_at DESC").
-		Limit(limit).
-		Offset(offset).
+		Limit(o.Limit).
+		Offset(o.Offset).
 		Scan(ctx)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
-	}
-
-	return users, nil
-}
-
-// GetByIDWithRoles retrieves a user by ID with their roles loaded
-func (r *UserRepository) GetByIDWithRoles(ctx context.Context, id uuid.UUID, isActive *bool) (*models.User, error) {
-	user := new(models.User)
-
-	query := r.db.NewSelect().
-		Model(user).
-		Where("id = ?", id)
-
-	if isActive != nil {
-		query = query.Where("is_active = ?", *isActive)
-	}
-
-	err := query.
-		Relation("Roles").
-		Scan(ctx)
-
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, models.ErrUserNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user by id with roles: %w", err)
-	}
-
-	return user, nil
-}
-
-// GetByEmailWithRoles retrieves a user by email with their roles loaded
-func (r *UserRepository) GetByEmailWithRoles(ctx context.Context, email string, isActive *bool) (*models.User, error) {
-	user := new(models.User)
-
-	query := r.db.NewSelect().
-		Model(user).
-		Where("email = ?", email)
-
-	if isActive != nil {
-		query = query.Where("is_active = ?", *isActive)
-	}
-
-	err := query.
-		Relation("Roles").
-		Scan(ctx)
-
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, models.ErrUserNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user by email with roles: %w", err)
-	}
-
-	return user, nil
-}
-
-// GetByUsernameWithRoles retrieves a user by username with their roles loaded
-func (r *UserRepository) GetByUsernameWithRoles(ctx context.Context, username string, isActive *bool) (*models.User, error) {
-	user := new(models.User)
-
-	query := r.db.NewSelect().
-		Model(user).
-		Where("username = ?", username)
-
-	if isActive != nil {
-		query = query.Where("is_active = ?", *isActive)
-	}
-
-	err := query.
-		Relation("Roles").
-		Scan(ctx)
-
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, models.ErrUserNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user by username with roles: %w", err)
-	}
-
-	return user, nil
-}
-
-// ListWithRoles retrieves users with their roles loaded
-func (r *UserRepository) ListWithRoles(ctx context.Context, limit, offset int, isActive *bool) ([]*models.User, error) {
-	users := make([]*models.User, 0)
-
-	query := r.db.NewSelect().
-		Model(&users)
-
-	if isActive != nil {
-		query = query.Where("is_active = ?", *isActive)
-	}
-
-	err := query.
-		Relation("Roles").
-		Order("created_at DESC").
-		Limit(limit).
-		Offset(offset).
-		Scan(ctx)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to list users with roles: %w", err)
 	}
 
 	return users, nil
@@ -466,7 +380,8 @@ func (r *UserRepository) DisableTOTP(ctx context.Context, userID uuid.UUID) erro
 }
 
 // GetByPhone retrieves a user by phone number
-func (r *UserRepository) GetByPhone(ctx context.Context, phone string, isActive *bool) (*models.User, error) {
+func (r *UserRepository) GetByPhone(ctx context.Context, phone string, isActive *bool, opts ...queryopt.UserGetOption) (*models.User, error) {
+	o := queryopt.BuildUserGetOptions(opts)
 	user := new(models.User)
 
 	query := r.db.NewSelect().
@@ -475,6 +390,9 @@ func (r *UserRepository) GetByPhone(ctx context.Context, phone string, isActive 
 
 	if isActive != nil {
 		query = query.Where("is_active = ?", *isActive)
+	}
+	if o.WithRoles {
+		query = query.Relation("Roles")
 	}
 
 	err := query.Scan(ctx)

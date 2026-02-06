@@ -307,7 +307,7 @@ func (s *GroupService) SyncDynamicGroupMembers(ctx context.Context, groupID uuid
 
 	// Get all users (this is a simplified approach - in production, you'd want pagination)
 	// For now, we'll use a limit
-	allUsers, err := s.userRepo.List(ctx, 10000, 0, nil) // Large limit to get all users
+	allUsers, err := s.userRepo.List(ctx, UserListLimit(10000), UserListOffset(0))
 	if err != nil {
 		return err
 	}

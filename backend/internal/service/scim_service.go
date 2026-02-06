@@ -59,7 +59,7 @@ func (s *SCIMService) GetUsers(ctx context.Context, filter string, startIndex, c
 	}
 
 	// Get paginated users
-	users, err := s.userRepo.List(ctx, pageSize, offset, nil)
+	users, err := s.userRepo.List(ctx, UserListLimit(pageSize), UserListOffset(offset))
 	if err != nil {
 		return nil, err
 	}
