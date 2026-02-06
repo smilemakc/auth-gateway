@@ -905,6 +905,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 				ipFilterGroup.DELETE("/:id", handlers.AdvancedAdmin.DeleteIPFilter)
 			}
 
+			adminGroup.GET("/branding", handlers.AdvancedAdmin.GetBranding)
 			adminGroup.PUT("/branding", handlers.AdvancedAdmin.UpdateBranding)
 
 			systemGroup := adminGroup.Group("/system")

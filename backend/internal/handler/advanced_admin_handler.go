@@ -386,7 +386,11 @@ func (h *AdvancedAdminHandler) GetPermissionMatrix(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/sessions [get]
 func (h *AdvancedAdminHandler) ListUserSessions(c *gin.Context) {
-	userID, _ := c.Get("userID")
+	userID, ok := utils.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "User not authenticated"})
+		return
+	}
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
@@ -398,7 +402,7 @@ func (h *AdvancedAdminHandler) ListUserSessions(c *gin.Context) {
 		perPage = 20
 	}
 
-	sessions, err := h.sessionService.GetUserSessions(c.Request.Context(), userID.(uuid.UUID), page, perPage)
+	sessions, err := h.sessionService.GetUserSessions(c.Request.Context(), *userID, page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
@@ -419,14 +423,18 @@ func (h *AdvancedAdminHandler) ListUserSessions(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/sessions/{id} [delete]
 func (h *AdvancedAdminHandler) RevokeSession(c *gin.Context) {
-	userID, _ := c.Get("userID")
+	userID, ok := utils.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "User not authenticated"})
+		return
+	}
 	sessionID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid session ID"})
 		return
 	}
 
-	err = h.sessionService.RevokeSession(c.Request.Context(), userID.(uuid.UUID), sessionID)
+	err = h.sessionService.RevokeSession(c.Request.Context(), *userID, sessionID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
@@ -637,7 +645,11 @@ func (h *AdvancedAdminHandler) ListIPFilters(c *gin.Context) {
 // @Failure 403 {object} models.ErrorResponse
 // @Router /api/admin/ip-filters [post]
 func (h *AdvancedAdminHandler) CreateIPFilter(c *gin.Context) {
-	userID, _ := c.Get("userID")
+	userID, ok := utils.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "User not authenticated"})
+		return
+	}
 
 	var req models.CreateIPFilterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -645,7 +657,7 @@ func (h *AdvancedAdminHandler) CreateIPFilter(c *gin.Context) {
 		return
 	}
 
-	filter, err := h.ipFilterService.CreateIPFilter(c.Request.Context(), &req, userID.(uuid.UUID))
+	filter, err := h.ipFilterService.CreateIPFilter(c.Request.Context(), &req, *userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
@@ -734,7 +746,11 @@ func (h *AdvancedAdminHandler) GetBranding(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/branding [put]
 func (h *AdvancedAdminHandler) UpdateBranding(c *gin.Context) {
-	userID, _ := c.Get("userID")
+	userID, ok := utils.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "User not authenticated"})
+		return
+	}
 
 	var req models.UpdateBrandingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -781,7 +797,7 @@ func (h *AdvancedAdminHandler) UpdateBranding(c *gin.Context) {
 		settings.PrivacyURL = req.PrivacyURL
 	}
 
-	err = h.brandingRepo.UpdateBrandingSettings(c.Request.Context(), settings, userID.(uuid.UUID))
+	err = h.brandingRepo.UpdateBrandingSettings(c.Request.Context(), settings, *userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
@@ -834,7 +850,11 @@ func (h *AdvancedAdminHandler) GetMaintenanceMode(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/system/maintenance [put]
 func (h *AdvancedAdminHandler) SetMaintenanceMode(c *gin.Context) {
-	userID, _ := c.Get("userID")
+	userID, ok := utils.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "User not authenticated"})
+		return
+	}
 
 	var req models.MaintenanceModeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -842,14 +862,12 @@ func (h *AdvancedAdminHandler) SetMaintenanceMode(c *gin.Context) {
 		return
 	}
 
-	uid := userID.(uuid.UUID)
-
 	// Update maintenance mode
 	value := "false"
 	if req.Enabled {
 		value = "true"
 	}
-	err := h.systemRepo.UpdateSetting(c.Request.Context(), models.SettingMaintenanceMode, value, &uid)
+	err := h.systemRepo.UpdateSetting(c.Request.Context(), models.SettingMaintenanceMode, value, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
@@ -857,7 +875,7 @@ func (h *AdvancedAdminHandler) SetMaintenanceMode(c *gin.Context) {
 
 	// Update message if provided
 	if req.Message != "" {
-		err = h.systemRepo.UpdateSetting(c.Request.Context(), models.SettingMaintenanceMessage, req.Message, &uid)
+		err = h.systemRepo.UpdateSetting(c.Request.Context(), models.SettingMaintenanceMessage, req.Message, userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 			return

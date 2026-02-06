@@ -30,7 +30,7 @@ func (r *BrandingRepository) GetBrandingSettings(ctx context.Context) (*models.B
 	return settings, err
 }
 
-// UpdateBrandingSettings updates the branding settings
+// UpdateBrandingSettings updates the branding settings (single-row table)
 func (r *BrandingRepository) UpdateBrandingSettings(ctx context.Context, settings *models.BrandingSettings, updatedBy uuid.UUID) error {
 	_, err := r.db.NewUpdate().
 		Model(settings).
@@ -39,7 +39,7 @@ func (r *BrandingRepository) UpdateBrandingSettings(ctx context.Context, setting
 		Column("terms_url", "privacy_url").
 		Set("updated_at = ?", bun.Safe("CURRENT_TIMESTAMP")).
 		Set("updated_by = ?", updatedBy).
-		WherePK().
+		Where("TRUE").
 		Exec(ctx)
 
 	return err

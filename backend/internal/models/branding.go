@@ -8,7 +8,7 @@ import (
 
 // BrandingSettings represents the system branding configuration
 type BrandingSettings struct {
-	ID              uuid.UUID  `json:"id" bun:"id"`
+	ID              uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
 	LogoURL         string     `json:"logo_url,omitempty" bun:"logo_url"`
 	FaviconURL      string     `json:"favicon_url,omitempty" bun:"favicon_url"`
 	PrimaryColor    string     `json:"primary_color" bun:"primary_color"`       // Hex color

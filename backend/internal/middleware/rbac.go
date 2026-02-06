@@ -7,7 +7,7 @@ import (
 	"github.com/smilemakc/auth-gateway/internal/service"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 )
 
 // RBACMiddleware provides permission-based access control
@@ -25,14 +25,14 @@ func NewRBACMiddleware(rbacService *service.RBACService) *RBACMiddleware {
 // RequirePermission checks if the user has a specific permission
 func (m *RBACMiddleware) RequirePermission(permission string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := c.Get("userID")
-		if !exists {
+		userID, ok := utils.GetUserIDFromContext(c)
+		if !ok {
 			c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
 			c.Abort()
 			return
 		}
 
-		hasPermission, err := m.rbacService.CheckUserPermission(c.Request.Context(), userID.(uuid.UUID), permission)
+		hasPermission, err := m.rbacService.CheckUserPermission(c.Request.Context(), *userID, permission)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to check permissions"})
 			c.Abort()
@@ -52,14 +52,14 @@ func (m *RBACMiddleware) RequirePermission(permission string) gin.HandlerFunc {
 // RequireAnyPermission checks if the user has any of the specified permissions
 func (m *RBACMiddleware) RequireAnyPermission(permissions ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := c.Get("userID")
-		if !exists {
+		userID, ok := utils.GetUserIDFromContext(c)
+		if !ok {
 			c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
 			c.Abort()
 			return
 		}
 
-		hasPermission, err := m.rbacService.CheckUserAnyPermission(c.Request.Context(), userID.(uuid.UUID), permissions)
+		hasPermission, err := m.rbacService.CheckUserAnyPermission(c.Request.Context(), *userID, permissions)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to check permissions"})
 			c.Abort()
@@ -79,14 +79,14 @@ func (m *RBACMiddleware) RequireAnyPermission(permissions ...string) gin.Handler
 // RequireAllPermissions checks if the user has all of the specified permissions
 func (m *RBACMiddleware) RequireAllPermissions(permissions ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := c.Get("userID")
-		if !exists {
+		userID, ok := utils.GetUserIDFromContext(c)
+		if !ok {
 			c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
 			c.Abort()
 			return
 		}
 
-		hasPermission, err := m.rbacService.CheckUserAllPermissions(c.Request.Context(), userID.(uuid.UUID), permissions)
+		hasPermission, err := m.rbacService.CheckUserAllPermissions(c.Request.Context(), *userID, permissions)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to check permissions"})
 			c.Abort()

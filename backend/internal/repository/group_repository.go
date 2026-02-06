@@ -203,7 +203,7 @@ func (r *GroupRepository) GetGroupMembers(ctx context.Context, groupID uuid.UUID
 		Model(&users).
 		Join("JOIN user_groups ON \"user\".id = user_groups.user_id").
 		Where("user_groups.group_id = ?", groupID).
-		Order("\"user\".created_at DESC").
+		OrderExpr("\"user\".created_at DESC").
 		Limit(pageSize).
 		Offset(offset).
 		Scan(ctx)

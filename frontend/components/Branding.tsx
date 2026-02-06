@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Palette, Image as ImageIcon, Layout, Lock, Github, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useBranding, useUpdateBranding } from '../hooks/useSettings';
+import { toast } from '../services/toast';
 
 const Branding: React.FC = () => {
   const navigate = useNavigate();
@@ -70,17 +71,17 @@ const Branding: React.FC = () => {
     try {
       await updateMutation.mutateAsync({
         company_name: config.company_name,
-        logo_url: config.logo_url,
-        favicon_url: config.favicon_url,
-        theme: config.theme,
-        login_page_title: config.loginPageTitle,
-        login_page_subtitle: config.loginPageSubtitle,
-        show_social_logins: config.showSocialLogins,
+        logo_url: config.logo_url || undefined,
+        favicon_url: config.favicon_url || undefined,
+        primary_color: config.theme.primary_color,
+        secondary_color: config.theme.secondary_color,
+        background_color: config.theme.background_color,
       });
+      toast.success(t('common.saved'));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      console.error('Failed to save branding:', err);
+      toast.error(t('common.error'));
     }
   };
 
@@ -162,45 +163,35 @@ const Branding: React.FC = () => {
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <Palette size={16} /> {t('brand.colors')}
               </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">{t('brand.primary')}</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      name="primary_color"
-                      value={config.theme.primary_color}
-                      onChange={handleChange}
-                      className="h-9 w-9 p-1 rounded border border-input cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      name="primary_color"
-                      value={config.theme.primary_color}
-                      onChange={handleChange}
-                      className="flex-1 px-3 py-2 border border-input rounded-md text-sm font-mono"
-                    />
+              <div className="space-y-3">
+                {([
+                  ['primary_color', t('brand.primary'), config.theme.primary_color],
+                  ['secondary_color', t('brand.secondary'), config.theme.secondary_color],
+                  ['background_color', t('brand.bg'), config.theme.background_color],
+                ] as const).map(([name, label, value]) => (
+                  <div key={name}>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">{label}</label>
+                    <div className="flex items-center border border-input rounded-lg overflow-hidden bg-background">
+                      <label className="relative cursor-pointer shrink-0">
+                        <input
+                          type="color"
+                          name={name}
+                          value={value}
+                          onChange={handleChange}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <div className="w-10 h-10 border-r border-input" style={{ backgroundColor: value }} />
+                      </label>
+                      <input
+                        type="text"
+                        name={name}
+                        value={value}
+                        onChange={handleChange}
+                        className="flex-1 px-3 py-2 text-sm font-mono bg-transparent border-0 outline-none"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">{t('brand.bg')}</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      name="background_color"
-                      value={config.theme.background_color}
-                      onChange={handleChange}
-                      className="h-9 w-9 p-1 rounded border border-input cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      name="background_color"
-                      value={config.theme.background_color}
-                      onChange={handleChange}
-                      className="flex-1 px-3 py-2 border border-input rounded-md text-sm font-mono"
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -283,9 +274,12 @@ const Branding: React.FC = () => {
                          <label className="block text-sm font-medium text-muted-foreground mb-1">Password</label>
                          <input disabled type="password" className="w-full px-4 py-2 border border-input rounded-lg bg-muted" placeholder="••••••••" />
                       </div>
+                      <div className="flex justify-end">
+                         <span className="text-xs font-medium cursor-pointer" style={{ color: config.theme.secondary_color }}>Forgot password?</span>
+                      </div>
 
                       <button
-                         className="w-full py-2 px-4 text-primary-foreground font-medium rounded-lg shadow-sm"
+                         className="w-full py-2.5 px-4 text-white font-medium rounded-lg shadow-sm transition-colors"
                          style={{ backgroundColor: config.theme.primary_color }}
                       >
                          Sign In
@@ -302,10 +296,16 @@ const Branding: React.FC = () => {
                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                               <button className="flex items-center justify-center px-4 py-2 border border-input rounded-lg hover:bg-accent bg-card text-sm font-medium text-muted-foreground">
+                               <button
+                                  className="flex items-center justify-center px-4 py-2 rounded-lg bg-card text-sm font-medium text-muted-foreground"
+                                  style={{ border: `1px solid ${config.theme.secondary_color}30` }}
+                               >
                                   <Github size={16} className="mr-2" /> GitHub
                                </button>
-                               <button className="flex items-center justify-center px-4 py-2 border border-input rounded-lg hover:bg-accent bg-card text-sm font-medium text-muted-foreground">
+                               <button
+                                  className="flex items-center justify-center px-4 py-2 rounded-lg bg-card text-sm font-medium text-muted-foreground"
+                                  style={{ border: `1px solid ${config.theme.secondary_color}30` }}
+                               >
                                   <span className="font-bold text-destructive mr-2">G</span> Google
                                </button>
                             </div>
@@ -313,8 +313,8 @@ const Branding: React.FC = () => {
                       )}
                    </div>
                 </div>
-                <div className="bg-muted px-8 py-4 text-center text-sm text-muted-foreground border-t border-border">
-                   Don't have an account? <span style={{ color: config.theme.primary_color }} className="font-medium">Sign up</span>
+                <div className="px-8 py-4 text-center text-sm text-muted-foreground" style={{ borderTop: `1px solid ${config.theme.secondary_color}20`, backgroundColor: `${config.theme.secondary_color}08` }}>
+                   Don't have an account? <span style={{ color: config.theme.secondary_color }} className="font-medium cursor-pointer">Sign up</span>
                 </div>
              </div>
 
