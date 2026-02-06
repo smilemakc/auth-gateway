@@ -2,10 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/apiClient';
 import { queryKeys } from '../services/queryClient';
 import type { CreateAPIKeyRequest, UpdateAPIKeyRequest } from '@auth-gateway/client-sdk';
+import { useCurrentAppId } from './useAppAwareQuery';
 
 export function useApiKeys(page: number = 1, pageSize: number = 50) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.apiKeys.list(page, pageSize),
+    queryKey: [...queryKeys.apiKeys.list(page, pageSize), appId],
     queryFn: async () => {
       const response = await apiClient.admin.apiKeys.list(page, pageSize);
       return response;

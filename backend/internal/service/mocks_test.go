@@ -929,6 +929,7 @@ type mockAPIKeyStore struct {
 	CountActiveFunc       func(ctx context.Context, userID uuid.UUID) (int, error)
 	ListAllFunc           func(ctx context.Context) ([]*models.APIKey, error)
 	GetByUserIDAndAppFunc func(ctx context.Context, userID, appID uuid.UUID) ([]*models.APIKey, error)
+	ListByAppFunc         func(ctx context.Context, appID uuid.UUID) ([]*models.APIKey, error)
 }
 
 func (m *mockAPIKeyStore) Create(ctx context.Context, apiKey *models.APIKey) error {
@@ -1051,6 +1052,12 @@ func (m *mockAPIKeyStore) ListAll(ctx context.Context) ([]*models.APIKey, error)
 func (m *mockAPIKeyStore) GetByUserIDAndApp(ctx context.Context, userID, appID uuid.UUID) ([]*models.APIKey, error) {
 	if m.GetByUserIDAndAppFunc != nil {
 		return m.GetByUserIDAndAppFunc(ctx, userID, appID)
+	}
+	return nil, nil
+}
+func (m *mockAPIKeyStore) ListByApp(ctx context.Context, appID uuid.UUID) ([]*models.APIKey, error) {
+	if m.ListByAppFunc != nil {
+		return m.ListByAppFunc(ctx, appID)
 	}
 	return nil, nil
 }

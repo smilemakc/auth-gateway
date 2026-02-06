@@ -20,7 +20,7 @@ func TestAdminService_GetStats(t *testing.T) {
 	mockBackupCode := &mockBackupCodeStore{}
 	mockDB := &mockTransactionDB{}
 
-	svc := NewAdminService(mockUser, mockAPIKey, mockAudit, mockOAuth, mockRBAC, mockBackupCode, 10, mockDB)
+	svc := NewAdminService(mockUser, mockAPIKey, mockAudit, mockOAuth, mockRBAC, mockBackupCode, nil, 10, mockDB)
 	ctx := context.Background()
 
 	t.Run("Success", func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestAdminService_ListUsers(t *testing.T) {
 	mockBackupCode := &mockBackupCodeStore{}
 	mockDB := &mockTransactionDB{}
 
-	svc := NewAdminService(mockUser, mockAPIKey, nil, mockOAuth, nil, mockBackupCode, 10, mockDB)
+	svc := NewAdminService(mockUser, mockAPIKey, nil, mockOAuth, nil, mockBackupCode, nil, 10, mockDB)
 	ctx := context.Background()
 
 	t.Run("Success", func(t *testing.T) {
@@ -95,7 +95,7 @@ func TestAdminService_ListUsers(t *testing.T) {
 			return []*models.OAuthAccount{{}}, nil
 		}
 
-		resp, err := svc.ListUsers(ctx, 1, 10)
+		resp, err := svc.ListUsers(ctx, nil, 1, 10)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(resp.Users))
 		assert.Equal(t, "test", resp.Users[0].Username)
@@ -112,7 +112,7 @@ func TestAdminService_UpdateUser(t *testing.T) {
 	mockBackupCode := &mockBackupCodeStore{}
 	mockDB := &mockTransactionDB{}
 
-	svc := NewAdminService(mockUser, mockAPIKey, nil, mockOAuth, mockRBAC, mockBackupCode, 10, mockDB)
+	svc := NewAdminService(mockUser, mockAPIKey, nil, mockOAuth, mockRBAC, mockBackupCode, nil, 10, mockDB)
 	ctx := context.Background()
 
 	t.Run("Success_UpdateRolesAndActive", func(t *testing.T) {

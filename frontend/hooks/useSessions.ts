@@ -1,17 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/apiClient';
 import { queryKeys } from '../services/queryClient';
+import { useCurrentAppId } from './useAppAwareQuery';
 
 export function useSessions(page: number = 1, pageSize: number = 50) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.sessions.list(page, pageSize),
+    queryKey: [...queryKeys.sessions.list(page, pageSize), appId],
     queryFn: () => apiClient.admin.sessions.list(page, pageSize),
   });
 }
 
 export function useUserSessions(userId: string, page: number = 1, pageSize: number = 50) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.sessions.byUser(userId, page, pageSize),
+    queryKey: [...queryKeys.sessions.byUser(userId, page, pageSize), appId],
     queryFn: async () => {
       // Get all sessions and filter by userId
       // The SDK might have a specific method for this

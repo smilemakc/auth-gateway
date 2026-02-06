@@ -2,10 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/apiClient';
 import { queryKeys } from '../services/queryClient';
 import type { AdminCreateUserRequest, AdminUpdateUserRequest } from '@auth-gateway/client-sdk';
+import { useCurrentAppId } from './useAppAwareQuery';
 
 export function useUsers(page: number = 1, pageSize: number = 50, search?: string, role?: string) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.users.list(page, pageSize, search, role),
+    queryKey: [...queryKeys.users.list(page, pageSize, search, role), appId],
     queryFn: async () => {
       const response = await apiClient.admin.users.list(page, pageSize);
       const { users, total } = response;
@@ -40,8 +42,9 @@ export function useUserDetail(userId: string) {
 }
 
 export function useUserStats() {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.users.stats,
+    queryKey: [...queryKeys.users.stats, appId],
     queryFn: () => apiClient.admin.users.getStats(),
   });
 }

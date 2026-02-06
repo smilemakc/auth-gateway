@@ -5,11 +5,13 @@ import type {
   CreateOAuthClientRequest,
   UpdateOAuthClientRequest,
 } from '@auth-gateway/client-sdk';
+import { useCurrentAppId } from './useAppAwareQuery';
 
 // OAuth Clients
 export function useOAuthClients(page: number = 1, pageSize: number = 20) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.oauthClients.list(page, pageSize),
+    queryKey: [...queryKeys.oauthClients.list(page, pageSize), appId],
     queryFn: () => apiClient.admin.oauthClients.list({ page, per_page: pageSize }),
   });
 }
@@ -93,8 +95,9 @@ export function useDeactivateOAuthClient() {
 
 // OAuth Scopes
 export function useOAuthScopes() {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.oauthClients.scopes,
+    queryKey: [...queryKeys.oauthClients.scopes, appId],
     queryFn: () => apiClient.admin.oauthClients.listScopes(),
   });
 }
@@ -124,8 +127,9 @@ export function useDeleteOAuthScope() {
 
 // User Consents
 export function useOAuthClientConsents(clientId: string) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.oauthClients.consents(clientId),
+    queryKey: [...queryKeys.oauthClients.consents(clientId), appId],
     queryFn: () => apiClient.admin.oauthClients.listClientConsents(clientId),
     enabled: !!clientId,
   });

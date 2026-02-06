@@ -21,6 +21,7 @@ type AdminService struct {
 	oauthRepo      OAuthStore
 	rbacRepo       RBACStore
 	backupCodeRepo BackupCodeStore
+	appRepo        ApplicationStore
 	bcryptCost     int
 	db             TransactionDB
 }
@@ -33,6 +34,7 @@ func NewAdminService(
 	oauthRepo OAuthStore,
 	rbacRepo RBACStore,
 	backupCodeRepo BackupCodeStore,
+	appRepo ApplicationStore,
 	bcryptCost int,
 	db TransactionDB,
 ) *AdminService {
@@ -43,6 +45,7 @@ func NewAdminService(
 		oauthRepo:      oauthRepo,
 		rbacRepo:       rbacRepo,
 		backupCodeRepo: backupCodeRepo,
+		appRepo:        appRepo,
 		bcryptCost:     bcryptCost,
 		db:             db,
 	}
@@ -127,8 +130,7 @@ func (s *AdminService) GetStats(ctx context.Context) (*models.AdminStatsResponse
 	return stats, nil
 }
 
-// ListUsers returns paginated list of users with admin info
-func (s *AdminService) ListUsers(ctx context.Context, page, pageSize int) (*models.AdminUserListResponse, error) {
+func (s *AdminService) ListUsers(ctx context.Context, appID *uuid.UUID, page, pageSize int) (*models.AdminUserListResponse, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -136,29 +138,43 @@ func (s *AdminService) ListUsers(ctx context.Context, page, pageSize int) (*mode
 		pageSize = 20
 	}
 
-	offset := (page - 1) * pageSize
+	var users []*models.User
+	var total int
+	var err error
 
-	users, err := s.userRepo.ListWithRoles(ctx, pageSize, offset, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list users: %w", err)
-	}
-
-	total, err := s.userRepo.Count(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to count users: %w", err)
+	if appID != nil {
+		var profiles []*models.UserApplicationProfile
+		profiles, total, err = s.appRepo.ListApplicationUsers(ctx, *appID, page, pageSize)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list users by app: %w", err)
+		}
+		users = make([]*models.User, 0, len(profiles))
+		for _, p := range profiles {
+			if p.User != nil {
+				users = append(users, p.User)
+			}
+		}
+	} else {
+		offset := (page - 1) * pageSize
+		users, err = s.userRepo.ListWithRoles(ctx, pageSize, offset, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list users: %w", err)
+		}
+		total, err = s.userRepo.Count(ctx, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to count users: %w", err)
+		}
 	}
 
 	adminUsers := make([]*models.AdminUserResponse, 0, len(users))
 	for _, user := range users {
 		adminUser := s.userToAdminResponse(user)
 
-		// Count API keys
 		apiKeys, err := s.apiKeyRepo.GetByUserID(ctx, user.ID)
 		if err == nil {
 			adminUser.APIKeysCount = len(apiKeys)
 		}
 
-		// Count OAuth accounts
 		oauthAccounts, err := s.oauthRepo.GetByUserID(ctx, user.ID)
 		if err == nil {
 			adminUser.OAuthAccountsCount = len(oauthAccounts)
@@ -339,7 +355,7 @@ func (s *AdminService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 }
 
 // ListAPIKeys returns all API keys with user information
-func (s *AdminService) ListAPIKeys(ctx context.Context, page, pageSize int) ([]*models.AdminAPIKeyResponse, error) {
+func (s *AdminService) ListAPIKeys(ctx context.Context, appID *uuid.UUID, page, pageSize int) ([]*models.AdminAPIKeyResponse, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -347,12 +363,18 @@ func (s *AdminService) ListAPIKeys(ctx context.Context, page, pageSize int) ([]*
 		pageSize = 50
 	}
 
-	apiKeys, err := s.apiKeyRepo.ListAll(ctx)
+	var apiKeys []*models.APIKey
+	var err error
+
+	if appID != nil {
+		apiKeys, err = s.apiKeyRepo.ListByApp(ctx, *appID)
+	} else {
+		apiKeys, err = s.apiKeyRepo.ListAll(ctx)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to list API keys: %w", err)
 	}
 
-	// Apply pagination
 	start := (page - 1) * pageSize
 	end := start + pageSize
 	if start >= len(apiKeys) {
@@ -365,29 +387,28 @@ func (s *AdminService) ListAPIKeys(ctx context.Context, page, pageSize int) ([]*
 	adminAPIKeys := make([]*models.AdminAPIKeyResponse, 0, end-start)
 	for i := start; i < end; i++ {
 		key := apiKeys[i]
-		user, err := s.userRepo.GetByID(ctx, key.UserID, nil)
-		if err != nil {
-			continue
-		}
+		user, _ := s.userRepo.GetByID(ctx, key.UserID, nil)
 
 		var scopes []string
 		if err := json.Unmarshal(key.Scopes, &scopes); err != nil {
 			scopes = []string{}
 		}
 
-		adminAPIKeys = append(adminAPIKeys, &models.AdminAPIKeyResponse{
+		resp := &models.AdminAPIKeyResponse{
 			ID:         key.ID,
 			UserID:     key.UserID,
-			Username:   user.Username,
 			Name:       key.Name,
 			Prefix:     key.KeyPrefix,
 			Scopes:     scopes,
 			ExpiresAt:  key.ExpiresAt,
 			LastUsedAt: key.LastUsedAt,
 			IsRevoked:  !key.IsActive,
-			RevokedAt:  nil, // Not tracked in current schema
 			CreatedAt:  key.CreatedAt,
-		})
+		}
+		if user != nil {
+			resp.Username = user.Username
+		}
+		adminAPIKeys = append(adminAPIKeys, resp)
 	}
 
 	return adminAPIKeys, nil

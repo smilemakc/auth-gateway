@@ -1,11 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/apiClient';
 import { queryKeys } from '../services/queryClient';
+import { useCurrentAppId } from './useAppAwareQuery';
 
 // Roles
 export function useRoles(page: number = 1, pageSize: number = 50) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.rbac.roles.list(page, pageSize),
+    queryKey: [...queryKeys.rbac.roles.list(page, pageSize), appId],
     queryFn: () => apiClient.admin.rbac.listRoles(),
   });
 }
@@ -56,8 +58,9 @@ export function useDeleteRole() {
 
 // Permissions
 export function usePermissions(page: number = 1, pageSize: number = 100) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.rbac.permissions.list(page, pageSize),
+    queryKey: [...queryKeys.rbac.permissions.list(page, pageSize), appId],
     queryFn: () => apiClient.admin.rbac.listPermissions(),
   });
 }

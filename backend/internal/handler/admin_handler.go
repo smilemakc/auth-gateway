@@ -72,8 +72,9 @@ func (h *AdminHandler) GetStats(c *gin.Context) {
 func (h *AdminHandler) ListUsers(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	appID, _ := utils.GetApplicationIDFromContext(c)
 
-	response, err := h.adminService.ListUsers(c.Request.Context(), page, pageSize)
+	response, err := h.adminService.ListUsers(c.Request.Context(), appID, page, pageSize)
 	if err != nil {
 		h.logger.Error("Failed to list users", map[string]interface{}{
 			"error": err.Error(),
@@ -305,8 +306,9 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 func (h *AdminHandler) ListAPIKeys(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
+	appID, _ := utils.GetApplicationIDFromContext(c)
 
-	apiKeys, err := h.adminService.ListAPIKeys(c.Request.Context(), page, pageSize)
+	apiKeys, err := h.adminService.ListAPIKeys(c.Request.Context(), appID, page, pageSize)
 	if err != nil {
 		h.logger.Error("Failed to list API keys", map[string]interface{}{
 			"error": err.Error(),

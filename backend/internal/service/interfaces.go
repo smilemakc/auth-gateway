@@ -222,6 +222,7 @@ type APIKeyStore interface {
 	Count(ctx context.Context, userID uuid.UUID) (int, error)
 	CountActive(ctx context.Context, userID uuid.UUID) (int, error)
 	ListAll(ctx context.Context) ([]*models.APIKey, error)
+	ListByApp(ctx context.Context, appID uuid.UUID) ([]*models.APIKey, error)
 	GetByUserIDAndApp(ctx context.Context, userID, appID uuid.UUID) ([]*models.APIKey, error)
 }
 

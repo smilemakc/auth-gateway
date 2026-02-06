@@ -2,10 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/apiClient';
 import { queryKeys } from '../services/queryClient';
 import type { CreateGroupRequest, UpdateGroupRequest, AddGroupMembersRequest } from '@auth-gateway/client-sdk';
+import { useCurrentAppId } from './useAppAwareQuery';
 
 export function useGroups(page: number = 1, pageSize: number = 20) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.groups.list(page, pageSize),
+    queryKey: [...queryKeys.groups.list(page, pageSize), appId],
     queryFn: () => apiClient.admin.groups.list(page, pageSize),
   });
 }
@@ -54,8 +56,9 @@ export function useDeleteGroup() {
 }
 
 export function useGroupMembers(groupId: string, page: number = 1, pageSize: number = 20) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.groups.members(groupId, page, pageSize),
+    queryKey: [...queryKeys.groups.members(groupId, page, pageSize), appId],
     queryFn: () => apiClient.admin.groups.getMembers(groupId, page, pageSize),
     enabled: !!groupId,
   });

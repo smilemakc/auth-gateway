@@ -6,10 +6,12 @@ import type {
   UpdateWebhookRequest,
   TestWebhookRequest,
 } from '@auth-gateway/client-sdk';
+import { useCurrentAppId } from './useAppAwareQuery';
 
 export function useWebhooks(page: number = 1, pageSize: number = 50) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.webhooks.list(page, pageSize),
+    queryKey: [...queryKeys.webhooks.list(page, pageSize), appId],
     queryFn: () => apiClient.admin.webhooks.list(page, pageSize),
   });
 }

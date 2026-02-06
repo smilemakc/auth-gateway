@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../services/apiClient';
 import { queryKeys } from '../services/queryClient';
+import { useCurrentAppId } from './useAppAwareQuery';
 
 interface AuditLogFilters {
   userId?: string;
@@ -16,8 +17,9 @@ export function useAuditLogs(
   pageSize: number = 50,
   filters?: AuditLogFilters
 ) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: queryKeys.auditLogs.list({ page, pageSize, ...filters }),
+    queryKey: [...queryKeys.auditLogs.list({ page, pageSize, ...filters }), appId],
     queryFn: async () => {
       const response = await apiClient.admin.audit.list({
         page,
@@ -50,8 +52,9 @@ export function useAuditLogDetail(id: string) {
 }
 
 export function useUserAuditLogs(userId: string, page: number = 1, pageSize: number = 50) {
+  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: ['auditLogs', 'user', userId, { page, pageSize }],
+    queryKey: ['auditLogs', 'user', userId, { page, pageSize }, appId],
     queryFn: async () => {
       const response = await apiClient.admin.audit.list({
         userId,
