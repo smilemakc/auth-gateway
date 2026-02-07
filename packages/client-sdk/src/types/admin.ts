@@ -689,3 +689,125 @@ export interface SCIMConfig {
 export interface SCIMMetadataResponse {
   metadata: Record<string, unknown>;
 }
+
+// ============================================
+// Application Types
+// ============================================
+
+/** Authentication method */
+export type AuthMethod = 'password' | 'otp_email' | 'otp_sms' | 'oauth_google' | 'oauth_github' | 'oauth_yandex' | 'oauth_telegram' | 'totp' | 'api_key';
+
+/** Application entity */
+export interface Application {
+  id: string;
+  name: string;
+  display_name: string;
+  description?: string;
+  homepage_url?: string;
+  callback_urls?: string[];
+  allowed_auth_methods: AuthMethod[];
+  is_active: boolean;
+  is_system: boolean;
+  owner_id?: string;
+  secret_prefix?: string;
+  created_at: string;
+  updated_at: string;
+  branding?: ApplicationBranding;
+}
+
+/** Application branding settings */
+export interface ApplicationBranding {
+  id: string;
+  application_id: string;
+  logo_url?: string;
+  favicon_url?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  background_color?: string;
+  custom_css?: string;
+  company_name?: string;
+  support_email?: string;
+  terms_url?: string;
+  privacy_url?: string;
+}
+
+/** Create application request */
+export interface CreateApplicationRequest {
+  name: string;
+  display_name: string;
+  description?: string;
+  homepage_url?: string;
+  callback_urls?: string[];
+  allowed_auth_methods?: AuthMethod[];
+  is_active?: boolean;
+}
+
+/** Create application response */
+export interface CreateApplicationResponse {
+  application: Application;
+  secret?: string;
+  warning?: string;
+}
+
+/** Update application request */
+export interface UpdateApplicationRequest {
+  display_name?: string;
+  description?: string;
+  homepage_url?: string;
+  callback_urls?: string[];
+  allowed_auth_methods?: AuthMethod[];
+  is_active?: boolean;
+}
+
+/** Application list response */
+export interface ApplicationListResponse {
+  applications: Application[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+/** Rotate application secret response */
+export interface AppRotateSecretResponse {
+  secret: string;
+  warning: string;
+}
+
+/** User app profile entity */
+export interface UserAppProfile {
+  id: string;
+  user_id: string;
+  application_id: string;
+  display_name?: string;
+  avatar_url?: string;
+  nickname?: string;
+  app_roles?: string[];
+  is_active: boolean;
+  is_banned: boolean;
+  ban_reason?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** User app profile list response */
+export interface UserAppProfileListResponse {
+  profiles: UserAppProfile[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+/** Ban user request */
+export interface BanUserRequest {
+  reason: string;
+}
+
+/** Auth configuration response (public) */
+export interface AuthConfigResponse {
+  application_id: string;
+  name: string;
+  display_name: string;
+  allowed_auth_methods: AuthMethod[];
+  oauth_providers?: string[];
+  branding?: ApplicationBranding;
+}

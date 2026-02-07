@@ -6,6 +6,7 @@ import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import * as path from 'path';
 import type {
+  AuthConfigResult,
   CheckPermissionRequest,
   CheckPermissionResponse,
   GetUserRequest,
@@ -14,6 +15,8 @@ import type {
   GrpcClientConfig,
   IntrospectTokenRequest,
   IntrospectTokenResponse,
+  SyncUsersOptions,
+  SyncUsersResult,
   ValidateTokenRequest,
   ValidateTokenResponse,
 } from './types';
@@ -184,6 +187,8 @@ export class AuthGrpcClient {
       getUser: this.promisify('getUser'),
       checkPermission: this.promisify('checkPermission'),
       introspectToken: this.promisify('introspectToken'),
+      syncUsers: this.promisify('syncUsers'),
+      getApplicationAuthConfig: this.promisify('getApplicationAuthConfig'),
     };
 
     // Wait for connection
@@ -362,6 +367,66 @@ export class AuthGrpcClient {
     return this.transformResponse(response as Record<string, unknown>) as unknown as IntrospectTokenResponse;
   }
 
+  /**
+   * Sync users updated after a timestamp
+   * @param opts Sync options including updatedAfter timestamp
+   * @param callOptions gRPC call options
+   * @returns List of users updated after the timestamp
+   */
+  async syncUsers(
+    opts: SyncUsersOptions,
+    callOptions?: GrpcCallOptions
+  ): Promise<SyncUsersResult> {
+    if (!this.isConnected()) {
+      await this.connect();
+    }
+
+    if (!this.serviceMethods.syncUsers) {
+      throw new Error('SyncUsers method not available');
+    }
+
+    const updatedAfter = typeof opts.updatedAfter === 'string'
+      ? opts.updatedAfter
+      : opts.updatedAfter.toISOString();
+
+    const request = {
+      updatedAfter,
+      applicationId: opts.applicationId || '',
+      limit: opts.limit || 100,
+      offset: opts.offset || 0,
+    };
+
+    this.log('SyncUsers:', { updatedAfter, applicationId: opts.applicationId, limit: opts.limit, offset: opts.offset });
+
+    const response = await this.serviceMethods.syncUsers(request, callOptions);
+    return this.transformResponse(response as Record<string, unknown>) as unknown as SyncUsersResult;
+  }
+
+  /**
+   * Get auth config for an application
+   * @param applicationId Application UUID
+   * @param options Call options
+   * @returns Application auth configuration
+   */
+  async getApplicationAuthConfig(
+    applicationId: string,
+    options?: GrpcCallOptions
+  ): Promise<AuthConfigResult> {
+    if (!this.isConnected()) {
+      await this.connect();
+    }
+
+    if (!this.serviceMethods.getApplicationAuthConfig) {
+      throw new Error('GetApplicationAuthConfig method not available');
+    }
+
+    const request = { applicationId };
+    this.log('GetApplicationAuthConfig:', request);
+
+    const response = await this.serviceMethods.getApplicationAuthConfig(request, options);
+    return this.transformResponse(response as Record<string, unknown>) as unknown as AuthConfigResult;
+  }
+
   /** Transform snake_case response to camelCase */
   private transformResponse(obj: Record<string, unknown>): Record<string, unknown> {
     const result: Record<string, unknown> = {};
@@ -369,7 +434,13 @@ export class AuthGrpcClient {
     for (const [key, value] of Object.entries(obj)) {
       const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
+      if (Array.isArray(value)) {
+        result[camelKey] = value.map(item =>
+          item && typeof item === 'object'
+            ? this.transformResponse(item as Record<string, unknown>)
+            : item
+        );
+      } else if (value && typeof value === 'object') {
         result[camelKey] = this.transformResponse(value as Record<string, unknown>);
       } else {
         result[camelKey] = value;

@@ -38,6 +38,7 @@ import {
   AdminTelegramBotsService,
   AdminUserTelegramService,
   AdminEmailService,
+  AdminApplicationsService,
 } from './services';
 
 /** Admin services container */
@@ -86,6 +87,8 @@ export interface AdminServices {
   userTelegram: AdminUserTelegramService;
   /** Email sending via templates */
   email: AdminEmailService;
+  /** Application management */
+  applications: AdminApplicationsService;
 }
 
 /**
@@ -202,6 +205,7 @@ export class AuthGatewayClient {
       telegramBots: new AdminTelegramBotsService(this.http),
       userTelegram: new AdminUserTelegramService(this.http),
       email: new AdminEmailService(this.http),
+      applications: new AdminApplicationsService(this.http),
     };
   }
 

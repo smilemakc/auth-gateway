@@ -105,3 +105,49 @@ export interface GrpcCallOptions {
   /** Metadata/headers to include */
   metadata?: Record<string, string>;
 }
+
+/** Sync users options */
+export interface SyncUsersOptions {
+  updatedAfter: Date | string;
+  applicationId?: string;
+  limit?: number;
+  offset?: number;
+}
+
+/** Sync user object */
+export interface SyncUser {
+  id: string;
+  email: string;
+  username: string;
+  fullName: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  updatedAt: string;
+  appProfile?: SyncUserAppProfile;
+}
+
+/** Sync user app profile */
+export interface SyncUserAppProfile {
+  displayName?: string;
+  avatarUrl?: string;
+  appRoles?: string[];
+  isActive: boolean;
+  isBanned: boolean;
+}
+
+/** Sync users result */
+export interface SyncUsersResult {
+  users: SyncUser[];
+  total: number;
+  hasMore: boolean;
+  syncTimestamp: string;
+}
+
+/** Auth config result */
+export interface AuthConfigResult {
+  applicationId: string;
+  name: string;
+  displayName: string;
+  allowedAuthMethods: string[];
+  oauthProviders: string[];
+}
