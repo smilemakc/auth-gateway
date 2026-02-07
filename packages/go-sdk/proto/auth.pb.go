@@ -3207,6 +3207,454 @@ func (x *SendEmailResponse) GetErrorMessage() string {
 	return ""
 }
 
+type SyncUsersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UpdatedAfter  string                 `protobuf:"bytes,1,opt,name=updated_after,json=updatedAfter,proto3" json:"updated_after,omitempty"`    // RFC3339 timestamp
+	ApplicationId string                 `protobuf:"bytes,2,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"` // Optional: filter by application
+	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`                                     // Pagination limit (max 1000)
+	Offset        int32                  `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`                                   // Pagination offset
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncUsersRequest) Reset() {
+	*x = SyncUsersRequest{}
+	mi := &file_proto_auth_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncUsersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncUsersRequest) ProtoMessage() {}
+
+func (x *SyncUsersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncUsersRequest.ProtoReflect.Descriptor instead.
+func (*SyncUsersRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *SyncUsersRequest) GetUpdatedAfter() string {
+	if x != nil {
+		return x.UpdatedAfter
+	}
+	return ""
+}
+
+func (x *SyncUsersRequest) GetApplicationId() string {
+	if x != nil {
+		return x.ApplicationId
+	}
+	return ""
+}
+
+func (x *SyncUsersRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *SyncUsersRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type SyncUsersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*SyncUser            `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	HasMore       bool                   `protobuf:"varint,3,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
+	SyncTimestamp string                 `protobuf:"bytes,4,opt,name=sync_timestamp,json=syncTimestamp,proto3" json:"sync_timestamp,omitempty"` // Server timestamp for next sync
+	ErrorMessage  string                 `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncUsersResponse) Reset() {
+	*x = SyncUsersResponse{}
+	mi := &file_proto_auth_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncUsersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncUsersResponse) ProtoMessage() {}
+
+func (x *SyncUsersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncUsersResponse.ProtoReflect.Descriptor instead.
+func (*SyncUsersResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *SyncUsersResponse) GetUsers() []*SyncUser {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
+func (x *SyncUsersResponse) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *SyncUsersResponse) GetHasMore() bool {
+	if x != nil {
+		return x.HasMore
+	}
+	return false
+}
+
+func (x *SyncUsersResponse) GetSyncTimestamp() string {
+	if x != nil {
+		return x.SyncTimestamp
+	}
+	return ""
+}
+
+func (x *SyncUsersResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+type SyncUser struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Username      string                 `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
+	FullName      string                 `protobuf:"bytes,4,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	IsActive      bool                   `protobuf:"varint,5,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	EmailVerified bool                   `protobuf:"varint,6,opt,name=email_verified,json=emailVerified,proto3" json:"email_verified,omitempty"`
+	UpdatedAt     string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // RFC3339 timestamp
+	AppProfile    *SyncUserAppProfile    `protobuf:"bytes,8,opt,name=app_profile,json=appProfile,proto3" json:"app_profile,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncUser) Reset() {
+	*x = SyncUser{}
+	mi := &file_proto_auth_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncUser) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncUser) ProtoMessage() {}
+
+func (x *SyncUser) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncUser.ProtoReflect.Descriptor instead.
+func (*SyncUser) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *SyncUser) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SyncUser) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *SyncUser) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *SyncUser) GetFullName() string {
+	if x != nil {
+		return x.FullName
+	}
+	return ""
+}
+
+func (x *SyncUser) GetIsActive() bool {
+	if x != nil {
+		return x.IsActive
+	}
+	return false
+}
+
+func (x *SyncUser) GetEmailVerified() bool {
+	if x != nil {
+		return x.EmailVerified
+	}
+	return false
+}
+
+func (x *SyncUser) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *SyncUser) GetAppProfile() *SyncUserAppProfile {
+	if x != nil {
+		return x.AppProfile
+	}
+	return nil
+}
+
+type SyncUserAppProfile struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DisplayName   string                 `protobuf:"bytes,1,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	AvatarUrl     string                 `protobuf:"bytes,2,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	AppRoles      []string               `protobuf:"bytes,3,rep,name=app_roles,json=appRoles,proto3" json:"app_roles,omitempty"`
+	IsActive      bool                   `protobuf:"varint,4,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	IsBanned      bool                   `protobuf:"varint,5,opt,name=is_banned,json=isBanned,proto3" json:"is_banned,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncUserAppProfile) Reset() {
+	*x = SyncUserAppProfile{}
+	mi := &file_proto_auth_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncUserAppProfile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncUserAppProfile) ProtoMessage() {}
+
+func (x *SyncUserAppProfile) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncUserAppProfile.ProtoReflect.Descriptor instead.
+func (*SyncUserAppProfile) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *SyncUserAppProfile) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *SyncUserAppProfile) GetAvatarUrl() string {
+	if x != nil {
+		return x.AvatarUrl
+	}
+	return ""
+}
+
+func (x *SyncUserAppProfile) GetAppRoles() []string {
+	if x != nil {
+		return x.AppRoles
+	}
+	return nil
+}
+
+func (x *SyncUserAppProfile) GetIsActive() bool {
+	if x != nil {
+		return x.IsActive
+	}
+	return false
+}
+
+func (x *SyncUserAppProfile) GetIsBanned() bool {
+	if x != nil {
+		return x.IsBanned
+	}
+	return false
+}
+
+type GetApplicationAuthConfigRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ApplicationId string                 `protobuf:"bytes,1,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"` // UUID
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetApplicationAuthConfigRequest) Reset() {
+	*x = GetApplicationAuthConfigRequest{}
+	mi := &file_proto_auth_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetApplicationAuthConfigRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetApplicationAuthConfigRequest) ProtoMessage() {}
+
+func (x *GetApplicationAuthConfigRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetApplicationAuthConfigRequest.ProtoReflect.Descriptor instead.
+func (*GetApplicationAuthConfigRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *GetApplicationAuthConfigRequest) GetApplicationId() string {
+	if x != nil {
+		return x.ApplicationId
+	}
+	return ""
+}
+
+type GetApplicationAuthConfigResponse struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	ApplicationId      string                 `protobuf:"bytes,1,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	Name               string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	DisplayName        string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	AllowedAuthMethods []string               `protobuf:"bytes,4,rep,name=allowed_auth_methods,json=allowedAuthMethods,proto3" json:"allowed_auth_methods,omitempty"`
+	OauthProviders     []string               `protobuf:"bytes,5,rep,name=oauth_providers,json=oauthProviders,proto3" json:"oauth_providers,omitempty"`
+	ErrorMessage       string                 `protobuf:"bytes,6,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *GetApplicationAuthConfigResponse) Reset() {
+	*x = GetApplicationAuthConfigResponse{}
+	mi := &file_proto_auth_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetApplicationAuthConfigResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetApplicationAuthConfigResponse) ProtoMessage() {}
+
+func (x *GetApplicationAuthConfigResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetApplicationAuthConfigResponse.ProtoReflect.Descriptor instead.
+func (*GetApplicationAuthConfigResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *GetApplicationAuthConfigResponse) GetApplicationId() string {
+	if x != nil {
+		return x.ApplicationId
+	}
+	return ""
+}
+
+func (x *GetApplicationAuthConfigResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *GetApplicationAuthConfigResponse) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *GetApplicationAuthConfigResponse) GetAllowedAuthMethods() []string {
+	if x != nil {
+		return x.AllowedAuthMethods
+	}
+	return nil
+}
+
+func (x *GetApplicationAuthConfigResponse) GetOauthProviders() []string {
+	if x != nil {
+		return x.OauthProviders
+	}
+	return nil
+}
+
+func (x *GetApplicationAuthConfigResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
 var File_proto_auth_proto protoreflect.FileDescriptor
 
 const file_proto_auth_proto_rawDesc = "" +
@@ -3488,14 +3936,52 @@ const file_proto_auth_proto_rawDesc = "" +
 	"\x11SendEmailResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage*\x9f\x01\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\x8c\x01\n" +
+	"\x10SyncUsersRequest\x12#\n" +
+	"\rupdated_after\x18\x01 \x01(\tR\fupdatedAfter\x12%\n" +
+	"\x0eapplication_id\x18\x02 \x01(\tR\rapplicationId\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x04 \x01(\x05R\x06offset\"\xb6\x01\n" +
+	"\x11SyncUsersResponse\x12$\n" +
+	"\x05users\x18\x01 \x03(\v2\x0e.auth.SyncUserR\x05users\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\x12\x19\n" +
+	"\bhas_more\x18\x03 \x01(\bR\ahasMore\x12%\n" +
+	"\x0esync_timestamp\x18\x04 \x01(\tR\rsyncTimestamp\x12#\n" +
+	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\"\x87\x02\n" +
+	"\bSyncUser\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
+	"\busername\x18\x03 \x01(\tR\busername\x12\x1b\n" +
+	"\tfull_name\x18\x04 \x01(\tR\bfullName\x12\x1b\n" +
+	"\tis_active\x18\x05 \x01(\bR\bisActive\x12%\n" +
+	"\x0eemail_verified\x18\x06 \x01(\bR\remailVerified\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\a \x01(\tR\tupdatedAt\x129\n" +
+	"\vapp_profile\x18\b \x01(\v2\x18.auth.SyncUserAppProfileR\n" +
+	"appProfile\"\xad\x01\n" +
+	"\x12SyncUserAppProfile\x12!\n" +
+	"\fdisplay_name\x18\x01 \x01(\tR\vdisplayName\x12\x1d\n" +
+	"\n" +
+	"avatar_url\x18\x02 \x01(\tR\tavatarUrl\x12\x1b\n" +
+	"\tapp_roles\x18\x03 \x03(\tR\bappRoles\x12\x1b\n" +
+	"\tis_active\x18\x04 \x01(\bR\bisActive\x12\x1b\n" +
+	"\tis_banned\x18\x05 \x01(\bR\bisBanned\"H\n" +
+	"\x1fGetApplicationAuthConfigRequest\x12%\n" +
+	"\x0eapplication_id\x18\x01 \x01(\tR\rapplicationId\"\x80\x02\n" +
+	" GetApplicationAuthConfigResponse\x12%\n" +
+	"\x0eapplication_id\x18\x01 \x01(\tR\rapplicationId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12!\n" +
+	"\fdisplay_name\x18\x03 \x01(\tR\vdisplayName\x120\n" +
+	"\x14allowed_auth_methods\x18\x04 \x03(\tR\x12allowedAuthMethods\x12'\n" +
+	"\x0foauth_providers\x18\x05 \x03(\tR\x0eoauthProviders\x12#\n" +
+	"\rerror_message\x18\x06 \x01(\tR\ferrorMessage*\x9f\x01\n" +
 	"\aOTPType\x12\x18\n" +
 	"\x14OTP_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15OTP_TYPE_VERIFICATION\x10\x01\x12\x1b\n" +
 	"\x17OTP_TYPE_PASSWORD_RESET\x10\x02\x12\x13\n" +
 	"\x0fOTP_TYPE_TWO_FA\x10\x03\x12\x12\n" +
 	"\x0eOTP_TYPE_LOGIN\x10\x04\x12\x19\n" +
-	"\x15OTP_TYPE_REGISTRATION\x10\x052\xd3\f\n" +
+	"\x15OTP_TYPE_REGISTRATION\x10\x052\xfc\r\n" +
 	"\vAuthService\x12H\n" +
 	"\rValidateToken\x12\x1a.auth.ValidateTokenRequest\x1a\x1b.auth.ValidateTokenResponse\x126\n" +
 	"\aGetUser\x12\x14.auth.GetUserRequest\x1a\x15.auth.GetUserResponse\x12N\n" +
@@ -3517,7 +4003,9 @@ const file_proto_auth_proto_rawDesc = "" +
 	"\x0eGetOAuthClient\x12\x1b.auth.GetOAuthClientRequest\x1a\x1c.auth.GetOAuthClientResponse\x12<\n" +
 	"\tSendEmail\x12\x16.auth.SendEmailRequest\x1a\x17.auth.SendEmailResponse\x12Y\n" +
 	"\x19GetUserApplicationProfile\x12\x1e.auth.GetUserAppProfileRequest\x1a\x1c.auth.UserAppProfileResponse\x12W\n" +
-	"\x13GetUserTelegramBots\x12 .auth.GetUserTelegramBotsRequest\x1a\x1e.auth.UserTelegramBotsResponseB9Z7github.com/smilemakc/auth-gateway/packages/go-sdk/protob\x06proto3"
+	"\x13GetUserTelegramBots\x12 .auth.GetUserTelegramBotsRequest\x1a\x1e.auth.UserTelegramBotsResponse\x12<\n" +
+	"\tSyncUsers\x12\x16.auth.SyncUsersRequest\x1a\x17.auth.SyncUsersResponse\x12i\n" +
+	"\x18GetApplicationAuthConfig\x12%.auth.GetApplicationAuthConfigRequest\x1a&.auth.GetApplicationAuthConfigResponseB9Z7github.com/smilemakc/auth-gateway/packages/go-sdk/protob\x06proto3"
 
 var (
 	file_proto_auth_proto_rawDescOnce sync.Once
@@ -3532,7 +4020,7 @@ func file_proto_auth_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_auth_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
+var file_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
 var file_proto_auth_proto_goTypes = []any{
 	(OTPType)(0),                                     // 0: auth.OTPType
 	(*ValidateTokenRequest)(nil),                     // 1: auth.ValidateTokenRequest
@@ -3578,7 +4066,13 @@ var file_proto_auth_proto_goTypes = []any{
 	(*UserTelegramBotsResponse)(nil),                 // 41: auth.UserTelegramBotsResponse
 	(*SendEmailRequest)(nil),                         // 42: auth.SendEmailRequest
 	(*SendEmailResponse)(nil),                        // 43: auth.SendEmailResponse
-	nil,                                              // 44: auth.SendEmailRequest.VariablesEntry
+	(*SyncUsersRequest)(nil),                         // 44: auth.SyncUsersRequest
+	(*SyncUsersResponse)(nil),                        // 45: auth.SyncUsersResponse
+	(*SyncUser)(nil),                                 // 46: auth.SyncUser
+	(*SyncUserAppProfile)(nil),                       // 47: auth.SyncUserAppProfile
+	(*GetApplicationAuthConfigRequest)(nil),          // 48: auth.GetApplicationAuthConfigRequest
+	(*GetApplicationAuthConfigResponse)(nil),         // 49: auth.GetApplicationAuthConfigResponse
+	nil,                                              // 50: auth.SendEmailRequest.VariablesEntry
 }
 var file_proto_auth_proto_depIdxs = []int32{
 	4,  // 0: auth.GetUserResponse.user:type_name -> auth.User
@@ -3591,52 +4085,58 @@ var file_proto_auth_proto_depIdxs = []int32{
 	4,  // 7: auth.VerifyLoginOTPResponse.user:type_name -> auth.User
 	35, // 8: auth.GetOAuthClientResponse.client:type_name -> auth.OAuthClient
 	40, // 9: auth.UserTelegramBotsResponse.bots:type_name -> auth.TelegramBotAccess
-	44, // 10: auth.SendEmailRequest.variables:type_name -> auth.SendEmailRequest.VariablesEntry
-	1,  // 11: auth.AuthService.ValidateToken:input_type -> auth.ValidateTokenRequest
-	3,  // 12: auth.AuthService.GetUser:input_type -> auth.GetUserRequest
-	6,  // 13: auth.AuthService.CheckPermission:input_type -> auth.CheckPermissionRequest
-	8,  // 14: auth.AuthService.IntrospectToken:input_type -> auth.IntrospectTokenRequest
-	10, // 15: auth.AuthService.CreateUser:input_type -> auth.CreateUserRequest
-	12, // 16: auth.AuthService.Login:input_type -> auth.LoginRequest
-	14, // 17: auth.AuthService.InitPasswordlessRegistration:input_type -> auth.InitPasswordlessRegistrationRequest
-	16, // 18: auth.AuthService.CompletePasswordlessRegistration:input_type -> auth.CompletePasswordlessRegistrationRequest
-	18, // 19: auth.AuthService.SendOTP:input_type -> auth.SendOTPRequest
-	20, // 20: auth.AuthService.VerifyOTP:input_type -> auth.VerifyOTPRequest
-	22, // 21: auth.AuthService.LoginWithOTP:input_type -> auth.LoginWithOTPRequest
-	28, // 22: auth.AuthService.VerifyLoginOTP:input_type -> auth.VerifyLoginOTPRequest
-	24, // 23: auth.AuthService.RegisterWithOTP:input_type -> auth.RegisterWithOTPRequest
-	26, // 24: auth.AuthService.VerifyRegistrationOTP:input_type -> auth.VerifyRegistrationOTPRequest
-	30, // 25: auth.AuthService.IntrospectOAuthToken:input_type -> auth.IntrospectOAuthTokenRequest
-	32, // 26: auth.AuthService.ValidateOAuthClient:input_type -> auth.ValidateOAuthClientRequest
-	34, // 27: auth.AuthService.GetOAuthClient:input_type -> auth.GetOAuthClientRequest
-	42, // 28: auth.AuthService.SendEmail:input_type -> auth.SendEmailRequest
-	37, // 29: auth.AuthService.GetUserApplicationProfile:input_type -> auth.GetUserAppProfileRequest
-	39, // 30: auth.AuthService.GetUserTelegramBots:input_type -> auth.GetUserTelegramBotsRequest
-	2,  // 31: auth.AuthService.ValidateToken:output_type -> auth.ValidateTokenResponse
-	5,  // 32: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
-	7,  // 33: auth.AuthService.CheckPermission:output_type -> auth.CheckPermissionResponse
-	9,  // 34: auth.AuthService.IntrospectToken:output_type -> auth.IntrospectTokenResponse
-	11, // 35: auth.AuthService.CreateUser:output_type -> auth.CreateUserResponse
-	13, // 36: auth.AuthService.Login:output_type -> auth.LoginResponse
-	15, // 37: auth.AuthService.InitPasswordlessRegistration:output_type -> auth.InitPasswordlessRegistrationResponse
-	17, // 38: auth.AuthService.CompletePasswordlessRegistration:output_type -> auth.CompletePasswordlessRegistrationResponse
-	19, // 39: auth.AuthService.SendOTP:output_type -> auth.SendOTPResponse
-	21, // 40: auth.AuthService.VerifyOTP:output_type -> auth.VerifyOTPResponse
-	23, // 41: auth.AuthService.LoginWithOTP:output_type -> auth.LoginWithOTPResponse
-	29, // 42: auth.AuthService.VerifyLoginOTP:output_type -> auth.VerifyLoginOTPResponse
-	25, // 43: auth.AuthService.RegisterWithOTP:output_type -> auth.RegisterWithOTPResponse
-	27, // 44: auth.AuthService.VerifyRegistrationOTP:output_type -> auth.VerifyRegistrationOTPResponse
-	31, // 45: auth.AuthService.IntrospectOAuthToken:output_type -> auth.IntrospectOAuthTokenResponse
-	33, // 46: auth.AuthService.ValidateOAuthClient:output_type -> auth.ValidateOAuthClientResponse
-	36, // 47: auth.AuthService.GetOAuthClient:output_type -> auth.GetOAuthClientResponse
-	43, // 48: auth.AuthService.SendEmail:output_type -> auth.SendEmailResponse
-	38, // 49: auth.AuthService.GetUserApplicationProfile:output_type -> auth.UserAppProfileResponse
-	41, // 50: auth.AuthService.GetUserTelegramBots:output_type -> auth.UserTelegramBotsResponse
-	31, // [31:51] is the sub-list for method output_type
-	11, // [11:31] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	50, // 10: auth.SendEmailRequest.variables:type_name -> auth.SendEmailRequest.VariablesEntry
+	46, // 11: auth.SyncUsersResponse.users:type_name -> auth.SyncUser
+	47, // 12: auth.SyncUser.app_profile:type_name -> auth.SyncUserAppProfile
+	1,  // 13: auth.AuthService.ValidateToken:input_type -> auth.ValidateTokenRequest
+	3,  // 14: auth.AuthService.GetUser:input_type -> auth.GetUserRequest
+	6,  // 15: auth.AuthService.CheckPermission:input_type -> auth.CheckPermissionRequest
+	8,  // 16: auth.AuthService.IntrospectToken:input_type -> auth.IntrospectTokenRequest
+	10, // 17: auth.AuthService.CreateUser:input_type -> auth.CreateUserRequest
+	12, // 18: auth.AuthService.Login:input_type -> auth.LoginRequest
+	14, // 19: auth.AuthService.InitPasswordlessRegistration:input_type -> auth.InitPasswordlessRegistrationRequest
+	16, // 20: auth.AuthService.CompletePasswordlessRegistration:input_type -> auth.CompletePasswordlessRegistrationRequest
+	18, // 21: auth.AuthService.SendOTP:input_type -> auth.SendOTPRequest
+	20, // 22: auth.AuthService.VerifyOTP:input_type -> auth.VerifyOTPRequest
+	22, // 23: auth.AuthService.LoginWithOTP:input_type -> auth.LoginWithOTPRequest
+	28, // 24: auth.AuthService.VerifyLoginOTP:input_type -> auth.VerifyLoginOTPRequest
+	24, // 25: auth.AuthService.RegisterWithOTP:input_type -> auth.RegisterWithOTPRequest
+	26, // 26: auth.AuthService.VerifyRegistrationOTP:input_type -> auth.VerifyRegistrationOTPRequest
+	30, // 27: auth.AuthService.IntrospectOAuthToken:input_type -> auth.IntrospectOAuthTokenRequest
+	32, // 28: auth.AuthService.ValidateOAuthClient:input_type -> auth.ValidateOAuthClientRequest
+	34, // 29: auth.AuthService.GetOAuthClient:input_type -> auth.GetOAuthClientRequest
+	42, // 30: auth.AuthService.SendEmail:input_type -> auth.SendEmailRequest
+	37, // 31: auth.AuthService.GetUserApplicationProfile:input_type -> auth.GetUserAppProfileRequest
+	39, // 32: auth.AuthService.GetUserTelegramBots:input_type -> auth.GetUserTelegramBotsRequest
+	44, // 33: auth.AuthService.SyncUsers:input_type -> auth.SyncUsersRequest
+	48, // 34: auth.AuthService.GetApplicationAuthConfig:input_type -> auth.GetApplicationAuthConfigRequest
+	2,  // 35: auth.AuthService.ValidateToken:output_type -> auth.ValidateTokenResponse
+	5,  // 36: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
+	7,  // 37: auth.AuthService.CheckPermission:output_type -> auth.CheckPermissionResponse
+	9,  // 38: auth.AuthService.IntrospectToken:output_type -> auth.IntrospectTokenResponse
+	11, // 39: auth.AuthService.CreateUser:output_type -> auth.CreateUserResponse
+	13, // 40: auth.AuthService.Login:output_type -> auth.LoginResponse
+	15, // 41: auth.AuthService.InitPasswordlessRegistration:output_type -> auth.InitPasswordlessRegistrationResponse
+	17, // 42: auth.AuthService.CompletePasswordlessRegistration:output_type -> auth.CompletePasswordlessRegistrationResponse
+	19, // 43: auth.AuthService.SendOTP:output_type -> auth.SendOTPResponse
+	21, // 44: auth.AuthService.VerifyOTP:output_type -> auth.VerifyOTPResponse
+	23, // 45: auth.AuthService.LoginWithOTP:output_type -> auth.LoginWithOTPResponse
+	29, // 46: auth.AuthService.VerifyLoginOTP:output_type -> auth.VerifyLoginOTPResponse
+	25, // 47: auth.AuthService.RegisterWithOTP:output_type -> auth.RegisterWithOTPResponse
+	27, // 48: auth.AuthService.VerifyRegistrationOTP:output_type -> auth.VerifyRegistrationOTPResponse
+	31, // 49: auth.AuthService.IntrospectOAuthToken:output_type -> auth.IntrospectOAuthTokenResponse
+	33, // 50: auth.AuthService.ValidateOAuthClient:output_type -> auth.ValidateOAuthClientResponse
+	36, // 51: auth.AuthService.GetOAuthClient:output_type -> auth.GetOAuthClientResponse
+	43, // 52: auth.AuthService.SendEmail:output_type -> auth.SendEmailResponse
+	38, // 53: auth.AuthService.GetUserApplicationProfile:output_type -> auth.UserAppProfileResponse
+	41, // 54: auth.AuthService.GetUserTelegramBots:output_type -> auth.UserTelegramBotsResponse
+	45, // 55: auth.AuthService.SyncUsers:output_type -> auth.SyncUsersResponse
+	49, // 56: auth.AuthService.GetApplicationAuthConfig:output_type -> auth.GetApplicationAuthConfigResponse
+	35, // [35:57] is the sub-list for method output_type
+	13, // [13:35] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_proto_auth_proto_init() }
@@ -3650,7 +4150,7 @@ func file_proto_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_auth_proto_rawDesc), len(file_proto_auth_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   44,
+			NumMessages:   50,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

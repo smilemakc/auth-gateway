@@ -557,3 +557,46 @@ func (c *GRPCClient) GetUserTelegramBots(ctx context.Context, userID, applicatio
 	}
 	return resp, nil
 }
+
+// ========== Sync & Config Methods ==========
+
+// SyncUsers returns users updated after a given timestamp for shadow table sync.
+func (c *GRPCClient) SyncUsers(ctx context.Context, updatedAfter string, applicationID string, limit, offset int32) (*proto.SyncUsersResponse, error) {
+	resp, err := c.client.SyncUsers(c.withMetadata(ctx), &proto.SyncUsersRequest{
+		UpdatedAfter:  updatedAfter,
+		ApplicationId: applicationID,
+		Limit:         limit,
+		Offset:        offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to sync users: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeBadRequest,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
+
+// GetApplicationAuthConfig returns auth configuration for a specific application.
+func (c *GRPCClient) GetApplicationAuthConfig(ctx context.Context, applicationID string) (*proto.GetApplicationAuthConfigResponse, error) {
+	resp, err := c.client.GetApplicationAuthConfig(c.withMetadata(ctx), &proto.GetApplicationAuthConfigRequest{
+		ApplicationId: applicationID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get application auth config: %w", err)
+	}
+
+	if resp.ErrorMessage != "" {
+		return nil, &APIError{
+			Code:    ErrCodeBadRequest,
+			Message: resp.ErrorMessage,
+		}
+	}
+
+	return resp, nil
+}
