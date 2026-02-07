@@ -1,0 +1,58 @@
+migration:
+  mode: "dry-run"       # "full" or "dry-run"
+  batch_size: 100
+  workers: 4
+
+source:
+  type: "postgresql"    # postgresql | mysql
+  host: "localhost"
+  port: 5432
+  database: "crm_production"
+  user: "readonly_user"
+  password: "${SOURCE_DB_PASSWORD}"
+  ssl: false
+  users_table: "users"
+  id_strategy: "preserve_uuid"  # preserve_uuid | generate_new
+
+  columns:
+    id: "id"
+    email: "email"
+    username: "username"
+    password_hash: "password_hash"
+    full_name: "full_name"
+    phone: "phone"
+    is_active: "is_active"
+    created_at: "created_at"
+
+target:
+  base_url: "http://auth-gateway:3000"
+  api_key: "${AUTH_GATEWAY_API_KEY}"
+  application_id: "uuid-of-application"
+
+password:
+  strategy: "transfer"          # transfer | force_reset | none
+  source_algorithm: "bcrypt"    # bcrypt | argon2 | scrypt | md5 | sha256
+
+conflicts:
+  strategy: "skip"    # skip | update | error
+
+deduplication:
+  key: "email"              # email | phone | email_or_phone
+  strategy: "keep_latest"   # keep_latest | keep_first | error
+
+shadow:
+  enabled: true
+  drop_columns:
+    - "password_hash"
+    - "totp_secret"
+    - "totp_enabled"
+  add_columns:
+    - name: "synced_at"
+      type: "TIMESTAMP"
+      default: "NOW()"
+    - name: "display_name"
+      type: "VARCHAR(255)"
+      default: "NULL"
+    - name: "avatar_url"
+      type: "TEXT"
+      default: "NULL"
