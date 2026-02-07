@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"regexp"
@@ -10,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
@@ -26,26 +29,28 @@ var (
 var slugRegex = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 type ApplicationService struct {
-	appRepo ApplicationStore
-	logger  *logger.Logger
+	appRepo      ApplicationStore
+	appOAuthRepo AppOAuthProviderStore
+	logger       *logger.Logger
 }
 
-func NewApplicationService(appRepo ApplicationStore, log *logger.Logger) *ApplicationService {
+func NewApplicationService(appRepo ApplicationStore, appOAuthRepo AppOAuthProviderStore, log *logger.Logger) *ApplicationService {
 	return &ApplicationService{
-		appRepo: appRepo,
-		logger:  log,
+		appRepo:      appRepo,
+		appOAuthRepo: appOAuthRepo,
+		logger:       log,
 	}
 }
 
-func (s *ApplicationService) CreateApplication(ctx context.Context, req *models.CreateApplicationRequest, ownerID *uuid.UUID) (*models.Application, error) {
+func (s *ApplicationService) CreateApplication(ctx context.Context, req *models.CreateApplicationRequest, ownerID *uuid.UUID) (*models.Application, string, error) {
 	name := strings.TrimSpace(strings.ToLower(req.Name))
 	if !isValidSlug(name) {
-		return nil, ErrInvalidApplicationName
+		return nil, "", ErrInvalidApplicationName
 	}
 
 	existing, err := s.appRepo.GetApplicationByName(ctx, name)
 	if err == nil && existing != nil {
-		return nil, ErrApplicationNameExists
+		return nil, "", ErrApplicationNameExists
 	}
 
 	isActive := true
@@ -53,18 +58,24 @@ func (s *ApplicationService) CreateApplication(ctx context.Context, req *models.
 		isActive = *req.IsActive
 	}
 
+	allowedAuthMethods := req.AllowedAuthMethods
+	if len(allowedAuthMethods) == 0 {
+		allowedAuthMethods = []string{"password"}
+	}
+
 	app := &models.Application{
-		ID:           uuid.New(),
-		Name:         name,
-		DisplayName:  req.DisplayName,
-		Description:  req.Description,
-		HomepageURL:  req.HomepageURL,
-		CallbackURLs: req.CallbackURLs,
-		IsActive:     isActive,
-		IsSystem:     false,
-		OwnerID:      ownerID,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		ID:                 uuid.New(),
+		Name:               name,
+		DisplayName:        req.DisplayName,
+		Description:        req.Description,
+		HomepageURL:        req.HomepageURL,
+		CallbackURLs:       req.CallbackURLs,
+		IsActive:           isActive,
+		IsSystem:           false,
+		OwnerID:            ownerID,
+		AllowedAuthMethods: allowedAuthMethods,
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
 	}
 
 	if err := s.appRepo.CreateApplication(ctx, app); err != nil {
@@ -72,7 +83,7 @@ func (s *ApplicationService) CreateApplication(ctx context.Context, req *models.
 			"error": err.Error(),
 			"name":  name,
 		})
-		return nil, fmt.Errorf("failed to create application: %w", err)
+		return nil, "", fmt.Errorf("failed to create application: %w", err)
 	}
 
 	branding := &models.ApplicationBranding{
@@ -91,6 +102,15 @@ func (s *ApplicationService) CreateApplication(ctx context.Context, req *models.
 		})
 	}
 
+	// Auto-generate application secret
+	secret, err := s.GenerateSecret(ctx, app.ID)
+	if err != nil {
+		s.logger.Warn("failed to auto-generate application secret", map[string]interface{}{
+			"error":          err.Error(),
+			"application_id": app.ID.String(),
+		})
+	}
+
 	s.logger.Info("application created", map[string]interface{}{
 		"application_id": app.ID.String(),
 		"name":           name,
@@ -98,7 +118,7 @@ func (s *ApplicationService) CreateApplication(ctx context.Context, req *models.
 	})
 
 	app.Branding = branding
-	return app, nil
+	return app, secret, nil
 }
 
 func (s *ApplicationService) GetByID(ctx context.Context, id uuid.UUID) (*models.Application, error) {
@@ -138,6 +158,9 @@ func (s *ApplicationService) UpdateApplication(ctx context.Context, id uuid.UUID
 	}
 	if req.IsActive != nil {
 		app.IsActive = *req.IsActive
+	}
+	if req.AllowedAuthMethods != nil {
+		app.AllowedAuthMethods = req.AllowedAuthMethods
 	}
 
 	app.UpdatedAt = time.Now()
@@ -493,4 +516,118 @@ func isValidSlug(name string) bool {
 		return false
 	}
 	return slugRegex.MatchString(name)
+}
+
+// IsAuthMethodAllowed checks if an auth method is allowed for a given application
+func (s *ApplicationService) IsAuthMethodAllowed(ctx context.Context, appID uuid.UUID, method string) error {
+	app, err := s.GetByID(ctx, appID)
+	if err != nil {
+		return err
+	}
+	if !app.IsActive {
+		return models.NewAppError(403, "Application is not active")
+	}
+	for _, m := range app.AllowedAuthMethods {
+		if m == method {
+			return nil
+		}
+	}
+	return models.NewAppError(403, fmt.Sprintf("Auth method '%s' is not allowed for this application", method))
+}
+
+const appSecretPrefix = "app_"
+
+// generateSecureToken generates a cryptographically secure random token
+func generateSecureToken(length int) (string, error) {
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", fmt.Errorf("failed to generate random bytes: %w", err)
+	}
+	return base64.URLEncoding.EncodeToString(bytes), nil
+}
+
+// GenerateSecret creates a new application secret
+// Returns the raw secret ONE TIME (only the hash is stored)
+func (s *ApplicationService) GenerateSecret(ctx context.Context, appID uuid.UUID) (string, error) {
+	app, err := s.appRepo.GetApplicationByID(ctx, appID)
+	if err != nil {
+		return "", ErrApplicationNotFound
+	}
+	if !app.IsActive {
+		return "", models.NewAppError(403, "Application is not active")
+	}
+
+	token, err := generateSecureToken(40)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate secret: %w", err)
+	}
+	rawSecret := appSecretPrefix + token
+
+	hash := utils.HashToken(rawSecret)
+	prefix := rawSecret[:12]
+
+	now := time.Now()
+	app.SecretHash = hash
+	app.SecretPrefix = prefix
+	app.SecretLastRotatedAt = &now
+	app.UpdatedAt = now
+
+	if err := s.appRepo.UpdateApplication(ctx, app); err != nil {
+		return "", fmt.Errorf("failed to save application secret: %w", err)
+	}
+
+	s.logger.Info("application secret generated", map[string]interface{}{
+		"application_id": appID.String(),
+		"prefix":         prefix,
+	})
+
+	return rawSecret, nil
+}
+
+// RotateSecret generates a new secret, invalidating the old one
+func (s *ApplicationService) RotateSecret(ctx context.Context, appID uuid.UUID) (string, error) {
+	return s.GenerateSecret(ctx, appID)
+}
+
+// ValidateSecret validates an app_ token and returns the Application
+func (s *ApplicationService) ValidateSecret(ctx context.Context, secret string) (*models.Application, error) {
+	hash := utils.HashToken(secret)
+	app, err := s.appRepo.GetBySecretHash(ctx, hash)
+	if err != nil {
+		return nil, models.NewAppError(401, "Invalid application secret")
+	}
+	if !app.IsActive {
+		return nil, models.NewAppError(403, "Application is not active")
+	}
+	return app, nil
+}
+
+func (s *ApplicationService) GetAuthConfig(ctx context.Context, app *models.Application) (*models.AuthConfigResponse, error) {
+	config := &models.AuthConfigResponse{
+		ApplicationID:      app.ID,
+		Name:               app.Name,
+		DisplayName:        app.DisplayName,
+		AllowedAuthMethods: app.AllowedAuthMethods,
+	}
+
+	if s.appOAuthRepo != nil {
+		providers, err := s.appOAuthRepo.ListByApp(ctx, app.ID)
+		if err == nil {
+			oauthProviders := make([]string, 0)
+			for _, p := range providers {
+				if p.IsActive {
+					oauthProviders = append(oauthProviders, p.Provider)
+				}
+			}
+			config.OAuthProviders = oauthProviders
+		}
+	}
+
+	branding, err := s.appRepo.GetBranding(ctx, app.ID)
+	if err == nil && branding != nil {
+		pubBranding := branding.ToPublicResponse()
+		config.Branding = &pubBranding
+	}
+
+	return config, nil
 }

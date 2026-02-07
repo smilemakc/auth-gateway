@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -608,6 +611,195 @@ func (s *AdminService) GetUserOAuthAccounts(ctx context.Context, userID uuid.UUI
 	}
 
 	return accounts, nil
+}
+
+// SyncUsers returns users updated after a given timestamp
+func (s *AdminService) SyncUsers(ctx context.Context, updatedAfter time.Time, appID *uuid.UUID, limit, offset int) (*models.SyncUsersResponse, error) {
+	if limit <= 0 || limit > 1000 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	users, total, err := s.userRepo.GetUsersUpdatedAfter(ctx, updatedAfter, appID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sync users: %w", err)
+	}
+
+	syncUsers := make([]models.SyncUserResponse, len(users))
+	for i, user := range users {
+		syncUser := models.SyncUserResponse{
+			ID:            user.ID,
+			Email:         user.Email,
+			Username:      user.Username,
+			FullName:      user.FullName,
+			IsActive:      user.IsActive,
+			EmailVerified: user.EmailVerified,
+			UpdatedAt:     user.UpdatedAt,
+		}
+
+		if len(user.ApplicationProfiles) > 0 {
+			profile := user.ApplicationProfiles[0]
+			appProfile := &models.SyncUserAppProfile{
+				AppRoles: profile.AppRoles,
+				IsActive: profile.IsActive,
+				IsBanned: profile.IsBanned,
+			}
+			if profile.DisplayName != nil {
+				appProfile.DisplayName = *profile.DisplayName
+			}
+			if profile.AvatarURL != nil {
+				appProfile.AvatarURL = *profile.AvatarURL
+			}
+			syncUser.AppProfile = appProfile
+		}
+
+		syncUsers[i] = syncUser
+	}
+
+	hasMore := offset+limit < total
+
+	return &models.SyncUsersResponse{
+		Users:         syncUsers,
+		Total:         total,
+		HasMore:       hasMore,
+		SyncTimestamp: time.Now().UTC().Format(time.RFC3339),
+	}, nil
+}
+
+// ImportUsers bulk imports users with optional UUID preservation
+func (s *AdminService) ImportUsers(ctx context.Context, req *models.BulkImportUsersRequest, appID *uuid.UUID) (*models.ImportUsersResponse, error) {
+	var imported, skipped, updated, errCount int
+	var details []models.ImportDetail
+
+	for _, entry := range req.Users {
+		detail := models.ImportDetail{Email: entry.Email}
+
+		email := utils.NormalizeEmail(entry.Email)
+		if !utils.IsValidEmail(email) {
+			detail.Status = "error"
+			detail.Reason = "invalid email format"
+			errCount++
+			details = append(details, detail)
+			continue
+		}
+
+		existingUser, err := s.userRepo.GetByEmail(ctx, email, nil)
+		if err == nil && existingUser != nil {
+			switch req.OnConflict {
+			case "skip":
+				detail.Status = "skipped"
+				detail.Reason = "email already exists"
+				detail.UserID = existingUser.ID.String()
+				skipped++
+			case "update":
+				if entry.FullName != "" {
+					existingUser.FullName = entry.FullName
+				}
+				if entry.IsActive != nil {
+					existingUser.IsActive = *entry.IsActive
+				}
+				if entry.PasswordHashImport != "" {
+					existingUser.PasswordHash = entry.PasswordHashImport
+				}
+				if err := s.userRepo.Update(ctx, existingUser); err != nil {
+					detail.Status = "error"
+					detail.Reason = fmt.Sprintf("failed to update: %s", err.Error())
+					errCount++
+				} else {
+					detail.Status = "updated"
+					detail.UserID = existingUser.ID.String()
+					updated++
+				}
+			case "error":
+				detail.Status = "error"
+				detail.Reason = "email already exists"
+				errCount++
+			}
+			details = append(details, detail)
+			continue
+		}
+
+		userID := uuid.New()
+		if entry.ID != nil {
+			userID = *entry.ID
+		}
+
+		username := entry.Username
+		if username == "" {
+			username = strings.Split(email, "@")[0]
+		}
+
+		passwordHash := entry.PasswordHashImport
+		if passwordHash == "" {
+			randomBytes := make([]byte, 16)
+			if _, err := rand.Read(randomBytes); err != nil {
+				detail.Status = "error"
+				detail.Reason = fmt.Sprintf("failed to generate random password: %s", err.Error())
+				errCount++
+				details = append(details, detail)
+				continue
+			}
+			randomPassword := base64.URLEncoding.EncodeToString(randomBytes)
+			hash, hashErr := utils.HashPassword(randomPassword, s.bcryptCost)
+			if hashErr != nil {
+				detail.Status = "error"
+				detail.Reason = fmt.Sprintf("failed to hash password: %s", hashErr.Error())
+				errCount++
+				details = append(details, detail)
+				continue
+			}
+			passwordHash = hash
+		}
+
+		isActive := true
+		if entry.IsActive != nil {
+			isActive = *entry.IsActive
+		}
+
+		user := &models.User{
+			ID:            userID,
+			Email:         email,
+			Username:      username,
+			PasswordHash:  passwordHash,
+			FullName:      entry.FullName,
+			IsActive:      isActive,
+			EmailVerified: entry.SkipEmailVerification,
+			AccountType:   string(models.AccountTypeHuman),
+		}
+
+		if err := s.userRepo.Create(ctx, user); err != nil {
+			detail.Status = "error"
+			detail.Reason = fmt.Sprintf("failed to create: %s", err.Error())
+			errCount++
+			details = append(details, detail)
+			continue
+		}
+
+		if appID != nil {
+			profile := &models.UserApplicationProfile{
+				UserID:        userID,
+				ApplicationID: *appID,
+				IsActive:      true,
+				AppRoles:      entry.AppRoles,
+			}
+			_ = s.appRepo.CreateUserProfile(ctx, profile)
+		}
+
+		detail.Status = "imported"
+		detail.UserID = userID.String()
+		imported++
+		details = append(details, detail)
+	}
+
+	return &models.ImportUsersResponse{
+		Imported: imported,
+		Skipped:  skipped,
+		Updated:  updated,
+		Errors:   errCount,
+		Details:  details,
+	}, nil
 }
 
 // userToAdminResponse converts User to AdminUserResponse with roles

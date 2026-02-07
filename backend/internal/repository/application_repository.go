@@ -75,7 +75,8 @@ func (r *ApplicationRepository) UpdateApplication(ctx context.Context, app *mode
 	result, err := r.db.NewUpdate().
 		Model(app).
 		Column("display_name", "description", "homepage_url", "callback_urls",
-			"is_active", "is_system", "owner_id", "updated_at").
+			"is_active", "is_system", "owner_id", "allowed_auth_methods",
+			"secret_hash", "secret_prefix", "secret_last_rotated_at", "updated_at").
 		WherePK().
 		Returning("*").
 		Exec(ctx)
@@ -427,4 +428,20 @@ func (r *ApplicationRepository) UnbanUserFromApplication(ctx context.Context, us
 	}
 
 	return nil
+}
+
+func (r *ApplicationRepository) GetBySecretHash(ctx context.Context, hash string) (*models.Application, error) {
+	app := new(models.Application)
+	err := r.db.NewSelect().
+		Model(app).
+		Where("secret_hash = ?", hash).
+		Where("secret_hash != ''").
+		Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("application not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get application by secret hash: %w", err)
+	}
+	return app, nil
 }

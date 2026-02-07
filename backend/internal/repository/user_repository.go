@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
@@ -444,4 +445,45 @@ func (r *UserRepository) MarkPhoneVerified(ctx context.Context, userID uuid.UUID
 	}
 
 	return nil
+}
+
+// GetUsersUpdatedAfter retrieves users updated after the given timestamp
+func (r *UserRepository) GetUsersUpdatedAfter(ctx context.Context, after time.Time, appID *uuid.UUID, limit, offset int) ([]*models.User, int, error) {
+	users := make([]*models.User, 0)
+
+	query := r.db.NewSelect().
+		Model(&users).
+		Where("updated_at > ?", after)
+
+	countQuery := r.db.NewSelect().
+		Model((*models.User)(nil)).
+		Where("updated_at > ?", after)
+
+	if appID != nil {
+		countQuery = countQuery.
+			Join("INNER JOIN user_application_profiles AS uap ON uap.user_id = \"user\".id").
+			Where("uap.application_id = ?", *appID)
+
+		query = query.
+			Relation("ApplicationProfiles", func(q *bun.SelectQuery) *bun.SelectQuery {
+				return q.Where("uap.application_id = ?", *appID)
+			})
+	}
+
+	total, err := countQuery.Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count sync users: %w", err)
+	}
+
+	err = query.
+		Order("updated_at ASC").
+		Limit(limit).
+		Offset(offset).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get users updated after: %w", err)
+	}
+
+	return users, total, nil
 }

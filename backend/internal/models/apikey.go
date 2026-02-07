@@ -44,6 +44,10 @@ const (
 
 	// Special scopes
 	ScopeAll APIKeyScope = "all"
+
+	// Sync scopes
+	ScopeSyncUsers   APIKeyScope = "users:sync"
+	ScopeImportUsers APIKeyScope = "users:import"
 )
 
 // CreateAPIKeyRequest represents a request to create a new API key
@@ -97,6 +101,8 @@ func IsValidScope(scope string) bool {
 		ScopeValidateToken,
 		ScopeIntrospectToken,
 		ScopeAll,
+		ScopeSyncUsers,
+		ScopeImportUsers,
 	}
 
 	for _, validScope := range validScopes {

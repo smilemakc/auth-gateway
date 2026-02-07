@@ -26,6 +26,7 @@ type UserStore interface {
 	MarkPhoneVerified(ctx context.Context, userID uuid.UUID) error
 	List(ctx context.Context, opts ...UserListOption) ([]*models.User, error)
 	Count(ctx context.Context, isActive *bool) (int, error)
+	GetUsersUpdatedAfter(ctx context.Context, after time.Time, appID *uuid.UUID, limit, offset int) ([]*models.User, int, error)
 	// 2FA methods
 	UpdateTOTPSecret(ctx context.Context, userID uuid.UUID, secret string) error
 	EnableTOTP(ctx context.Context, userID uuid.UUID) error
@@ -305,6 +306,7 @@ type ApplicationStore interface {
 	UpdateApplication(ctx context.Context, app *models.Application) error
 	DeleteApplication(ctx context.Context, id uuid.UUID) error
 	ListApplications(ctx context.Context, page, perPage int, isActive *bool) ([]*models.Application, int, error)
+	GetBySecretHash(ctx context.Context, hash string) (*models.Application, error)
 
 	// Application Branding
 	GetBranding(ctx context.Context, applicationID uuid.UUID) (*models.ApplicationBranding, error)

@@ -8,6 +8,27 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var ValidAuthMethods = []string{
+	"password",
+	"otp_email",
+	"otp_sms",
+	"oauth_google",
+	"oauth_github",
+	"oauth_yandex",
+	"oauth_telegram",
+	"totp",
+	"api_key",
+}
+
+func IsValidAuthMethod(method string) bool {
+	for _, m := range ValidAuthMethods {
+		if m == method {
+			return true
+		}
+	}
+	return false
+}
+
 type Application struct {
 	bun.BaseModel `bun:"table:applications,alias:app"`
 
@@ -19,8 +40,12 @@ type Application struct {
 	CallbackURLs []string   `json:"callback_urls,omitempty" bun:"callback_urls,type:jsonb,default:'[]'" example:"https://example.com/callback"`
 	IsActive     bool       `json:"is_active" bun:"is_active,default:true" example:"true"`
 	IsSystem     bool       `json:"is_system" bun:"is_system,default:false" example:"false"`
-	OwnerID      *uuid.UUID `json:"owner_id,omitempty" bun:"owner_id,type:uuid" example:"123e4567-e89b-12d3-a456-426614174000"`
-	CreatedAt    time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
+	OwnerID             *uuid.UUID `json:"owner_id,omitempty" bun:"owner_id,type:uuid" example:"123e4567-e89b-12d3-a456-426614174000"`
+	AllowedAuthMethods  []string   `json:"allowed_auth_methods" bun:"allowed_auth_methods,type:jsonb,default:'[\"password\"]'"`
+	SecretHash          string     `json:"-" bun:"secret_hash"`
+	SecretPrefix        string     `json:"secret_prefix,omitempty" bun:"secret_prefix"`
+	SecretLastRotatedAt *time.Time `json:"secret_last_rotated_at,omitempty" bun:"secret_last_rotated_at"`
+	CreatedAt           time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
 	UpdatedAt    time.Time  `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
 
 	Owner    *User                `json:"owner,omitempty" bun:"rel:belongs-to,join:owner_id=id"`
@@ -77,7 +102,8 @@ type CreateApplicationRequest struct {
 	Description  string   `json:"description,omitempty" binding:"max=500" example:"My application description"`
 	HomepageURL  string   `json:"homepage_url,omitempty" binding:"omitempty,url,max=500" example:"https://example.com"`
 	CallbackURLs []string `json:"callback_urls,omitempty" binding:"omitempty,dive,url" example:"https://example.com/callback"`
-	IsActive     *bool    `json:"is_active,omitempty" example:"true"`
+	IsActive           *bool    `json:"is_active,omitempty" example:"true"`
+	AllowedAuthMethods []string `json:"allowed_auth_methods,omitempty" binding:"omitempty,dive,oneof=password otp_email otp_sms oauth_google oauth_github oauth_yandex oauth_telegram totp api_key"`
 }
 
 type UpdateApplicationRequest struct {
@@ -85,7 +111,8 @@ type UpdateApplicationRequest struct {
 	Description  string   `json:"description,omitempty" binding:"max=500" example:"Updated description"`
 	HomepageURL  string   `json:"homepage_url,omitempty" binding:"omitempty,url,max=500" example:"https://example.com"`
 	CallbackURLs []string `json:"callback_urls,omitempty" binding:"omitempty,dive,url" example:"https://example.com/callback"`
-	IsActive     *bool    `json:"is_active,omitempty" example:"true"`
+	IsActive           *bool    `json:"is_active,omitempty" example:"true"`
+	AllowedAuthMethods []string `json:"allowed_auth_methods,omitempty" binding:"omitempty,dive,oneof=password otp_email otp_sms oauth_google oauth_github oauth_yandex oauth_telegram totp api_key"`
 }
 
 type UpdateApplicationBrandingRequest struct {
@@ -147,8 +174,9 @@ func (a *Application) PublicApplication() *Application {
 		Description:  a.Description,
 		HomepageURL:  a.HomepageURL,
 		CallbackURLs: a.CallbackURLs,
-		IsActive:     a.IsActive,
-		CreatedAt:    a.CreatedAt,
+		IsActive:           a.IsActive,
+		AllowedAuthMethods: a.AllowedAuthMethods,
+		CreatedAt:          a.CreatedAt,
 		UpdatedAt:    a.UpdatedAt,
 		Branding:     a.Branding,
 	}
@@ -197,4 +225,13 @@ type PublicApplicationBrandingResponse struct {
 	SupportEmail string                   `json:"support_email,omitempty" example:"support@example.com"`
 	TermsURL     string                   `json:"terms_url,omitempty" example:"https://example.com/terms"`
 	PrivacyURL   string                   `json:"privacy_url,omitempty" example:"https://example.com/privacy"`
+}
+
+type AuthConfigResponse struct {
+	ApplicationID      uuid.UUID                           `json:"application_id" example:"123e4567-e89b-12d3-a456-426614174000"`
+	Name               string                              `json:"name" example:"my-app"`
+	DisplayName        string                              `json:"display_name" example:"My Application"`
+	AllowedAuthMethods []string                            `json:"allowed_auth_methods" example:"password,oauth_google,otp_email"`
+	OAuthProviders     []string                            `json:"oauth_providers,omitempty" example:"google,github"`
+	Branding           *PublicApplicationBrandingResponse  `json:"branding,omitempty"`
 }

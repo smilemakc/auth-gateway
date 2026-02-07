@@ -73,6 +73,14 @@ service AuthService {
 
   // GetUserTelegramBots returns user's Telegram bot access for an application
   rpc GetUserTelegramBots(GetUserTelegramBotsRequest) returns (UserTelegramBotsResponse);
+
+  // ========== Sync & Config Methods ==========
+
+  // SyncUsers returns users updated after a given timestamp for shadow table sync
+  rpc SyncUsers(SyncUsersRequest) returns (SyncUsersResponse);
+
+  // GetApplicationAuthConfig returns auth configuration for a specific application
+  rpc GetApplicationAuthConfig(GetApplicationAuthConfigRequest) returns (GetApplicationAuthConfigResponse);
 }
 
 // ValidateTokenRequest contains the token to validate
@@ -455,4 +463,53 @@ message SendEmailResponse {
   bool success = 1;
   string message = 2;
   string error_message = 3;
+}
+
+// ========== Sync & Config Messages ==========
+
+message SyncUsersRequest {
+  string updated_after = 1;    // RFC3339 timestamp
+  string application_id = 2;   // Optional: filter by application
+  int32 limit = 3;             // Pagination limit (max 1000)
+  int32 offset = 4;            // Pagination offset
+}
+
+message SyncUsersResponse {
+  repeated SyncUser users = 1;
+  int32 total = 2;
+  bool has_more = 3;
+  string sync_timestamp = 4;   // Server timestamp for next sync
+  string error_message = 5;
+}
+
+message SyncUser {
+  string id = 1;
+  string email = 2;
+  string username = 3;
+  string full_name = 4;
+  bool is_active = 5;
+  bool email_verified = 6;
+  string updated_at = 7;       // RFC3339 timestamp
+  SyncUserAppProfile app_profile = 8;
+}
+
+message SyncUserAppProfile {
+  string display_name = 1;
+  string avatar_url = 2;
+  repeated string app_roles = 3;
+  bool is_active = 4;
+  bool is_banned = 5;
+}
+
+message GetApplicationAuthConfigRequest {
+  string application_id = 1;   // UUID
+}
+
+message GetApplicationAuthConfigResponse {
+  string application_id = 1;
+  string name = 2;
+  string display_name = 3;
+  repeated string allowed_auth_methods = 4;
+  repeated string oauth_providers = 5;
+  string error_message = 6;
 }

@@ -58,6 +58,7 @@ import (
 	"github.com/smilemakc/auth-gateway/internal/jobs"
 	"github.com/smilemakc/auth-gateway/internal/metrics"
 	"github.com/smilemakc/auth-gateway/internal/middleware"
+	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/sms"
@@ -175,6 +176,7 @@ type middlewareSet struct {
 	IPFilter    *middleware.IPFilterMiddleware
 	Maintenance *middleware.MaintenanceMiddleware
 	Application *middleware.ApplicationMiddleware
+	AppSecret   *middleware.AppSecretMiddleware
 }
 
 // serverCmd represents the server command
@@ -258,6 +260,8 @@ func runServer() {
 		services.OAuthProvider,
 		services.OTP,
 		services.EmailProfile,
+		services.Admin,
+		services.Application,
 		deps.redis,
 		deps.log,
 	)
@@ -469,7 +473,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	// LoginAlertService: detects logins from new devices and sends email alerts
 	loginAlertService := service.NewLoginAlertService(deps.redis, repos.Session, emailProfileService, geoService, deps.log)
 
-	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db, repos.Application, loginAlertService)
+	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db, repos.Application, loginAlertService, webhookService)
 	oauthService := service.NewOAuthService(repos.User, repos.OAuth, repos.Token, repos.Audit, repos.RBAC, deps.jwtService, sessionService, &http.Client{Timeout: 10 * time.Second}, repos.AppOAuthProvider, repos.Application, deps.cfg.Security.JITProvisioning, loginAlertService)
 
 	// OTP Service
@@ -549,7 +553,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	)
 
 	// Application Service
-	applicationService := service.NewApplicationService(repos.Application, deps.log)
+	applicationService := service.NewApplicationService(repos.Application, repos.AppOAuthProvider, deps.log)
 
 	// App OAuth Provider Service
 	appOAuthProviderService := service.NewAppOAuthProviderService(repos.AppOAuthProvider, repos.Application, deps.log)
@@ -659,6 +663,7 @@ func buildMiddlewares(deps *infra, repos *repoSet, services *serviceSet) *middle
 	ipFilterMiddleware := middleware.NewIPFilterMiddleware(services.IPFilter)
 	maintenanceMiddleware := middleware.NewMaintenanceMiddleware(repos.System)
 	applicationMiddleware := middleware.NewApplicationMiddleware(services.Application, deps.log)
+	appSecretMiddleware := middleware.NewAppSecretMiddleware(services.Application)
 
 	return &middlewareSet{
 		Auth:        authMiddleware,
@@ -667,6 +672,7 @@ func buildMiddlewares(deps *infra, repos *repoSet, services *serviceSet) *middle
 		IPFilter:    ipFilterMiddleware,
 		Maintenance: maintenanceMiddleware,
 		Application: applicationMiddleware,
+		AppSecret:   appSecretMiddleware,
 	}
 }
 
@@ -787,6 +793,13 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 
 	apiGroup := router.Group("/api")
 	{
+		// Application-level endpoints (authenticated via app_ secret)
+		appConfigGroup := apiGroup.Group("/applications")
+		appConfigGroup.Use(middlewares.AppSecret.RequireAppSecret())
+		{
+			appConfigGroup.GET("/config", handlers.Application.GetAuthConfig)
+		}
+
 		// Public Application endpoints
 		publicAppsGroup := apiGroup.Group("/applications")
 		{
@@ -863,6 +876,10 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			userAppsGroup.GET("/:id/profile", handlers.Application.GetMyProfile)
 			userAppsGroup.PUT("/:id/profile", handlers.Application.UpdateMyProfile)
 		}
+
+		// Sync endpoint with API key authentication (placed before JWT-only admin routes)
+		apiGroup.GET("/admin/users/sync", middlewares.APIKey.RequireScope(models.ScopeSyncUsers), handlers.Admin.SyncUsers)
+		apiGroup.POST("/admin/users/import", middlewares.APIKey.RequireScope(models.ScopeImportUsers), handlers.Admin.ImportUsers)
 
 		adminGroup := apiGroup.Group("/admin")
 		adminGroup.Use(middlewares.Auth.Authenticate())
@@ -1054,6 +1071,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 				applicationsGroup.GET("/:id", handlers.Application.GetApplication)
 				applicationsGroup.PUT("/:id", handlers.Application.UpdateApplication)
 				applicationsGroup.DELETE("/:id", handlers.Application.DeleteApplication)
+				applicationsGroup.POST("/:id/rotate-secret", handlers.Application.RotateSecret)
 
 				// Branding
 				applicationsGroup.GET("/:id/branding", handlers.Application.GetBranding)

@@ -28,6 +28,8 @@ type mockUserStore struct {
 	MarkPhoneVerifiedFunc func(ctx context.Context, userID uuid.UUID) error
 	ListFunc              func(ctx context.Context, opts ...UserListOption) ([]*models.User, error)
 	CountFunc             func(ctx context.Context, isActive *bool) (int, error)
+	// Sync methods
+	GetUsersUpdatedAfterFunc func(ctx context.Context, after time.Time, appID *uuid.UUID, limit, offset int) ([]*models.User, int, error)
 	// 2FA methods
 	UpdateTOTPSecretFunc func(ctx context.Context, userID uuid.UUID, secret string) error
 	EnableTOTPFunc       func(ctx context.Context, userID uuid.UUID) error
@@ -135,6 +137,13 @@ func (m *mockUserStore) DisableTOTP(ctx context.Context, userID uuid.UUID) error
 		return m.DisableTOTPFunc(ctx, userID)
 	}
 	return nil
+}
+
+func (m *mockUserStore) GetUsersUpdatedAfter(ctx context.Context, after time.Time, appID *uuid.UUID, limit, offset int) ([]*models.User, int, error) {
+	if m.GetUsersUpdatedAfterFunc != nil {
+		return m.GetUsersUpdatedAfterFunc(ctx, after, appID, limit, offset)
+	}
+	return nil, 0, nil
 }
 
 type mockTokenStore struct {

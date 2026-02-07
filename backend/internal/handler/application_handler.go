@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -54,7 +55,7 @@ func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 		return
 	}
 
-	app, err := h.appService.CreateApplication(c.Request.Context(), &req, userID)
+	app, secret, err := h.appService.CreateApplication(c.Request.Context(), &req, userID)
 	if err != nil {
 		if err == service.ErrInvalidApplicationName {
 			c.JSON(http.StatusBadRequest, models.NewErrorResponse(
@@ -76,7 +77,11 @@ func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, app)
+	c.JSON(http.StatusCreated, gin.H{
+		"application": app,
+		"secret":      secret,
+		"warning":     "Store this secret securely. It will not be shown again.",
+	})
 }
 
 // GetApplication retrieves an application by ID
@@ -641,6 +646,53 @@ func (h *ApplicationHandler) UpdateMyProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, profile)
 }
 
+// RotateSecret rotates the application secret
+// @Summary Rotate application secret
+// @Description Rotate the application secret, invalidating the old one (admin only)
+// @Tags Admin - Applications
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Application ID (UUID)"
+// @Success 200 {object} object{secret=string,prefix=string,rotated_at=string,warning=string}
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/applications/{id}/rotate-secret [post]
+func (h *ApplicationHandler) RotateSecret(c *gin.Context) {
+	id, err := h.parseIDParam(c, "id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid application ID"),
+		))
+		return
+	}
+
+	secret, err := h.appService.RotateSecret(c.Request.Context(), id)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+		} else if err == service.ErrApplicationNotFound {
+			c.JSON(http.StatusNotFound, models.NewErrorResponse(
+				models.NewAppError(http.StatusNotFound, "Application not found"),
+			))
+		} else {
+			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(
+				models.NewAppError(http.StatusInternalServerError, "Failed to rotate secret"),
+			))
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"secret":     secret,
+		"prefix":     secret[:12],
+		"rotated_at": time.Now(),
+		"warning":    "Store this secret securely. It will not be shown again.",
+	})
+}
+
 func (h *ApplicationHandler) parseIDParam(c *gin.Context, param string) (uuid.UUID, error) {
 	idStr := c.Param(param)
 	id, err := uuid.Parse(idStr)
@@ -648,6 +700,44 @@ func (h *ApplicationHandler) parseIDParam(c *gin.Context, param string) (uuid.UU
 		return uuid.Nil, err
 	}
 	return id, nil
+}
+
+// GetAuthConfig retrieves auth configuration for the calling application
+// @Summary Get application auth config
+// @Description Get authentication configuration (requires app_ secret)
+// @Tags Applications - Config
+// @Produce json
+// @Success 200 {object} models.AuthConfigResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/applications/config [get]
+func (h *ApplicationHandler) GetAuthConfig(c *gin.Context) {
+	appInterface, exists := c.Get("application")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(
+			models.NewAppError(http.StatusUnauthorized, "Application secret required"),
+		))
+		return
+	}
+
+	app, ok := appInterface.(*models.Application)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	config, err := h.appService.GetAuthConfig(c.Request.Context(), app)
+	if err != nil {
+		h.logger.Error("Failed to get auth config", map[string]interface{}{
+			"error":          err.Error(),
+			"application_id": app.ID.String(),
+		})
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, config)
 }
 
 func (h *ApplicationHandler) getPagination(c *gin.Context) (int, int) {

@@ -33,6 +33,8 @@ func NewServer(
 	oauthProviderService *service.OAuthProviderService,
 	otpService *service.OTPService,
 	emailProfileService *service.EmailProfileService,
+	adminService *service.AdminService,
+	appService *service.ApplicationService,
 	redis *service.RedisService,
 	log *logger.Logger,
 ) (*Server, error) {
@@ -51,7 +53,7 @@ func NewServer(
 	)
 
 	// Register auth service handler
-	handler := NewAuthHandlerV2(jwtService, userRepo, tokenRepo, rbacRepo, apiKeyService, authService, oauthProviderService, otpService, emailProfileService, redis, log)
+	handler := NewAuthHandlerV2(jwtService, userRepo, tokenRepo, rbacRepo, apiKeyService, authService, oauthProviderService, otpService, emailProfileService, adminService, appService, redis, log)
 	pb.RegisterAuthServiceServer(grpcServer, handler)
 
 	// Register reflection service for debugging

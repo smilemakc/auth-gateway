@@ -233,6 +233,8 @@ type AuthHandlerV2 struct {
 	oauthProviderService *service.OAuthProviderService
 	otpService           *service.OTPService
 	emailProfileService  *service.EmailProfileService
+	adminService         *service.AdminService
+	appService           *service.ApplicationService
 	redis                *service.RedisService
 	logger               *logger.Logger
 }
@@ -248,6 +250,8 @@ func NewAuthHandlerV2(
 	oauthProviderService *service.OAuthProviderService,
 	otpService *service.OTPService,
 	emailProfileService *service.EmailProfileService,
+	adminService *service.AdminService,
+	appService *service.ApplicationService,
 	redis *service.RedisService,
 	log *logger.Logger,
 ) *AuthHandlerV2 {
@@ -261,6 +265,8 @@ func NewAuthHandlerV2(
 		oauthProviderService: oauthProviderService,
 		otpService:           otpService,
 		emailProfileService:  emailProfileService,
+		adminService:         adminService,
+		appService:           appService,
 		redis:                redis,
 		logger:               log,
 	}
@@ -1433,6 +1439,116 @@ func (h *AuthHandlerV2) GetUserTelegramBots(ctx context.Context, req *pb.GetUser
 	}
 
 	return nil, status.Errorf(codes.Unimplemented, "GetUserTelegramBots not implemented - handler requires UserTelegramRepository dependency")
+}
+
+// ========== Sync & Config Methods ==========
+
+// SyncUsers returns users updated after a given timestamp for shadow table sync
+func (h *AuthHandlerV2) SyncUsers(ctx context.Context, req *pb.SyncUsersRequest) (*pb.SyncUsersResponse, error) {
+	if req.UpdatedAfter == "" {
+		return &pb.SyncUsersResponse{
+			ErrorMessage: "updated_after is required",
+		}, nil
+	}
+
+	updatedAfter, err := time.Parse(time.RFC3339, req.UpdatedAfter)
+	if err != nil {
+		return &pb.SyncUsersResponse{
+			ErrorMessage: "invalid updated_after format, expected RFC3339",
+		}, nil
+	}
+
+	var appID *uuid.UUID
+	if req.ApplicationId != "" {
+		parsed, err := uuid.Parse(req.ApplicationId)
+		if err != nil {
+			return &pb.SyncUsersResponse{
+				ErrorMessage: "invalid application_id format",
+			}, nil
+		}
+		appID = &parsed
+	}
+
+	limit := int(req.Limit)
+	if limit <= 0 {
+		limit = 100
+	}
+	offset := int(req.Offset)
+
+	result, err := h.adminService.SyncUsers(ctx, updatedAfter, appID, limit, offset)
+	if err != nil {
+		return &pb.SyncUsersResponse{
+			ErrorMessage: err.Error(),
+		}, nil
+	}
+
+	users := make([]*pb.SyncUser, len(result.Users))
+	for i, u := range result.Users {
+		syncUser := &pb.SyncUser{
+			Id:            u.ID.String(),
+			Email:         u.Email,
+			Username:      u.Username,
+			FullName:      u.FullName,
+			IsActive:      u.IsActive,
+			EmailVerified: u.EmailVerified,
+			UpdatedAt:     u.UpdatedAt.Format(time.RFC3339),
+		}
+		if u.AppProfile != nil {
+			syncUser.AppProfile = &pb.SyncUserAppProfile{
+				DisplayName: u.AppProfile.DisplayName,
+				AvatarUrl:   u.AppProfile.AvatarURL,
+				AppRoles:    u.AppProfile.AppRoles,
+				IsActive:    u.AppProfile.IsActive,
+				IsBanned:    u.AppProfile.IsBanned,
+			}
+		}
+		users[i] = syncUser
+	}
+
+	return &pb.SyncUsersResponse{
+		Users:         users,
+		Total:         int32(result.Total),
+		HasMore:       result.HasMore,
+		SyncTimestamp: result.SyncTimestamp,
+	}, nil
+}
+
+// GetApplicationAuthConfig returns auth configuration for a specific application
+func (h *AuthHandlerV2) GetApplicationAuthConfig(ctx context.Context, req *pb.GetApplicationAuthConfigRequest) (*pb.GetApplicationAuthConfigResponse, error) {
+	if req.ApplicationId == "" {
+		return &pb.GetApplicationAuthConfigResponse{
+			ErrorMessage: "application_id is required",
+		}, nil
+	}
+
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return &pb.GetApplicationAuthConfigResponse{
+			ErrorMessage: "invalid application_id format",
+		}, nil
+	}
+
+	app, err := h.appService.GetByID(ctx, appID)
+	if err != nil {
+		return &pb.GetApplicationAuthConfigResponse{
+			ErrorMessage: "application not found",
+		}, nil
+	}
+
+	authConfig, err := h.appService.GetAuthConfig(ctx, app)
+	if err != nil {
+		return &pb.GetApplicationAuthConfigResponse{
+			ErrorMessage: err.Error(),
+		}, nil
+	}
+
+	return &pb.GetApplicationAuthConfigResponse{
+		ApplicationId:      authConfig.ApplicationID.String(),
+		Name:               authConfig.Name,
+		DisplayName:        authConfig.DisplayName,
+		AllowedAuthMethods: authConfig.AllowedAuthMethods,
+		OauthProviders:     authConfig.OAuthProviders,
+	}, nil
 }
 
 // SendEmail sends an email using a specified template

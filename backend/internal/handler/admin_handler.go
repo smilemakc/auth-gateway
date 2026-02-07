@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -647,4 +648,96 @@ func (h *AdminHandler) Reset2FA(c *gin.Context) {
 		"message": "2FA has been disabled for user",
 		"user_id": userID.String(),
 	})
+}
+
+// SyncUsers returns users updated after a timestamp for periodic sync
+// @Summary Sync users
+// @Description Get users updated after a given timestamp (requires users:sync scope)
+// @Tags Admin - Users
+// @Security ApiKeyAuth
+// @Produce json
+// @Param updated_after query string true "RFC3339 timestamp" example("2024-01-15T10:30:00Z")
+// @Param application_id query string false "Application ID filter"
+// @Param limit query int false "Limit" default(100)
+// @Param offset query int false "Offset" default(0)
+// @Success 200 {object} models.SyncUsersResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/users/sync [get]
+func (h *AdminHandler) SyncUsers(c *gin.Context) {
+	updatedAfterStr := c.Query("updated_after")
+	if updatedAfterStr == "" {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "updated_after parameter is required"),
+		))
+		return
+	}
+
+	updatedAfter, err := time.Parse(time.RFC3339, updatedAfterStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid updated_after format, expected RFC3339"),
+		))
+		return
+	}
+
+	var appID *uuid.UUID
+	if appIDStr := c.Query("application_id"); appIDStr != "" {
+		parsed, err := uuid.Parse(appIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+				models.NewAppError(http.StatusBadRequest, "Invalid application_id format"),
+			))
+			return
+		}
+		appID = &parsed
+	}
+
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+
+	response, err := h.adminService.SyncUsers(c.Request.Context(), updatedAfter, appID, limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ImportUsers bulk imports users
+// @Summary Import users
+// @Description Bulk import users with optional UUID preservation (requires users:import scope)
+// @Tags Admin - Users
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param X-Application-ID header string false "Application ID for auto-creating profiles"
+// @Param request body models.BulkImportUsersRequest true "Import data"
+// @Success 200 {object} models.ImportUsersResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/users/import [post]
+func (h *AdminHandler) ImportUsers(c *gin.Context) {
+	var req models.BulkImportUsersRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "Invalid request", err.Error()),
+		))
+		return
+	}
+
+	appID, _ := utils.GetApplicationIDFromContext(c)
+
+	response, err := h.adminService.ImportUsers(c.Request.Context(), &req, appID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
 }

@@ -49,7 +49,8 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
 
 	// Relations
-	Roles []Role `json:"roles,omitempty" bun:"m2m:user_roles,join:User=Role"`
+	Roles               []Role                     `json:"roles,omitempty" bun:"m2m:user_roles,join:User=Role"`
+	ApplicationProfiles []*UserApplicationProfile `json:"-" bun:"rel:has-many,join:id=user_id"`
 }
 
 // BeforeInsert hook for automatic timestamp management
@@ -202,4 +203,68 @@ type PendingRegistration struct {
 	Username  string `json:"username"`
 	FullName  string `json:"full_name,omitempty"`
 	CreatedAt int64  `json:"created_at"`
+}
+
+// SyncUserResponse represents a user in sync response
+type SyncUserResponse struct {
+	ID            uuid.UUID           `json:"id"`
+	Email         string              `json:"email"`
+	Username      string              `json:"username"`
+	FullName      string              `json:"full_name,omitempty"`
+	IsActive      bool                `json:"is_active"`
+	EmailVerified bool                `json:"email_verified"`
+	UpdatedAt     time.Time           `json:"updated_at"`
+	AppProfile    *SyncUserAppProfile `json:"app_profile,omitempty"`
+}
+
+// SyncUserAppProfile represents the user's app profile in sync response
+type SyncUserAppProfile struct {
+	DisplayName string   `json:"display_name,omitempty"`
+	AvatarURL   string   `json:"avatar_url,omitempty"`
+	AppRoles    []string `json:"app_roles,omitempty"`
+	IsActive    bool     `json:"is_active"`
+	IsBanned    bool     `json:"is_banned"`
+}
+
+// SyncUsersResponse represents the response for users sync
+type SyncUsersResponse struct {
+	Users         []SyncUserResponse `json:"users"`
+	Total         int                `json:"total"`
+	HasMore       bool               `json:"has_more"`
+	SyncTimestamp string             `json:"sync_timestamp"`
+}
+
+// BulkImportUserEntry represents a single user in the bulk import request
+type BulkImportUserEntry struct {
+	ID                    *uuid.UUID `json:"id,omitempty"`
+	Email                 string     `json:"email" binding:"required,email"`
+	Username              string     `json:"username,omitempty"`
+	PasswordHashImport    string     `json:"password_hash_import,omitempty"`
+	FullName              string     `json:"full_name,omitempty"`
+	IsActive              *bool      `json:"is_active,omitempty"`
+	SkipEmailVerification bool       `json:"skip_email_verification,omitempty"`
+	AppRoles              []string   `json:"app_roles,omitempty"`
+}
+
+// BulkImportUsersRequest represents a bulk import request with conflict resolution
+type BulkImportUsersRequest struct {
+	Users      []BulkImportUserEntry `json:"users" binding:"required,min=1,max=1000"`
+	OnConflict string                `json:"on_conflict" binding:"required,oneof=skip update error"`
+}
+
+// ImportDetail represents the result for a single user import
+type ImportDetail struct {
+	Email  string `json:"email"`
+	Status string `json:"status"`
+	Reason string `json:"reason,omitempty"`
+	UserID string `json:"user_id,omitempty"`
+}
+
+// ImportUsersResponse represents the bulk import response
+type ImportUsersResponse struct {
+	Imported int            `json:"imported"`
+	Skipped  int            `json:"skipped"`
+	Updated  int            `json:"updated"`
+	Errors   int            `json:"errors"`
+	Details  []ImportDetail `json:"details,omitempty"`
 }
