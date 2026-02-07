@@ -26,6 +26,7 @@ type OAuthService struct {
 	rbacRepo             RBACStore
 	jwtService           TokenService
 	sessionService       *SessionService
+	loginAlertService    *LoginAlertService
 	httpClient           HTTPClient
 	providers            map[models.OAuthProvider]*OAuthProviderConfig
 	jitProvisioning      bool // Enable Just-In-Time user provisioning
@@ -57,6 +58,7 @@ func NewOAuthService(
 	appOAuthProviderRepo AppOAuthProviderStore,
 	appRepo ApplicationStore,
 	jitProvisioning bool,
+	loginAlertService *LoginAlertService,
 ) *OAuthService {
 	// Use default HTTP client if not provided
 	if httpClient == nil {
@@ -71,6 +73,7 @@ func NewOAuthService(
 		rbacRepo:             rbacRepo,
 		jwtService:           jwtService,
 		sessionService:       sessionService,
+		loginAlertService:    loginAlertService,
 		httpClient:           httpClient,
 		providers:            make(map[models.OAuthProvider]*OAuthProviderConfig),
 		jitProvisioning:      jitProvisioning,
@@ -504,6 +507,24 @@ func (s *OAuthService) HandleCallback(ctx context.Context, provider models.OAuth
 			ExpiresAt:       time.Now().Add(refreshExpiration),
 			SessionName:     sessionName,
 		})
+	}
+
+	// Check for new device and send login alert email (async, non-blocking)
+	if s.loginAlertService != nil {
+		go func() {
+			alertCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
+			s.loginAlertService.CheckAndAlert(alertCtx, LoginAlertParams{
+				UserID:    user.ID,
+				Username:  user.Username,
+				Email:     user.Email,
+				IP:        ipAddress,
+				UserAgent: userAgent,
+				Device:    deviceInfo,
+				AppID:     appID,
+				IsNewUser: isNewUser,
+			})
+		}()
 	}
 
 	return &models.OAuthLoginResponse{

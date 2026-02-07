@@ -139,3 +139,22 @@ func (r *RedisService) DeletePendingRegistration(ctx context.Context, identifier
 	key := fmt.Sprintf("pending:registration:%s", identifier)
 	return r.Delete(ctx, key)
 }
+
+// SAdd adds one or more members to a Redis SET
+func (r *RedisService) SAdd(ctx context.Context, key string, members ...string) error {
+	args := make([]interface{}, len(members))
+	for i, m := range members {
+		args[i] = m
+	}
+	return r.client.SAdd(ctx, key, args...).Err()
+}
+
+// SIsMember checks if a member exists in a Redis SET
+func (r *RedisService) SIsMember(ctx context.Context, key string, member string) (bool, error) {
+	return r.client.SIsMember(ctx, key, member).Result()
+}
+
+// SMembers returns all members of a Redis SET
+func (r *RedisService) SMembers(ctx context.Context, key string) ([]string, error) {
+	return r.client.SMembers(ctx, key).Result()
+}

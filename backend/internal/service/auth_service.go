@@ -16,19 +16,20 @@ import (
 
 // AuthService provides authentication operations
 type AuthService struct {
-	userRepo         UserStore
-	tokenRepo        TokenStore
-	rbacRepo         RBACStore
-	auditService     AuditLogger
-	jwtService       TokenService
-	blacklistService *BlacklistService
-	redis            CacheService
-	sessionService   *SessionService
-	twoFAService     *TwoFactorService
-	bcryptCost       int
-	passwordPolicy   utils.PasswordPolicy
-	db               TransactionDB
-	appRepo          ApplicationStore
+	userRepo          UserStore
+	tokenRepo         TokenStore
+	rbacRepo          RBACStore
+	auditService      AuditLogger
+	jwtService        TokenService
+	blacklistService  *BlacklistService
+	redis             CacheService
+	sessionService    *SessionService
+	twoFAService      *TwoFactorService
+	loginAlertService *LoginAlertService
+	bcryptCost        int
+	passwordPolicy    utils.PasswordPolicy
+	db                TransactionDB
+	appRepo           ApplicationStore
 }
 
 // TransactionDB defines the interface for database transactions
@@ -51,21 +52,23 @@ func NewAuthService(
 	passwordPolicy utils.PasswordPolicy,
 	db TransactionDB,
 	appRepo ApplicationStore,
+	loginAlertService *LoginAlertService,
 ) *AuthService {
 	return &AuthService{
-		userRepo:         userRepo,
-		tokenRepo:        tokenRepo,
-		rbacRepo:         rbacRepo,
-		auditService:     auditService,
-		jwtService:       jwtService,
-		blacklistService: blacklistService,
-		redis:            redis,
-		sessionService:   sessionService,
-		twoFAService:     twoFAService,
-		bcryptCost:       bcryptCost,
-		passwordPolicy:   passwordPolicy,
-		db:               db,
-		appRepo:          appRepo,
+		userRepo:          userRepo,
+		tokenRepo:         tokenRepo,
+		rbacRepo:          rbacRepo,
+		auditService:      auditService,
+		jwtService:        jwtService,
+		blacklistService:  blacklistService,
+		redis:             redis,
+		sessionService:    sessionService,
+		twoFAService:      twoFAService,
+		loginAlertService: loginAlertService,
+		bcryptCost:        bcryptCost,
+		passwordPolicy:    passwordPolicy,
+		db:                db,
+		appRepo:           appRepo,
 	}
 }
 
@@ -204,8 +207,8 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		}
 	}
 
-	// Generate tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, appID)
+	// Generate tokens with device info (isNewUser=true suppresses login alert)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, appID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +290,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	}
 
 	// Generate tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, appID)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, appID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +340,7 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 	}
 
 	// Generate full auth tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, nil)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, nil, false)
 	if err != nil {
 		return nil, err
 	}
@@ -815,8 +818,8 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 		fmt.Printf("Failed to delete pending registration: %v\n", err)
 	}
 
-	// Generate tokens with device info
-	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, nil)
+	// Generate tokens with device info (isNewUser=true — passwordless signup)
+	authResp, err := s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, nil, true)
 	if err != nil {
 		return nil, err
 	}
@@ -830,7 +833,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 }
 
 // generateAuthResponse generates access and refresh tokens and saves refresh token with device info
-func (s *AuthService) generateAuthResponse(ctx context.Context, user *models.User, ip, userAgent string, deviceInfo models.DeviceInfo, appID *uuid.UUID) (*models.AuthResponse, error) {
+func (s *AuthService) generateAuthResponse(ctx context.Context, user *models.User, ip, userAgent string, deviceInfo models.DeviceInfo, appID *uuid.UUID, isNewUser bool) (*models.AuthResponse, error) {
 	// Generate access token
 	accessToken, err := s.jwtService.GenerateAccessToken(user, appID)
 	if err != nil {
@@ -878,6 +881,24 @@ func (s *AuthService) generateAuthResponse(ctx context.Context, user *models.Use
 		})
 	}
 
+	// Check for new device and send login alert email (async, non-blocking)
+	if s.loginAlertService != nil {
+		go func() {
+			alertCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
+			s.loginAlertService.CheckAndAlert(alertCtx, LoginAlertParams{
+				UserID:    user.ID,
+				Username:  user.Username,
+				Email:     user.Email,
+				IP:        ip,
+				UserAgent: userAgent,
+				Device:    deviceInfo,
+				AppID:     appID,
+				IsNewUser: isNewUser,
+			})
+		}()
+	}
+
 	return &models.AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -893,7 +914,7 @@ func (s *AuthService) GenerateTokensForUser(ctx context.Context, user *models.Us
 	deviceInfo := utils.ParseUserAgent(userAgent)
 
 	// Use the centralized generateAuthResponse method
-	return s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, nil)
+	return s.generateAuthResponse(ctx, user, ip, userAgent, deviceInfo, nil, false)
 }
 
 func (s *AuthService) logAudit(userID *uuid.UUID, action models.AuditAction, status models.AuditStatus, ip, userAgent string, details map[string]interface{}) {

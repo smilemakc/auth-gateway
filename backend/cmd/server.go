@@ -82,58 +82,58 @@ type infra struct {
 }
 
 type repoSet struct {
-	User          *repository.UserRepository
-	Token         *repository.TokenRepository
-	OAuth         *repository.OAuthRepository
-	Audit         *repository.AuditRepository
-	APIKey        *repository.APIKeyRepository
-	OTP           *repository.OTPRepository
-	BackupCode    *repository.BackupCodeRepository
-	SMSLog        *repository.SMSLogRepository
-	RBAC          *repository.RBACRepository
-	Session       *repository.SessionRepository
-	IPFilter      *repository.IPFilterRepository
-	Webhook       *repository.WebhookRepository
-	Template      *repository.TemplateRepository
-	Branding      *repository.BrandingRepository
-	System        *repository.SystemRepository
-	Geo           *repository.GeoRepository
-	OAuthProvider *repository.OAuthProviderRepository
-	Group         *repository.GroupRepository
-	LDAP          *repository.LDAPRepository
-	SAML          *repository.SAMLRepository
-	EmailProvider *repository.EmailProviderRepository
-	EmailProfile  *repository.EmailProfileRepository
-	Application   *repository.ApplicationRepository
+	User             *repository.UserRepository
+	Token            *repository.TokenRepository
+	OAuth            *repository.OAuthRepository
+	Audit            *repository.AuditRepository
+	APIKey           *repository.APIKeyRepository
+	OTP              *repository.OTPRepository
+	BackupCode       *repository.BackupCodeRepository
+	SMSLog           *repository.SMSLogRepository
+	RBAC             *repository.RBACRepository
+	Session          *repository.SessionRepository
+	IPFilter         *repository.IPFilterRepository
+	Webhook          *repository.WebhookRepository
+	Template         *repository.TemplateRepository
+	Branding         *repository.BrandingRepository
+	System           *repository.SystemRepository
+	Geo              *repository.GeoRepository
+	OAuthProvider    *repository.OAuthProviderRepository
+	Group            *repository.GroupRepository
+	LDAP             *repository.LDAPRepository
+	SAML             *repository.SAMLRepository
+	EmailProvider    *repository.EmailProviderRepository
+	EmailProfile     *repository.EmailProfileRepository
+	Application      *repository.ApplicationRepository
 	AppOAuthProvider *repository.AppOAuthProviderRepository
 	TelegramBot      *repository.TelegramBotRepository
 	UserTelegram     *repository.UserTelegramRepository
 }
 
 type serviceSet struct {
-	Geo             *service.GeoService
-	Audit           *service.AuditService
-	Blacklist       *service.BlacklistService
-	Session         *service.SessionService
-	Auth            *service.AuthService
-	User            *service.UserService
-	APIKey          *service.APIKeyService
-	Email           *service.EmailService
-	OTP             *service.OTPService
-	OAuth           *service.OAuthService
-	TwoFA           *service.TwoFactorService
-	Admin           *service.AdminService
-	RBAC            *service.RBACService
-	IPFilter        *service.IPFilterService
-	Webhook         *service.WebhookService
-	Template        *service.TemplateService
-	OAuthProvider   *service.OAuthProviderService
-	MinimalOAuthSvc *service.OAuthProviderService
-	Group           *service.GroupService
-	LDAP            *service.LDAPService
-	Bulk            *service.BulkService
-	SCIM            *service.SCIMService
-	SAML            *service.SAMLService
+	Geo              *service.GeoService
+	Audit            *service.AuditService
+	Blacklist        *service.BlacklistService
+	Session          *service.SessionService
+	Auth             *service.AuthService
+	User             *service.UserService
+	APIKey           *service.APIKeyService
+	Email            *service.EmailService
+	OTP              *service.OTPService
+	OAuth            *service.OAuthService
+	TwoFA            *service.TwoFactorService
+	Admin            *service.AdminService
+	RBAC             *service.RBACService
+	IPFilter         *service.IPFilterService
+	Webhook          *service.WebhookService
+	Template         *service.TemplateService
+	OAuthProvider    *service.OAuthProviderService
+	MinimalOAuthSvc  *service.OAuthProviderService
+	Group            *service.GroupService
+	LDAP             *service.LDAPService
+	Bulk             *service.BulkService
+	SCIM             *service.SCIMService
+	SAML             *service.SAMLService
 	EmailProfile     *service.EmailProfileService
 	Application      *service.ApplicationService
 	AppOAuthProvider *service.AppOAuthProviderService
@@ -142,25 +142,25 @@ type serviceSet struct {
 }
 
 type handlerSet struct {
-	Auth          *handler.AuthHandler
-	Health        *handler.HealthHandler
-	APIKey        *handler.APIKeyHandler
-	OTP           *handler.OTPHandler
-	OAuth         *handler.OAuthHandler
-	TwoFA         *handler.TwoFactorHandler
-	Admin         *handler.AdminHandler
-	AdvancedAdmin *handler.AdvancedAdminHandler
-	Webhook       *handler.WebhookHandler
-	Template      *handler.TemplateHandler
-	OAuthProvider *handler.OAuthProviderHandler
-	OAuthAdmin    *handler.OAuthAdminHandler
-	Login         *handler.LoginHandler
-	Group         *handler.GroupHandler
-	SCIM          *handler.SCIMHandler
-	LDAP          *handler.LDAPHandler
-	Bulk          *handler.BulkHandler
-	SAML          *handler.SAMLHandler
-	Token         *handler.TokenHandler
+	Auth             *handler.AuthHandler
+	Health           *handler.HealthHandler
+	APIKey           *handler.APIKeyHandler
+	OTP              *handler.OTPHandler
+	OAuth            *handler.OAuthHandler
+	TwoFA            *handler.TwoFactorHandler
+	Admin            *handler.AdminHandler
+	AdvancedAdmin    *handler.AdvancedAdminHandler
+	Webhook          *handler.WebhookHandler
+	Template         *handler.TemplateHandler
+	OAuthProvider    *handler.OAuthProviderHandler
+	OAuthAdmin       *handler.OAuthAdminHandler
+	Login            *handler.LoginHandler
+	Group            *handler.GroupHandler
+	SCIM             *handler.SCIMHandler
+	LDAP             *handler.LDAPHandler
+	Bulk             *handler.BulkHandler
+	SAML             *handler.SAMLHandler
+	Token            *handler.TokenHandler
 	EmailProfile     *handler.EmailProfileHandler
 	Application      *handler.ApplicationHandler
 	AppOAuthProvider *handler.AppOAuthProviderHandler
@@ -385,29 +385,29 @@ func buildInfra() (*infra, func(), error) {
 
 func buildRepositories(deps *infra) *repoSet {
 	return &repoSet{
-		User:          repository.NewUserRepository(deps.db),
-		Token:         repository.NewTokenRepository(deps.db),
-		OAuth:         repository.NewOAuthRepository(deps.db),
-		Audit:         repository.NewAuditRepository(deps.db),
-		APIKey:        repository.NewAPIKeyRepository(deps.db),
-		OTP:           repository.NewOTPRepository(deps.db),
-		BackupCode:    repository.NewBackupCodeRepository(deps.db),
-		SMSLog:        repository.NewSMSLogRepository(deps.db),
-		RBAC:          repository.NewRBACRepository(deps.db),
-		Session:       repository.NewSessionRepository(deps.db),
-		IPFilter:      repository.NewIPFilterRepository(deps.db),
-		Webhook:       repository.NewWebhookRepository(deps.db),
-		Template:      repository.NewTemplateRepository(deps.db),
-		Branding:      repository.NewBrandingRepository(deps.db),
-		System:        repository.NewSystemRepository(deps.db),
-		Geo:           repository.NewGeoRepository(deps.db),
-		OAuthProvider: repository.NewOAuthProviderRepository(deps.db),
-		Group:         repository.NewGroupRepository(deps.db),
-		LDAP:          repository.NewLDAPRepository(deps.db),
-		SAML:          repository.NewSAMLRepository(deps.db),
-		EmailProvider: repository.NewEmailProviderRepository(deps.db),
-		EmailProfile:  repository.NewEmailProfileRepository(deps.db),
-		Application:   repository.NewApplicationRepository(deps.db),
+		User:             repository.NewUserRepository(deps.db),
+		Token:            repository.NewTokenRepository(deps.db),
+		OAuth:            repository.NewOAuthRepository(deps.db),
+		Audit:            repository.NewAuditRepository(deps.db),
+		APIKey:           repository.NewAPIKeyRepository(deps.db),
+		OTP:              repository.NewOTPRepository(deps.db),
+		BackupCode:       repository.NewBackupCodeRepository(deps.db),
+		SMSLog:           repository.NewSMSLogRepository(deps.db),
+		RBAC:             repository.NewRBACRepository(deps.db),
+		Session:          repository.NewSessionRepository(deps.db),
+		IPFilter:         repository.NewIPFilterRepository(deps.db),
+		Webhook:          repository.NewWebhookRepository(deps.db),
+		Template:         repository.NewTemplateRepository(deps.db),
+		Branding:         repository.NewBrandingRepository(deps.db),
+		System:           repository.NewSystemRepository(deps.db),
+		Geo:              repository.NewGeoRepository(deps.db),
+		OAuthProvider:    repository.NewOAuthProviderRepository(deps.db),
+		Group:            repository.NewGroupRepository(deps.db),
+		LDAP:             repository.NewLDAPRepository(deps.db),
+		SAML:             repository.NewSAMLRepository(deps.db),
+		EmailProvider:    repository.NewEmailProviderRepository(deps.db),
+		EmailProfile:     repository.NewEmailProfileRepository(deps.db),
+		Application:      repository.NewApplicationRepository(deps.db),
 		AppOAuthProvider: repository.NewAppOAuthProviderRepository(deps.db),
 		TelegramBot:      repository.NewTelegramBotRepository(deps.db),
 		UserTelegram:     repository.NewUserTelegramRepository(deps.db),
@@ -450,8 +450,6 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 		RequireSpecial:   deps.cfg.Security.PasswordPolicy.RequireSpecial,
 		MaxLength:        deps.cfg.Security.PasswordPolicy.MaxLength,
 	}
-	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db, repos.Application)
-	oauthService := service.NewOAuthService(repos.User, repos.OAuth, repos.Token, repos.Audit, repos.RBAC, deps.jwtService, sessionService, &http.Client{Timeout: 10 * time.Second}, repos.AppOAuthProvider, repos.Application, deps.cfg.Security.JITProvisioning)
 	adminService := service.NewAdminService(repos.User, repos.APIKey, repos.Audit, repos.OAuth, repos.RBAC, repos.BackupCode, repos.Application, deps.cfg.Security.BcryptCost, deps.db)
 	rbacService := service.NewRBACService(repos.RBAC, auditService)
 	ipFilterService := service.NewIPFilterService(repos.IPFilter)
@@ -467,6 +465,12 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 		deps.cfg,
 		emailService,
 	)
+
+	// LoginAlertService: detects logins from new devices and sends email alerts
+	loginAlertService := service.NewLoginAlertService(deps.redis, repos.Session, emailProfileService, geoService, deps.log)
+
+	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db, repos.Application, loginAlertService)
+	oauthService := service.NewOAuthService(repos.User, repos.OAuth, repos.Token, repos.Audit, repos.RBAC, deps.jwtService, sessionService, &http.Client{Timeout: 10 * time.Second}, repos.AppOAuthProvider, repos.Application, deps.cfg.Security.JITProvisioning, loginAlertService)
 
 	// OTP Service
 	otpService := service.NewOTPService(
@@ -557,29 +561,29 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	migrationService := service.NewMigrationService(repos.User, repos.OAuth, repos.RBAC, repos.Application, repos.Application)
 
 	return &serviceSet{
-		Geo:             geoService,
-		Audit:           auditService,
-		Blacklist:       blacklistService,
-		Session:         sessionService,
-		Auth:            authService,
-		User:            userService,
-		APIKey:          apiKeyService,
-		Email:           emailService,
-		OTP:             otpService,
-		OAuth:           oauthService,
-		TwoFA:           twoFAService,
-		Admin:           adminService,
-		RBAC:            rbacService,
-		IPFilter:        ipFilterService,
-		Webhook:         webhookService,
-		Template:        templateService,
-		OAuthProvider:   oauthProviderService,
-		MinimalOAuthSvc: minimalOAuth,
-		Group:           groupService,
-		LDAP:            ldapService,
-		Bulk:            bulkService,
-		SCIM:            scimService,
-		SAML:            samlService,
+		Geo:              geoService,
+		Audit:            auditService,
+		Blacklist:        blacklistService,
+		Session:          sessionService,
+		Auth:             authService,
+		User:             userService,
+		APIKey:           apiKeyService,
+		Email:            emailService,
+		OTP:              otpService,
+		OAuth:            oauthService,
+		TwoFA:            twoFAService,
+		Admin:            adminService,
+		RBAC:             rbacService,
+		IPFilter:         ipFilterService,
+		Webhook:          webhookService,
+		Template:         templateService,
+		OAuthProvider:    oauthProviderService,
+		MinimalOAuthSvc:  minimalOAuth,
+		Group:            groupService,
+		LDAP:             ldapService,
+		Bulk:             bulkService,
+		SCIM:             scimService,
+		SAML:             samlService,
 		EmailProfile:     emailProfileService,
 		Application:      applicationService,
 		AppOAuthProvider: appOAuthProviderService,
@@ -621,26 +625,26 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	migrationHandler := handler.NewMigrationHandler(services.Migration, deps.log)
 
 	return &handlerSet{
-		Auth:          authHandler,
-		Health:        healthHandler,
-		APIKey:        apiKeyHandler,
-		OTP:           otpHandler,
-		OAuth:         oauthHandler,
-		TwoFA:         twoFAHandler,
-		Admin:         adminHandler,
-		AdvancedAdmin: advancedAdminHandler,
-		Webhook:       webhookHandler,
-		Template:      templateHandler,
-		OAuthProvider: oauthProviderHandler,
-		OAuthAdmin:    oauthAdminHandler,
-		Login:         loginHandler,
-		Group:         groupHandler,
-		SCIM:          scimHandler,
-		LDAP:          ldapHandler,
-		Bulk:          bulkHandler,
-		SAML:          samlHandler,
-		Token:         tokenHandler,
-		EmailProfile:  emailProfileHandler,
+		Auth:             authHandler,
+		Health:           healthHandler,
+		APIKey:           apiKeyHandler,
+		OTP:              otpHandler,
+		OAuth:            oauthHandler,
+		TwoFA:            twoFAHandler,
+		Admin:            adminHandler,
+		AdvancedAdmin:    advancedAdminHandler,
+		Webhook:          webhookHandler,
+		Template:         templateHandler,
+		OAuthProvider:    oauthProviderHandler,
+		OAuthAdmin:       oauthAdminHandler,
+		Login:            loginHandler,
+		Group:            groupHandler,
+		SCIM:             scimHandler,
+		LDAP:             ldapHandler,
+		Bulk:             bulkHandler,
+		SAML:             samlHandler,
+		Token:            tokenHandler,
+		EmailProfile:     emailProfileHandler,
 		Application:      applicationHandler,
 		AppOAuthProvider: appOAuthProviderHandler,
 		Telegram:         telegramHandler,

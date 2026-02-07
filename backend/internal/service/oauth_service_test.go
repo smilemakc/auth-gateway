@@ -19,7 +19,7 @@ func TestOAuthService_GetAuthURL(t *testing.T) {
 	t.Setenv("GOOGLE_CLIENT_SECRET", "google-secret")
 	t.Setenv("GOOGLE_CALLBACK_URL", "http://localhost/callback")
 
-	svc := NewOAuthService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, false)
+	svc := NewOAuthService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, false, nil)
 
 	t.Run("Success_Google", func(t *testing.T) {
 		url, err := svc.GetAuthURL(context.Background(), models.ProviderGoogle, "state-123", nil)
@@ -42,7 +42,7 @@ func TestOAuthService_ExchangeCode_And_GetUserInfo(t *testing.T) {
 	t.Setenv("GOOGLE_CALLBACK_URL", "http://localhost/callback")
 
 	mockHTTP := &mockHTTPClient{}
-	svc := NewOAuthService(nil, nil, nil, nil, nil, nil, nil, mockHTTP, nil, nil, false)
+	svc := NewOAuthService(nil, nil, nil, nil, nil, nil, nil, mockHTTP, nil, nil, false, nil)
 
 	ctx := context.Background()
 
@@ -99,7 +99,7 @@ func TestOAuthService_HandleCallback(t *testing.T) {
 	mockHTTP := &mockHTTPClient{}
 	// mockAudit := &mockAuditStore{} // Not used in current logic apparently
 
-	svc := NewOAuthService(mockUserRepo, mockOAuthRepo, mockTokenRepo, nil, mockRBACRepo, mockJWT, nil, mockHTTP, nil, nil, true)
+	svc := NewOAuthService(mockUserRepo, mockOAuthRepo, mockTokenRepo, nil, mockRBACRepo, mockJWT, nil, mockHTTP, nil, nil, true, nil)
 	ctx := context.Background()
 
 	// Mock HTTP responses for ExchangeCode and GetUserInfo
