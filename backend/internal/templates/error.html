@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorization Error</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            padding: 50px 40px;
+            text-align: center;
+        }
+
+        .error-container::before {
+            content: '⚠️';
+            display: block;
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+
+        .error-code {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            color: #721c24;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .error-description {
+            font-size: 16px;
+            color: #6c757d;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+            background: #667eea;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 40px 25px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .error-container::before {
+                font-size: 48px;
+            }
+
+            .error-description {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container error-container">
+        <h1>Authorization Error</h1>
+        {{if .Error}}
+        <p class="error-code">{{.Error}}</p>
+        {{end}}
+        {{if .ErrorDescription}}
+        <p class="error-description">{{.ErrorDescription}}</p>
+        {{else}}
+        <p class="error-description">An error occurred during the authorization process. Please try again or contact support.</p>
+        {{end}}
+
+        {{if .ReturnURL}}
+        <a href="{{.ReturnURL}}" class="btn">Go Back</a>
+        {{end}}
+    </div>
+</body>
+</html>

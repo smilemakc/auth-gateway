@@ -1,0 +1,550 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "github.com/smilemakc/auth-gateway/proto";
+
+// AuthService provides authentication and authorization operations for microservices
+service AuthService {
+  // ValidateToken validates a JWT access token and returns user information
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+
+  // GetUser retrieves user information by ID
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // CheckPermission checks if a user has specific permission
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+
+  // IntrospectToken provides detailed information about a token
+  rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse);
+
+  // CreateUser creates a new user account
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  // Login authenticates a user with email/phone and password
+  rpc Login(LoginRequest) returns (LoginResponse);
+
+  // InitPasswordlessRegistration initiates passwordless two-step registration
+  rpc InitPasswordlessRegistration(InitPasswordlessRegistrationRequest) returns (InitPasswordlessRegistrationResponse);
+
+  // CompletePasswordlessRegistration completes registration after OTP verification
+  rpc CompletePasswordlessRegistration(CompletePasswordlessRegistrationRequest) returns (CompletePasswordlessRegistrationResponse);
+
+  // ========== OTP Methods ==========
+
+  // SendOTP sends a one-time password to email
+  rpc SendOTP(SendOTPRequest) returns (SendOTPResponse);
+
+  // VerifyOTP verifies a one-time password
+  rpc VerifyOTP(VerifyOTPRequest) returns (VerifyOTPResponse);
+
+  // LoginWithOTP initiates passwordless login by sending OTP to email
+  rpc LoginWithOTP(LoginWithOTPRequest) returns (LoginWithOTPResponse);
+
+  // VerifyLoginOTP completes passwordless login by verifying OTP
+  rpc VerifyLoginOTP(VerifyLoginOTPRequest) returns (VerifyLoginOTPResponse);
+
+  // RegisterWithOTP initiates OTP-based registration by sending verification code
+  rpc RegisterWithOTP(RegisterWithOTPRequest) returns (RegisterWithOTPResponse);
+
+  // VerifyRegistrationOTP completes OTP-based registration
+  rpc VerifyRegistrationOTP(VerifyRegistrationOTPRequest) returns (VerifyRegistrationOTPResponse);
+
+  // ========== OAuth Provider Methods ==========
+
+  // IntrospectOAuthToken validates OAuth access token (RFC 7662)
+  rpc IntrospectOAuthToken(IntrospectOAuthTokenRequest) returns (IntrospectOAuthTokenResponse);
+
+  // ValidateOAuthClient validates OAuth client credentials
+  rpc ValidateOAuthClient(ValidateOAuthClientRequest) returns (ValidateOAuthClientResponse);
+
+  // GetOAuthClient retrieves OAuth client information by client_id
+  rpc GetOAuthClient(GetOAuthClientRequest) returns (GetOAuthClientResponse);
+
+  // ========== Email Methods ==========
+
+  // SendEmail sends an email using a specified template
+  rpc SendEmail(SendEmailRequest) returns (SendEmailResponse);
+
+  // ========== Multi-Application Methods ==========
+
+  // GetUserApplicationProfile returns user's profile for a specific application
+  rpc GetUserApplicationProfile(GetUserAppProfileRequest) returns (UserAppProfileResponse);
+
+  // GetUserTelegramBots returns user's Telegram bot access for an application
+  rpc GetUserTelegramBots(GetUserTelegramBotsRequest) returns (UserTelegramBotsResponse);
+
+  // ========== Sync & Config Methods ==========
+
+  // SyncUsers returns users updated after a given timestamp for shadow table sync
+  rpc SyncUsers(SyncUsersRequest) returns (SyncUsersResponse);
+
+  // GetApplicationAuthConfig returns auth configuration for a specific application
+  rpc GetApplicationAuthConfig(GetApplicationAuthConfigRequest) returns (GetApplicationAuthConfigResponse);
+
+  // ========== SSO Token Exchange Methods ==========
+
+  // CreateTokenExchange creates a one-time exchange code for cross-application SSO
+  rpc CreateTokenExchange(CreateTokenExchangeGrpcRequest) returns (CreateTokenExchangeGrpcResponse);
+
+  // RedeemTokenExchange redeems an exchange code for tokens in the target application
+  rpc RedeemTokenExchange(RedeemTokenExchangeGrpcRequest) returns (RedeemTokenExchangeGrpcResponse);
+}
+
+// ValidateTokenRequest contains the token to validate
+message ValidateTokenRequest {
+  string access_token = 1;
+  string application_id = 2; // Optional: validate token against specific application
+}
+
+// ValidateTokenResponse contains validation result and user info
+message ValidateTokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+  string email = 3;
+  string username = 4;
+  repeated string roles = 5;
+  string error_message = 6;
+  int64 expires_at = 7; // Unix timestamp
+  bool is_active = 8;
+  string application_id = 9;    // Application ID from token claims
+  repeated string app_roles = 10; // Per-application roles
+}
+
+// GetUserRequest contains the user ID to retrieve
+message GetUserRequest {
+  string user_id = 1;
+  string application_id = 2; // Optional: include app-specific profile
+}
+
+// User represents user information
+message User {
+  string id = 1;
+  string email = 2;
+  string username = 3;
+  string full_name = 4;
+  string profile_picture_url = 5;
+  repeated string roles = 6;
+  bool email_verified = 7;
+  bool is_active = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+}
+
+// GetUserResponse contains user information
+message GetUserResponse {
+  User user = 1;
+  string error_message = 2;
+}
+
+// CheckPermissionRequest contains permission check data
+message CheckPermissionRequest {
+  string user_id = 1;
+  string resource = 2; // e.g., "users", "products", "orders"
+  string action = 3;   // e.g., "read", "write", "delete"
+  string application_id = 4; // Optional: check per-app permission
+}
+
+// CheckPermissionResponse contains permission check result
+message CheckPermissionResponse {
+  bool allowed = 1;
+  string role = 2;
+  string error_message = 3;
+}
+
+// IntrospectTokenRequest contains the token to introspect
+message IntrospectTokenRequest {
+  string access_token = 1;
+}
+
+// IntrospectTokenResponse contains detailed token information
+message IntrospectTokenResponse {
+  bool active = 1;
+  string user_id = 2;
+  string email = 3;
+  string username = 4;
+  string role = 5;
+  int64 issued_at = 6;
+  int64 expires_at = 7;
+  int64 not_before = 8;
+  string subject = 9;
+  bool blacklisted = 10;
+  string error_message = 11;
+}
+
+// CreateUserRequest contains data for creating a new user
+message CreateUserRequest {
+  string email = 1;
+  string phone = 2;
+  string username = 3;
+  string password = 4;
+  string full_name = 5;
+  string account_type = 6; // "human" or "service"
+}
+
+// CreateUserResponse contains the result of user creation
+message CreateUserResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 expires_in = 4;
+  string error_message = 5;
+}
+
+// LoginRequest contains credentials for authentication
+message LoginRequest {
+  string email = 1;    // Email for login (optional if phone provided)
+  string phone = 2;    // Phone for login (optional if email provided)
+  string password = 3; // User password
+}
+
+// LoginResponse contains the result of login
+message LoginResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 expires_in = 4;
+  string error_message = 5;
+}
+
+// InitPasswordlessRegistrationRequest contains data to initiate passwordless registration
+message InitPasswordlessRegistrationRequest {
+  string email = 1;    // Optional if phone is provided
+  string phone = 2;    // Optional if email is provided
+  string username = 3; // Optional, will be auto-generated if not provided
+  string full_name = 4;
+}
+
+// InitPasswordlessRegistrationResponse contains the result of registration initiation
+message InitPasswordlessRegistrationResponse {
+  bool success = 1;
+  string message = 2;
+  string error_message = 3;
+}
+
+// CompletePasswordlessRegistrationRequest contains data to complete registration
+message CompletePasswordlessRegistrationRequest {
+  string email = 1; // Must match init request
+  string phone = 2; // Must match init request
+  string code = 3;  // 6-digit OTP code
+}
+
+// CompletePasswordlessRegistrationResponse contains the result of completed registration
+message CompletePasswordlessRegistrationResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 expires_in = 4;
+  string error_message = 5;
+}
+
+// ========== OTP Messages ==========
+
+// OTPType represents the type of OTP
+enum OTPType {
+  OTP_TYPE_UNSPECIFIED = 0;
+  OTP_TYPE_VERIFICATION = 1;
+  OTP_TYPE_PASSWORD_RESET = 2;
+  OTP_TYPE_TWO_FA = 3;
+  OTP_TYPE_LOGIN = 4;
+  OTP_TYPE_REGISTRATION = 5;
+}
+
+// SendOTPRequest contains data to send OTP
+message SendOTPRequest {
+  string email = 1;           // Email to send OTP to
+  OTPType otp_type = 2;       // Type of OTP (login, registration, verification, etc.)
+  string profile_id = 3;      // Optional email profile ID for multi-tenant support
+}
+
+// SendOTPResponse contains result of OTP sending
+message SendOTPResponse {
+  bool success = 1;
+  string message = 2;         // Success message
+  string error_message = 3;   // Error message if failed
+  int32 expires_in = 4;       // OTP expiration time in seconds
+}
+
+// VerifyOTPRequest contains OTP verification data
+message VerifyOTPRequest {
+  string email = 1;           // Email that received the OTP
+  string code = 2;            // 6-digit OTP code
+  OTPType otp_type = 3;       // Type of OTP being verified
+}
+
+// VerifyOTPResponse contains OTP verification result
+message VerifyOTPResponse {
+  bool valid = 1;             // Whether OTP is valid
+  string error_message = 2;   // Error message if invalid
+}
+
+// LoginWithOTPRequest contains data for OTP-based login (step 1: request OTP)
+message LoginWithOTPRequest {
+  string email = 1;           // Email for passwordless login
+  string profile_id = 2;      // Optional email profile ID
+}
+
+// LoginWithOTPResponse contains result of OTP login request
+message LoginWithOTPResponse {
+  bool success = 1;
+  string message = 2;         // e.g., "OTP sent to your email"
+  string error_message = 3;
+  int32 expires_in = 4;       // OTP expiration time in seconds
+}
+
+// RegisterWithOTPRequest contains data for OTP-based registration (step 1: send OTP)
+message RegisterWithOTPRequest {
+  string email = 1;           // Email for registration
+  string username = 2;        // Optional username
+  string full_name = 3;       // Optional full name
+  string profile_id = 4;      // Optional email profile ID
+}
+
+// RegisterWithOTPResponse contains result of registration OTP request
+message RegisterWithOTPResponse {
+  bool success = 1;
+  string message = 2;         // e.g., "Verification code sent to your email"
+  string error_message = 3;
+  int32 expires_in = 4;       // OTP expiration time in seconds
+}
+
+// VerifyRegistrationOTPRequest contains data to complete OTP registration (step 2)
+message VerifyRegistrationOTPRequest {
+  string email = 1;           // Email that received the OTP
+  string code = 2;            // 6-digit OTP code
+  string username = 3;        // Optional username (can be set here if not in step 1)
+  string full_name = 4;       // Optional full name (can be set here if not in step 1)
+  string password = 5;        // Optional password (for hybrid registration)
+}
+
+// VerifyRegistrationOTPResponse contains completed registration result
+message VerifyRegistrationOTPResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 expires_in = 4;
+  string error_message = 5;
+}
+
+// VerifyLoginOTPRequest contains data for step 2 of OTP login
+message VerifyLoginOTPRequest {
+  string email = 1;           // Email that received the OTP
+  string code = 2;            // 6-digit OTP code
+}
+
+// VerifyLoginOTPResponse contains the login result after OTP verification
+message VerifyLoginOTPResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 expires_in = 4;
+  string error_message = 5;
+}
+
+// ========== OAuth Provider Messages ==========
+
+// IntrospectOAuthTokenRequest contains the OAuth token to introspect
+message IntrospectOAuthTokenRequest {
+  string token = 1;
+  string token_type_hint = 2; // "access_token" or "refresh_token"
+}
+
+// IntrospectOAuthTokenResponse contains RFC 7662 introspection response
+message IntrospectOAuthTokenResponse {
+  bool active = 1;
+  string scope = 2;
+  string client_id = 3;
+  string username = 4;
+  string token_type = 5;
+  int64 exp = 6;    // Expiration time (Unix timestamp)
+  int64 iat = 7;    // Issued at (Unix timestamp)
+  int64 nbf = 8;    // Not before (Unix timestamp)
+  string sub = 9;   // Subject (user ID)
+  string aud = 10;  // Audience
+  string iss = 11;  // Issuer
+  string jti = 12;  // JWT ID
+  string error_message = 13;
+}
+
+// ValidateOAuthClientRequest contains client credentials to validate
+message ValidateOAuthClientRequest {
+  string client_id = 1;
+  string client_secret = 2;
+}
+
+// ValidateOAuthClientResponse contains client validation result
+message ValidateOAuthClientResponse {
+  bool valid = 1;
+  string client_id = 2;
+  string client_name = 3;
+  string client_type = 4;   // "confidential" or "public"
+  repeated string scopes = 5;
+  repeated string redirect_uris = 6;
+  string error_message = 7;
+}
+
+// GetOAuthClientRequest contains the client_id to retrieve
+message GetOAuthClientRequest {
+  string client_id = 1;
+}
+
+// OAuthClient represents OAuth client information
+message OAuthClient {
+  string id = 1;
+  string client_id = 2;
+  string client_name = 3;
+  string client_type = 4;
+  repeated string redirect_uris = 5;
+  repeated string scopes = 6;
+  repeated string grant_types = 7;
+  string token_endpoint_auth_method = 8;
+  bool is_active = 9;
+  int64 created_at = 10;
+  int64 updated_at = 11;
+}
+
+// GetOAuthClientResponse contains OAuth client information
+message GetOAuthClientResponse {
+  OAuthClient client = 1;
+  string error_message = 2;
+}
+
+// ========== Multi-Application Messages ==========
+
+// GetUserAppProfileRequest contains user and application IDs
+message GetUserAppProfileRequest {
+  string user_id = 1;
+  string application_id = 2;
+}
+
+// UserAppProfileResponse contains user's application-specific profile
+message UserAppProfileResponse {
+  string user_id = 1;
+  string application_id = 2;
+  string display_name = 3;
+  string avatar_url = 4;
+  string locale = 5;
+  string timezone = 6;
+  repeated string app_roles = 7;
+  bool is_active = 8;
+  int64 created_at = 9;
+  string error_message = 10;
+}
+
+// GetUserTelegramBotsRequest contains user and application IDs
+message GetUserTelegramBotsRequest {
+  string user_id = 1;
+  string application_id = 2;
+}
+
+// TelegramBotAccess represents user's access to a Telegram bot
+message TelegramBotAccess {
+  string bot_id = 1;
+  string bot_username = 2;
+  string display_name = 3;
+  string telegram_user_id = 4;
+  string telegram_username = 5;
+  bool is_active = 6;
+  int64 first_interaction_at = 7;
+  int64 last_interaction_at = 8;
+}
+
+// UserTelegramBotsResponse contains user's Telegram bot access records
+message UserTelegramBotsResponse {
+  repeated TelegramBotAccess bots = 1;
+  string error_message = 2;
+}
+
+// ========== Email Messages ==========
+
+// SendEmailRequest contains data to send an email via template
+message SendEmailRequest {
+  string template_type = 1;          // Template type (e.g., "welcome", "password_changed")
+  string to_email = 2;               // Recipient email address
+  map<string, string> variables = 3; // Template variables
+  string profile_id = 4;             // Optional email profile ID
+  string application_id = 5;         // Optional application ID for app-scoped templates
+}
+
+// SendEmailResponse contains the result of email sending
+message SendEmailResponse {
+  bool success = 1;
+  string message = 2;
+  string error_message = 3;
+}
+
+// ========== Sync & Config Messages ==========
+
+message SyncUsersRequest {
+  string updated_after = 1;    // RFC3339 timestamp
+  string application_id = 2;   // Optional: filter by application
+  int32 limit = 3;             // Pagination limit (max 1000)
+  int32 offset = 4;            // Pagination offset
+}
+
+message SyncUsersResponse {
+  repeated SyncUser users = 1;
+  int32 total = 2;
+  bool has_more = 3;
+  string sync_timestamp = 4;   // Server timestamp for next sync
+  string error_message = 5;
+}
+
+message SyncUser {
+  string id = 1;
+  string email = 2;
+  string username = 3;
+  string full_name = 4;
+  bool is_active = 5;
+  bool email_verified = 6;
+  string updated_at = 7;       // RFC3339 timestamp
+  SyncUserAppProfile app_profile = 8;
+}
+
+message SyncUserAppProfile {
+  string display_name = 1;
+  string avatar_url = 2;
+  repeated string app_roles = 3;
+  bool is_active = 4;
+  bool is_banned = 5;
+}
+
+message GetApplicationAuthConfigRequest {
+  string application_id = 1;   // UUID
+}
+
+message GetApplicationAuthConfigResponse {
+  string application_id = 1;
+  string name = 2;
+  string display_name = 3;
+  repeated string allowed_auth_methods = 4;
+  repeated string oauth_providers = 5;
+  string error_message = 6;
+}
+
+// ========== SSO Token Exchange Messages ==========
+
+message CreateTokenExchangeGrpcRequest {
+  string access_token = 1;
+  string target_application_id = 2;
+}
+
+message CreateTokenExchangeGrpcResponse {
+  string exchange_code = 1;
+  string expires_at = 2;
+  string redirect_url = 3;
+  string error_message = 4;
+}
+
+message RedeemTokenExchangeGrpcRequest {
+  string exchange_code = 1;
+}
+
+message RedeemTokenExchangeGrpcResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  string user_id = 3;
+  string email = 4;
+  string application_id = 5;
+  string error_message = 6;
+}

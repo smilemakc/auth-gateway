@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorize Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 30px 30px;
+            background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .client-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            object-fit: cover;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        .permissions {
+            padding: 30px;
+        }
+
+        .permissions h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #495057;
+        }
+
+        .permissions ul {
+            list-style: none;
+        }
+
+        .permissions li {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .permissions li:last-child {
+            margin-bottom: 0;
+        }
+
+        .permissions li strong {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .permissions li span {
+            display: block;
+            font-size: 13px;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            padding: 20px 30px 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: none;
+        }
+
+        .btn-allow {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-allow:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-deny {
+            background: #ffffff;
+            color: #6c757d;
+            border: 2px solid #e9ecef;
+        }
+
+        .btn-deny:hover {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 30px 20px 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .permissions {
+                padding: 20px;
+            }
+
+            .buttons {
+                flex-direction: column-reverse;
+                padding: 15px 20px 25px;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            {{if .ClientLogoURL}}
+            <img src="{{.ClientLogoURL}}" alt="{{.ClientName}}" class="client-logo">
+            {{end}}
+            <h1>{{.ClientName}}</h1>
+            {{if .ClientDescription}}
+            <p>{{.ClientDescription}}</p>
+            {{end}}
+        </div>
+
+        <div class="permissions">
+            <h2>This application is requesting access to:</h2>
+            <ul>
+                {{range .Scopes}}
+                <li>
+                    <strong>{{.DisplayName}}</strong>
+                    <span>{{.Description}}</span>
+                </li>
+                {{end}}
+            </ul>
+        </div>
+
+        <form method="POST" action="/oauth/consent">
+            <input type="hidden" name="client_id" value="{{.ClientID}}">
+            <input type="hidden" name="redirect_uri" value="{{.RedirectURI}}">
+            <input type="hidden" name="scope" value="{{.Scope}}">
+            <input type="hidden" name="state" value="{{.State}}">
+            <input type="hidden" name="response_type" value="{{.ResponseType}}">
+            <input type="hidden" name="nonce" value="{{.Nonce}}">
+            <input type="hidden" name="code_challenge" value="{{.CodeChallenge}}">
+            <input type="hidden" name="code_challenge_method" value="{{.CodeChallengeMethod}}">
+
+            <div class="buttons">
+                <button type="submit" name="approve" value="false" class="btn btn-deny">Deny</button>
+                <button type="submit" name="approve" value="true" class="btn btn-allow">Allow</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

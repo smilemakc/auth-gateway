@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Activation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px 30px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #1a1a1a;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .success p {
+            color: #155724;
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .error p {
+            color: #721c24;
+            font-size: 15px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .container > p {
+            text-align: center;
+            font-size: 15px;
+            color: #6c757d;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        form {
+            width: 100%;
+        }
+
+        .code-input {
+            width: 100%;
+            padding: 16px;
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            transition: border-color 0.2s ease;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .code-input::placeholder {
+            color: #adb5bd;
+            font-weight: 400;
+        }
+
+        .approval {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .approval > p {
+            font-size: 15px;
+            color: #495057;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .approval strong {
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        .approval ul {
+            list-style: none;
+            margin-bottom: 25px;
+        }
+
+        .approval li {
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #495057;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .approval li:last-child {
+            margin-bottom: 0;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: none;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-allow {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-allow:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-deny {
+            background: #ffffff;
+            color: #6c757d;
+            border: 2px solid #e9ecef;
+        }
+
+        .btn-deny:hover {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            .code-input {
+                font-size: 20px;
+                padding: 14px;
+            }
+
+            .buttons {
+                flex-direction: column-reverse;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Activate Your Device</h1>
+
+        {{if .Success}}
+        <div class="success">
+            <p>Device activated successfully! You can close this page.</p>
+        </div>
+        {{else if .Error}}
+        <div class="error">
+            <p>{{.Error}}</p>
+        </div>
+        {{end}}
+
+        {{if not .Success}}
+        <p>Enter the code shown on your device:</p>
+
+        <form method="POST" action="/oauth/device/approve">
+            <input type="text"
+                   name="user_code"
+                   placeholder="ABCD-1234"
+                   value="{{.UserCode}}"
+                   pattern="[A-Z0-9]{4}-[A-Z0-9]{4}"
+                   class="code-input"
+                   autocomplete="off"
+                   required>
+
+            {{if .ClientName}}
+            <div class="approval">
+                <p>Allow <strong>{{.ClientName}}</strong> to access:</p>
+                <ul>
+                    {{range .Scopes}}
+                    <li>{{.DisplayName}}</li>
+                    {{end}}
+                </ul>
+
+                <div class="buttons">
+                    <button type="submit" name="approve" value="false" class="btn btn-deny">Deny</button>
+                    <button type="submit" name="approve" value="true" class="btn btn-allow">Allow</button>
+                </div>
+            </div>
+            {{else}}
+            <button type="submit" class="btn btn-primary">Continue</button>
+            {{end}}
+        </form>
+        {{end}}
+    </div>
+</body>
+</html>
