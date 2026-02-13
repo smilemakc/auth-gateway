@@ -81,6 +81,14 @@ service AuthService {
 
   // GetApplicationAuthConfig returns auth configuration for a specific application
   rpc GetApplicationAuthConfig(GetApplicationAuthConfigRequest) returns (GetApplicationAuthConfigResponse);
+
+  // ========== SSO Token Exchange Methods ==========
+
+  // CreateTokenExchange creates a one-time exchange code for cross-application SSO
+  rpc CreateTokenExchange(CreateTokenExchangeGrpcRequest) returns (CreateTokenExchangeGrpcResponse);
+
+  // RedeemTokenExchange redeems an exchange code for tokens in the target application
+  rpc RedeemTokenExchange(RedeemTokenExchangeGrpcRequest) returns (RedeemTokenExchangeGrpcResponse);
 }
 
 // ValidateTokenRequest contains the token to validate
@@ -511,5 +519,32 @@ message GetApplicationAuthConfigResponse {
   string display_name = 3;
   repeated string allowed_auth_methods = 4;
   repeated string oauth_providers = 5;
+  string error_message = 6;
+}
+
+// ========== SSO Token Exchange Messages ==========
+
+message CreateTokenExchangeGrpcRequest {
+  string access_token = 1;
+  string target_application_id = 2;
+}
+
+message CreateTokenExchangeGrpcResponse {
+  string exchange_code = 1;
+  string expires_at = 2;
+  string redirect_url = 3;
+  string error_message = 4;
+}
+
+message RedeemTokenExchangeGrpcRequest {
+  string exchange_code = 1;
+}
+
+message RedeemTokenExchangeGrpcResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  string user_id = 3;
+  string email = 4;
+  string application_id = 5;
   string error_message = 6;
 }

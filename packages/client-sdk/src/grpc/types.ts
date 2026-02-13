@@ -1,88 +1,81 @@
 /**
  * gRPC type definitions
+ *
+ * Proto message types are auto-generated from auth.proto by ts-proto.
+ * This file re-exports them and provides SDK-specific types.
  */
 
-/** Role information */
-export interface RoleInfo {
-  id: string;
-  name: string;
-  displayName: string;
-}
+// Re-export all generated proto types
+export type {
+  ValidateTokenRequest,
+  ValidateTokenResponse,
+  GetUserRequest,
+  GetUserResponse,
+  User,
+  CheckPermissionRequest,
+  CheckPermissionResponse,
+  IntrospectTokenRequest,
+  IntrospectTokenResponse,
+  CreateUserRequest,
+  CreateUserResponse,
+  LoginRequest,
+  LoginResponse,
+  InitPasswordlessRegistrationRequest,
+  InitPasswordlessRegistrationResponse,
+  CompletePasswordlessRegistrationRequest,
+  CompletePasswordlessRegistrationResponse,
+  SendOTPRequest,
+  SendOTPResponse,
+  VerifyOTPRequest,
+  VerifyOTPResponse,
+  LoginWithOTPRequest,
+  LoginWithOTPResponse,
+  VerifyLoginOTPRequest,
+  VerifyLoginOTPResponse,
+  RegisterWithOTPRequest,
+  RegisterWithOTPResponse,
+  VerifyRegistrationOTPRequest,
+  VerifyRegistrationOTPResponse,
+  IntrospectOAuthTokenRequest,
+  IntrospectOAuthTokenResponse,
+  ValidateOAuthClientRequest,
+  ValidateOAuthClientResponse,
+  GetOAuthClientRequest,
+  GetOAuthClientResponse,
+  OAuthClient,
+  GetUserAppProfileRequest,
+  UserAppProfileResponse,
+  GetUserTelegramBotsRequest,
+  TelegramBotAccess,
+  UserTelegramBotsResponse,
+  SendEmailRequest,
+  SendEmailResponse,
+  SyncUsersRequest,
+  SyncUsersResponse,
+  SyncUser,
+  SyncUserAppProfile,
+  GetApplicationAuthConfigRequest,
+  GetApplicationAuthConfigResponse,
+  CreateTokenExchangeGrpcRequest,
+  CreateTokenExchangeGrpcResponse,
+  RedeemTokenExchangeGrpcRequest,
+  RedeemTokenExchangeGrpcResponse,
+} from './generated';
 
-/** Validate token request */
-export interface ValidateTokenRequest {
-  accessToken: string;
-}
+export { OTPType } from './generated';
 
-/** Validate token response */
-export interface ValidateTokenResponse {
-  valid: boolean;
-  userId: string;
-  email: string;
-  username: string;
-  roles: string[];
-  errorMessage: string;
-  expiresAt: number;
-}
+// Import types used in local aliases
+import type {
+  User,
+  GetApplicationAuthConfigResponse,
+  CreateTokenExchangeGrpcResponse,
+  RedeemTokenExchangeGrpcResponse,
+} from './generated';
 
-/** Get user request */
-export interface GetUserRequest {
-  userId: string;
-}
+// Backward-compatible alias
+export type GrpcUser = User;
 
-/** gRPC User object */
-export interface GrpcUser {
-  id: string;
-  email: string;
-  username: string;
-  fullName: string;
-  profilePictureUrl: string;
-  roles: RoleInfo[];
-  emailVerified: boolean;
-  isActive: boolean;
-  createdAt: number;
-  updatedAt: number;
-}
-
-/** Get user response */
-export interface GetUserResponse {
-  user: GrpcUser | null;
-  errorMessage: string;
-}
-
-/** Check permission request */
-export interface CheckPermissionRequest {
-  userId: string;
-  resource: string;
-  action: string;
-}
-
-/** Check permission response */
-export interface CheckPermissionResponse {
-  allowed: boolean;
-  roles: string[];
-  errorMessage: string;
-}
-
-/** Introspect token request */
-export interface IntrospectTokenRequest {
-  accessToken: string;
-}
-
-/** Introspect token response */
-export interface IntrospectTokenResponse {
-  active: boolean;
-  userId: string;
-  email: string;
-  username: string;
-  roles: string[];
-  issuedAt: number;
-  expiresAt: number;
-  notBefore: number;
-  subject: string;
-  blacklisted: boolean;
-  errorMessage: string;
-}
+// ========== SDK-specific types ==========
 
 /** gRPC client configuration */
 export interface GrpcClientConfig {
@@ -108,7 +101,7 @@ export interface GrpcCallOptions {
   metadata?: Record<string, string>;
 }
 
-/** Sync users options */
+/** Sync users options (SDK convenience wrapper) */
 export interface SyncUsersOptions {
   updatedAfter: Date | string;
   applicationId?: string;
@@ -116,56 +109,11 @@ export interface SyncUsersOptions {
   offset?: number;
 }
 
-/** Sync user object */
-export interface SyncUser {
-  id: string;
-  email: string;
-  username: string;
-  fullName: string;
-  isActive: boolean;
-  emailVerified: boolean;
-  updatedAt: string;
-  appProfile?: SyncUserAppProfile;
-}
+/** Auth config result (SDK convenience alias) */
+export type AuthConfigResult = GetApplicationAuthConfigResponse;
 
-/** Sync user app profile */
-export interface SyncUserAppProfile {
-  displayName?: string;
-  avatarUrl?: string;
-  appRoles?: string[];
-  isActive: boolean;
-  isBanned: boolean;
-}
+/** Token exchange result (SDK convenience alias) */
+export type TokenExchangeResult = CreateTokenExchangeGrpcResponse;
 
-/** Sync users result */
-export interface SyncUsersResult {
-  users: SyncUser[];
-  total: number;
-  hasMore: boolean;
-  syncTimestamp: string;
-}
-
-/** Auth config result */
-export interface AuthConfigResult {
-  applicationId: string;
-  name: string;
-  displayName: string;
-  allowedAuthMethods: string[];
-  oauthProviders: string[];
-}
-
-/** Token exchange result */
-export interface TokenExchangeResult {
-  exchangeCode: string;
-  expiresAt: string;
-  redirectUrl?: string;
-}
-
-/** Token exchange redeem result */
-export interface TokenExchangeRedeemResult {
-  accessToken: string;
-  refreshToken: string;
-  userId: string;
-  email: string;
-  applicationId: string;
-}
+/** Token exchange redeem result (SDK convenience alias) */
+export type TokenExchangeRedeemResult = RedeemTokenExchangeGrpcResponse;

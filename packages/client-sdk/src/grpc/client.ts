@@ -9,16 +9,53 @@ import type {
   AuthConfigResult,
   CheckPermissionRequest,
   CheckPermissionResponse,
-  GetUserRequest,
-  GetUserResponse,
   GrpcCallOptions,
   GrpcClientConfig,
   IntrospectTokenRequest,
   IntrospectTokenResponse,
   SyncUsersOptions,
-  SyncUsersResult,
+  TokenExchangeResult,
+  TokenExchangeRedeemResult,
   ValidateTokenRequest,
   ValidateTokenResponse,
+  GetUserRequest,
+  GetUserResponse,
+  CreateUserRequest,
+  CreateUserResponse,
+  LoginRequest,
+  LoginResponse,
+  InitPasswordlessRegistrationRequest,
+  InitPasswordlessRegistrationResponse,
+  CompletePasswordlessRegistrationRequest,
+  CompletePasswordlessRegistrationResponse,
+  SendOTPRequest,
+  SendOTPResponse,
+  VerifyOTPRequest,
+  VerifyOTPResponse,
+  LoginWithOTPRequest,
+  LoginWithOTPResponse,
+  VerifyLoginOTPRequest,
+  VerifyLoginOTPResponse,
+  RegisterWithOTPRequest,
+  RegisterWithOTPResponse,
+  VerifyRegistrationOTPRequest,
+  VerifyRegistrationOTPResponse,
+  IntrospectOAuthTokenRequest,
+  IntrospectOAuthTokenResponse,
+  ValidateOAuthClientRequest,
+  ValidateOAuthClientResponse,
+  GetOAuthClientRequest,
+  GetOAuthClientResponse,
+  GetUserAppProfileRequest,
+  UserAppProfileResponse,
+  GetUserTelegramBotsRequest,
+  UserTelegramBotsResponse,
+  SendEmailRequest,
+  SendEmailResponse,
+  SyncUsersResponse,
+  GetApplicationAuthConfigRequest,
+  CreateTokenExchangeGrpcRequest,
+  RedeemTokenExchangeGrpcRequest,
 } from './types';
 
 /** Default gRPC configuration */
@@ -27,86 +64,6 @@ const DEFAULT_CONFIG: Required<Omit<GrpcClientConfig, 'address' | 'caCertPath' |
   timeout: 5000,
   debug: false,
 };
-
-/** Proto definition for dynamic loading */
-const PROTO_DEFINITION = `
-syntax = "proto3";
-
-package auth;
-
-service AuthService {
-  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
-  rpc GetUser(GetUserRequest) returns (GetUserResponse);
-  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
-  rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse);
-}
-
-message ValidateTokenRequest {
-  string access_token = 1;
-}
-
-message ValidateTokenResponse {
-  bool valid = 1;
-  string user_id = 2;
-  string email = 3;
-  string username = 4;
-  string role = 5;
-  string error_message = 6;
-  int64 expires_at = 7;
-}
-
-message GetUserRequest {
-  string user_id = 1;
-}
-
-message User {
-  string id = 1;
-  string email = 2;
-  string username = 3;
-  string full_name = 4;
-  string profile_picture_url = 5;
-  string role = 6;
-  bool email_verified = 7;
-  bool is_active = 8;
-  int64 created_at = 9;
-  int64 updated_at = 10;
-}
-
-message GetUserResponse {
-  User user = 1;
-  string error_message = 2;
-}
-
-message CheckPermissionRequest {
-  string user_id = 1;
-  string resource = 2;
-  string action = 3;
-}
-
-message CheckPermissionResponse {
-  bool allowed = 1;
-  string role = 2;
-  string error_message = 3;
-}
-
-message IntrospectTokenRequest {
-  string access_token = 1;
-}
-
-message IntrospectTokenResponse {
-  bool active = 1;
-  string user_id = 2;
-  string email = 3;
-  string username = 4;
-  string role = 5;
-  int64 issued_at = 6;
-  int64 expires_at = 7;
-  int64 not_before = 8;
-  string subject = 9;
-  bool blacklisted = 10;
-  string error_message = 11;
-}
-`;
 
 /** gRPC Auth Service client */
 export class AuthGrpcClient {
@@ -134,7 +91,7 @@ export class AuthGrpcClient {
 
     this.log(`Connecting to ${this.config.address}`);
 
-    // Load proto definition from string
+    // Load proto definition from file (copied by generate-proto.sh)
     const packageDefinition = protoLoader.loadSync(
       path.join(__dirname, 'auth.proto'),
       {
@@ -146,26 +103,7 @@ export class AuthGrpcClient {
       }
     );
 
-    // If proto file doesn't exist, use inline definition
-    let protoDescriptor: grpc.GrpcObject;
-    try {
-      protoDescriptor = grpc.loadPackageDefinition(packageDefinition);
-    } catch {
-      // Fallback: create client directly with proto definition string
-      this.log('Using inline proto definition');
-      const tempProtoPath = '/tmp/auth.proto';
-      const fs = await import('fs');
-      fs.writeFileSync(tempProtoPath, PROTO_DEFINITION);
-
-      const tempPackageDef = protoLoader.loadSync(tempProtoPath, {
-        keepCase: false,
-        longs: Number,
-        enums: String,
-        defaults: true,
-        oneofs: true,
-      });
-      protoDescriptor = grpc.loadPackageDefinition(tempPackageDef);
-    }
+    const protoDescriptor = grpc.loadPackageDefinition(packageDefinition);
 
     // Get credentials
     const credentials = this.config.useTls
@@ -181,12 +119,28 @@ export class AuthGrpcClient {
       .AuthService as grpc.ServiceClientConstructor;
     this.client = new AuthService(this.config.address, credentials);
 
-    // Store methods
+    // Store all 24 RPC methods
     this.serviceMethods = {
       validateToken: this.promisify('validateToken'),
       getUser: this.promisify('getUser'),
       checkPermission: this.promisify('checkPermission'),
       introspectToken: this.promisify('introspectToken'),
+      createUser: this.promisify('createUser'),
+      login: this.promisify('login'),
+      initPasswordlessRegistration: this.promisify('initPasswordlessRegistration'),
+      completePasswordlessRegistration: this.promisify('completePasswordlessRegistration'),
+      sendOTP: this.promisify('sendOTP'),
+      verifyOTP: this.promisify('verifyOTP'),
+      loginWithOTP: this.promisify('loginWithOTP'),
+      verifyLoginOTP: this.promisify('verifyLoginOTP'),
+      registerWithOTP: this.promisify('registerWithOTP'),
+      verifyRegistrationOTP: this.promisify('verifyRegistrationOTP'),
+      introspectOAuthToken: this.promisify('introspectOAuthToken'),
+      validateOAuthClient: this.promisify('validateOAuthClient'),
+      getOAuthClient: this.promisify('getOAuthClient'),
+      sendEmail: this.promisify('sendEmail'),
+      getUserApplicationProfile: this.promisify('getUserApplicationProfile'),
+      getUserTelegramBots: this.promisify('getUserTelegramBots'),
       syncUsers: this.promisify('syncUsers'),
       getApplicationAuthConfig: this.promisify('getApplicationAuthConfig'),
       createTokenExchange: this.promisify('createTokenExchange'),
@@ -274,6 +228,24 @@ export class AuthGrpcClient {
     this.config.apiKey = apiKey;
   }
 
+  // ========== Ensure connection helper ==========
+
+  private async ensureConnected(): Promise<void> {
+    if (!this.isConnected()) {
+      await this.connect();
+    }
+  }
+
+  private ensureMethod(name: string): Function {
+    const method = this.serviceMethods[name];
+    if (!method) {
+      throw new Error(`${name} method not available`);
+    }
+    return method;
+  }
+
+  // ========== Token & Auth Methods ==========
+
   /**
    * Validate an access token, API key, or application secret
    * @param accessToken JWT token, API key (starting with 'agw_'), or application secret (starting with 'app_')
@@ -284,19 +256,13 @@ export class AuthGrpcClient {
     accessToken: string,
     options?: GrpcCallOptions
   ): Promise<ValidateTokenResponse> {
-    if (!this.isConnected()) {
-      await this.connect();
-    }
+    await this.ensureConnected();
+    const method = this.ensureMethod('validateToken');
 
-    if (!this.serviceMethods.validateToken) {
-      throw new Error('ValidateToken method not available');
-    }
-
-    const request: ValidateTokenRequest = { accessToken };
+    const request: ValidateTokenRequest = { accessToken, applicationId: '' };
     this.log('ValidateToken:', { accessToken: accessToken.substring(0, 20) + '...' });
 
-    const response = await this.serviceMethods.validateToken(request, options);
-    return this.transformResponse(response as Record<string, unknown>) as unknown as ValidateTokenResponse;
+    return await method(request, options) as ValidateTokenResponse;
   }
 
   /**
@@ -309,19 +275,13 @@ export class AuthGrpcClient {
     userId: string,
     options?: GrpcCallOptions
   ): Promise<GetUserResponse> {
-    if (!this.isConnected()) {
-      await this.connect();
-    }
+    await this.ensureConnected();
+    const method = this.ensureMethod('getUser');
 
-    if (!this.serviceMethods.getUser) {
-      throw new Error('GetUser method not available');
-    }
+    const request: GetUserRequest = { userId, applicationId: '' };
+    this.log('GetUser:', { userId });
 
-    const request: GetUserRequest = { userId };
-    this.log('GetUser:', request);
-
-    const response = await this.serviceMethods.getUser(request, options);
-    return this.transformResponse(response as Record<string, unknown>) as unknown as GetUserResponse;
+    return await method(request, options) as GetUserResponse;
   }
 
   /**
@@ -338,19 +298,13 @@ export class AuthGrpcClient {
     action: string,
     options?: GrpcCallOptions
   ): Promise<CheckPermissionResponse> {
-    if (!this.isConnected()) {
-      await this.connect();
-    }
+    await this.ensureConnected();
+    const method = this.ensureMethod('checkPermission');
 
-    if (!this.serviceMethods.checkPermission) {
-      throw new Error('CheckPermission method not available');
-    }
+    const request: CheckPermissionRequest = { userId, resource, action, applicationId: '' };
+    this.log('CheckPermission:', { userId, resource, action });
 
-    const request: CheckPermissionRequest = { userId, resource, action };
-    this.log('CheckPermission:', request);
-
-    const response = await this.serviceMethods.checkPermission(request, options);
-    return this.transformResponse(response as Record<string, unknown>) as unknown as CheckPermissionResponse;
+    return await method(request, options) as CheckPermissionResponse;
   }
 
   /**
@@ -363,20 +317,316 @@ export class AuthGrpcClient {
     accessToken: string,
     options?: GrpcCallOptions
   ): Promise<IntrospectTokenResponse> {
-    if (!this.isConnected()) {
-      await this.connect();
-    }
-
-    if (!this.serviceMethods.introspectToken) {
-      throw new Error('IntrospectToken method not available');
-    }
+    await this.ensureConnected();
+    const method = this.ensureMethod('introspectToken');
 
     const request: IntrospectTokenRequest = { accessToken };
     this.log('IntrospectToken:', { accessToken: accessToken.substring(0, 20) + '...' });
 
-    const response = await this.serviceMethods.introspectToken(request, options);
-    return this.transformResponse(response as Record<string, unknown>) as unknown as IntrospectTokenResponse;
+    return await method(request, options) as IntrospectTokenResponse;
   }
+
+  // ========== User Management Methods ==========
+
+  /**
+   * Create a new user account
+   * @param request User creation data
+   * @param options Call options
+   * @returns Created user with tokens
+   */
+  async createUser(
+    request: CreateUserRequest,
+    options?: GrpcCallOptions
+  ): Promise<CreateUserResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('createUser');
+
+    this.log('CreateUser:', { email: request.email });
+
+    return await method(request, options) as CreateUserResponse;
+  }
+
+  /**
+   * Authenticate a user with email/phone and password
+   * @param request Login credentials
+   * @param options Call options
+   * @returns Login result with tokens
+   */
+  async login(
+    request: LoginRequest,
+    options?: GrpcCallOptions
+  ): Promise<LoginResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('login');
+
+    this.log('Login:', { email: request.email });
+
+    return await method(request, options) as LoginResponse;
+  }
+
+  // ========== Passwordless Registration Methods ==========
+
+  /**
+   * Initiate passwordless two-step registration
+   * @param request Registration initiation data
+   * @param options Call options
+   * @returns Initiation result
+   */
+  async initPasswordlessRegistration(
+    request: InitPasswordlessRegistrationRequest,
+    options?: GrpcCallOptions
+  ): Promise<InitPasswordlessRegistrationResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('initPasswordlessRegistration');
+
+    this.log('InitPasswordlessRegistration:', { email: request.email });
+
+    return await method(request, options) as InitPasswordlessRegistrationResponse;
+  }
+
+  /**
+   * Complete registration after OTP verification
+   * @param request Registration completion data
+   * @param options Call options
+   * @returns Completed registration with tokens
+   */
+  async completePasswordlessRegistration(
+    request: CompletePasswordlessRegistrationRequest,
+    options?: GrpcCallOptions
+  ): Promise<CompletePasswordlessRegistrationResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('completePasswordlessRegistration');
+
+    this.log('CompletePasswordlessRegistration:', { email: request.email });
+
+    return await method(request, options) as CompletePasswordlessRegistrationResponse;
+  }
+
+  // ========== OTP Methods ==========
+
+  /**
+   * Send a one-time password to email
+   * @param request OTP send data
+   * @param options Call options
+   * @returns Send result
+   */
+  async sendOTP(
+    request: SendOTPRequest,
+    options?: GrpcCallOptions
+  ): Promise<SendOTPResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('sendOTP');
+
+    this.log('SendOTP:', { email: request.email, otpType: request.otpType });
+
+    return await method(request, options) as SendOTPResponse;
+  }
+
+  /**
+   * Verify a one-time password
+   * @param request OTP verification data
+   * @param options Call options
+   * @returns Verification result
+   */
+  async verifyOTP(
+    request: VerifyOTPRequest,
+    options?: GrpcCallOptions
+  ): Promise<VerifyOTPResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('verifyOTP');
+
+    this.log('VerifyOTP:', { email: request.email });
+
+    return await method(request, options) as VerifyOTPResponse;
+  }
+
+  /**
+   * Initiate passwordless login by sending OTP to email
+   * @param request Login OTP request data
+   * @param options Call options
+   * @returns Send result
+   */
+  async loginWithOTP(
+    request: LoginWithOTPRequest,
+    options?: GrpcCallOptions
+  ): Promise<LoginWithOTPResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('loginWithOTP');
+
+    this.log('LoginWithOTP:', { email: request.email });
+
+    return await method(request, options) as LoginWithOTPResponse;
+  }
+
+  /**
+   * Complete passwordless login by verifying OTP
+   * @param request Login OTP verification data
+   * @param options Call options
+   * @returns Login result with tokens
+   */
+  async verifyLoginOTP(
+    request: VerifyLoginOTPRequest,
+    options?: GrpcCallOptions
+  ): Promise<VerifyLoginOTPResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('verifyLoginOTP');
+
+    this.log('VerifyLoginOTP:', { email: request.email });
+
+    return await method(request, options) as VerifyLoginOTPResponse;
+  }
+
+  /**
+   * Initiate OTP-based registration by sending verification code
+   * @param request Registration OTP request data
+   * @param options Call options
+   * @returns Send result
+   */
+  async registerWithOTP(
+    request: RegisterWithOTPRequest,
+    options?: GrpcCallOptions
+  ): Promise<RegisterWithOTPResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('registerWithOTP');
+
+    this.log('RegisterWithOTP:', { email: request.email });
+
+    return await method(request, options) as RegisterWithOTPResponse;
+  }
+
+  /**
+   * Complete OTP-based registration
+   * @param request Registration OTP verification data
+   * @param options Call options
+   * @returns Registration result with tokens
+   */
+  async verifyRegistrationOTP(
+    request: VerifyRegistrationOTPRequest,
+    options?: GrpcCallOptions
+  ): Promise<VerifyRegistrationOTPResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('verifyRegistrationOTP');
+
+    this.log('VerifyRegistrationOTP:', { email: request.email });
+
+    return await method(request, options) as VerifyRegistrationOTPResponse;
+  }
+
+  // ========== OAuth Provider Methods ==========
+
+  /**
+   * Validate OAuth access token (RFC 7662)
+   * @param request OAuth token introspection data
+   * @param options Call options
+   * @returns Introspection result
+   */
+  async introspectOAuthToken(
+    request: IntrospectOAuthTokenRequest,
+    options?: GrpcCallOptions
+  ): Promise<IntrospectOAuthTokenResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('introspectOAuthToken');
+
+    this.log('IntrospectOAuthToken');
+
+    return await method(request, options) as IntrospectOAuthTokenResponse;
+  }
+
+  /**
+   * Validate OAuth client credentials
+   * @param request Client credentials
+   * @param options Call options
+   * @returns Validation result
+   */
+  async validateOAuthClient(
+    request: ValidateOAuthClientRequest,
+    options?: GrpcCallOptions
+  ): Promise<ValidateOAuthClientResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('validateOAuthClient');
+
+    this.log('ValidateOAuthClient:', { clientId: request.clientId });
+
+    return await method(request, options) as ValidateOAuthClientResponse;
+  }
+
+  /**
+   * Get OAuth client information by client_id
+   * @param request Client ID data
+   * @param options Call options
+   * @returns OAuth client information
+   */
+  async getOAuthClient(
+    request: GetOAuthClientRequest,
+    options?: GrpcCallOptions
+  ): Promise<GetOAuthClientResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('getOAuthClient');
+
+    this.log('GetOAuthClient:', { clientId: request.clientId });
+
+    return await method(request, options) as GetOAuthClientResponse;
+  }
+
+  // ========== Email Methods ==========
+
+  /**
+   * Send an email using a specified template
+   * @param request Email send data
+   * @param options Call options
+   * @returns Send result
+   */
+  async sendEmail(
+    request: SendEmailRequest,
+    options?: GrpcCallOptions
+  ): Promise<SendEmailResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('sendEmail');
+
+    this.log('SendEmail:', { templateType: request.templateType, toEmail: request.toEmail });
+
+    return await method(request, options) as SendEmailResponse;
+  }
+
+  // ========== Multi-Application Methods ==========
+
+  /**
+   * Get user's profile for a specific application
+   * @param request User and application IDs
+   * @param options Call options
+   * @returns User application profile
+   */
+  async getUserApplicationProfile(
+    request: GetUserAppProfileRequest,
+    options?: GrpcCallOptions
+  ): Promise<UserAppProfileResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('getUserApplicationProfile');
+
+    this.log('GetUserApplicationProfile:', { userId: request.userId, applicationId: request.applicationId });
+
+    return await method(request, options) as UserAppProfileResponse;
+  }
+
+  /**
+   * Get user's Telegram bot access for an application
+   * @param request User and application IDs
+   * @param options Call options
+   * @returns Telegram bot access records
+   */
+  async getUserTelegramBots(
+    request: GetUserTelegramBotsRequest,
+    options?: GrpcCallOptions
+  ): Promise<UserTelegramBotsResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('getUserTelegramBots');
+
+    this.log('GetUserTelegramBots:', { userId: request.userId });
+
+    return await method(request, options) as UserTelegramBotsResponse;
+  }
+
+  // ========== Sync & Config Methods ==========
 
   /**
    * Sync users updated after a timestamp
@@ -387,14 +637,9 @@ export class AuthGrpcClient {
   async syncUsers(
     opts: SyncUsersOptions,
     callOptions?: GrpcCallOptions
-  ): Promise<SyncUsersResult> {
-    if (!this.isConnected()) {
-      await this.connect();
-    }
-
-    if (!this.serviceMethods.syncUsers) {
-      throw new Error('SyncUsers method not available');
-    }
+  ): Promise<SyncUsersResponse> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('syncUsers');
 
     const updatedAfter = typeof opts.updatedAfter === 'string'
       ? opts.updatedAfter
@@ -409,8 +654,7 @@ export class AuthGrpcClient {
 
     this.log('SyncUsers:', { updatedAfter, applicationId: opts.applicationId, limit: opts.limit, offset: opts.offset });
 
-    const response = await this.serviceMethods.syncUsers(request, callOptions);
-    return this.transformResponse(response as Record<string, unknown>) as unknown as SyncUsersResult;
+    return await method(request, callOptions) as SyncUsersResponse;
   }
 
   /**
@@ -423,20 +667,16 @@ export class AuthGrpcClient {
     applicationId: string,
     options?: GrpcCallOptions
   ): Promise<AuthConfigResult> {
-    if (!this.isConnected()) {
-      await this.connect();
-    }
+    await this.ensureConnected();
+    const method = this.ensureMethod('getApplicationAuthConfig');
 
-    if (!this.serviceMethods.getApplicationAuthConfig) {
-      throw new Error('GetApplicationAuthConfig method not available');
-    }
-
-    const request = { applicationId };
+    const request: GetApplicationAuthConfigRequest = { applicationId };
     this.log('GetApplicationAuthConfig:', request);
 
-    const response = await this.serviceMethods.getApplicationAuthConfig(request, options);
-    return this.transformResponse(response as Record<string, unknown>) as unknown as AuthConfigResult;
+    return await method(request, options) as AuthConfigResult;
   }
+
+  // ========== SSO Token Exchange Methods ==========
 
   /**
    * Create a token exchange code for cross-application SSO
@@ -449,20 +689,14 @@ export class AuthGrpcClient {
     accessToken: string,
     targetAppId: string,
     options?: GrpcCallOptions
-  ): Promise<unknown> {
-    if (!this.isConnected()) {
-      await this.connect();
-    }
+  ): Promise<TokenExchangeResult> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('createTokenExchange');
 
-    if (!this.serviceMethods.createTokenExchange) {
-      throw new Error('CreateTokenExchange method not available');
-    }
-
-    const request = { accessToken, targetApplicationId: targetAppId };
+    const request: CreateTokenExchangeGrpcRequest = { accessToken, targetApplicationId: targetAppId };
     this.log('CreateTokenExchange:', { targetApplicationId: targetAppId });
 
-    const response = await this.serviceMethods.createTokenExchange(request, options);
-    return this.transformResponse(response as Record<string, unknown>);
+    return await method(request, options) as TokenExchangeResult;
   }
 
   /**
@@ -474,43 +708,14 @@ export class AuthGrpcClient {
   async redeemTokenExchange(
     code: string,
     options?: GrpcCallOptions
-  ): Promise<unknown> {
-    if (!this.isConnected()) {
-      await this.connect();
-    }
+  ): Promise<TokenExchangeRedeemResult> {
+    await this.ensureConnected();
+    const method = this.ensureMethod('redeemTokenExchange');
 
-    if (!this.serviceMethods.redeemTokenExchange) {
-      throw new Error('RedeemTokenExchange method not available');
-    }
-
-    const request = { exchangeCode: code };
+    const request: RedeemTokenExchangeGrpcRequest = { exchangeCode: code };
     this.log('RedeemTokenExchange:', { exchangeCode: code.substring(0, 10) + '...' });
 
-    const response = await this.serviceMethods.redeemTokenExchange(request, options);
-    return this.transformResponse(response as Record<string, unknown>);
-  }
-
-  /** Transform snake_case response to camelCase */
-  private transformResponse(obj: Record<string, unknown>): Record<string, unknown> {
-    const result: Record<string, unknown> = {};
-
-    for (const [key, value] of Object.entries(obj)) {
-      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-
-      if (Array.isArray(value)) {
-        result[camelKey] = value.map(item =>
-          item && typeof item === 'object'
-            ? this.transformResponse(item as Record<string, unknown>)
-            : item
-        );
-      } else if (value && typeof value === 'object') {
-        result[camelKey] = this.transformResponse(value as Record<string, unknown>);
-      } else {
-        result[camelKey] = value;
-      }
-    }
-
-    return result;
+    return await method(request, options) as TokenExchangeRedeemResult;
   }
 }
 
