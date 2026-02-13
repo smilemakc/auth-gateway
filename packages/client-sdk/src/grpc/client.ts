@@ -223,6 +223,10 @@ export class AuthGrpcClient {
         }
 
         const metadata = new grpc.Metadata();
+        // Inject API key if configured
+        if (this.config.apiKey) {
+          metadata.add('x-api-key', this.config.apiKey);
+        }
         if (options?.metadata) {
           for (const [key, value] of Object.entries(options.metadata)) {
             metadata.add(key, value);
@@ -263,6 +267,11 @@ export class AuthGrpcClient {
   /** Check if connected */
   isConnected(): boolean {
     return this.client !== null;
+  }
+
+  /** Set or update the API key for authentication */
+  setAPIKey(apiKey: string): void {
+    this.config.apiKey = apiKey;
   }
 
   /**
