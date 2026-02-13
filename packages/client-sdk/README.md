@@ -550,33 +550,39 @@ client.disconnectWebSocket();
 
 ## gRPC Client (Server-to-Server)
 
+> **Important:** All gRPC methods require API key authentication. Pass `apiKey` in the config to authenticate.
+
 ```typescript
 import { createGrpcClient } from '@auth-gateway/client-sdk/grpc';
 
 const grpc = createGrpcClient({
   address: 'localhost:50051',
   useTls: false,
+  apiKey: 'agw_YOUR_API_KEY', // Required: API key for authentication
   debug: true,
 });
 
 // Connect
 await grpc.connect();
 
-// Validate token
+// Validate token (requires scope: token:validate)
 const result = await grpc.validateToken('eyJhbGc...');
 console.log('Valid:', result.valid, 'User:', result.userId);
 
-// Check permission
+// Check permission (requires scope: users:read)
 const permission = await grpc.checkPermission(userId, 'products', 'write');
 console.log('Allowed:', permission.allowed);
 
-// Get user
+// Get user (requires scope: users:read)
 const { user } = await grpc.getUser(userId);
 console.log('User:', user?.email);
 
-// Introspect token
+// Introspect token (requires scope: token:introspect)
 const introspection = await grpc.introspectToken(token);
 console.log('Active:', introspection.active, 'Blacklisted:', introspection.blacklisted);
+
+// Update API key at runtime
+grpc.setAPIKey('agw_NEW_API_KEY');
 
 // Disconnect
 grpc.disconnect();

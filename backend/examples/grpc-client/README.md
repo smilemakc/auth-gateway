@@ -29,11 +29,44 @@ curl -X POST http://localhost:3000/auth/signup \
 # Сохраните access_token из ответа
 ```
 
+### 2.5 Создать API ключ для gRPC
+
+gRPC API требует аутентификацию через API ключ. Создайте ключ с нужными scopes:
+
+```bash
+# Создать API ключ (нужен JWT токен)
+curl -X POST http://localhost:3000/api-keys \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "gRPC Client Key",
+    "scopes": ["token:validate", "token:introspect", "users:read", "profile:read"]
+  }'
+
+# Сохраните plain_key из ответа — это ваш API ключ (agw_...)
+```
+
+**Доступные gRPC scopes:**
+
+| Scope | Методы |
+|-------|--------|
+| `token:validate` | ValidateToken |
+| `token:introspect` | IntrospectToken |
+| `users:read` | GetUser, CheckPermission, GetApplicationAuthConfig |
+| `profile:read` | GetUserApplicationProfile, GetUserTelegramBots |
+| `auth:login` | Login |
+| `auth:register` | CreateUser, RegisterWithOTP, VerifyRegistrationOTP, InitPasswordlessRegistration, CompletePasswordlessRegistration |
+| `auth:otp` | SendOTP, VerifyOTP, LoginWithOTP, VerifyLoginOTP |
+| `email:send` | SendEmail |
+| `oauth:read` | IntrospectOAuthToken, ValidateOAuthClient, GetOAuthClient |
+| `exchange:manage` | CreateTokenExchange, RedeemTokenExchange |
+| `sync:users` | SyncUsers |
+
 ### 3. Запустить пример клиента
 
 ```bash
 cd examples/grpc-client
-go run main.go
+go run main.go -api-key=agw_YOUR_API_KEY
 ```
 
 ## Интеграция в другие сервисы
@@ -64,32 +97,26 @@ import (
     "log"
     "time"
 
-    "google.golang.org/grpc"
-    "google.golang.org/grpc/credentials/insecure"
-
-    pb "your-service/api/proto"  // generated proto
+    "github.com/smilemakc/auth-gateway/pkg/grpcclient"
 )
 
 func main() {
-    // Подключиться к auth gateway
-    conn, err := grpc.NewClient(
-        "auth-gateway:50051",  // в Docker
-        grpc.WithTransportCredentials(insecure.NewCredentials()),
+    // Подключиться к auth gateway с API ключом
+    client, err := grpcclient.NewClient(
+        "auth-gateway:50051",
+        grpcclient.WithAPIKey("agw_YOUR_API_KEY"),
+        grpcclient.WithTimeout(10*time.Second),
     )
     if err != nil {
         log.Fatalf("Failed to connect: %v", err)
     }
-    defer conn.Close()
-
-    client := pb.NewAuthServiceClient(conn)
+    defer client.Close()
 
     // Проверить токен
     ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
 
-    resp, err := client.ValidateToken(ctx, &pb.ValidateTokenRequest{
-        AccessToken: "your-jwt-token",
-    })
+    resp, err := client.ValidateToken(ctx, "your-jwt-token")
     if err != nil {
         log.Fatalf("Failed to validate token: %v", err)
     }
@@ -102,11 +129,12 @@ func main() {
     log.Printf("Token is valid!")
     log.Printf("User ID: %s", resp.UserId)
     log.Printf("Email: %s", resp.Email)
-    log.Printf("Role: %s", resp.Role)
 }
 ```
 
 ## Middleware для gRPC сервисов
+
+> **Важно:** Для подключения к Auth Gateway через gRPC необходим API ключ. Передайте его через gRPC metadata `x-api-key`.
 
 Пример middleware для автоматической проверки токенов:
 
@@ -278,9 +306,10 @@ func (a *AuthInterceptor) Unary() grpc.UnaryServerInterceptor {
 1. **TLS**: Используйте TLS для production
 ```go
 creds, err := credentials.NewClientTLSFromFile("cert.pem", "")
-conn, err := grpc.NewClient(
+client, err := grpcclient.NewClient(
     "auth-gateway:50051",
-    grpc.WithTransportCredentials(creds),
+    grpcclient.WithTLS("cert.pem"),
+    grpcclient.WithAPIKey("agw_YOUR_API_KEY"),
 )
 ```
 
@@ -350,6 +379,14 @@ netstat -an | grep 50051
 - Токен не истек (15 минут для access token)
 - Токен не был revoked через `/auth/logout`
 
-### Permission denied
+### Permission denied / Insufficient scope
 
-Убедитесь что пользователь имеет необходимую роль (user/moderator/admin).
+Проверьте что API ключ имеет нужный scope для вызываемого метода.
+Например, для `ValidateToken` нужен scope `token:validate`.
+
+### Unauthenticated / Missing API key
+
+Все gRPC методы требуют API ключ. Убедитесь что:
+- API ключ передается через metadata `x-api-key` или `Authorization: Bearer agw_...`
+- Ключ не отозван и активен
+- Ключ имеет необходимые scopes для вызываемого метода
