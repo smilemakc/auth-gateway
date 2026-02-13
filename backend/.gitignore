@@ -9,7 +9,7 @@ dist/
 ./.claude
 # Test binary, built with `go test -c`
 *.test
-
+scripts/certs
 # Output of the go coverage tool
 *.out
 coverage.txt
