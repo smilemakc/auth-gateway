@@ -5,31 +5,57 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 // Client provides a convenient interface to the Auth Gateway gRPC service
 type Client struct {
-	conn    *grpc.ClientConn
-	address string
-	timeout time.Duration
+	conn        *grpc.ClientConn
+	address     string
+	timeout     time.Duration
+	apiKey      string
+	insecure    bool
+	tlsCertFile string
 }
 
 // NewClient creates a new gRPC client for the Auth Gateway
 func NewClient(address string, opts ...Option) (*Client, error) {
 	c := &Client{
-		address: address,
-		timeout: 10 * time.Second,
+		address:  address,
+		timeout:  10 * time.Second,
+		insecure: true,
 	}
 
 	for _, opt := range opts {
 		opt(c)
 	}
 
-	conn, err := grpc.NewClient(
-		address,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+	var creds credentials.TransportCredentials
+	if c.insecure {
+		creds = insecure.NewCredentials()
+	} else {
+		if c.tlsCertFile != "" {
+			var err error
+			creds, err = credentials.NewClientTLSFromFile(c.tlsCertFile, "")
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			creds = credentials.NewClientTLSFromCert(nil, "")
+		}
+	}
+
+	dialOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(creds),
+	}
+
+	if c.apiKey != "" {
+		dialOpts = append(dialOpts, grpc.WithUnaryInterceptor(apiKeyUnaryInterceptor(c.apiKey)))
+	}
+
+	conn, err := grpc.NewClient(address, dialOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +71,44 @@ type Option func(*Client)
 func WithTimeout(timeout time.Duration) Option {
 	return func(c *Client) {
 		c.timeout = timeout
+	}
+}
+
+// WithAPIKey sets the API key for authentication.
+// The key is sent as x-api-key gRPC metadata on every call.
+func WithAPIKey(apiKey string) Option {
+	return func(c *Client) {
+		c.apiKey = apiKey
+	}
+}
+
+// WithTLS enables TLS with an optional CA certificate file.
+// If certFile is empty, system CA certificates are used.
+func WithTLS(certFile string) Option {
+	return func(c *Client) {
+		c.insecure = false
+		c.tlsCertFile = certFile
+	}
+}
+
+// WithInsecure explicitly enables insecure (non-TLS) connection.
+func WithInsecure() Option {
+	return func(c *Client) {
+		c.insecure = true
+	}
+}
+
+func apiKeyUnaryInterceptor(apiKey string) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		md, ok := metadata.FromOutgoingContext(ctx)
+		if !ok {
+			md = metadata.New(nil)
+		} else {
+			md = md.Copy()
+		}
+		md.Set("x-api-key", apiKey)
+		ctx = metadata.NewOutgoingContext(ctx, md)
+		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 }
 
