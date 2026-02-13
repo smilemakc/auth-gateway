@@ -47,13 +47,16 @@ func NewServer(
 		return nil, fmt.Errorf("failed to listen on port %s: %w", grpcConfig.Port, err)
 	}
 
-	// Build server options
+	// Build server options with unary and stream interceptors
 	serverOpts := []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(
 			apiKeyAuthInterceptor(apiKeyService, appService, log),
 			contextExtractorInterceptor(log),
 			loggingInterceptor(log),
 			recoveryInterceptor(log),
+		),
+		grpc.ChainStreamInterceptor(
+			streamAPIKeyAuthInterceptor(apiKeyService, log),
 		),
 	}
 

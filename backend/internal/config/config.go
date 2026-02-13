@@ -45,6 +45,19 @@ type GRPCConfig struct {
 	TLSKey     string // Path to TLS private key file
 }
 
+// Validate validates gRPC configuration
+func (c *GRPCConfig) Validate() error {
+	if c.TLSEnabled {
+		if c.TLSCert == "" {
+			return fmt.Errorf("GRPC_TLS_CERT_FILE is required when GRPC_TLS_ENABLED is true")
+		}
+		if c.TLSKey == "" {
+			return fmt.Errorf("GRPC_TLS_KEY_FILE is required when GRPC_TLS_ENABLED is true")
+		}
+	}
+	return nil
+}
+
 // DatabaseConfig contains database-related configuration
 type DatabaseConfig struct {
 	Host           string
@@ -420,6 +433,11 @@ func Load() (*Config, error) {
 	// Validate JWT configuration (checks for presence and minimum length)
 	if err := cfg.JWT.Validate(); err != nil {
 		return nil, fmt.Errorf("JWT configuration validation failed: %w", err)
+	}
+
+	// Validate gRPC configuration
+	if err := cfg.GRPC.Validate(); err != nil {
+		return nil, fmt.Errorf("gRPC configuration validation failed: %w", err)
 	}
 
 	return cfg, nil

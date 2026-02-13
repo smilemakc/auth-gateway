@@ -241,15 +241,20 @@ func apiKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *ser
 		}
 
 		requiredScope, scopeRequired := methodScopes[info.FullMethod]
-		if scopeRequired {
-			if !apiKeyService.HasScope(apiKeyObj, requiredScope) {
-				log.Warn("gRPC auth failed: insufficient scope", map[string]interface{}{
-					"method":         info.FullMethod,
-					"required_scope": string(requiredScope),
-					"user_id":        user.ID.String(),
-				})
-				return nil, status.Errorf(codes.PermissionDenied, "insufficient scope: requires %s", string(requiredScope))
-			}
+		if !scopeRequired {
+			log.Warn("gRPC auth failed: method not configured", map[string]interface{}{
+				"method":  info.FullMethod,
+				"user_id": user.ID.String(),
+			})
+			return nil, status.Errorf(codes.PermissionDenied, "method %s is not configured for API key access", info.FullMethod)
+		}
+		if !apiKeyService.HasScope(apiKeyObj, requiredScope) {
+			log.Warn("gRPC auth failed: insufficient scope", map[string]interface{}{
+				"method":         info.FullMethod,
+				"required_scope": string(requiredScope),
+				"user_id":        user.ID.String(),
+			})
+			return nil, status.Errorf(codes.PermissionDenied, "insufficient scope: requires %s", string(requiredScope))
 		}
 
 		if appIDs := md.Get("x-application-id"); len(appIDs) > 0 && appIDs[0] != "" {
@@ -279,12 +284,55 @@ func apiKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *ser
 		ctx = context.WithValue(ctx, GRPCUserEmailKey, user.Email)
 
 		log.Debug("gRPC auth successful", map[string]interface{}{
-			"method":   info.FullMethod,
-			"user_id":  user.ID.String(),
-			"email":    user.Email,
-			"api_key":  apiKeyObj.KeyPrefix,
+			"method":  info.FullMethod,
+			"user_id": user.ID.String(),
+			"api_key": apiKeyObj.KeyPrefix,
 		})
 
 		return handler(ctx, req)
+	}
+}
+
+// streamAPIKeyAuthInterceptor validates API key authentication for streaming gRPC requests.
+// This prevents unauthenticated access to streaming services like gRPC reflection.
+func streamAPIKeyAuthInterceptor(apiKeyService *service.APIKeyService, log *logger.Logger) grpc.StreamServerInterceptor {
+	return func(
+		srv interface{},
+		ss grpc.ServerStream,
+		info *grpc.StreamServerInfo,
+		handler grpc.StreamHandler,
+	) error {
+		md, ok := metadata.FromIncomingContext(ss.Context())
+		if !ok {
+			return status.Error(codes.Unauthenticated, "missing API key: provide x-api-key metadata")
+		}
+
+		var apiKey string
+		if keys := md.Get("x-api-key"); len(keys) > 0 && keys[0] != "" {
+			apiKey = keys[0]
+		} else if authHeaders := md.Get("authorization"); len(authHeaders) > 0 && authHeaders[0] != "" {
+			authHeader := authHeaders[0]
+			if strings.HasPrefix(authHeader, "Bearer ") {
+				token := strings.TrimPrefix(authHeader, "Bearer ")
+				if strings.HasPrefix(token, "agw_") {
+					apiKey = token
+				}
+			}
+		}
+
+		if apiKey == "" {
+			return status.Error(codes.Unauthenticated, "missing API key: provide x-api-key metadata")
+		}
+
+		_, _, err := apiKeyService.ValidateAPIKey(ss.Context(), apiKey)
+		if err != nil {
+			log.Warn("gRPC stream auth failed: invalid API key", map[string]interface{}{
+				"method": info.FullMethod,
+				"error":  err.Error(),
+			})
+			return status.Error(codes.Unauthenticated, "invalid API key")
+		}
+
+		return handler(srv, ss)
 	}
 }
