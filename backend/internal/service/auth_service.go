@@ -153,7 +153,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 			if err := userRepo.CreateWithTx(ctx, tx, user); err != nil {
 				// Database will return unique_violation error if email/username/phone already exists
 				// handlePgError will convert it to appropriate error
-				s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(nil, appID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "create_failed",
 					"error":  err.Error(),
 				})
@@ -162,7 +162,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		} else {
 			// Fallback to non-transactional method if type assertion fails
 			if err := s.userRepo.Create(ctx, user); err != nil {
-				s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(nil, appID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "create_failed",
 					"error":  err.Error(),
 				})
@@ -173,7 +173,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		// Assign default "user" role to the new user
 		if rbacRepo, ok := s.rbacRepo.(*repository.RBACRepository); ok {
 			if err := rbacRepo.AssignRoleToUserWithTx(ctx, tx, user.ID, defaultRole.ID, user.ID); err != nil {
-				s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(&user.ID, appID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "role_assignment_failed",
 					"error":  err.Error(),
 				})
@@ -182,7 +182,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		} else {
 			// Fallback to non-transactional method if type assertion fails
 			if err := s.rbacRepo.AssignRoleToUser(ctx, user.ID, defaultRole.ID, user.ID); err != nil {
-				s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(&user.ID, appID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "role_assignment_failed",
 					"error":  err.Error(),
 				})
@@ -211,7 +211,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 	}
 
 	// Log successful signup
-	s.logAudit(&user.ID, models.ActionSignUp, models.StatusSuccess, ip, userAgent, nil)
+	s.logAudit(&user.ID, appID, models.ActionSignUp, models.StatusSuccess, ip, userAgent, nil)
 
 	return authResp, nil
 }
@@ -261,7 +261,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 		if user != nil {
 			userID = &user.ID
 		}
-		s.logAudit(userID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+		s.logAudit(userID, appID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "invalid_credentials",
 		})
 		return nil, models.ErrInvalidCredentials
@@ -270,7 +270,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	// If we reach here but user is nil, it means password matched dummy hash
 	// This should be extremely rare, but handle it for safety
 	if user == nil {
-		s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+		s.logAudit(nil, appID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "invalid_credentials",
 		})
 		return nil, models.ErrInvalidCredentials
@@ -298,7 +298,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	}
 
 	// Log successful signin
-	s.logAudit(&user.ID, models.ActionSignIn, models.StatusSuccess, ip, userAgent, nil)
+	s.logAudit(&user.ID, appID, models.ActionSignIn, models.StatusSuccess, ip, userAgent, nil)
 
 	return authResp, nil
 }
@@ -328,13 +328,13 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 		if s.twoFAService != nil {
 			valid, err := s.twoFAService.VerifyTOTP(ctx, user.ID, code)
 			if err != nil || !valid {
-				s.logAudit(&user.ID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(&user.ID, claims.ApplicationID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "invalid_2fa_code",
 				})
 				return nil, models.NewAppError(401, "Invalid 2FA code")
 			}
 		} else {
-			s.logAudit(&user.ID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			s.logAudit(&user.ID, claims.ApplicationID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": "invalid_2fa_code",
 			})
 			return nil, models.NewAppError(401, "Invalid 2FA code")
@@ -348,7 +348,7 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 	}
 
 	// Log successful signin with 2FA
-	s.logAudit(&user.ID, models.ActionSignIn, models.StatusSuccess, ip, userAgent, map[string]interface{}{
+	s.logAudit(&user.ID, claims.ApplicationID, models.ActionSignIn, models.StatusSuccess, ip, userAgent, map[string]interface{}{
 		"2fa": true,
 	})
 
@@ -373,7 +373,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	// Validate refresh token
 	claims, err := s.jwtService.ValidateRefreshToken(refreshToken)
 	if err != nil {
-		s.logAudit(nil, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+		s.logAudit(nil, nil, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "invalid_token",
 		})
 		return nil, models.ErrInvalidToken
@@ -382,7 +382,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	// Check if token is blacklisted using unified blacklist service
 	oldTokenHash := utils.HashToken(refreshToken)
 	if s.blacklistService.IsBlacklisted(ctx, oldTokenHash) {
-		s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+		s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "token_blacklisted",
 		})
 		return nil, models.ErrTokenRevoked
@@ -411,21 +411,21 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 		// Check if token exists and is not revoked (with lock)
 		dbToken, err = tokenRepo.GetRefreshTokenForUpdate(ctx, tx, oldTokenHash)
 		if err != nil {
-			s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": "token_not_found",
 			})
 			return models.ErrInvalidToken
 		}
 
 		if dbToken.IsRevoked() {
-			s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": "token_revoked",
 			})
 			return models.ErrTokenRevoked
 		}
 
 		if dbToken.IsExpired() {
-			s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": "token_expired",
 			})
 			return models.ErrTokenExpired
@@ -490,7 +490,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	}
 
 	// Log successful refresh
-	s.logAudit(&user.ID, models.ActionRefreshToken, models.StatusSuccess, ip, userAgent, nil)
+	s.logAudit(&user.ID, claims.ApplicationID, models.ActionRefreshToken, models.StatusSuccess, ip, userAgent, nil)
 
 	return &models.AuthResponse{
 		AccessToken:  newAccessToken,
@@ -520,7 +520,7 @@ func (s *AuthService) Logout(ctx context.Context, accessToken, ip, userAgent str
 	}
 
 	// Log successful logout
-	s.logAudit(&claims.UserID, models.ActionSignOut, models.StatusSuccess, ip, userAgent, nil)
+	s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionSignOut, models.StatusSuccess, ip, userAgent, nil)
 
 	return nil
 }
@@ -535,7 +535,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 
 	// Verify old password
 	if err := utils.CheckPassword(user.PasswordHash, oldPassword); err != nil {
-		s.logAudit(&userID, models.ActionChangePassword, models.StatusFailed, ip, userAgent, map[string]interface{}{
+		s.logAudit(&userID, nil, models.ActionChangePassword, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "invalid_old_password",
 		})
 		return models.ErrInvalidCredentials
@@ -563,7 +563,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 	}
 
 	// Log successful password change
-	s.logAudit(&userID, models.ActionChangePassword, models.StatusSuccess, ip, userAgent, nil)
+	s.logAudit(&userID, nil, models.ActionChangePassword, models.StatusSuccess, ip, userAgent, nil)
 
 	return nil
 }
@@ -592,7 +592,7 @@ func (s *AuthService) ResetPassword(ctx context.Context, userID uuid.UUID, newPa
 	}
 
 	// Log successful password reset
-	s.logAudit(&userID, models.ActionChangePassword, models.StatusSuccess, ip, userAgent, map[string]interface{}{
+	s.logAudit(&userID, nil, models.ActionChangePassword, models.StatusSuccess, ip, userAgent, map[string]interface{}{
 		"reset": true,
 	})
 
@@ -669,7 +669,7 @@ func (s *AuthService) InitPasswordlessRegistration(ctx context.Context, req *mod
 	}
 
 	// Log init registration
-	s.logAudit(nil, models.ActionSignUp, models.StatusSuccess, ip, userAgent, map[string]interface{}{
+	s.logAudit(nil, nil, models.ActionSignUp, models.StatusSuccess, ip, userAgent, map[string]interface{}{
 		"step":       "init",
 		"identifier": identifier,
 	})
@@ -703,7 +703,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 	// Retrieve pending registration from Redis
 	pending, err := s.redis.GetPendingRegistration(ctx, identifier)
 	if err != nil {
-		s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+		s.logAudit(nil, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason":     "pending_not_found",
 			"identifier": identifier,
 		})
@@ -744,14 +744,14 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 				if err == models.ErrUsernameAlreadyExists {
 					user.Username = fmt.Sprintf("%s_%d", pending.Username, time.Now().UnixNano()%10000)
 					if err := userRepo.CreateWithTx(ctx, tx, user); err != nil {
-						s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+						s.logAudit(nil, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 							"reason": "create_failed",
 							"error":  err.Error(),
 						})
 						return err
 					}
 				} else {
-					s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+					s.logAudit(nil, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 						"reason": "create_failed",
 						"error":  err.Error(),
 					})
@@ -765,14 +765,14 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 				if err == models.ErrUsernameAlreadyExists {
 					user.Username = fmt.Sprintf("%s_%d", pending.Username, time.Now().UnixNano()%10000)
 					if err := s.userRepo.Create(ctx, user); err != nil {
-						s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+						s.logAudit(nil, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 							"reason": "create_failed",
 							"error":  err.Error(),
 						})
 						return err
 					}
 				} else {
-					s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+					s.logAudit(nil, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 						"reason": "create_failed",
 						"error":  err.Error(),
 					})
@@ -784,7 +784,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 		// Assign default "user" role
 		if rbacRepo, ok := s.rbacRepo.(*repository.RBACRepository); ok {
 			if err := rbacRepo.AssignRoleToUserWithTx(ctx, tx, user.ID, defaultRole.ID, user.ID); err != nil {
-				s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(&user.ID, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "role_assignment_failed",
 					"error":  err.Error(),
 				})
@@ -793,7 +793,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 		} else {
 			// Fallback to non-transactional method if type assertion fails
 			if err := s.rbacRepo.AssignRoleToUser(ctx, user.ID, defaultRole.ID, user.ID); err != nil {
-				s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(&user.ID, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "role_assignment_failed",
 					"error":  err.Error(),
 				})
@@ -827,7 +827,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 	}
 
 	// Log successful signup
-	s.logAudit(&user.ID, models.ActionSignUp, models.StatusSuccess, ip, userAgent, map[string]interface{}{
+	s.logAudit(&user.ID, nil, models.ActionSignUp, models.StatusSuccess, ip, userAgent, map[string]interface{}{
 		"passwordless": true,
 	})
 
@@ -956,14 +956,15 @@ func (s *AuthService) GenerateTokensForUser(ctx context.Context, user *models.Us
 	return s.finalizeAuth(ctx, user, ip, userAgent, deviceInfo, nil, false, "password")
 }
 
-func (s *AuthService) logAudit(userID *uuid.UUID, action models.AuditAction, status models.AuditStatus, ip, userAgent string, details map[string]interface{}) {
+func (s *AuthService) logAudit(userID *uuid.UUID, appID *uuid.UUID, action models.AuditAction, status models.AuditStatus, ip, userAgent string, details map[string]interface{}) {
 	s.auditService.Log(AuditLogParams{
-		UserID:    userID,
-		Action:    action,
-		Status:    status,
-		IP:        ip,
-		UserAgent: userAgent,
-		Details:   details,
+		UserID:        userID,
+		ApplicationID: appID,
+		Action:        action,
+		Status:        status,
+		IP:            ip,
+		UserAgent:     userAgent,
+		Details:       details,
 	})
 }
 
