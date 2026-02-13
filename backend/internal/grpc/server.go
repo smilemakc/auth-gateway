@@ -47,6 +47,7 @@ func NewServer(
 	// Create gRPC server with interceptors
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			apiKeyAuthInterceptor(apiKeyService, appService, log),
 			contextExtractorInterceptor(log),
 			loggingInterceptor(log),
 			recoveryInterceptor(log),
