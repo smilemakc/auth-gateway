@@ -10,11 +10,20 @@ import { confirm } from '../services/confirm';
 const AVAILABLE_SCOPES = [
   'users:read',
   'users:write',
+  'users:sync',
+  'users:import',
+  'profile:read',
+  'profile:write',
   'token:validate',
-  'token:refresh',
-  'sessions:read',
-  'sessions:write',
-  'audit:read',
+  'token:introspect',
+  'auth:login',
+  'auth:register',
+  'auth:otp',
+  'email:send',
+  'oauth:read',
+  'exchange:manage',
+  'admin:all',
+  'all',
 ];
 
 const ApiKeys: React.FC = () => {
@@ -82,13 +91,16 @@ const ApiKeys: React.FC = () => {
     }
 
     try {
+      const expiresAt = newKeyExpiresIn
+        ? new Date(Date.now() + newKeyExpiresIn * 24 * 60 * 60 * 1000).toISOString()
+        : undefined;
       const result = await createApiKeyMutation.mutateAsync({
         name: newKeyName,
         scopes: newKeyScopes,
-        expires_in: newKeyExpiresIn,
+        expires_at: expiresAt,
       });
       // The API returns the full key only once - show it to the user
-      setGeneratedKey(result.key);
+      setGeneratedKey(result.plain_key);
     } catch (error) {
       console.error('Failed to create API key:', error);
       toast.error('Failed to create API key: ' + (error as Error).message);

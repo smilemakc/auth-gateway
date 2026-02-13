@@ -18,6 +18,7 @@ from lib import (
     MigrationConfig,
     MigrationReport,
     ImportStats,
+    ImportStatus,
     DedupStats,
     ConflictStrategy,
 )
@@ -51,7 +52,7 @@ def analyze(config: str):
 
     exporter: Optional[UserExporter] = None
     try:
-        exporter = UserExporter(cfg.source)
+        exporter = UserExporter(cfg.source, roles_config=cfg.roles)
 
         with Progress(
             SpinnerColumn(),
@@ -87,7 +88,7 @@ def analyze(config: str):
             progress.add_task("Scanning for duplicate records...", total=None)
             deduplicated = deduplicator.deduplicate(users_iter)
 
-        conflicts = deduplicator.get_conflicts()
+        conflicts = deduplicator.conflicts
 
         dedup_table = Table(title="Deduplication Preview", border_style="yellow")
         dedup_table.add_column("Metric", style="bold")
@@ -201,7 +202,7 @@ def _run_import_step(cfg: MigrationConfig, dry_run: bool, report: MigrationRepor
 
     exporter: Optional[UserExporter] = None
     try:
-        exporter = UserExporter(cfg.source)
+        exporter = UserExporter(cfg.source, roles_config=cfg.roles)
 
         with Progress(
             SpinnerColumn(),
@@ -244,24 +245,24 @@ def _run_import_step(cfg: MigrationConfig, dry_run: bool, report: MigrationRepor
 
 async def _run_import_async(cfg: MigrationConfig, users: list, report: MigrationReport):
     """Execute async import."""
-    importer = AuthGatewayImporter(
+    async with AuthGatewayImporter(
         cfg.target,
         cfg.password,
         cfg.conflicts,
-        cfg.workers
-    )
+        cfg.workers,
+        roles_config=cfg.roles,
+    ) as importer:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            console=console,
+        ) as progress:
+            import_task = progress.add_task("Importing users...", total=len(users))
 
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-        console=console,
-    ) as progress:
-        import_task = progress.add_task("Importing users...", total=len(users))
-
-        results = await importer.import_users(users)
-        progress.update(import_task, completed=len(users))
+            results = await importer.import_users(users)
+            progress.update(import_task, completed=len(users))
 
     report.import_stats = ImportStats(
         total=len(results),
@@ -275,20 +276,31 @@ async def _run_import_async(cfg: MigrationConfig, users: list, report: Migration
     console.print(f"[green]Import complete: {report.import_stats.created} created, "
                   f"{report.import_stats.errors} errors[/green]")
 
+    # Show first error reasons for debugging
+    error_results = [r for r in results if r.status == ImportStatus.ERROR and r.note]
+    if error_results:
+        console.print(f"\n[red]First {min(len(error_results), 5)} error(s):[/red]")
+        for r in error_results[:5]:
+            identifier = r.source_id or "unknown"
+            # Truncate long error messages (e.g. full HTTP response bodies)
+            note = r.note[:300] + "..." if len(r.note) > 300 else r.note
+            console.print(f"  [dim]id={identifier}[/dim] → {note}")
+        if len(error_results) > 5:
+            console.print(f"  [dim]... and {len(error_results) - 5} more errors[/dim]")
+
 
 async def _run_verify_step(cfg: MigrationConfig, report: MigrationReport):
     """Execute verification step."""
     console.print("\n[bold blue]Step 3: Verify Migration[/bold blue]")
 
-    verifier = MigrationVerifier(cfg.source, cfg.target)
-
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console,
-    ) as progress:
-        progress.add_task("Verifying migration...", total=None)
-        verification_report = await verifier.verify()
+    async with MigrationVerifier(cfg.source, cfg.target) as verifier:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            progress.add_task("Verifying migration...", total=None)
+            verification_report = await verifier.verify()
 
     report.verification = verification_report
 
@@ -332,15 +344,14 @@ def verify(config: str):
     console.print(Panel.fit("Verifying Migration", border_style="blue"))
 
     async def run_verification():
-        verifier = MigrationVerifier(cfg.source, cfg.target)
-
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
-            progress.add_task("Verifying migration...", total=None)
-            return await verifier.verify()
+        async with MigrationVerifier(cfg.source, cfg.target) as verifier:
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            ) as progress:
+                progress.add_task("Verifying migration...", total=None)
+                return await verifier.verify()
 
     try:
         verification_report = asyncio.run(run_verification())

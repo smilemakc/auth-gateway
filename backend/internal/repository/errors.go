@@ -31,7 +31,7 @@ func handlePgError(err error) error {
 			constraint := pgErr.Field('n')
 
 			// User-specific constraints
-			if constraint == "users_email_key" {
+			if constraint == "users_email_key" || constraint == "idx_users_email_unique" {
 				return models.ErrEmailAlreadyExists
 			}
 			if constraint == "users_username_key" {

@@ -18,6 +18,12 @@ class UserDeduplicator:
         self.stats = DedupStats()
 
     def deduplicate(self, users: Iterator[SourceUser]) -> list[SourceUser]:
+        if self.config.strategy == DedupStrategy.NONE:
+            result = list(users)
+            self.stats.total = len(result)
+            self.stats.unique = len(result)
+            return result
+
         seen: dict[str, SourceUser] = {}
         unique_users: list[SourceUser] = []
 
@@ -63,10 +69,18 @@ class UserDeduplicator:
         elif self.config.key == "phone":
             return user.phone.strip() if user.phone else None
 
+        elif self.config.key == "username":
+            return user.username.lower().strip() if user.username else None
+
         elif self.config.key == "email_or_phone":
             email_key = user.email.lower().strip() if user.email else None
             phone_key = user.phone.strip() if user.phone else None
             return email_key or phone_key
+
+        elif self.config.key == "username_or_email":
+            username_key = user.username.lower().strip() if user.username else None
+            email_key = user.email.lower().strip() if user.email else None
+            return username_key or email_key
 
         return None
 

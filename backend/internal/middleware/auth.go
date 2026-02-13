@@ -16,6 +16,7 @@ import (
 type AuthMiddleware struct {
 	jwtService       *jwt.Service
 	blacklistService *service.BlacklistService
+	apiKeyMiddleware *APIKeyMiddleware
 }
 
 // NewAuthMiddleware creates a new auth middleware
@@ -26,10 +27,23 @@ func NewAuthMiddleware(jwtService *jwt.Service, blacklistService *service.Blackl
 	}
 }
 
-// Authenticate validates the JWT token and sets user context
+// SetAPIKeyMiddleware sets the API key middleware for combined auth
+func (m *AuthMiddleware) SetAPIKeyMiddleware(apiKeyMw *APIKeyMiddleware) {
+	m.apiKeyMiddleware = apiKeyMw
+}
+
+// Authenticate validates JWT token, API key, or application secret.
+// Priority: X-API-Key / X-App-Secret / Bearer agw_ / Bearer app_ → delegate to APIKeyMiddleware.
+// Otherwise treat as JWT.
 func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get token from Authorization header
+		// Check if request carries an API key or app secret
+		if m.apiKeyMiddleware != nil && m.isAPIKeyOrAppSecret(c) {
+			m.apiKeyMiddleware.Authenticate()(c)
+			return
+		}
+
+		// Fall through to JWT authentication
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
@@ -37,7 +51,6 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 			return
 		}
 
-		// Check if token starts with "Bearer "
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrInvalidToken))
@@ -47,7 +60,6 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 
 		token := parts[1]
 
-		// Validate token
 		claims, err := m.jwtService.ValidateAccessToken(token)
 		if err != nil {
 			if errors.Is(err, jwt.ErrExpiredToken) {
@@ -59,7 +71,6 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 			return
 		}
 
-		// Check if token is blacklisted using unified blacklist service
 		tokenHash := utils.HashToken(token)
 		if m.blacklistService.IsBlacklisted(c.Request.Context(), tokenHash) {
 			c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrTokenRevoked))
@@ -67,13 +78,11 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 			return
 		}
 
-		// Set user context
 		c.Set(utils.UserIDKey, claims.UserID)
 		c.Set(utils.UserEmailKey, claims.Email)
 		c.Set(utils.UserRolesKey, claims.Roles)
 		c.Set(utils.TokenKey, token)
 
-		// Set application ID from JWT claims if not already set by header/query
 		if claims.ApplicationID != nil {
 			if _, exists := utils.GetApplicationIDFromContext(c); !exists {
 				c.Set(utils.ApplicationIDKey, *claims.ApplicationID)
@@ -82,6 +91,24 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// isAPIKeyOrAppSecret checks if the request carries API key or app secret credentials.
+func (m *AuthMiddleware) isAPIKeyOrAppSecret(c *gin.Context) bool {
+	if c.GetHeader("X-API-Key") != "" || c.GetHeader("X-App-Secret") != "" {
+		return true
+	}
+	authHeader := c.GetHeader("Authorization")
+	if authHeader != "" {
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) == 2 && parts[0] == "Bearer" {
+			token := parts[1]
+			if strings.HasPrefix(token, "agw_") || strings.HasPrefix(token, "app_") {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // RequireRole checks if user has the required role

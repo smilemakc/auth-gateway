@@ -165,21 +165,37 @@ type AdminAPIKeyResponse struct {
 	// User ID who owns the key
 	UserID uuid.UUID `json:"user_id" example:"123e4567-e89b-12d3-a456-426614174000"`
 	// Username of the key owner
-	Username string `json:"username" example:"johndoe"`
+	Username string `json:"username,omitempty" example:"johndoe"`
+	// Email of the key owner
+	UserEmail string `json:"user_email,omitempty" example:"john@example.com"`
+	// Display name of the key owner
+	UserName string `json:"user_name,omitempty" example:"John Doe"`
 	// API key name
 	Name string `json:"name" example:"Production API Key"`
 	// API key prefix (first 12 characters)
-	Prefix string `json:"prefix" example:"agw_abc123de"`
+	KeyPrefix string `json:"key_prefix" example:"agw_abc123de"`
 	// API key scopes/permissions
 	Scopes []string `json:"scopes" example:"users:read,token:validate"`
 	// Expiration timestamp (null if never expires)
 	ExpiresAt *time.Time `json:"expires_at,omitempty" example:"2024-12-31T23:59:59Z"`
 	// Last usage timestamp
 	LastUsedAt *time.Time `json:"last_used_at,omitempty" example:"2024-01-15T10:30:00Z"`
-	// Whether the key is revoked
-	IsRevoked bool `json:"is_revoked" example:"false"`
+	// Whether the key is active
+	IsActive bool `json:"is_active" example:"true"`
 	// Timestamp when key was revoked
 	RevokedAt *time.Time `json:"revoked_at,omitempty" example:"2024-01-15T10:30:00Z"`
 	// Timestamp when key was created
 	CreatedAt time.Time `json:"created_at" example:"2024-01-15T10:30:00Z"`
+}
+
+// AdminAPIKeyListResponse represents paginated admin API key list
+type AdminAPIKeyListResponse struct {
+	// List of API keys
+	APIKeys []*AdminAPIKeyResponse `json:"api_keys"`
+	// Total number of API keys
+	Total int `json:"total" example:"10"`
+	// Current page number
+	Page int `json:"page" example:"1"`
+	// Number of items per page
+	PageSize int `json:"page_size" example:"50"`
 }

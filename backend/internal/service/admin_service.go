@@ -383,7 +383,7 @@ func (s *AdminService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 }
 
 // ListAPIKeys returns all API keys with user information
-func (s *AdminService) ListAPIKeys(ctx context.Context, appID *uuid.UUID, page, pageSize int) ([]*models.AdminAPIKeyResponse, error) {
+func (s *AdminService) ListAPIKeys(ctx context.Context, appID *uuid.UUID, page, pageSize int) (*models.AdminAPIKeyListResponse, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -403,13 +403,19 @@ func (s *AdminService) ListAPIKeys(ctx context.Context, appID *uuid.UUID, page, 
 		return nil, fmt.Errorf("failed to list API keys: %w", err)
 	}
 
+	total := len(apiKeys)
 	start := (page - 1) * pageSize
 	end := start + pageSize
-	if start >= len(apiKeys) {
-		return []*models.AdminAPIKeyResponse{}, nil
+	if start >= total {
+		return &models.AdminAPIKeyListResponse{
+			APIKeys:  []*models.AdminAPIKeyResponse{},
+			Total:    total,
+			Page:     page,
+			PageSize: pageSize,
+		}, nil
 	}
-	if end > len(apiKeys) {
-		end = len(apiKeys)
+	if end > total {
+		end = total
 	}
 
 	adminAPIKeys := make([]*models.AdminAPIKeyResponse, 0, end-start)
@@ -426,20 +432,27 @@ func (s *AdminService) ListAPIKeys(ctx context.Context, appID *uuid.UUID, page, 
 			ID:         key.ID,
 			UserID:     key.UserID,
 			Name:       key.Name,
-			Prefix:     key.KeyPrefix,
+			KeyPrefix:  key.KeyPrefix,
 			Scopes:     scopes,
 			ExpiresAt:  key.ExpiresAt,
 			LastUsedAt: key.LastUsedAt,
-			IsRevoked:  !key.IsActive,
+			IsActive:   key.IsActive,
 			CreatedAt:  key.CreatedAt,
 		}
 		if user != nil {
 			resp.Username = user.Username
+			resp.UserEmail = user.Email
+			resp.UserName = user.FullName
 		}
 		adminAPIKeys = append(adminAPIKeys, resp)
 	}
 
-	return adminAPIKeys, nil
+	return &models.AdminAPIKeyListResponse{
+		APIKeys:  adminAPIKeys,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
 }
 
 // RevokeAPIKey revokes an API key
@@ -668,16 +681,40 @@ func (s *AdminService) SyncUsers(ctx context.Context, updatedAfter time.Time, ap
 	}, nil
 }
 
-// ImportUsers bulk imports users with optional UUID preservation
+// ImportUsers bulk imports users with optional UUID preservation.
+// At least one identifier (email, phone, or username) must be provided per entry.
 func (s *AdminService) ImportUsers(ctx context.Context, req *models.BulkImportUsersRequest, appID *uuid.UUID) (*models.ImportUsersResponse, error) {
 	var imported, skipped, updated, errCount int
 	var details []models.ImportDetail
 
 	for _, entry := range req.Users {
-		detail := models.ImportDetail{Email: entry.Email}
+		detail := models.ImportDetail{
+			Email:    entry.Email,
+			Username: entry.Username,
+		}
+		if entry.Phone != nil {
+			detail.Phone = *entry.Phone
+		}
 
+		// Normalize identifiers
 		email := utils.NormalizeEmail(entry.Email)
-		if !utils.IsValidEmail(email) {
+		var phone string
+		if entry.Phone != nil && *entry.Phone != "" {
+			phone = utils.NormalizePhone(*entry.Phone)
+		}
+		username := entry.Username
+
+		// Validate: at least one identifier must be provided
+		if email == "" && phone == "" && username == "" {
+			detail.Status = "error"
+			detail.Reason = "at least one of email, phone, or username is required"
+			errCount++
+			details = append(details, detail)
+			continue
+		}
+
+		// Validate email format if provided
+		if email != "" && !utils.IsValidEmail(email) {
 			detail.Status = "error"
 			detail.Reason = "invalid email format"
 			errCount++
@@ -685,12 +722,32 @@ func (s *AdminService) ImportUsers(ctx context.Context, req *models.BulkImportUs
 			continue
 		}
 
-		existingUser, err := s.userRepo.GetByEmail(ctx, email, nil)
-		if err == nil && existingUser != nil {
+		// Validate phone format if provided
+		if phone != "" && !utils.IsValidPhone(phone) {
+			detail.Status = "error"
+			detail.Reason = "invalid phone format"
+			errCount++
+			details = append(details, detail)
+			continue
+		}
+
+		// Search for existing user: email → phone → username
+		var existingUser *models.User
+		if email != "" {
+			existingUser, _ = s.userRepo.GetByEmail(ctx, email, nil)
+		}
+		if existingUser == nil && phone != "" {
+			existingUser, _ = s.userRepo.GetByPhone(ctx, phone, nil)
+		}
+		if existingUser == nil && username != "" {
+			existingUser, _ = s.userRepo.GetByUsername(ctx, username, nil)
+		}
+
+		if existingUser != nil {
 			switch req.OnConflict {
 			case "skip":
 				detail.Status = "skipped"
-				detail.Reason = "email already exists"
+				detail.Reason = "user already exists"
 				detail.UserID = existingUser.ID.String()
 				skipped++
 			case "update":
@@ -703,6 +760,12 @@ func (s *AdminService) ImportUsers(ctx context.Context, req *models.BulkImportUs
 				if entry.PasswordHashImport != "" {
 					existingUser.PasswordHash = entry.PasswordHashImport
 				}
+				if phone != "" && existingUser.Phone == nil {
+					existingUser.Phone = &phone
+				}
+				if email != "" && existingUser.Email == "" {
+					existingUser.Email = email
+				}
 				if err := s.userRepo.Update(ctx, existingUser); err != nil {
 					detail.Status = "error"
 					detail.Reason = fmt.Sprintf("failed to update: %s", err.Error())
@@ -714,7 +777,7 @@ func (s *AdminService) ImportUsers(ctx context.Context, req *models.BulkImportUs
 				}
 			case "error":
 				detail.Status = "error"
-				detail.Reason = "email already exists"
+				detail.Reason = "user already exists"
 				errCount++
 			}
 			details = append(details, detail)
@@ -726,9 +789,21 @@ func (s *AdminService) ImportUsers(ctx context.Context, req *models.BulkImportUs
 			userID = *entry.ID
 		}
 
-		username := entry.Username
-		if username == "" {
+		// Generate username via fallback chain: entry.Username → email prefix → phone digits
+		if username == "" && email != "" {
 			username = strings.Split(email, "@")[0]
+		}
+		if username == "" && phone != "" {
+			username = strings.TrimPrefix(phone, "+")
+		}
+		username = utils.NormalizeUsername(username)
+
+		// Ensure generated username is unique by appending a short random suffix
+		if entry.Username == "" && username != "" {
+			if _, err := s.userRepo.GetByUsername(ctx, username, nil); err == nil {
+				suffix := userID.String()[:6]
+				username = username + "-" + suffix
+			}
 		}
 
 		passwordHash := entry.PasswordHashImport
@@ -758,15 +833,34 @@ func (s *AdminService) ImportUsers(ctx context.Context, req *models.BulkImportUs
 			isActive = *entry.IsActive
 		}
 
+		// Determine email_verified status
+		emailVerified := false
+		if entry.EmailVerified != nil {
+			emailVerified = *entry.EmailVerified
+		} else if entry.SkipEmailVerification {
+			emailVerified = true // backward compatibility
+		}
+
+		// Determine phone_verified status
+		phoneVerified := false
+		if entry.PhoneVerified != nil {
+			phoneVerified = *entry.PhoneVerified
+		}
+
 		user := &models.User{
 			ID:            userID,
-			Email:         email,
+			Email:         email, // empty string is OK after migration 019
 			Username:      username,
 			PasswordHash:  passwordHash,
 			FullName:      entry.FullName,
 			IsActive:      isActive,
-			EmailVerified: entry.SkipEmailVerification,
+			EmailVerified: emailVerified,
+			PhoneVerified: phoneVerified,
 			AccountType:   string(models.AccountTypeHuman),
+		}
+
+		if phone != "" {
+			user.Phone = &phone
 		}
 
 		if err := s.userRepo.Create(ctx, user); err != nil {

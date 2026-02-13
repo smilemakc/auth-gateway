@@ -667,7 +667,8 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 
 func buildMiddlewares(deps *infra, repos *repoSet, services *serviceSet) *middlewareSet {
 	authMiddleware := middleware.NewAuthMiddleware(deps.jwtService, services.Blacklist)
-	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(services.APIKey, repos.RBAC)
+	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(services.APIKey, services.Application, repos.RBAC)
+	authMiddleware.SetAPIKeyMiddleware(apiKeyMiddleware)
 	rateLimitMiddleware := middleware.NewRateLimitMiddleware(deps.redis, &deps.cfg.RateLimit)
 	ipFilterMiddleware := middleware.NewIPFilterMiddleware(services.IPFilter)
 	maintenanceMiddleware := middleware.NewMaintenanceMiddleware(repos.System)
@@ -888,9 +889,9 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			userAppsGroup.PUT("/:id/profile", handlers.Application.UpdateMyProfile)
 		}
 
-		// Sync endpoint with API key authentication (placed before JWT-only admin routes)
-		apiGroup.GET("/admin/users/sync", middlewares.APIKey.RequireScope(models.ScopeSyncUsers), handlers.Admin.SyncUsers)
-		apiGroup.POST("/admin/users/import", middlewares.APIKey.RequireScope(models.ScopeImportUsers), handlers.Admin.ImportUsers)
+		// API key only endpoints (placed before admin group)
+		apiGroup.GET("/admin/users/sync", middlewares.APIKey.Authenticate(), middlewares.APIKey.RequireScope(models.ScopeSyncUsers), handlers.Admin.SyncUsers)
+		apiGroup.POST("/admin/users/import", middlewares.APIKey.Authenticate(), middlewares.APIKey.RequireScope(models.ScopeImportUsers), handlers.Admin.ImportUsers)
 
 		adminGroup := apiGroup.Group("/admin")
 		adminGroup.Use(middlewares.Auth.Authenticate())

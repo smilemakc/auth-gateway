@@ -11,82 +11,119 @@ import (
 	"github.com/smilemakc/auth-gateway/internal/utils"
 )
 
-// APIKeyMiddleware validates API keys
+// APIKeyMiddleware validates API keys and application secrets
 type APIKeyMiddleware struct {
 	apiKeyService *service.APIKeyService
+	appService    *service.ApplicationService
 	rbacRepo      *repository.RBACRepository
 }
 
 // NewAPIKeyMiddleware creates a new API key middleware
-func NewAPIKeyMiddleware(apiKeyService *service.APIKeyService, rbacRepo *repository.RBACRepository) *APIKeyMiddleware {
+func NewAPIKeyMiddleware(apiKeyService *service.APIKeyService, appService *service.ApplicationService, rbacRepo *repository.RBACRepository) *APIKeyMiddleware {
 	return &APIKeyMiddleware{
 		apiKeyService: apiKeyService,
+		appService:    appService,
 		rbacRepo:      rbacRepo,
 	}
 }
 
-// Authenticate validates the API key and sets user context
+// Authenticate validates the API key or application secret and sets context.
+// Supports: X-API-Key header, X-App-Secret header, Authorization: Bearer agw_/app_
 func (m *APIKeyMiddleware) Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get API key from header
-		// Support both "X-API-Key" and "Authorization: Bearer <key>" headers
-		apiKey := c.GetHeader("X-API-Key")
-		if apiKey == "" {
-			// Try Authorization header
+		token := c.GetHeader("X-API-Key")
+		if token == "" {
+			token = c.GetHeader("X-App-Secret")
+		}
+		if token == "" {
 			authHeader := c.GetHeader("Authorization")
-			if authHeader != "" && strings.HasPrefix(authHeader, "Bearer agw_") {
-				parts := strings.Split(authHeader, " ")
-				if len(parts) == 2 {
-					apiKey = parts[1]
+			if authHeader != "" {
+				parts := strings.SplitN(authHeader, " ", 2)
+				if len(parts) == 2 && parts[0] == "Bearer" {
+					token = parts[1]
 				}
 			}
 		}
 
-		if apiKey == "" {
+		if token == "" {
 			c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
 			c.Abort()
 			return
 		}
 
-		// Validate API key
-		key, user, err := m.apiKeyService.ValidateAPIKey(c.Request.Context(), apiKey)
-		if err != nil {
-			if appErr, ok := err.(*models.AppError); ok {
-				c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			} else {
-				c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrInvalidToken))
-			}
-			c.Abort()
-			return
-		}
-
-		// Set user context
-		c.Set(utils.UserIDKey, user.ID)
-		c.Set(utils.UserEmailKey, user.Email)
-		c.Set("api_key_id", key.ID)
-		c.Set("api_key", key)
-
-		// Load user roles
-		ctx := c.Request.Context()
-		roles, err := m.rbacRepo.GetUserRoles(ctx, user.ID)
-		if err == nil {
-			roleNames := make([]string, len(roles))
-			for i, role := range roles {
-				roleNames[i] = role.Name
-			}
-			c.Set(utils.UserRolesKey, roleNames)
+		// Dispatch based on token prefix
+		if strings.HasPrefix(token, "app_") {
+			m.authenticateAppSecret(c, token)
 		} else {
-			c.Set(utils.UserRolesKey, []string{})
+			m.authenticateAPIKey(c, token)
 		}
-
-		c.Next()
 	}
 }
 
-// RequireScope checks if the API key has the required scope
+func (m *APIKeyMiddleware) authenticateAPIKey(c *gin.Context, apiKey string) {
+	key, user, err := m.apiKeyService.ValidateAPIKey(c.Request.Context(), apiKey)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+		} else {
+			c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrInvalidToken))
+		}
+		c.Abort()
+		return
+	}
+
+	c.Set(utils.UserIDKey, user.ID)
+	c.Set(utils.UserEmailKey, user.Email)
+	c.Set("api_key_id", key.ID)
+	c.Set("api_key", key)
+	c.Set("auth_type", "api_key")
+
+	ctx := c.Request.Context()
+	roles, err := m.rbacRepo.GetUserRoles(ctx, user.ID)
+	if err == nil {
+		roleNames := make([]string, len(roles))
+		for i, role := range roles {
+			roleNames[i] = role.Name
+		}
+		c.Set(utils.UserRolesKey, roleNames)
+	} else {
+		c.Set(utils.UserRolesKey, []string{})
+	}
+
+	c.Next()
+}
+
+func (m *APIKeyMiddleware) authenticateAppSecret(c *gin.Context, secret string) {
+	app, err := m.appService.ValidateSecret(c.Request.Context(), secret)
+	if err != nil {
+		if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
+		} else {
+			c.JSON(http.StatusUnauthorized, models.NewErrorResponse(
+				models.NewAppError(http.StatusUnauthorized, "Invalid application secret"),
+			))
+		}
+		c.Abort()
+		return
+	}
+
+	c.Set("application", app)
+	c.Set(utils.ApplicationIDKey, app.ID)
+	c.Set("auth_type", "application")
+
+	c.Next()
+}
+
+// RequireScope checks if the API key has the required scope.
+// Application secrets bypass scope checks (full access).
 func (m *APIKeyMiddleware) RequireScope(scope models.APIKeyScope) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get API key from context
+		// Application secrets have full access
+		if authType, _ := c.Get("auth_type"); authType == "application" {
+			c.Next()
+			return
+		}
+
 		apiKeyVal, exists := c.Get("api_key")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
@@ -101,7 +138,6 @@ func (m *APIKeyMiddleware) RequireScope(scope models.APIKeyScope) gin.HandlerFun
 			return
 		}
 
-		// Check scope
 		if !m.apiKeyService.HasScope(apiKey, scope) {
 			c.JSON(http.StatusForbidden, models.NewErrorResponse(
 				models.NewAppError(http.StatusForbidden, "API key does not have required scope: "+string(scope)),

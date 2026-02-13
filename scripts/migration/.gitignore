@@ -1,0 +1,4 @@
+config.yaml
+migration_report_*.json
+shadow_migration.sql
+__pycache__/

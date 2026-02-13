@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 import random
 from typing import Any
 
 import httpx
 
 from . import SourceConfig, TargetConfig, VerificationReport
+
+logger = logging.getLogger(__name__)
 
 
 def _connect_source(config: SourceConfig):
@@ -122,7 +125,8 @@ class MigrationVerifier:
             response = await self._http_client.get("/api/admin/users", params={"per_page": 1})
             response.raise_for_status()
             return response.json().get("total", 0)
-        except Exception:
+        except Exception as e:
+            logger.warning("Failed to count AG users: %s", e)
             return 0
 
     async def _count_app_profiles(self) -> int:
@@ -133,7 +137,8 @@ class MigrationVerifier:
             )
             response.raise_for_status()
             return response.json().get("total", 0)
-        except Exception:
+        except Exception as e:
+            logger.warning("Failed to count app profiles: %s", e)
             return 0
 
     async def _find_in_ag(self, user_id: str) -> dict[str, Any] | None:
@@ -143,5 +148,6 @@ class MigrationVerifier:
                 return None
             response.raise_for_status()
             return response.json()
-        except Exception:
+        except Exception as e:
+            logger.warning("Failed to find user %s: %s", user_id, e)
             return None

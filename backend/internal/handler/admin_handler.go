@@ -309,7 +309,7 @@ func (h *AdminHandler) ListAPIKeys(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
 	appID, _ := utils.GetApplicationIDFromContext(c)
 
-	apiKeys, err := h.adminService.ListAPIKeys(c.Request.Context(), appID, page, pageSize)
+	result, err := h.adminService.ListAPIKeys(c.Request.Context(), appID, page, pageSize)
 	if err != nil {
 		h.logger.Error("Failed to list API keys", map[string]interface{}{
 			"error": err.Error(),
@@ -318,7 +318,7 @@ func (h *AdminHandler) ListAPIKeys(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, apiKeys)
+	c.JSON(http.StatusOK, result)
 }
 
 // RevokeAPIKey revokes an API key

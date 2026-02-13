@@ -140,20 +140,49 @@ source:
     id: "id"
     email: "email"
     username: "username"
-    password_hash: "password_hash"
     full_name: "full_name"
     phone: "phone"
     is_active: "is_active"
+    email_verified: "email_verified"
     created_at: "created_at"
+    # password_hash: "password_hash"  # Optional — omit if source uses OTP/Telegram-only auth
 ```
 
 Маппинг внутренних полей на колонки source БД. **Ключ** — внутреннее имя поля, **значение** — имя колонки в таблице.
-Используется для формирования SQL-запроса.
+Используется для формирования SQL-запроса. Указывайте только те колонки, которые реально существуют в source-таблице.
 
-Пример для нестандартных имён колонок:
+**Поддерживаемые поля:**
+
+| Ключ | Обязательный | Описание |
+|------|-------------|----------|
+| `id` | да | Идентификатор пользователя |
+| `email` | нет | Email пользователя (не обязателен, если есть phone или username) |
+| `username` | нет | Имя пользователя (если нет — генерируется из email) |
+| `full_name` | нет | Полное имя |
+| `phone` | нет | Телефон |
+| `is_active` | нет | Активен ли аккаунт (default: `true`) |
+| `email_verified` | нет | Подтверждён ли email (default: `false`) |
+| `phone_verified` | нет | Подтверждён ли телефон (default: `false`) |
+| `created_at` | нет | Дата создания (используется для дедупликации `keep_latest`) |
+| `password_hash` | нет | Хеш пароля. Не указывайте, если source использует OTP/Telegram-авторизацию |
+
+Пример для сервиса без паролей (OTP-only):
 
 ```yaml
   columns:
+    id: "id"
+    email: "email"
+    phone: "phone_number"
+    email_verified: "is_email_confirmed"
+    created_at: "registered_at"
+```
+
+Пример для нестандартных имён колонок с паролями:
+
+```yaml
+  columns:
+    id: "user_id"
+    email: "email"
     password_hash: "pwd_bcrypt"
     full_name: "display_name"
     is_active: "active"
@@ -179,15 +208,22 @@ target:
 ### `password` — стратегия миграции паролей
 
 ```yaml
+# Для сервисов с паролями:
 password:
   strategy: "transfer"          # transfer | force_reset | none
   source_algorithm: "bcrypt"    # bcrypt | argon2 | scrypt | md5 | sha256
+
+# Для сервисов без паролей (OTP, Telegram-бот и т.д.):
+password:
+  strategy: "none"
 ```
 
 | Параметр           | Тип    | По умолчанию | Описание                                                                                                                                                                                        |
 |--------------------|--------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `strategy`         | string | `"transfer"` | `transfer` — хеши паролей передаются как есть через поле `password_hash_import`. `force_reset` — пароли не мигрируются, пользователи получат принудительный сброс. `none` — пароли игнорируются |
-| `source_algorithm` | string | `"bcrypt"`   | Формат хешей в source БД. Автодетекция также выполняется при `analyze` по паттернам: `$2b$` → bcrypt, `$argon2` → argon2, hex длина 64 → sha256 и т.д.                                          |
+| `source_algorithm` | string | `"bcrypt"`   | Формат хешей в source БД. Автодетекция также выполняется при `analyze` по паттернам: `$2b$` → bcrypt, `$argon2` → argon2, hex длина 64 → sha256 и т.д. Не используется при `strategy: "none"`   |
+
+> **Важно:** Если source-сервис использует только OTP или Telegram-авторизацию (без паролей), установите `strategy: "none"` и не включайте `password_hash` в секцию `source.columns`.
 
 ### `conflicts` — стратегия при коллизиях в Auth Gateway
 
@@ -217,8 +253,58 @@ deduplication:
 
 | Параметр   | Тип    | По умолчанию    | Описание                                                                                                                                                  |
 |------------|--------|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `key`      | string | `"email"`       | Поле для поиска дубликатов. `email_or_phone` — проверяет email, затем phone как fallback                                                                  |
-| `strategy` | string | `"keep_latest"` | `keep_latest` — оставляет запись с более поздним `created_at`. `keep_first` — оставляет первую встреченную. `error` — бросает ошибку при первом дубликате |
+| `key`      | string | `"email"`       | Поле для поиска дубликатов: `email`, `phone`, `username`, `email_or_phone`, `username_or_email`                                                           |
+| `strategy` | string | `"keep_latest"` | `none` — пропустить дедупликацию. `keep_latest` — оставляет запись с более поздним `created_at`. `keep_first` — оставляет первую встреченную. `error` — бросает ошибку при первом дубликате |
+
+### `validation` — настройки валидации
+
+```yaml
+validation:
+  skip_email_validation: false
+  skip_phone_validation: false
+```
+
+Позволяет отключить валидацию формата email или телефона для «грязных» данных из source-БД. Полезно, если в исходной
+системе email-адреса не проходили строгую валидацию.
+
+| Параметр                | Тип  | По умолчанию | Описание                                                          |
+|-------------------------|------|--------------|-------------------------------------------------------------------|
+| `skip_email_validation` | bool | `false`      | Пропускать валидацию формата email (позволяет импорт невалидных)  |
+| `skip_phone_validation` | bool | `false`      | Пропускать валидацию формата телефона (E.164)                     |
+
+### `roles` — миграция ролей
+
+```yaml
+roles:
+  enabled: false
+  source_column: "role_id"      # Колонка роли в таблице пользователей
+  # source_table: "user_roles"  # M2M таблица (альтернативный вариант)
+  # source_user_id_column: "user_id"
+  # source_role_id_column: "role_id"
+  mapping:
+    1: "admin"
+    2: "user"
+    3: "manager"
+```
+
+Маппинг числовых ролей из source-системы в строковые имена ролей Auth Gateway. Поддерживает два варианта хранения ролей:
+
+**Вариант 1: Колонка в таблице пользователей** (e.g. `users.role_id INT`):
+- `source_column` — имя колонки с ID роли
+
+**Вариант 2: M2M таблица** (e.g. `user_roles(user_id, role_id)`):
+- `source_table` — имя таблицы связи
+- `source_user_id_column` — колонка с ID пользователя
+- `source_role_id_column` — колонка с ID роли
+
+| Параметр                | Тип    | По умолчанию | Описание                                           |
+|-------------------------|--------|--------------|-----------------------------------------------------|
+| `enabled`               | bool   | `false`      | Включить миграцию ролей                             |
+| `source_column`         | string | `"role_id"`  | Колонка роли в таблице пользователей                |
+| `source_table`          | string | `""`         | M2M таблица (если указана, `source_column` игнорируется) |
+| `source_user_id_column` | string | `"user_id"`  | Колонка user_id в M2M таблице                       |
+| `source_role_id_column` | string | `"role_id"`  | Колонка role_id в M2M таблице                       |
+| `mapping`               | map    | `{}`         | Маппинг `int → string` (source ID → AG role name)  |
 
 ### `shadow` — трансформация source-таблицы
 
