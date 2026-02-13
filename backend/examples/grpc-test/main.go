@@ -3,12 +3,15 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protowire"
 )
 
@@ -560,24 +563,51 @@ func unmarshalIntrospectTokenResponse(b []byte, m *IntrospectTokenResponse) erro
 	return nil
 }
 
+// apiKeyInterceptor adds API key to every gRPC call
+func apiKeyInterceptor(apiKey string) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		md, ok := metadata.FromOutgoingContext(ctx)
+		if !ok {
+			md = metadata.New(nil)
+		} else {
+			md = md.Copy()
+		}
+		md.Set("x-api-key", apiKey)
+		ctx = metadata.NewOutgoingContext(ctx, md)
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+}
+
 func main() {
+	// Parse flags
+	apiKey := flag.String("api-key", "", "API key for gRPC authentication (agw_*)")
+	serverAddr := flag.String("server", "localhost:50051", "gRPC server address")
+	flag.Parse()
+
+	if *apiKey == "" {
+		fmt.Println("ERROR: API key is required for gRPC authentication")
+		fmt.Println("Usage: go run main.go -api-key=agw_YOUR_API_KEY [-server=localhost:50051]")
+		os.Exit(1)
+	}
+
 	fmt.Println("==========================================")
 	fmt.Println("  Auth Gateway gRPC Integration Test")
 	fmt.Println("==========================================")
 	fmt.Println()
 
-	// Connect to server
+	// Connect to server with API key interceptor
 	conn, err := grpc.NewClient(
-		"localhost:50051",
+		*serverAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultCallOptions(grpc.ForceCodec(authCodec{})),
+		grpc.WithUnaryInterceptor(apiKeyInterceptor(*apiKey)),
 	)
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
 	defer conn.Close()
 
-	fmt.Println("Connected to gRPC server at localhost:50051")
+	fmt.Printf("Connected to gRPC server at %s\n", *serverAddr)
 	fmt.Println()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
