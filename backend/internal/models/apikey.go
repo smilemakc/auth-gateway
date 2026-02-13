@@ -48,6 +48,20 @@ const (
 	// Sync scopes
 	ScopeSyncUsers   APIKeyScope = "users:sync"
 	ScopeImportUsers APIKeyScope = "users:import"
+
+	// Auth flow scopes (for gRPC service-to-service calls)
+	ScopeAuthLogin    APIKeyScope = "auth:login"
+	ScopeAuthRegister APIKeyScope = "auth:register"
+	ScopeAuthOTP      APIKeyScope = "auth:otp"
+
+	// Email scopes
+	ScopeEmailSend APIKeyScope = "email:send"
+
+	// OAuth scopes
+	ScopeOAuthRead APIKeyScope = "oauth:read"
+
+	// Token exchange scopes
+	ScopeExchangeManage APIKeyScope = "exchange:manage"
 )
 
 // CreateAPIKeyRequest represents a request to create a new API key
@@ -103,6 +117,12 @@ func IsValidScope(scope string) bool {
 		ScopeAll,
 		ScopeSyncUsers,
 		ScopeImportUsers,
+		ScopeAuthLogin,
+		ScopeAuthRegister,
+		ScopeAuthOTP,
+		ScopeEmailSend,
+		ScopeOAuthRead,
+		ScopeExchangeManage,
 	}
 
 	for _, validScope := range validScopes {

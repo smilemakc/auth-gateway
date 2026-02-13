@@ -5,8 +5,10 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 
+	"github.com/smilemakc/auth-gateway/internal/config"
 	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
@@ -23,7 +25,7 @@ type Server struct {
 
 // NewServer creates a new gRPC server
 func NewServer(
-	port string,
+	grpcConfig *config.GRPCConfig,
 	jwtService *jwt.Service,
 	userRepo *repository.UserRepository,
 	tokenRepo *repository.TokenRepository,
@@ -40,18 +42,38 @@ func NewServer(
 	log *logger.Logger,
 ) (*Server, error) {
 	// Create listener
-	lis, err := net.Listen("tcp", ":"+port)
+	lis, err := net.Listen("tcp", ":"+grpcConfig.Port)
 	if err != nil {
-		return nil, fmt.Errorf("failed to listen on port %s: %w", port, err)
+		return nil, fmt.Errorf("failed to listen on port %s: %w", grpcConfig.Port, err)
 	}
-	// Create gRPC server with interceptors
-	grpcServer := grpc.NewServer(
+
+	// Build server options with unary and stream interceptors
+	serverOpts := []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(
+			apiKeyAuthInterceptor(apiKeyService, appService, log),
 			contextExtractorInterceptor(log),
 			loggingInterceptor(log),
 			recoveryInterceptor(log),
 		),
-	)
+		grpc.ChainStreamInterceptor(
+			streamAPIKeyAuthInterceptor(apiKeyService, log),
+		),
+	}
+
+	// Add TLS credentials if enabled
+	if grpcConfig.TLSEnabled {
+		creds, err := credentials.NewServerTLSFromFile(grpcConfig.TLSCert, grpcConfig.TLSKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load TLS credentials: %w", err)
+		}
+		serverOpts = append(serverOpts, grpc.Creds(creds))
+		log.Info("gRPC TLS enabled", map[string]interface{}{
+			"cert": grpcConfig.TLSCert,
+		})
+	}
+
+	// Create gRPC server with options
+	grpcServer := grpc.NewServer(serverOpts...)
 
 	// Register auth service handler
 	handler := NewAuthHandlerV2(jwtService, userRepo, tokenRepo, rbacRepo, apiKeyService, authService, oauthProviderService, otpService, emailProfileService, adminService, appService, redis, tokenExchangeService, log)

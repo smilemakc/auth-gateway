@@ -120,10 +120,12 @@ import (
 )
 
 func main() {
-    // Create gRPC client
+    // Create gRPC client with API key authentication
+    // All gRPC methods require a valid API key
     grpcClient, err := authgateway.NewGRPCClient(authgateway.GRPCConfig{
         Address:  "localhost:50051",
-        Insecure: true, // false for production
+        Insecure: true, // false for production with TLS
+        APIKey:   "agw_YOUR_API_KEY",
     })
     if err != nil {
         log.Fatal(err)
@@ -132,7 +134,7 @@ func main() {
 
     ctx := context.Background()
 
-    // Validate token
+    // Validate token (requires scope: token:validate)
     resp, err := grpcClient.ValidateToken(ctx, "jwt_token_here")
     if err != nil {
         log.Fatal(err)
@@ -265,6 +267,9 @@ client.OAuth.GetAuthURL(provider)
 ```
 
 ### gRPC Client
+
+> **Important:** All gRPC methods require API key authentication. Set `APIKey` in `GRPCConfig` or use `grpcClient.SetAPIKey("agw_...")`.
+
 ```go
 // Authentication
 grpcClient.Login(ctx, &proto.LoginRequest{...})
@@ -443,6 +448,7 @@ ctx = authgateway.WithRequestID(context.Background(), "req-12345")
 grpcClient, _ := authgateway.NewGRPCClient(authgateway.GRPCConfig{
     Address:  "localhost:50051",
     Insecure: true,
+    APIKey:   "agw_YOUR_API_KEY", // Required for authentication
     Metadata: map[string]string{
         "x-application-id": "my-app-id",
     },

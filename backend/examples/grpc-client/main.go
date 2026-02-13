@@ -15,6 +15,7 @@ import (
 func main() {
 	// Parse command line flags
 	serverAddr := flag.String("server", "localhost:50051", "gRPC server address")
+	apiKey := flag.String("api-key", "", "API key for gRPC authentication (agw_*)")
 	token := flag.String("token", "", "JWT token or API key (agw_*) for validation")
 	userID := flag.String("user-id", "", "User ID for GetUser/CheckPermission")
 	resource := flag.String("resource", "", "Resource name for CheckPermission")
@@ -27,8 +28,12 @@ func main() {
 	fmt.Println("======================================")
 	fmt.Printf("Server: %s\n\n", *serverAddr)
 
-	// Create client
-	client, err := grpcclient.NewClient(*serverAddr, grpcclient.WithTimeout(10*time.Second))
+	// Create client with options
+	opts := []grpcclient.Option{grpcclient.WithTimeout(10 * time.Second)}
+	if *apiKey != "" {
+		opts = append(opts, grpcclient.WithAPIKey(*apiKey))
+	}
+	client, err := grpcclient.NewClient(*serverAddr, opts...)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
@@ -111,6 +116,7 @@ func main() {
 		fmt.Println()
 		fmt.Println("Flags:")
 		fmt.Println("  -server     gRPC server address (default: localhost:50051)")
+		fmt.Println("  -api-key    API key for authentication (agw_* format, required)")
 		fmt.Println("  -token      JWT token or API key for validation")
 		fmt.Println("  -user-id    User UUID for GetUser or CheckPermission")
 		fmt.Println("  -resource   Resource name for CheckPermission (e.g., users, orders)")
@@ -257,8 +263,9 @@ func runAllTests(client *grpcclient.Client) {
 	fmt.Println("they use invalid/non-existent test data.")
 	fmt.Println("To test with real data:")
 	fmt.Println("  1. Sign up/sign in via REST API to get a JWT token")
-	fmt.Println("  2. Create an API key via /api-keys endpoint")
-	fmt.Println("  3. Use the -token flag with your real token")
+	fmt.Println("  2. Create an API key via /api-keys endpoint with required scopes")
+	fmt.Println("  3. Use the -api-key flag with your API key")
+	fmt.Println("  4. Use the -token flag with your real token")
 }
 
 func printJSON(label string, v interface{}) {

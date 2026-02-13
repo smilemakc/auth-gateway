@@ -21,6 +21,8 @@ type GRPCClient struct {
 	// Custom metadata to include in every request
 	metadata   map[string]string
 	metadataMu sync.RWMutex
+
+	apiKey string
 }
 
 // GRPCConfig contains configuration for the gRPC client.
@@ -40,6 +42,9 @@ type GRPCConfig struct {
 	// Metadata contains custom metadata to include in every gRPC call.
 	// Common metadata: x-application-id, x-client-name, x-request-id, etc.
 	Metadata map[string]string
+
+	// APIKey for gRPC authentication. Sent as x-api-key metadata on every call.
+	APIKey string
 }
 
 // NewGRPCClient creates a new gRPC client for the Auth Gateway.
@@ -62,11 +67,18 @@ func NewGRPCClient(config GRPCConfig) (*GRPCClient, error) {
 		return nil, fmt.Errorf("failed to connect to gRPC server: %w", err)
 	}
 
-	return &GRPCClient{
+	c := &GRPCClient{
 		conn:     conn,
 		client:   proto.NewAuthServiceClient(conn),
 		metadata: config.Metadata,
-	}, nil
+		apiKey:   config.APIKey,
+	}
+
+	if config.APIKey != "" {
+		c.SetMetadata("x-api-key", config.APIKey)
+	}
+
+	return c, nil
 }
 
 // SetMetadata sets a custom metadata key-value pair to be included in all requests.
@@ -121,6 +133,12 @@ func (c *GRPCClient) SetApplicationID(appID string) {
 // SetClientName sets the x-client-name metadata for client identification.
 func (c *GRPCClient) SetClientName(name string) {
 	c.SetMetadata("x-client-name", name)
+}
+
+// SetAPIKey sets the API key for gRPC authentication.
+// The key is sent as x-api-key metadata on every call.
+func (c *GRPCClient) SetAPIKey(apiKey string) {
+	c.SetMetadata("x-api-key", apiKey)
 }
 
 // withMetadata returns a context with the client's metadata attached.

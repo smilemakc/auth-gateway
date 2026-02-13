@@ -252,7 +252,7 @@ func runServer() {
 	}
 
 	grpcSrv, err := grpcserver.NewServer(
-		deps.cfg.Server.GRPCPort,
+		&deps.cfg.GRPC,
 		deps.jwtService,
 		repos.User,
 		repos.Token,

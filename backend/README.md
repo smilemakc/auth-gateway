@@ -201,14 +201,24 @@ curl -X GET http://localhost:3000/auth/profile \
 
 ### Доступные scopes
 
+**Базовые scopes:**
 - `users:read` - чтение информации о пользователях
 - `users:write` - изменение информации о пользователях
 - `profile:read` - чтение профиля
 - `profile:write` - изменение профиля
-- `token:validate` - валидация токенов (для gRPC)
+- `token:validate` - валидация токенов
 - `token:introspect` - детальная информация о токенах
 - `admin:all` - все административные права
 - `all` - полный доступ ко всем операциям
+
+**gRPC scopes:**
+- `auth:login` - аутентификация через gRPC (Login)
+- `auth:register` - регистрация через gRPC (CreateUser, RegisterWithOTP и др.)
+- `auth:otp` - OTP операции через gRPC (SendOTP, VerifyOTP и др.)
+- `email:send` - отправка email через gRPC
+- `oauth:read` - чтение OAuth данных через gRPC
+- `exchange:manage` - управление обменом токенов между приложениями
+- `sync:users` - синхронизация пользователей между сервисами
 
 ### Управление API ключами
 
@@ -235,17 +245,54 @@ curl -X DELETE http://localhost:3000/api-keys/{key_id} \
 
 ## gRPC API для микросервисов
 
-Auth Gateway предоставляет gRPC API для проверки токенов и авторизации между микросервисами. Поддерживает как JWT
-токены, так и API ключи.
+Auth Gateway предоставляет gRPC API для проверки токенов и авторизации между микросервисами.
 
-### gRPC Endpoints
+**Важно:** Все gRPC методы требуют аутентификацию через API ключ.
 
-| Метод             | Описание                                                |
-|-------------------|---------------------------------------------------------|
-| `ValidateToken`   | Проверка JWT токена или API ключа и получение user info |
-| `GetUser`         | Получение информации о пользователе по ID               |
-| `CheckPermission` | Проверка прав доступа (RBAC)                            |
-| `IntrospectToken` | Детальная информация о JWT токене                       |
+### Безопасность gRPC
+
+- **Аутентификация:** Каждый запрос должен содержать API ключ в metadata `x-api-key` или `Authorization: Bearer agw_...`
+- **Авторизация:** Каждый метод требует определенный scope у API ключа
+- **TLS:** Поддерживается TLS шифрование для production-окружений
+- **Deny-by-default:** Методы не настроенные в системе scopes автоматически отклоняются
+
+### Переменные окружения gRPC
+
+| Переменная | Описание | По умолчанию |
+|-----------|----------|-------------|
+| `GRPC_PORT` | Порт gRPC сервера | `50051` |
+| `GRPC_TLS_ENABLED` | Включить TLS | `false` |
+| `GRPC_TLS_CERT_FILE` | Путь к TLS сертификату | — |
+| `GRPC_TLS_KEY_FILE` | Путь к TLS приватному ключу | — |
+
+### gRPC Endpoints и Scopes
+
+| Метод | Scope | Описание |
+|-------|-------|----------|
+| `ValidateToken` | `token:validate` | Проверка JWT токена или API ключа |
+| `IntrospectToken` | `token:introspect` | Детальная информация о токене |
+| `GetUser` | `users:read` | Получение пользователя по ID |
+| `CheckPermission` | `users:read` | Проверка прав доступа (RBAC) |
+| `GetApplicationAuthConfig` | `users:read` | Конфигурация аутентификации приложения |
+| `GetUserApplicationProfile` | `profile:read` | Профиль пользователя в приложении |
+| `GetUserTelegramBots` | `profile:read` | Telegram-боты пользователя |
+| `Login` | `auth:login` | Аутентификация по email/паролю |
+| `CreateUser` | `auth:register` | Создание пользователя |
+| `RegisterWithOTP` | `auth:register` | Регистрация через OTP |
+| `VerifyRegistrationOTP` | `auth:register` | Подтверждение регистрации OTP |
+| `InitPasswordlessRegistration` | `auth:register` | Начало passwordless регистрации |
+| `CompletePasswordlessRegistration` | `auth:register` | Завершение passwordless регистрации |
+| `SendOTP` | `auth:otp` | Отправка OTP |
+| `VerifyOTP` | `auth:otp` | Проверка OTP |
+| `LoginWithOTP` | `auth:otp` | Вход через OTP |
+| `VerifyLoginOTP` | `auth:otp` | Подтверждение входа через OTP |
+| `SendEmail` | `email:send` | Отправка email |
+| `IntrospectOAuthToken` | `oauth:read` | Интроспекция OAuth токена |
+| `ValidateOAuthClient` | `oauth:read` | Валидация OAuth клиента |
+| `GetOAuthClient` | `oauth:read` | Информация об OAuth клиенте |
+| `CreateTokenExchange` | `exchange:manage` | Создание кода обмена токенов |
+| `RedeemTokenExchange` | `exchange:manage` | Обмен кода на токены |
+| `SyncUsers` | `sync:users` | Синхронизация пользователей |
 
 ### Адрес gRPC сервера
 
@@ -260,24 +307,32 @@ package main
 import (
     "context"
     "log"
+    "time"
 
-    "google.golang.org/grpc"
-    "google.golang.org/grpc/credentials/insecure"
+    "github.com/smilemakc/auth-gateway/pkg/grpcclient"
 )
 
 func main() {
-    // Подключение к auth gateway
-    conn, err := grpc.NewClient(
+    // Подключение к auth gateway с API ключом
+    client, err := grpcclient.NewClient(
         "localhost:50051",
-        grpc.WithTransportCredentials(insecure.NewCredentials()),
+        grpcclient.WithAPIKey("agw_YOUR_API_KEY"),
+        grpcclient.WithTimeout(10*time.Second),
     )
     if err != nil {
         log.Fatal(err)
     }
-    defer conn.Close()
+    defer client.Close()
 
     // Проверка токена
-    // См. examples/grpc-client для полного примера
+    resp, err := client.ValidateToken(
+        context.Background(),
+        "your-jwt-token",
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    log.Printf("Token valid: %t, User: %s", resp.Valid, resp.UserId)
 }
 ```
 
@@ -428,6 +483,13 @@ make migrate-down  # Откатить
 4. **Включить HTTPS** (используйте reverse proxy как Nginx)
 
 5. **Настроить мониторинг** (Prometheus, Grafana)
+
+6. **Настроить gRPC TLS** (для production):
+   ```
+   GRPC_TLS_ENABLED=true
+   GRPC_TLS_CERT_FILE=/path/to/cert.pem
+   GRPC_TLS_KEY_FILE=/path/to/key.pem
+   ```
 
 ## Тестирование
 
