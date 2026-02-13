@@ -22,7 +22,7 @@ import type {
 } from './types';
 
 /** Default gRPC configuration */
-const DEFAULT_CONFIG: Required<Omit<GrpcClientConfig, 'address' | 'caCertPath'>> = {
+const DEFAULT_CONFIG: Required<Omit<GrpcClientConfig, 'address' | 'caCertPath' | 'apiKey'>> = {
   useTls: false,
   timeout: 5000,
   debug: false,
@@ -223,7 +223,7 @@ export class AuthGrpcClient {
         }
 
         const metadata = new grpc.Metadata();
-        // Inject API key if configured
+        // Inject API key or application secret if configured
         if (this.config.apiKey) {
           metadata.add('x-api-key', this.config.apiKey);
         }
@@ -269,14 +269,14 @@ export class AuthGrpcClient {
     return this.client !== null;
   }
 
-  /** Set or update the API key for authentication */
+  /** Set or update the API key or application secret for authentication */
   setAPIKey(apiKey: string): void {
     this.config.apiKey = apiKey;
   }
 
   /**
-   * Validate an access token or API key
-   * @param accessToken JWT token or API key (starting with 'agw_')
+   * Validate an access token, API key, or application secret
+   * @param accessToken JWT token, API key (starting with 'agw_'), or application secret (starting with 'app_')
    * @param options Call options
    * @returns Token validation result
    */

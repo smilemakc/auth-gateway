@@ -50,4 +50,4 @@ auth-gateway
 *.pem
 *.key
 *.crt
-keys/
+local.keys

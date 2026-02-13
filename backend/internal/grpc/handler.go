@@ -321,10 +321,10 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *pb.ValidateToken
 			IsActive:  user.IsActive,
 		}
 
-		if req.ApplicationId != "" {
-			appID, parseErr := uuid.Parse(req.ApplicationId)
+		if resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId); resolvedAppID != "" {
+			appID, parseErr := uuid.Parse(resolvedAppID)
 			if parseErr == nil {
-				response.ApplicationId = req.ApplicationId
+				response.ApplicationId = resolvedAppID
 				appRoles, roleErr := h.rbacRepo.GetUserRolesInApp(ctx, user.ID, &appID)
 				if roleErr == nil {
 					response.AppRoles = extractRoleNames(appRoles)
@@ -384,8 +384,8 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *pb.ValidateToken
 		}
 	}
 
-	if req.ApplicationId != "" {
-		reqAppID, parseErr := uuid.Parse(req.ApplicationId)
+	if resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId); resolvedAppID != "" {
+		reqAppID, parseErr := uuid.Parse(resolvedAppID)
 		if parseErr != nil {
 			return &pb.ValidateTokenResponse{
 				Valid:        false,
@@ -401,7 +401,7 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *pb.ValidateToken
 		}
 
 		if claims.ApplicationID == nil {
-			response.ApplicationId = req.ApplicationId
+			response.ApplicationId = resolvedAppID
 			appRoles, roleErr := h.rbacRepo.GetUserRolesInApp(ctx, claims.UserID, &reqAppID)
 			if roleErr == nil {
 				response.AppRoles = extractRoleNames(appRoles)
@@ -463,8 +463,8 @@ func (h *AuthHandlerV2) CheckPermission(ctx context.Context, req *pb.CheckPermis
 	}
 
 	var roles []models.Role
-	if req.ApplicationId != "" {
-		appID, parseErr := uuid.Parse(req.ApplicationId)
+	if resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId); resolvedAppID != "" {
+		appID, parseErr := uuid.Parse(resolvedAppID)
 		if parseErr != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
 		}
@@ -1425,9 +1425,11 @@ func (h *AuthHandlerV2) GetUserApplicationProfile(ctx context.Context, req *pb.G
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
-	if req.ApplicationId == "" {
+	resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId)
+	if resolvedAppID == "" {
 		return nil, status.Error(codes.InvalidArgument, "application_id is required")
 	}
+	_ = resolvedAppID // TODO: use when implemented
 
 	return nil, status.Errorf(codes.Unimplemented, "GetUserApplicationProfile not implemented - handler requires ApplicationRepository dependency")
 }
@@ -1437,9 +1439,11 @@ func (h *AuthHandlerV2) GetUserTelegramBots(ctx context.Context, req *pb.GetUser
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
-	if req.ApplicationId == "" {
+	resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId)
+	if resolvedAppID == "" {
 		return nil, status.Error(codes.InvalidArgument, "application_id is required")
 	}
+	_ = resolvedAppID // TODO: use when implemented
 
 	return nil, status.Errorf(codes.Unimplemented, "GetUserTelegramBots not implemented - handler requires UserTelegramRepository dependency")
 }
@@ -1462,8 +1466,8 @@ func (h *AuthHandlerV2) SyncUsers(ctx context.Context, req *pb.SyncUsersRequest)
 	}
 
 	var appID *uuid.UUID
-	if req.ApplicationId != "" {
-		parsed, err := uuid.Parse(req.ApplicationId)
+	if resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId); resolvedAppID != "" {
+		parsed, err := uuid.Parse(resolvedAppID)
 		if err != nil {
 			return &pb.SyncUsersResponse{
 				ErrorMessage: "invalid application_id format",
@@ -1518,13 +1522,14 @@ func (h *AuthHandlerV2) SyncUsers(ctx context.Context, req *pb.SyncUsersRequest)
 
 // GetApplicationAuthConfig returns auth configuration for a specific application
 func (h *AuthHandlerV2) GetApplicationAuthConfig(ctx context.Context, req *pb.GetApplicationAuthConfigRequest) (*pb.GetApplicationAuthConfigResponse, error) {
-	if req.ApplicationId == "" {
+	resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId)
+	if resolvedAppID == "" {
 		return &pb.GetApplicationAuthConfigResponse{
 			ErrorMessage: "application_id is required",
 		}, nil
 	}
 
-	appID, err := uuid.Parse(req.ApplicationId)
+	appID, err := uuid.Parse(resolvedAppID)
 	if err != nil {
 		return &pb.GetApplicationAuthConfigResponse{
 			ErrorMessage: "invalid application_id format",
@@ -1580,10 +1585,10 @@ func (h *AuthHandlerV2) SendEmail(ctx context.Context, req *pb.SendEmailRequest)
 		profileID = &id
 	}
 
-	// Parse optional application ID
+	// Parse optional application ID (falls back to app secret context)
 	var applicationID *uuid.UUID
-	if req.ApplicationId != "" {
-		id, err := uuid.Parse(req.ApplicationId)
+	if resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId); resolvedAppID != "" {
+		id, err := uuid.Parse(resolvedAppID)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
 		}

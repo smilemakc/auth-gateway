@@ -121,11 +121,11 @@ import (
 
 func main() {
     // Create gRPC client with API key authentication
-    // All gRPC methods require a valid API key
+    // All gRPC methods require a valid API key or application secret
     grpcClient, err := authgateway.NewGRPCClient(authgateway.GRPCConfig{
         Address:  "localhost:50051",
         Insecure: true, // false for production with TLS
-        APIKey:   "agw_YOUR_API_KEY",
+        APIKey:   "agw_YOUR_API_KEY", // or "app_YOUR_APP_SECRET"
     })
     if err != nil {
         log.Fatal(err)
@@ -142,6 +142,29 @@ func main() {
     fmt.Printf("Token valid: %t, User: %s\n", resp.Valid, resp.Email)
 }
 ```
+
+#### Authentication with Application Secrets
+
+You can use application secrets (prefix `app_`) instead of API keys (`agw_`) for gRPC authentication. When authenticated with an application secret, the `application_id` is automatically resolved from the context, so you don't need to pass it in request bodies.
+
+```go
+// Using application secret for authentication
+grpcClient, err := authgateway.NewGRPCClient(authgateway.GRPCConfig{
+    Address:  "localhost:50051",
+    Insecure: true,
+    APIKey:   "app_YOUR_APPLICATION_SECRET", // Application secret
+})
+
+// When using app secret, application_id is auto-resolved
+// No need to set x-application-id metadata manually
+resp, err := grpcClient.GetApplicationAuthConfig(ctx, "")
+```
+
+**Key differences:**
+
+- **API Keys** (`agw_`): Standard API key authentication with scope-based permissions
+- **Application Secrets** (`app_`): Application-level authentication with automatic `application_id` resolution
+- Both can be used in `x-api-key` metadata or `Authorization: Bearer` header
 
 ### API Key Authentication
 
@@ -268,7 +291,7 @@ client.OAuth.GetAuthURL(provider)
 
 ### gRPC Client
 
-> **Important:** All gRPC methods require API key authentication. Set `APIKey` in `GRPCConfig` or use `grpcClient.SetAPIKey("agw_...")`.
+> **Important:** All gRPC methods require authentication via API key (`agw_...`) or application secret (`app_...`). Set `APIKey` in `GRPCConfig` or use `grpcClient.SetAPIKey()`. When using an application secret, `application_id` is automatically resolved.
 
 ```go
 // Authentication
@@ -448,9 +471,9 @@ ctx = authgateway.WithRequestID(context.Background(), "req-12345")
 grpcClient, _ := authgateway.NewGRPCClient(authgateway.GRPCConfig{
     Address:  "localhost:50051",
     Insecure: true,
-    APIKey:   "agw_YOUR_API_KEY", // Required for authentication
+    APIKey:   "agw_YOUR_API_KEY", // API key (agw_) or app secret (app_)
     Metadata: map[string]string{
-        "x-application-id": "my-app-id",
+        "x-application-id": "my-app-id", // Optional when using app secret
     },
 })
 

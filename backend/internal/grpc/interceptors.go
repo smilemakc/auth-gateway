@@ -26,11 +26,11 @@ const (
 	GRPCUserEmailKey     = "grpc_user_email"
 )
 
-// contextExtractorInterceptor extracts application context from gRPC metadata
-// and adds it to the context for use in handlers.
+// contextExtractorInterceptor extracts additional context from gRPC metadata.
+// Note: x-application-id is handled by apiKeyAuthInterceptor to avoid conflicts
+// with application_id set during app secret authentication.
 //
 // Supported metadata keys:
-// - x-application-id: Application UUID
 // - x-tenant-id: Tenant UUID (for future multi-tenancy support)
 func contextExtractorInterceptor(log *logger.Logger) grpc.UnaryServerInterceptor {
 	return func(
@@ -42,16 +42,6 @@ func contextExtractorInterceptor(log *logger.Logger) grpc.UnaryServerInterceptor
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
 			return handler(ctx, req)
-		}
-
-		if appIDs := md.Get("x-application-id"); len(appIDs) > 0 && appIDs[0] != "" {
-			ctx = context.WithValue(ctx, GRPCApplicationIDKey, appIDs[0])
-			if log != nil {
-				log.Debug("gRPC application context extracted", map[string]interface{}{
-					"application_id": appIDs[0],
-					"method":         info.FullMethod,
-				})
-			}
 		}
 
 		if tenantIDs := md.Get("x-tenant-id"); len(tenantIDs) > 0 && tenantIDs[0] != "" {
@@ -151,6 +141,18 @@ func GetApplicationUUIDFromGRPCContext(ctx context.Context) *uuid.UUID {
 	return &appID
 }
 
+// ResolveApplicationID returns application_id from request or falls back to context
+// (set by app secret authentication). Returns empty string if neither is available.
+func ResolveApplicationID(ctx context.Context, reqApplicationID string) string {
+	if reqApplicationID != "" {
+		return reqApplicationID
+	}
+	if appID := GetApplicationIDFromGRPCContext(ctx); appID != nil {
+		return *appID
+	}
+	return ""
+}
+
 // GetTenantIDFromGRPCContext extracts tenant_id from gRPC context
 func GetTenantIDFromGRPCContext(ctx context.Context) *string {
 	val := ctx.Value(GRPCTenantIDKey)
@@ -164,6 +166,21 @@ func GetTenantIDFromGRPCContext(ctx context.Context) *string {
 	}
 
 	return &tenantID
+}
+
+// extractCredential extracts API key or application secret from gRPC metadata.
+// Checks x-api-key header first, then Authorization: Bearer header.
+func extractCredential(md metadata.MD) string {
+	if keys := md.Get("x-api-key"); len(keys) > 0 && keys[0] != "" {
+		return keys[0]
+	}
+	if authHeaders := md.Get("authorization"); len(authHeaders) > 0 && authHeaders[0] != "" {
+		authHeader := authHeaders[0]
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			return strings.TrimPrefix(authHeader, "Bearer ")
+		}
+	}
+	return ""
 }
 
 // methodScopes maps gRPC method names to required API key scopes
@@ -210,28 +227,49 @@ func apiKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *ser
 			return nil, status.Error(codes.Unauthenticated, "missing API key: provide x-api-key metadata")
 		}
 
-		var apiKey string
-
-		if keys := md.Get("x-api-key"); len(keys) > 0 && keys[0] != "" {
-			apiKey = keys[0]
-		} else if authHeaders := md.Get("authorization"); len(authHeaders) > 0 && authHeaders[0] != "" {
-			authHeader := authHeaders[0]
-			if strings.HasPrefix(authHeader, "Bearer ") {
-				token := strings.TrimPrefix(authHeader, "Bearer ")
-				if strings.HasPrefix(token, "agw_") {
-					apiKey = token
-				}
-			}
-		}
-
-		if apiKey == "" {
-			log.Warn("gRPC auth failed: API key not found", map[string]interface{}{
+		// Extract credential from metadata
+		credential := extractCredential(md)
+		if credential == "" {
+			log.Warn("gRPC auth failed: credential not found", map[string]interface{}{
 				"method": info.FullMethod,
 			})
-			return nil, status.Error(codes.Unauthenticated, "missing API key: provide x-api-key metadata")
+			return nil, status.Error(codes.Unauthenticated, "missing API key or application secret: provide x-api-key metadata")
 		}
 
-		apiKeyObj, user, err := apiKeyService.ValidateAPIKey(ctx, apiKey)
+		// Verify method is allowed (deny-by-default)
+		_, scopeRequired := methodScopes[info.FullMethod]
+		if !scopeRequired {
+			log.Warn("gRPC auth failed: method not configured", map[string]interface{}{
+				"method": info.FullMethod,
+			})
+			return nil, status.Errorf(codes.PermissionDenied, "method %s is not configured for access", info.FullMethod)
+		}
+
+		// Authenticate based on credential type
+		if strings.HasPrefix(credential, "app_") {
+			// Application secret authentication — full access to all configured methods
+			app, err := appService.ValidateSecret(ctx, credential)
+			if err != nil {
+				log.Warn("gRPC auth failed: invalid application secret", map[string]interface{}{
+					"method": info.FullMethod,
+					"error":  err.Error(),
+				})
+				return nil, status.Error(codes.Unauthenticated, "invalid application secret")
+			}
+
+			ctx = context.WithValue(ctx, GRPCApplicationIDKey, app.ID.String())
+
+			log.Debug("gRPC auth successful (application secret)", map[string]interface{}{
+				"method":         info.FullMethod,
+				"application_id": app.ID.String(),
+				"app_name":       app.Name,
+			})
+
+			return handler(ctx, req)
+		}
+
+		// API key authentication
+		apiKeyObj, user, err := apiKeyService.ValidateAPIKey(ctx, credential)
 		if err != nil {
 			log.Warn("gRPC auth failed: invalid API key", map[string]interface{}{
 				"method": info.FullMethod,
@@ -240,14 +278,7 @@ func apiKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *ser
 			return nil, status.Error(codes.Unauthenticated, "invalid API key")
 		}
 
-		requiredScope, scopeRequired := methodScopes[info.FullMethod]
-		if !scopeRequired {
-			log.Warn("gRPC auth failed: method not configured", map[string]interface{}{
-				"method":  info.FullMethod,
-				"user_id": user.ID.String(),
-			})
-			return nil, status.Errorf(codes.PermissionDenied, "method %s is not configured for API key access", info.FullMethod)
-		}
+		requiredScope := methodScopes[info.FullMethod]
 		if !apiKeyService.HasScope(apiKeyObj, requiredScope) {
 			log.Warn("gRPC auth failed: insufficient scope", map[string]interface{}{
 				"method":         info.FullMethod,
@@ -277,13 +308,15 @@ func apiKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *ser
 				})
 				return nil, status.Error(codes.InvalidArgument, "application not found")
 			}
+
+			ctx = context.WithValue(ctx, GRPCApplicationIDKey, appID.String())
 		}
 
 		ctx = context.WithValue(ctx, GRPCAPIKeyKey, apiKeyObj)
 		ctx = context.WithValue(ctx, GRPCUserIDKey, user.ID.String())
 		ctx = context.WithValue(ctx, GRPCUserEmailKey, user.Email)
 
-		log.Debug("gRPC auth successful", map[string]interface{}{
+		log.Debug("gRPC auth successful (API key)", map[string]interface{}{
 			"method":  info.FullMethod,
 			"user_id": user.ID.String(),
 			"api_key": apiKeyObj.KeyPrefix,
@@ -293,38 +326,44 @@ func apiKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *ser
 	}
 }
 
-// streamAPIKeyAuthInterceptor validates API key authentication for streaming gRPC requests.
-// This prevents unauthenticated access to streaming services like gRPC reflection.
-func streamAPIKeyAuthInterceptor(apiKeyService *service.APIKeyService, log *logger.Logger) grpc.StreamServerInterceptor {
+// streamAPIKeyAuthInterceptor validates API key or application secret authentication for streaming gRPC requests.
+func streamAPIKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *service.ApplicationService, log *logger.Logger) grpc.StreamServerInterceptor {
 	return func(
 		srv interface{},
 		ss grpc.ServerStream,
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,
 	) error {
+		// Allow gRPC reflection without authentication
+		if strings.HasPrefix(info.FullMethod, "/grpc.reflection.") {
+			return handler(srv, ss)
+		}
+
 		md, ok := metadata.FromIncomingContext(ss.Context())
 		if !ok {
-			return status.Error(codes.Unauthenticated, "missing API key: provide x-api-key metadata")
+			return status.Error(codes.Unauthenticated, "missing API key or application secret: provide x-api-key metadata")
 		}
 
-		var apiKey string
-		if keys := md.Get("x-api-key"); len(keys) > 0 && keys[0] != "" {
-			apiKey = keys[0]
-		} else if authHeaders := md.Get("authorization"); len(authHeaders) > 0 && authHeaders[0] != "" {
-			authHeader := authHeaders[0]
-			if strings.HasPrefix(authHeader, "Bearer ") {
-				token := strings.TrimPrefix(authHeader, "Bearer ")
-				if strings.HasPrefix(token, "agw_") {
-					apiKey = token
-				}
+		credential := extractCredential(md)
+		if credential == "" {
+			return status.Error(codes.Unauthenticated, "missing API key or application secret: provide x-api-key metadata")
+		}
+
+		// Application secret — full access
+		if strings.HasPrefix(credential, "app_") {
+			_, err := appService.ValidateSecret(ss.Context(), credential)
+			if err != nil {
+				log.Warn("gRPC stream auth failed: invalid application secret", map[string]interface{}{
+					"method": info.FullMethod,
+					"error":  err.Error(),
+				})
+				return status.Error(codes.Unauthenticated, "invalid application secret")
 			}
+			return handler(srv, ss)
 		}
 
-		if apiKey == "" {
-			return status.Error(codes.Unauthenticated, "missing API key: provide x-api-key metadata")
-		}
-
-		_, _, err := apiKeyService.ValidateAPIKey(ss.Context(), apiKey)
+		// API key
+		_, _, err := apiKeyService.ValidateAPIKey(ss.Context(), credential)
 		if err != nil {
 			log.Warn("gRPC stream auth failed: invalid API key", map[string]interface{}{
 				"method": info.FullMethod,

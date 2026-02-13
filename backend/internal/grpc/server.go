@@ -56,7 +56,7 @@ func NewServer(
 			recoveryInterceptor(log),
 		),
 		grpc.ChainStreamInterceptor(
-			streamAPIKeyAuthInterceptor(apiKeyService, log),
+			streamAPIKeyAuthInterceptor(apiKeyService, appService, log),
 		),
 	}
 

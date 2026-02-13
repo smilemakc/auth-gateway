@@ -74,7 +74,8 @@ func WithTimeout(timeout time.Duration) Option {
 	}
 }
 
-// WithAPIKey sets the API key for authentication.
+// WithAPIKey sets the API key or application secret for authentication.
+// Accepts both API keys (agw_*) and application secrets (app_*).
 // The key is sent as x-api-key gRPC metadata on every call.
 func WithAPIKey(apiKey string) Option {
 	return func(c *Client) {

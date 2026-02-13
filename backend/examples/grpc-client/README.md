@@ -31,7 +31,9 @@ curl -X POST http://localhost:3000/auth/signup \
 
 ### 2.5 Создать API ключ для gRPC
 
-gRPC API требует аутентификацию через API ключ. Создайте ключ с нужными scopes:
+gRPC API требует аутентификацию через API ключ или секрет приложения. Есть два способа:
+
+#### Вариант A: API ключ (для пользователя)
 
 ```bash
 # Создать API ключ (нужен JWT токен)
@@ -44,6 +46,22 @@ curl -X POST http://localhost:3000/api-keys \
   }'
 
 # Сохраните plain_key из ответа — это ваш API ключ (agw_...)
+```
+
+#### Вариант Б: Секрет приложения (для микросервиса)
+
+```bash
+# Создать приложение (нужен JWT токен с правами администратора)
+curl -X POST http://localhost:3000/applications \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My Microservice",
+    "description": "Backend service"
+  }'
+
+# Сохраните secret из ответа — это секрет приложения (app_...)
+# При использовании app_ секрета, application_id автоматически определяется из контекста
 ```
 
 **Доступные gRPC scopes:**
@@ -66,7 +84,12 @@ curl -X POST http://localhost:3000/api-keys \
 
 ```bash
 cd examples/grpc-client
+
+# С API ключом пользователя
 go run main.go -api-key=agw_YOUR_API_KEY
+
+# Или с секретом приложения
+go run main.go -api-key=app_YOUR_APP_SECRET
 ```
 
 ## Интеграция в другие сервисы
@@ -101,10 +124,12 @@ import (
 )
 
 func main() {
-    // Подключиться к auth gateway с API ключом
+    // Подключиться к auth gateway с API ключом или секретом приложения
+    // Используйте agw_* для пользовательских API ключей
+    // Используйте app_* для секретов приложения (application_id автоматически определяется)
     client, err := grpcclient.NewClient(
         "auth-gateway:50051",
-        grpcclient.WithAPIKey("agw_YOUR_API_KEY"),
+        grpcclient.WithAPIKey("agw_YOUR_API_KEY"), // или "app_YOUR_APP_SECRET"
         grpcclient.WithTimeout(10*time.Second),
     )
     if err != nil {
@@ -132,9 +157,54 @@ func main() {
 }
 ```
 
+## Аутентификация через секрет приложения (app_)
+
+Секреты приложения (`app_*`) предназначены для аутентификации микросервисов и имеют ряд преимуществ:
+
+1. **Автоматическое определение application_id** — не нужно передавать в запросах
+2. **Долгосрочные** — не истекают, в отличие от JWT токенов
+3. **Для service-to-service** — предназначены для межсервисного взаимодействия
+
+### Примеры использования с grpcurl
+
+```bash
+# С API ключом пользователя (agw_)
+grpcurl -plaintext \
+  -H "x-api-key: agw_YOUR_API_KEY" \
+  -d '{"access_token": "eyJhbGc..."}' \
+  localhost:50051 auth.AuthService/ValidateToken
+
+# С секретом приложения (app_)
+grpcurl -plaintext \
+  -H "x-api-key: app_YOUR_APP_SECRET" \
+  -d '{"access_token": "eyJhbGc..."}' \
+  localhost:50051 auth.AuthService/ValidateToken
+
+# Для методов, требующих application_id, он определяется автоматически при использовании app_
+grpcurl -plaintext \
+  -H "x-api-key: app_YOUR_APP_SECRET" \
+  -d '{"user_id": "uuid"}' \
+  localhost:50051 auth.AuthService/GetUserApplicationProfile
+```
+
+### gRPC Reflection (без аутентификации)
+
+gRPC reflection доступен без аутентификации и позволяет узнать список доступных методов:
+
+```bash
+# Список сервисов
+grpcurl -plaintext localhost:50051 list
+
+# Методы конкретного сервиса
+grpcurl -plaintext localhost:50051 list auth.AuthService
+
+# Описание метода
+grpcurl -plaintext localhost:50051 describe auth.AuthService.ValidateToken
+```
+
 ## Middleware для gRPC сервисов
 
-> **Важно:** Для подключения к Auth Gateway через gRPC необходим API ключ. Передайте его через gRPC metadata `x-api-key`.
+> **Важно:** Для подключения к Auth Gateway через gRPC необходим API ключ (agw_*) или секрет приложения (app_*). Передайте его через gRPC metadata `x-api-key`.
 
 Пример middleware для автоматической проверки токенов:
 
@@ -309,7 +379,7 @@ creds, err := credentials.NewClientTLSFromFile("cert.pem", "")
 client, err := grpcclient.NewClient(
     "auth-gateway:50051",
     grpcclient.WithTLS("cert.pem"),
-    grpcclient.WithAPIKey("agw_YOUR_API_KEY"),
+    grpcclient.WithAPIKey("app_YOUR_APP_SECRET"), // или agw_YOUR_API_KEY
 )
 ```
 
@@ -386,7 +456,9 @@ netstat -an | grep 50051
 
 ### Unauthenticated / Missing API key
 
-Все gRPC методы требуют API ключ. Убедитесь что:
-- API ключ передается через metadata `x-api-key` или `Authorization: Bearer agw_...`
+Все gRPC методы (кроме reflection) требуют API ключ или секрет приложения. Убедитесь что:
+- Ключ передается через metadata `x-api-key` или `Authorization: Bearer agw_...` / `app_...`
+- Используете правильный формат: `agw_*` для API ключей, `app_*` для секретов приложения
 - Ключ не отозван и активен
-- Ключ имеет необходимые scopes для вызываемого метода
+- Для API ключей: ключ имеет необходимые scopes для вызываемого метода
+- Для секретов приложения: приложение активно и не удалено

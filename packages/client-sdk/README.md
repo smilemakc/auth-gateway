@@ -550,7 +550,9 @@ client.disconnectWebSocket();
 
 ## gRPC Client (Server-to-Server)
 
-> **Important:** All gRPC methods require API key authentication. Pass `apiKey` in the config to authenticate.
+> **Important:** All gRPC methods require authentication via API key (prefix `agw_`) or application secret (prefix `app_`). Pass `apiKey` in the config to authenticate.
+>
+> **Application Secrets:** When authenticating with an application secret (`app_` prefix), the `application_id` is automatically resolved from context. You don't need to pass it in request bodies.
 
 ```typescript
 import { createGrpcClient } from '@auth-gateway/client-sdk/grpc';
@@ -558,7 +560,7 @@ import { createGrpcClient } from '@auth-gateway/client-sdk/grpc';
 const grpc = createGrpcClient({
   address: 'localhost:50051',
   useTls: false,
-  apiKey: 'agw_YOUR_API_KEY', // Required: API key for authentication
+  apiKey: 'agw_YOUR_API_KEY', // Required: API key or application secret
   debug: true,
 });
 
@@ -581,8 +583,8 @@ console.log('User:', user?.email);
 const introspection = await grpc.introspectToken(token);
 console.log('Active:', introspection.active, 'Blacklisted:', introspection.blacklisted);
 
-// Update API key at runtime
-grpc.setAPIKey('agw_NEW_API_KEY');
+// Update API key or application secret at runtime
+grpc.setAPIKey('app_YOUR_APPLICATION_SECRET');
 
 // Disconnect
 grpc.disconnect();

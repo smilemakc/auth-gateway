@@ -563,7 +563,8 @@ func unmarshalIntrospectTokenResponse(b []byte, m *IntrospectTokenResponse) erro
 	return nil
 }
 
-// apiKeyInterceptor adds API key to every gRPC call
+// apiKeyInterceptor adds API key or application secret to every gRPC call.
+// Supports both API keys (agw_*) and application secrets (app_*).
 func apiKeyInterceptor(apiKey string) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		md, ok := metadata.FromOutgoingContext(ctx)
@@ -580,13 +581,14 @@ func apiKeyInterceptor(apiKey string) grpc.UnaryClientInterceptor {
 
 func main() {
 	// Parse flags
-	apiKey := flag.String("api-key", "", "API key for gRPC authentication (agw_*)")
+	apiKey := flag.String("api-key", "", "API key or application secret for gRPC authentication (agw_* or app_*)")
 	serverAddr := flag.String("server", "localhost:50051", "gRPC server address")
 	flag.Parse()
 
 	if *apiKey == "" {
-		fmt.Println("ERROR: API key is required for gRPC authentication")
+		fmt.Println("ERROR: API key or application secret is required for gRPC authentication")
 		fmt.Println("Usage: go run main.go -api-key=agw_YOUR_API_KEY [-server=localhost:50051]")
+		fmt.Println("       go run main.go -api-key=app_YOUR_APP_SECRET [-server=localhost:50051]")
 		os.Exit(1)
 	}
 
@@ -628,7 +630,7 @@ func main() {
 	}
 	fmt.Println()
 
-	// Test 2: ValidateToken with valid API key
+	// Test 2: ValidateToken with valid API key (Note: app_* secrets also work)
 	fmt.Println("Test 2: ValidateToken (agw_valid_test_key)")
 	fmt.Println("-------------------------------------------")
 	resp2 := &ValidateTokenResponse{}
@@ -639,6 +641,21 @@ func main() {
 		printJSON(resp2)
 		if resp2.Valid {
 			fmt.Println("PASS: API key validated successfully!")
+		}
+	}
+	fmt.Println()
+
+	// Test 2.5: ValidateToken with application secret (app_* prefix)
+	fmt.Println("Test 2.5: ValidateToken (app_valid_test_secret)")
+	fmt.Println("------------------------------------------------")
+	resp2_5 := &ValidateTokenResponse{}
+	err = conn.Invoke(ctx, "/auth.AuthService/ValidateToken", &ValidateTokenRequest{AccessToken: "app_valid_test_secret"}, resp2_5)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	} else {
+		printJSON(resp2_5)
+		if resp2_5.Valid {
+			fmt.Println("PASS: Application secret validated successfully!")
 		}
 	}
 	fmt.Println()
@@ -662,6 +679,9 @@ func main() {
 	userID := resp1.UserId
 	if userID == "" {
 		userID = resp2.UserId
+	}
+	if userID == "" {
+		userID = resp2_5.UserId
 	}
 
 	if userID != "" {

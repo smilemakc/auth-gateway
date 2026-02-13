@@ -15,7 +15,7 @@ import (
 func main() {
 	// Parse command line flags
 	serverAddr := flag.String("server", "localhost:50051", "gRPC server address")
-	apiKey := flag.String("api-key", "", "API key for gRPC authentication (agw_*)")
+	apiKey := flag.String("api-key", "", "API key or application secret for gRPC authentication (agw_* or app_*)")
 	token := flag.String("token", "", "JWT token or API key (agw_*) for validation")
 	userID := flag.String("user-id", "", "User ID for GetUser/CheckPermission")
 	resource := flag.String("resource", "", "Resource name for CheckPermission")
@@ -29,6 +29,8 @@ func main() {
 	fmt.Printf("Server: %s\n\n", *serverAddr)
 
 	// Create client with options
+	// Note: You can use either API keys (agw_*) or application secrets (app_*) for authentication
+	// When using app secrets, application_id is automatically resolved from context
 	opts := []grpcclient.Option{grpcclient.WithTimeout(10 * time.Second)}
 	if *apiKey != "" {
 		opts = append(opts, grpcclient.WithAPIKey(*apiKey))
@@ -116,7 +118,7 @@ func main() {
 		fmt.Println()
 		fmt.Println("Flags:")
 		fmt.Println("  -server     gRPC server address (default: localhost:50051)")
-		fmt.Println("  -api-key    API key for authentication (agw_* format, required)")
+		fmt.Println("  -api-key    API key (agw_*) or application secret (app_*) for authentication (required)")
 		fmt.Println("  -token      JWT token or API key for validation")
 		fmt.Println("  -user-id    User UUID for GetUser or CheckPermission")
 		fmt.Println("  -resource   Resource name for CheckPermission (e.g., users, orders)")

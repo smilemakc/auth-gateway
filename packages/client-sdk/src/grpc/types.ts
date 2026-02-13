@@ -96,7 +96,7 @@ export interface GrpcClientConfig {
   timeout?: number;
   /** Enable debug logging */
   debug?: boolean;
-  /** API key for gRPC authentication. Sent as x-api-key metadata on every call. */
+  /** API key (prefix 'agw_') or application secret (prefix 'app_') for gRPC authentication. Sent as x-api-key metadata on every call. */
   apiKey?: string;
 }
 
