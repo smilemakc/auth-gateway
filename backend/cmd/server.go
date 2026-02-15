@@ -479,7 +479,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	// LoginAlertService: detects logins from new devices and sends email alerts
 	loginAlertService := service.NewLoginAlertService(deps.redis, repos.Session, emailProfileService, geoService, deps.log)
 
-	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db, repos.Application, loginAlertService, webhookService)
+	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db, repos.Application, loginAlertService, webhookService, deps.cfg.Security.StrictTokenBinding)
 	oauthService := service.NewOAuthService(repos.User, repos.OAuth, repos.Token, repos.Audit, repos.RBAC, deps.jwtService, sessionService, &http.Client{Timeout: 10 * time.Second}, repos.AppOAuthProvider, repos.Application, deps.cfg.Security.JITProvisioning, loginAlertService)
 
 	// OTP Service
@@ -716,6 +716,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 	router.Use(middleware.Logger(deps.log))
 	router.Use(middleware.SetupCORS(&deps.cfg.CORS))
 	router.Use(middleware.SecurityHeaders())
+	router.Use(middleware.CSRFProtection(deps.cfg.Security.CSRFEnabled, deps.cfg.Server.Env == "production"))
 	router.Use(middlewares.Maintenance.CheckMaintenance())
 	router.Use(middlewares.IPFilter.CheckIPFilter())
 	router.Use(middlewares.Application.ExtractApplicationID())
