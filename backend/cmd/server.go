@@ -548,6 +548,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 		repos.User,
 		repos.Group,
 		deps.log,
+		deps.cfg.Security.EncryptionKey,
 	)
 
 	// Bulk Service

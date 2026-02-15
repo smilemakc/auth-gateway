@@ -202,6 +202,7 @@ type SecurityConfig struct {
 	TokenBlacklistCleanupInterval time.Duration
 	PasswordPolicy                PasswordPolicyConfig
 	JITProvisioning               bool // Enable Just-In-Time user provisioning for OAuth/OIDC logins
+	EncryptionKey                 string
 }
 
 // PasswordPolicyConfig contains password policy configuration
@@ -396,6 +397,7 @@ func Load() (*Config, error) {
 			BcryptCost:                    getEnvAsInt("BCRYPT_COST", 12),
 			TokenBlacklistCleanupInterval: getEnvAsDuration("TOKEN_BLACKLIST_CLEANUP_INTERVAL", "1h"),
 			JITProvisioning:               getEnvAsBool("JIT_PROVISIONING_ENABLED", true), // Enabled by default
+			EncryptionKey:                 getEnv("ENCRYPTION_KEY", ""),
 			PasswordPolicy: PasswordPolicyConfig{
 				MinLength:        getEnvAsInt("PASSWORD_MIN_LENGTH", 8),
 				RequireUppercase: getEnvAsBool("PASSWORD_REQUIRE_UPPERCASE", false),
