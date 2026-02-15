@@ -596,6 +596,10 @@ func (s *ApplicationService) ValidateSecret(ctx context.Context, secret string) 
 	if err != nil {
 		return nil, models.NewAppError(401, "Invalid application secret")
 	}
+	// Defense-in-depth: constant-time verification of hash match
+	if !utils.CompareHashConstantTime(hash, app.SecretHash) {
+		return nil, models.NewAppError(401, "Invalid application secret")
+	}
 	if !app.IsActive {
 		return nil, models.NewAppError(403, "Application is not active")
 	}
