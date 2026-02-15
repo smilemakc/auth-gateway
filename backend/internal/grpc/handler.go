@@ -839,7 +839,7 @@ func (h *AuthHandlerV2) CreateUser(ctx context.Context, req *pb.CreateUserReques
 	deviceInfo := buildDeviceInfo(clientInfo)
 
 	// Call AuthService.SignUp
-	authResp, err := h.authService.SignUp(ctx, createReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo, nil)
+	authResp, err := h.authService.SignUp(ctx, createReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo, GetApplicationUUIDFromGRPCContext(ctx))
 	if err != nil {
 		h.logger.Error("Failed to create user via gRPC", map[string]interface{}{
 			"error":    err.Error(),
@@ -921,7 +921,7 @@ func (h *AuthHandlerV2) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Lo
 	deviceInfo := buildDeviceInfo(clientInfo)
 
 	// Call AuthService.SignIn
-	authResp, err := h.authService.SignIn(ctx, signInReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo, nil)
+	authResp, err := h.authService.SignIn(ctx, signInReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo, GetApplicationUUIDFromGRPCContext(ctx))
 	if err != nil {
 		h.logger.Debug("Login via gRPC failed", map[string]interface{}{
 			"error": err.Error(),
@@ -1380,7 +1380,7 @@ func (h *AuthHandlerV2) VerifyRegistrationOTP(ctx context.Context, req *pb.Verif
 		Browser:    clientInfo.UserAgent,
 	}
 
-	authResp, err := h.authService.SignUp(ctx, createReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo, nil)
+	authResp, err := h.authService.SignUp(ctx, createReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo, GetApplicationUUIDFromGRPCContext(ctx))
 	if err != nil {
 		h.logger.Error("Failed to create user via gRPC OTP registration", map[string]interface{}{
 			"error": err.Error(),
