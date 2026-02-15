@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -1420,7 +1421,6 @@ func (h *AuthHandlerV2) VerifyRegistrationOTP(ctx context.Context, req *pb.Verif
 	}, nil
 }
 
-// GetUserApplicationProfile returns user's profile for a specific application
 func (h *AuthHandlerV2) GetUserApplicationProfile(ctx context.Context, req *pb.GetUserAppProfileRequest) (*pb.UserAppProfileResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
@@ -1429,9 +1429,19 @@ func (h *AuthHandlerV2) GetUserApplicationProfile(ctx context.Context, req *pb.G
 	if resolvedAppID == "" {
 		return nil, status.Error(codes.InvalidArgument, "application_id is required")
 	}
-	_ = resolvedAppID // TODO: use when implemented
-
-	return nil, status.Errorf(codes.Unimplemented, "GetUserApplicationProfile not implemented - handler requires ApplicationRepository dependency")
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
+	}
+	appID, err := uuid.Parse(resolvedAppID)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	profile, err := h.appService.GetOrCreateUserProfile(ctx, userID, appID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get user profile: %v", err)
+	}
+	return toUserAppProfileResponse(profile), nil
 }
 
 // GetUserTelegramBots returns user's Telegram bot access for an application
@@ -1449,27 +1459,184 @@ func (h *AuthHandlerV2) GetUserTelegramBots(ctx context.Context, req *pb.GetUser
 }
 
 func (h *AuthHandlerV2) UpdateUserProfile(ctx context.Context, req *pb.UpdateUserProfileRequest) (*pb.UserAppProfileResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserProfile not implemented")
+	if req.UserId == "" || req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id and application_id are required")
+	}
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
+	}
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	updateReq := &models.UpdateUserAppProfileRequest{
+		AppRoles: req.AppRoles,
+	}
+	if req.DisplayName != "" {
+		updateReq.DisplayName = &req.DisplayName
+	}
+	if req.AvatarUrl != "" {
+		updateReq.AvatarURL = &req.AvatarUrl
+	}
+	if req.Nickname != "" {
+		updateReq.Nickname = &req.Nickname
+	}
+	profile, err := h.appService.UpdateUserProfile(ctx, userID, appID, updateReq)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to update user profile: %v", err)
+	}
+	return toUserAppProfileResponse(profile), nil
 }
 
 func (h *AuthHandlerV2) CreateUserProfile(ctx context.Context, req *pb.CreateUserProfileRequest) (*pb.UserAppProfileResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateUserProfile not implemented")
+	if req.UserId == "" || req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id and application_id are required")
+	}
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
+	}
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	profile, err := h.appService.GetOrCreateUserProfile(ctx, userID, appID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create user profile: %v", err)
+	}
+	return toUserAppProfileResponse(profile), nil
 }
 
 func (h *AuthHandlerV2) DeleteUserProfile(ctx context.Context, req *pb.DeleteUserProfileRequest) (*pb.GenericResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserProfile not implemented")
+	if req.UserId == "" || req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id and application_id are required")
+	}
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
+	}
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	if err := h.appService.DeleteUserProfile(ctx, userID, appID); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to delete user profile: %v", err)
+	}
+	return &pb.GenericResponse{Success: true, Message: "User profile deleted"}, nil
 }
 
 func (h *AuthHandlerV2) BanUser(ctx context.Context, req *pb.BanUserRequest) (*pb.GenericResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BanUser not implemented")
+	if req.UserId == "" || req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id and application_id are required")
+	}
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
+	}
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	var bannedBy uuid.UUID
+	if req.BannedBy != "" {
+		bannedBy, err = uuid.Parse(req.BannedBy)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid banned_by format")
+		}
+	}
+	if err := h.appService.BanUser(ctx, userID, appID, bannedBy, req.Reason); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to ban user: %v", err)
+	}
+	return &pb.GenericResponse{Success: true, Message: "User banned"}, nil
 }
 
 func (h *AuthHandlerV2) UnbanUser(ctx context.Context, req *pb.UnbanUserRequest) (*pb.GenericResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UnbanUser not implemented")
+	if req.UserId == "" || req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id and application_id are required")
+	}
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
+	}
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	if err := h.appService.UnbanUser(ctx, userID, appID); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to unban user: %v", err)
+	}
+	return &pb.GenericResponse{Success: true, Message: "User unbanned"}, nil
 }
 
 func (h *AuthHandlerV2) ListApplicationUsers(ctx context.Context, req *pb.ListApplicationUsersRequest) (*pb.ListApplicationUsersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListApplicationUsers not implemented")
+	if req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "application_id is required")
+	}
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	page := int(req.Page)
+	if page < 1 {
+		page = 1
+	}
+	pageSize := int(req.PageSize)
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+	result, err := h.appService.ListApplicationUsers(ctx, appID, page, pageSize)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to list application users: %v", err)
+	}
+	var profiles []*pb.UserAppProfileResponse
+	for _, p := range result.Profiles {
+		profiles = append(profiles, toUserAppProfileResponse(&p))
+	}
+	return &pb.ListApplicationUsersResponse{
+		Profiles:   profiles,
+		Total:      int32(result.Total),
+		Page:       int32(result.Page),
+		PageSize:   int32(result.PageSize),
+		TotalPages: int32(result.TotalPages),
+	}, nil
+}
+
+func toUserAppProfileResponse(p *models.UserApplicationProfile) *pb.UserAppProfileResponse {
+	resp := &pb.UserAppProfileResponse{
+		UserId:        p.UserID.String(),
+		ApplicationId: p.ApplicationID.String(),
+		AppRoles:      p.AppRoles,
+		IsActive:      p.IsActive,
+		IsBanned:      p.IsBanned,
+		CreatedAt:     p.CreatedAt.Unix(),
+		UpdatedAt:     p.UpdatedAt.Unix(),
+	}
+	if p.DisplayName != nil {
+		resp.DisplayName = *p.DisplayName
+	}
+	if p.AvatarURL != nil {
+		resp.AvatarUrl = *p.AvatarURL
+	}
+	if p.Nickname != nil {
+		resp.Nickname = *p.Nickname
+	}
+	if p.BanReason != nil {
+		resp.BanReason = *p.BanReason
+	}
+	if p.LastAccessAt != nil {
+		resp.LastAccessAt = p.LastAccessAt.Unix()
+	}
+	if len(p.Metadata) > 0 {
+		metadataMap, err := p.GetMetadataMap()
+		if err == nil {
+			resp.Metadata = make(map[string]string)
+			for k, v := range metadataMap {
+				resp.Metadata[k] = fmt.Sprintf("%v", v)
+			}
+		}
+	}
+	return resp
 }
 
 // ========== Sync & Config Methods ==========

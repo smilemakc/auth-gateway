@@ -190,8 +190,13 @@ var methodScopes = map[string]models.APIKeyScope{
 	"/auth.AuthService/GetUser":                          models.ScopeReadUsers,
 	"/auth.AuthService/CheckPermission":                  models.ScopeReadUsers,
 	"/auth.AuthService/GetApplicationAuthConfig":         models.ScopeReadUsers,
-	// GetUserApplicationProfile and GetUserTelegramBots removed — currently return Unimplemented.
-	// Re-add when properly implemented (see Phase 5 of audit remediation plan).
+	"/auth.AuthService/GetUserApplicationProfile":  models.ScopeReadUsers,
+	"/auth.AuthService/UpdateUserProfile":           models.ScopeReadUsers,
+	"/auth.AuthService/CreateUserProfile":           models.ScopeAuthRegister,
+	"/auth.AuthService/DeleteUserProfile":           models.ScopeReadUsers,
+	"/auth.AuthService/BanUser":                     models.ScopeReadUsers,
+	"/auth.AuthService/UnbanUser":                   models.ScopeReadUsers,
+	"/auth.AuthService/ListApplicationUsers":        models.ScopeReadUsers,
 	"/auth.AuthService/CreateUser":                       models.ScopeAuthRegister,
 	"/auth.AuthService/Login":                            models.ScopeAuthLogin,
 	"/auth.AuthService/SendOTP":                          models.ScopeAuthOTP,
