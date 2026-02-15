@@ -921,6 +921,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			adminGroup.POST("/users/:id/reset-2fa", handlers.Admin.Reset2FA)
 			adminGroup.GET("/users/:id/telegram-accounts", handlers.Telegram.ListUserTelegramAccounts)
 			adminGroup.GET("/users/:id/telegram-bot-access", handlers.Telegram.ListUserTelegramBotAccess)
+			adminGroup.GET("/users/:id/sessions", handlers.AdvancedAdmin.ListUserSessionsAdmin)
 			adminGroup.GET("/api-keys", handlers.Admin.ListAPIKeys)
 			adminGroup.POST("/api-keys/:id/revoke", handlers.Admin.RevokeAPIKey)
 			adminGroup.GET("/audit-logs", handlers.Admin.ListAuditLogs)
@@ -929,6 +930,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			{
 				rbacGroup.GET("/permissions", handlers.AdvancedAdmin.ListPermissions)
 				rbacGroup.POST("/permissions", handlers.AdvancedAdmin.CreatePermission)
+				rbacGroup.GET("/permissions/:id", handlers.AdvancedAdmin.GetPermission)
 				rbacGroup.PUT("/permissions/:id", handlers.AdvancedAdmin.UpdatePermission)
 				rbacGroup.DELETE("/permissions/:id", handlers.AdvancedAdmin.DeletePermission)
 				rbacGroup.GET("/roles", handlers.AdvancedAdmin.ListRoles)

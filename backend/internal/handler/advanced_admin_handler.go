@@ -161,6 +161,33 @@ func (h *AdvancedAdminHandler) UpdatePermission(c *gin.Context) {
 	c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Permission not found"})
 }
 
+// GetPermission godoc
+// @Summary Get a permission by ID
+// @Description Get a specific permission by its ID (admin only)
+// @Tags Admin - RBAC
+// @Accept json
+// @Produce json
+// @Param id path string true "Permission ID (UUID)"
+// @Security BearerAuth
+// @Success 200 {object} models.Permission
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/rbac/permissions/{id} [get]
+func (h *AdvancedAdminHandler) GetPermission(c *gin.Context) {
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
+		return
+	}
+
+	permission, err := h.rbacService.GetPermission(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Permission not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, permission)
+}
+
 // DeletePermission godoc
 // @Summary Delete a permission
 // @Description Delete a permission by ID
@@ -521,6 +548,36 @@ func (h *AdvancedAdminHandler) GetSessionStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, stats)
+}
+
+// ListUserSessionsAdmin godoc
+// @Summary List user sessions (admin)
+// @Description Get sessions for a specific user (admin only)
+// @Tags Admin - Sessions
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID (UUID)"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Page size" default(20)
+// @Security BearerAuth
+// @Success 200 {object} models.SessionListResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Router /api/admin/users/{id}/sessions [get]
+func (h *AdvancedAdminHandler) ListUserSessionsAdmin(c *gin.Context) {
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
+		return
+	}
+
+	page, pageSize := utils.ParsePagination(c)
+
+	sessions, err := h.sessionService.GetUserSessions(c.Request.Context(), userID, page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to list user sessions"})
+		return
+	}
+
+	c.JSON(http.StatusOK, sessions)
 }
 
 // ListAllSessions godoc

@@ -32,6 +32,16 @@ export class AdminRBACService extends BaseService {
   }
 
   /**
+   * Get a permission by ID
+   * @param permissionId Permission ID
+   * @returns Permission details
+   */
+  async getPermission(permissionId: string): Promise<Permission> {
+    const response = await this.http.get<Permission>(`/api/admin/rbac/permissions/${permissionId}`);
+    return response.data;
+  }
+
+  /**
    * Create a new permission
    * @param data Permission data
    * @returns Created permission

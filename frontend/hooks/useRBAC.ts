@@ -68,11 +68,7 @@ export function usePermissions(page: number = 1, pageSize: number = 100) {
 export function usePermissionDetail(permissionId: string) {
   return useQuery({
     queryKey: queryKeys.rbac.permissions.detail(permissionId),
-    queryFn: async () => {
-      // SDK doesn't have getPermission, fetch all and filter
-      const permissions = await apiClient.admin.rbac.listPermissions();
-      return permissions.find((p: any) => p.id === permissionId);
-    },
+    queryFn: () => apiClient.admin.rbac.getPermission(permissionId),
     enabled: !!permissionId,
   });
 }
