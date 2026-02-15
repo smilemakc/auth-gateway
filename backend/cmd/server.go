@@ -824,6 +824,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 		}
 
 		authGroup := apiGroup.Group("/auth")
+		authGroup.Use(middlewares.Application.RequireApplicationID())
 		{
 			authGroup.POST("/signup", middlewares.RateLimit.LimitSignup(), handlers.Auth.SignUp)
 			authGroup.POST("/signin", middlewares.RateLimit.LimitSignin(), handlers.Auth.SignIn)
@@ -838,6 +839,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 		}
 
 		otpGroup := apiGroup.Group("/otp")
+		otpGroup.Use(middlewares.Application.RequireApplicationID())
 		{
 			otpGroup.POST("/send", handlers.OTP.SendOTP)
 			otpGroup.POST("/verify", handlers.OTP.VerifyOTP)
