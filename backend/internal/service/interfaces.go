@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
+	"github.com/uptrace/bun"
 )
 
 // UserStore defines the interface for user storage
@@ -41,8 +42,16 @@ type TokenStore interface {
 	RevokeAllUserTokens(ctx context.Context, userID uuid.UUID) error
 	AddToBlacklist(ctx context.Context, token *models.TokenBlacklist) error
 	IsBlacklisted(ctx context.Context, tokenHash string) (bool, error)
-	// GetAllActiveBlacklistEntries is optional - only implemented by concrete repository
-	// Used for synchronization, so we use type assertion instead of interface
+}
+
+// TransactionalTokenStore extends TokenStore with transaction-aware methods.
+// Used by AuthService.RefreshToken for atomic token rotation and by BlacklistService for sync operations.
+type TransactionalTokenStore interface {
+	TokenStore
+	GetRefreshTokenForUpdate(ctx context.Context, tx bun.Tx, tokenHash string) (*models.RefreshToken, error)
+	RevokeRefreshTokenWithTx(ctx context.Context, tx bun.Tx, tokenHash string) error
+	CreateRefreshTokenWithTx(ctx context.Context, tx bun.Tx, token *models.RefreshToken) error
+	GetAllActiveBlacklistEntries(ctx context.Context) ([]*models.TokenBlacklist, error)
 }
 
 // BackupCodeStore defines the interface for backup code storage
@@ -364,4 +373,22 @@ type UserTelegramStore interface {
 	ListBotAccessByUserAndApp(ctx context.Context, userID, appID uuid.UUID) ([]*models.UserTelegramBotAccess, error)
 	UpdateBotAccess(ctx context.Context, access *models.UserTelegramBotAccess) error
 	DeleteBotAccess(ctx context.Context, id uuid.UUID) error
+}
+
+// BlacklistChecker provides token blacklist checking and management.
+// Used by AuthService to check and add tokens to the blacklist.
+type BlacklistChecker interface {
+	IsBlacklisted(ctx context.Context, tokenHash string) bool
+	AddToBlacklist(ctx context.Context, tokenHash string, userID *uuid.UUID, ttl time.Duration) error
+	AddAccessToken(ctx context.Context, tokenHash string, userID *uuid.UUID) error
+	AddRefreshToken(ctx context.Context, tokenHash string, userID *uuid.UUID) error
+	BlacklistSessionTokens(ctx context.Context, session *models.Session) error
+	BlacklistAllUserSessions(ctx context.Context, userID uuid.UUID) error
+}
+
+// SessionManager provides session creation and management.
+// Used by AuthService for session lifecycle operations.
+type SessionManager interface {
+	CreateSessionNonFatal(ctx context.Context, params SessionCreationParams) *models.Session
+	RefreshSessionNonFatal(ctx context.Context, params SessionRefreshParams) bool
 }

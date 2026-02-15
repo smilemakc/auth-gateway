@@ -10,12 +10,11 @@ import (
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
-	"github.com/smilemakc/auth-gateway/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/uptrace/bun"
 )
 
-func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBACStore, *mockAuditLogger, *mockTokenService, *mockCacheService, *BlacklistService, *mockTransactionDB) {
+func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBACStore, *mockAuditLogger, *mockTokenService, *mockCacheService, *mockBlacklistChecker, *mockTransactionDB) {
 	mUser := &mockUserStore{}
 	mToken := &mockTokenStore{}
 	mRBAC := &mockRBACStore{}
@@ -24,20 +23,16 @@ func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBA
 	mCache := &mockCacheService{}
 	mDB := &mockTransactionDB{}
 
-	// Create logger for tests
-	log := logger.New("auth-test", logger.DebugLevel, false)
-
-	mSession := &mockSessionStore{}
-
-	// Create blacklist service with mocks
-	blacklistSvc := NewBlacklistService(mCache, mToken, mSession, mJWT, log, mAudit)
+	// Create mocks for blacklist and session
+	mBlacklist := &mockBlacklistChecker{}
+	mSessionMgr := &mockSessionManager{}
 
 	// Create default password policy
 	passwordPolicy := utils.DefaultPasswordPolicy()
 
-	// SessionService, TwoFactorService, LoginAlertService, and WebhookService are nil for tests
-	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, blacklistSvc, mCache, nil, nil, 10, passwordPolicy, mDB, nil, nil, nil, false)
-	return svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache, blacklistSvc, mDB
+	// TwoFactorService, LoginAlertService, and WebhookService are nil for tests
+	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, mBlacklist, mCache, mSessionMgr, nil, 10, passwordPolicy, mDB, nil, nil, nil, false)
+	return svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache, mBlacklist, mDB
 }
 
 func TestAuthService_SignUp(t *testing.T) {

@@ -17,13 +17,13 @@ import (
 // AuthService provides authentication operations
 type AuthService struct {
 	userRepo           UserStore
-	tokenRepo          TokenStore
+	tokenRepo          TransactionalTokenStore
 	rbacRepo           RBACStore
 	auditService       AuditLogger
 	jwtService         TokenService
-	blacklistService   *BlacklistService
+	blacklistService   BlacklistChecker
 	redis              CacheService
-	sessionService     *SessionService
+	sessionService     SessionManager
 	twoFAService       *TwoFactorService
 	loginAlertService  *LoginAlertService
 	webhookService     *WebhookService
@@ -42,13 +42,13 @@ type TransactionDB interface {
 // NewAuthService creates a new auth service
 func NewAuthService(
 	userRepo UserStore,
-	tokenRepo TokenStore,
+	tokenRepo TransactionalTokenStore,
 	rbacRepo RBACStore,
 	auditService AuditLogger,
 	jwtService TokenService,
-	blacklistService *BlacklistService,
+	blacklistService BlacklistChecker,
 	redis CacheService,
-	sessionService *SessionService,
+	sessionService SessionManager,
 	twoFAService *TwoFactorService,
 	bcryptCost int,
 	passwordPolicy utils.PasswordPolicy,
@@ -405,14 +405,8 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	var refreshExpiration time.Duration
 
 	err = s.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
-		// Get token with row lock (SELECT FOR UPDATE)
-		tokenRepo, ok := s.tokenRepo.(*repository.TokenRepository)
-		if !ok {
-			return fmt.Errorf("token repository does not support transactions")
-		}
-
 		// Check if token exists and is not revoked (with lock)
-		dbToken, err = tokenRepo.GetRefreshTokenForUpdate(ctx, tx, oldTokenHash)
+		dbToken, err = s.tokenRepo.GetRefreshTokenForUpdate(ctx, tx, oldTokenHash)
 		if err != nil {
 			s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": "token_not_found",
@@ -445,7 +439,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 		}
 
 		// Revoke old refresh token
-		if err := tokenRepo.RevokeRefreshTokenWithTx(ctx, tx, oldTokenHash); err != nil {
+		if err := s.tokenRepo.RevokeRefreshTokenWithTx(ctx, tx, oldTokenHash); err != nil {
 			return fmt.Errorf("failed to revoke old token: %w", err)
 		}
 
@@ -476,7 +470,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 			UserAgent:   userAgent,
 		}
 
-		if err := tokenRepo.CreateRefreshTokenWithTx(ctx, tx, newDBToken); err != nil {
+		if err := s.tokenRepo.CreateRefreshTokenWithTx(ctx, tx, newDBToken); err != nil {
 			return fmt.Errorf("failed to create new refresh token: %w", err)
 		}
 

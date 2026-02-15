@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
@@ -15,7 +14,7 @@ import (
 // It combines Redis (fast, primary) and PostgreSQL (persistent, fallback) storage.
 type BlacklistService struct {
 	redis       CacheService
-	tokenRepo   TokenStore
+	tokenRepo   TransactionalTokenStore
 	sessionRepo SessionStore
 	jwtService  TokenService
 	logger      *logger.Logger
@@ -34,7 +33,7 @@ type SyncStats struct {
 }
 
 // NewBlacklistService creates a new blacklist service
-func NewBlacklistService(redis CacheService, tokenRepo TokenStore, sessionRepo SessionStore, jwtService TokenService, logger *logger.Logger, auditLogger AuditLogger) *BlacklistService {
+func NewBlacklistService(redis CacheService, tokenRepo TransactionalTokenStore, sessionRepo SessionStore, jwtService TokenService, logger *logger.Logger, auditLogger AuditLogger) *BlacklistService {
 	return &BlacklistService{
 		redis:       redis,
 		tokenRepo:   tokenRepo,
@@ -54,12 +53,7 @@ func (s *BlacklistService) SyncFromDatabase(ctx context.Context) error {
 	s.logger.Info("Starting blacklist synchronization from database to Redis")
 
 	// Get all active blacklist entries from database
-	tokenRepo, ok := s.tokenRepo.(*repository.TokenRepository)
-	if !ok {
-		return fmt.Errorf("token repository does not support GetAllActiveBlacklistEntries")
-	}
-
-	entries, err := tokenRepo.GetAllActiveBlacklistEntries(ctx)
+	entries, err := s.tokenRepo.GetAllActiveBlacklistEntries(ctx)
 	if err != nil {
 		s.syncStats.DatabaseErrors++
 		s.logger.Error("Failed to get blacklist entries from database", map[string]interface{}{
