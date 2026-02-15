@@ -611,7 +611,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	healthHandler := handler.NewHealthHandler(deps.db, deps.redis)
 	apiKeyHandler := handler.NewAPIKeyHandler(services.APIKey, deps.log)
 	otpHandler := handler.NewOTPHandler(services.OTP, services.Auth, deps.log)
-	oauthHandler := handler.NewOAuthHandler(services.OAuth, deps.log)
+	oauthHandler := handler.NewOAuthHandler(services.OAuth, deps.log, deps.cfg.OAuth.TelegramBotToken)
 	twoFAHandler := handler.NewTwoFactorHandler(services.TwoFA, services.User, services.EmailProfile, deps.log)
 	adminHandler := handler.NewAdminHandler(services.Admin, services.User, services.OTP, services.Audit, deps.log)
 	advancedAdminHandler := handler.NewAdvancedAdminHandler(services.RBAC, services.Session, services.IPFilter, repos.Branding, repos.System, repos.Geo, deps.log)

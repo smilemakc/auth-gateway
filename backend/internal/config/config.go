@@ -116,12 +116,13 @@ func (c *JWTConfig) Validate() error {
 
 // OAuthConfig contains OAuth provider configurations
 type OAuthConfig struct {
-	Google      OAuthProvider
-	Yandex      OAuthProvider
-	GitHub      OAuthProvider
-	Instagram   OAuthProvider
-	OneC        CustomOAuthProvider
-	FrontendURL string
+	Google           OAuthProvider
+	Yandex           OAuthProvider
+	GitHub           OAuthProvider
+	Instagram        OAuthProvider
+	OneC             CustomOAuthProvider
+	FrontendURL      string
+	TelegramBotToken string
 }
 
 // OAuthProvider represents a single OAuth provider configuration
@@ -350,7 +351,8 @@ func Load() (*Config, error) {
 				UserInfoURL:  getEnv("OAUTH_ONEC_USERINFO_URL", ""),
 				Scopes:       getEnv("OAUTH_ONEC_SCOPES", "openid profile email"),
 			},
-			FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3001"),
+			FrontendURL:      getEnv("FRONTEND_URL", "http://localhost:3001"),
+			TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
 		},
 		SMTP: SMTPConfig{
 			Host:      getEnv("SMTP_HOST", "smtp.gmail.com"),

@@ -1,10 +1,16 @@
 package handler
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/smilemakc/auth-gateway/internal/models"
@@ -15,18 +21,21 @@ import (
 
 // OAuthHandler handles OAuth-related requests
 type OAuthHandler struct {
-	oauthService *service.OAuthService
-	logger       *logger.Logger
+	oauthService     *service.OAuthService
+	logger           *logger.Logger
+	telegramBotToken string
 }
 
 // NewOAuthHandler creates a new OAuth handler
 func NewOAuthHandler(
 	oauthService *service.OAuthService,
 	logger *logger.Logger,
+	telegramBotToken string,
 ) *OAuthHandler {
 	return &OAuthHandler{
-		oauthService: oauthService,
-		logger:       logger,
+		oauthService:     oauthService,
+		logger:           logger,
+		telegramBotToken: telegramBotToken,
 	}
 }
 
@@ -233,13 +242,67 @@ func (h *OAuthHandler) TelegramCallback(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// verifyTelegramAuth verifies Telegram widget authentication data
+const telegramAuthMaxAge = 86400
+
 func (h *OAuthHandler) verifyTelegramAuth(data map[string]interface{}) bool {
-	// TODO: Implement proper Telegram auth verification
-	// https://core.telegram.org/widgets/login#checking-authorization
-	// This requires crypto/sha256 and crypto/hmac
-	// For now, accept all (NOT SECURE for production!)
-	return true
+	if h.telegramBotToken == "" {
+		return false
+	}
+
+	receivedHash, ok := data["hash"].(string)
+	if !ok || receivedHash == "" {
+		return false
+	}
+
+	if !h.isTelegramAuthDateValid(data) {
+		return false
+	}
+
+	expectedHash := h.computeTelegramHash(data)
+	return hmac.Equal([]byte(receivedHash), []byte(expectedHash))
+}
+
+func (h *OAuthHandler) isTelegramAuthDateValid(data map[string]interface{}) bool {
+	authDateVal, exists := data["auth_date"]
+	if !exists {
+		return false
+	}
+
+	authDateFloat, ok := authDateVal.(float64)
+	if !ok {
+		return false
+	}
+
+	authDate := time.Unix(int64(authDateFloat), 0)
+	elapsed := time.Since(authDate)
+	return elapsed >= 0 && elapsed.Seconds() <= telegramAuthMaxAge
+}
+
+func (h *OAuthHandler) computeTelegramHash(data map[string]interface{}) string {
+	dataCheckString := buildTelegramDataCheckString(data)
+	secretKey := sha256.Sum256([]byte(h.telegramBotToken))
+	mac := hmac.New(sha256.New, secretKey[:])
+	mac.Write([]byte(dataCheckString))
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func buildTelegramDataCheckString(data map[string]interface{}) string {
+	var parts []string
+	for k, v := range data {
+		if k == "hash" {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s=%s", k, formatTelegramValue(v)))
+	}
+	sort.Strings(parts)
+	return strings.Join(parts, "\n")
+}
+
+func formatTelegramValue(v interface{}) string {
+	if floatVal, ok := v.(float64); ok && floatVal == float64(int64(floatVal)) {
+		return fmt.Sprintf("%d", int64(floatVal))
+	}
+	return fmt.Sprintf("%v", v)
 }
 
 // GetProviders returns available OAuth providers
