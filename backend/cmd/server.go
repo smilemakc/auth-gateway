@@ -678,7 +678,7 @@ func buildMiddlewares(deps *infra, repos *repoSet, services *serviceSet) *middle
 	rateLimitMiddleware := middleware.NewRateLimitMiddleware(deps.redis, &deps.cfg.RateLimit)
 	ipFilterMiddleware := middleware.NewIPFilterMiddleware(services.IPFilter)
 	maintenanceMiddleware := middleware.NewMaintenanceMiddleware(repos.System)
-	applicationMiddleware := middleware.NewApplicationMiddleware(services.Application, deps.log)
+	applicationMiddleware := middleware.NewApplicationMiddleware(services.Application, services.Application, deps.log)
 	appSecretMiddleware := middleware.NewAppSecretMiddleware(services.Application)
 
 	return &middlewareSet{

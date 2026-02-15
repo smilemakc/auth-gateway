@@ -16,17 +16,24 @@ type ApplicationServiceInterface interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Application, error)
 }
 
+// ApplicationAccessChecker defines the interface for checking user access to applications
+type ApplicationAccessChecker interface {
+	CheckUserAccess(ctx context.Context, userID, applicationID uuid.UUID) error
+}
+
 // ApplicationMiddleware handles application context extraction and validation
 type ApplicationMiddleware struct {
-	appService ApplicationServiceInterface
-	logger     *logger.Logger
+	appService    ApplicationServiceInterface
+	accessChecker ApplicationAccessChecker
+	logger        *logger.Logger
 }
 
 // NewApplicationMiddleware creates a new ApplicationMiddleware
-func NewApplicationMiddleware(appService ApplicationServiceInterface, log *logger.Logger) *ApplicationMiddleware {
+func NewApplicationMiddleware(appService ApplicationServiceInterface, accessChecker ApplicationAccessChecker, log *logger.Logger) *ApplicationMiddleware {
 	return &ApplicationMiddleware{
-		appService: appService,
-		logger:     log,
+		appService:    appService,
+		accessChecker: accessChecker,
+		logger:        log,
 	}
 }
 
@@ -86,7 +93,6 @@ func (m *ApplicationMiddleware) RequireApplicationID() gin.HandlerFunc {
 }
 
 // ValidateApplicationAccess validates that the user has access to the application
-// This can be extended to check user_application_profiles
 func (m *ApplicationMiddleware) ValidateApplicationAccess() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, hasUser := utils.GetUserIDFromContext(c)
@@ -97,8 +103,18 @@ func (m *ApplicationMiddleware) ValidateApplicationAccess() gin.HandlerFunc {
 			return
 		}
 
-		_ = userID
-		_ = appID
+		if m.accessChecker == nil {
+			c.Next()
+			return
+		}
+
+		if err := m.accessChecker.CheckUserAccess(c.Request.Context(), *userID, *appID); err != nil {
+			c.JSON(http.StatusForbidden, models.NewErrorResponse(
+				models.NewAppError(http.StatusForbidden, "User does not have access to this application"),
+			))
+			c.Abort()
+			return
+		}
 
 		c.Next()
 	}

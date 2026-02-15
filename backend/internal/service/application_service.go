@@ -501,7 +501,7 @@ func (s *ApplicationService) UnbanUser(ctx context.Context, userID, applicationI
 func (s *ApplicationService) CheckUserAccess(ctx context.Context, userID, applicationID uuid.UUID) error {
 	profile, err := s.appRepo.GetUserProfile(ctx, userID, applicationID)
 	if err != nil {
-		return nil
+		return fmt.Errorf("user has no access to application: %w", err)
 	}
 
 	if profile.IsBanned {
