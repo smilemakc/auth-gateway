@@ -224,6 +224,17 @@ type SecurityConfig struct {
 	MaxActiveSessions             int    // Maximum active sessions per user (0 = unlimited)
 }
 
+// Validate checks security configuration for common misconfigurations
+func (c *SecurityConfig) Validate(env string) error {
+	if env == "production" && c.OTPHMACSecret == "change-me-in-production-otp-hmac-secret-32-chars-minimum" {
+		return fmt.Errorf("OTP_HMAC_SECRET must be changed from default value in production")
+	}
+	if len(c.OTPHMACSecret) < 32 {
+		return fmt.Errorf("OTP_HMAC_SECRET must be at least 32 characters long (current: %d)", len(c.OTPHMACSecret))
+	}
+	return nil
+}
+
 // PasswordPolicyConfig contains password policy configuration
 type PasswordPolicyConfig struct {
 	MinLength        int
@@ -475,6 +486,11 @@ func Load() (*Config, error) {
 	// Validate CORS configuration
 	if err := cfg.CORS.Validate(); err != nil {
 		return nil, fmt.Errorf("CORS configuration validation failed: %w", err)
+	}
+
+	// Validate security configuration
+	if err := cfg.Security.Validate(cfg.Server.Env); err != nil {
+		return nil, fmt.Errorf("security configuration validation failed: %w", err)
 	}
 
 	return cfg, nil

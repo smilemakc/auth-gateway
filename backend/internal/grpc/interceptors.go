@@ -190,7 +190,7 @@ var methodScopes = map[string]models.APIKeyScope{
 	"/auth.AuthService/GetUser":                          models.ScopeReadUsers,
 	"/auth.AuthService/CheckPermission":                  models.ScopeReadUsers,
 	"/auth.AuthService/GetApplicationAuthConfig":         models.ScopeReadUsers,
-	"/auth.AuthService/GetUserApplicationProfile":  models.ScopeReadUsers,
+	"/auth.AuthService/GetUserApplicationProfile":  models.ScopeReadProfile,
 	"/auth.AuthService/UpdateUserProfile":           models.ScopeReadUsers,
 	"/auth.AuthService/CreateUserProfile":           models.ScopeAuthRegister,
 	"/auth.AuthService/DeleteUserProfile":           models.ScopeReadUsers,
@@ -215,6 +215,9 @@ var methodScopes = map[string]models.APIKeyScope{
 	"/auth.AuthService/CreateTokenExchange":              models.ScopeExchangeManage,
 	"/auth.AuthService/RedeemTokenExchange":              models.ScopeExchangeManage,
 }
+
+// NOTE: GetUserTelegramBots is excluded from methodScopes until fully implemented.
+// The handler exists but returns codes.Unimplemented. Deny-by-default interceptor blocks it.
 
 // apiKeyAuthInterceptor validates API key authentication for all gRPC requests
 func apiKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *service.ApplicationService, log *logger.Logger) grpc.UnaryServerInterceptor {

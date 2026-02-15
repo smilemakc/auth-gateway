@@ -108,7 +108,7 @@ export class AdminSessionsService extends BaseService {
    * Get a session by ID
    */
   async get(sessionId: string): Promise<Session> {
-    const response = await this.http.get<Session>(`/admin/sessions/${sessionId}`);
+    const response = await this.http.get<Session>(`/api/admin/sessions/${sessionId}`);
     return response.data;
   }
 

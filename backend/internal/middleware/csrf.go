@@ -25,13 +25,18 @@ func CSRFProtection(enabled bool, secureCookie bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		switch c.Request.Method {
 		case http.MethodGet, http.MethodHead, http.MethodOptions:
-			// Safe methods: issue/refresh CSRF token cookie
-			token, err := generateCSRFToken()
-			if err != nil {
-				c.Next()
-				return
+			// Safe methods: only set CSRF token cookie if one does not already exist
+			if _, err := c.Cookie(csrfCookieName); err != nil {
+				token, err := generateCSRFToken()
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, models.NewErrorResponse(
+						models.NewAppError(http.StatusInternalServerError, "CSRF_GENERATION_FAILED", "Failed to generate CSRF token"),
+					))
+					c.Abort()
+					return
+				}
+				c.SetCookie(csrfCookieName, token, 3600, "/", "", secureCookie, false)
 			}
-			c.SetCookie(csrfCookieName, token, 3600, "/", "", secureCookie, false)
 			c.Next()
 		default:
 			// State-changing methods: verify CSRF token

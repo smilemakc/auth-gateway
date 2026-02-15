@@ -237,10 +237,10 @@ func runServer() {
 	var ldapSyncJob *jobs.LDAPSyncJob
 	if services.LDAP != nil {
 		ldapSyncJob = jobs.NewLDAPSyncJob(services.LDAP, deps.log)
-		ctx, cancel := context.WithCancel(context.Background())
+		ldapCtx, ldapCancel := context.WithCancel(bgCtx)
 		go func() {
-			ldapSyncJob.Start(ctx)
-			cancel()
+			ldapSyncJob.Start(ldapCtx)
+			ldapCancel()
 		}()
 		deps.log.Info("LDAP sync job started")
 	}

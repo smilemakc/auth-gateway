@@ -114,6 +114,13 @@ func (s *SessionService) CreateSessionWithParams(ctx context.Context, params Ses
 				"session_id": oldest.ID,
 				"limit":      s.maxSessions,
 			})
+			// Blacklist tokens before revoking to invalidate active access tokens
+			if err := s.blacklistService.BlacklistSessionTokens(ctx, &oldest); err != nil {
+				s.logger.Warn("failed to blacklist evicted session tokens", map[string]interface{}{
+					"session_id": oldest.ID,
+					"error":      err.Error(),
+				})
+			}
 			_ = s.sessionRepo.RevokeSession(ctx, oldest.ID)
 		}
 	}
