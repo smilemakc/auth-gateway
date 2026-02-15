@@ -221,7 +221,7 @@ export interface UserApplicationProfile {
   avatar_url?: string;
   nickname?: string;
   metadata?: Record<string, unknown>;
-  app_roles: string[];
+  app_roles?: string[];
   is_active: boolean;
   is_banned: boolean;
   ban_reason?: string;

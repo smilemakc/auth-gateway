@@ -159,11 +159,11 @@ export function usePublicApplicationBranding(applicationId: string) {
 }
 
 // User's own profile in application
-export function useMyApplicationProfile(applicationId?: string) {
+export function useMyApplicationProfile(applicationId: string) {
   return useQuery<UserApplicationProfile>({
     queryKey: ['user', 'application-profile', applicationId],
     queryFn: () => apiClient.admin.applications.getMyApplicationProfile(applicationId),
-    enabled: true,
+    enabled: !!applicationId,
   });
 }
 
@@ -171,8 +171,8 @@ export function useUpdateMyApplicationProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ applicationId, data }: { applicationId?: string; data: Partial<UserApplicationProfile> }) =>
-      apiClient.admin.applications.updateMyApplicationProfile(data, applicationId),
+    mutationFn: ({ applicationId, data }: { applicationId: string; data: Partial<UserApplicationProfile> }) =>
+      apiClient.admin.applications.updateMyApplicationProfile(applicationId, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['user', 'application-profile', variables.applicationId] });
     },
@@ -183,12 +183,7 @@ export function useUpdateMyApplicationProfile() {
 export function useUserApplicationProfile(userId: string, applicationId: string) {
   return useQuery<UserApplicationProfile | null>({
     queryKey: ['admin', 'user-application-profile', userId, applicationId],
-    queryFn: async () => {
-      // Fetch the user from the application users list and find the specific user
-      const response = await apiClient.admin.applications.listUsers(applicationId, 1, 100);
-      const profile = response.profiles?.find((p: UserApplicationProfile) => p.user_id === userId);
-      return profile || null;
-    },
+    queryFn: () => apiClient.admin.applications.getUserProfile(applicationId, userId),
     enabled: !!userId && !!applicationId,
   });
 }

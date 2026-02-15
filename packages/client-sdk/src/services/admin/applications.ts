@@ -14,7 +14,9 @@ import type {
   ApplicationBranding,
   UpdateBrandingRequest,
   UserAppProfileListResponse,
+  UserAppProfile,
   BanUserRequest,
+  UpdateUserAppProfileRequest,
   AuthConfigResponse,
   EmailTemplateListResponse,
   EmailTemplate,
@@ -181,6 +183,47 @@ export class AdminApplicationsService extends BaseService {
   }
 
   /**
+   * Get a specific user's application profile
+   * @param appId Application ID
+   * @param userId User ID
+   * @returns User application profile
+   */
+  async getUserProfile(appId: string, userId: string): Promise<UserAppProfile> {
+    const response = await this.http.get<UserAppProfile>(
+      `/api/admin/applications/${appId}/users/${userId}`
+    );
+    return response.data;
+  }
+
+  /**
+   * Update a specific user's application profile
+   * @param appId Application ID
+   * @param userId User ID
+   * @param data Profile update data
+   * @returns Updated user application profile
+   */
+  async updateUserProfile(appId: string, userId: string, data: UpdateUserAppProfileRequest): Promise<UserAppProfile> {
+    const response = await this.http.put<UserAppProfile>(
+      `/api/admin/applications/${appId}/users/${userId}`,
+      data
+    );
+    return response.data;
+  }
+
+  /**
+   * Delete a specific user's application profile
+   * @param appId Application ID
+   * @param userId User ID
+   * @returns Success message
+   */
+  async deleteUserProfile(appId: string, userId: string): Promise<MessageResponse> {
+    const response = await this.http.delete<MessageResponse>(
+      `/api/admin/applications/${appId}/users/${userId}`
+    );
+    return response.data;
+  }
+
+  /**
    * Get public auth configuration for an application
    * @param appId Application ID
    * @returns Auth configuration with allowed methods and branding
@@ -328,30 +371,26 @@ export class AdminApplicationsService extends BaseService {
 
   /**
    * Get current user's application profile
-   * @param appId Optional application ID (uses X-Application-ID header if not provided)
+   * @param appId Application ID
    * @returns User application profile
    */
-  async getMyApplicationProfile(appId?: string): Promise<any> {
-    const query = appId ? { application_id: appId } : undefined;
-    const response = await this.http.get<any>(
-      '/api/user/application-profile',
-      { query }
+  async getMyApplicationProfile(appId: string): Promise<UserAppProfile> {
+    const response = await this.http.get<UserAppProfile>(
+      `/api/applications/${appId}/profile`
     );
     return response.data;
   }
 
   /**
    * Update current user's application profile
+   * @param appId Application ID
    * @param data Profile update data
-   * @param appId Optional application ID (uses X-Application-ID header if not provided)
    * @returns Updated user application profile
    */
-  async updateMyApplicationProfile(data: any, appId?: string): Promise<any> {
-    const query = appId ? { application_id: appId } : undefined;
-    const response = await this.http.put<any>(
-      '/api/user/application-profile',
-      data,
-      { query }
+  async updateMyApplicationProfile(appId: string, data: UpdateUserAppProfileRequest): Promise<UserAppProfile> {
+    const response = await this.http.put<UserAppProfile>(
+      `/api/applications/${appId}/profile`,
+      data
     );
     return response.data;
   }
