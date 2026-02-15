@@ -174,7 +174,7 @@ func (h *EmailProfileHandler) UpdateProvider(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Email provider updated successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Email provider updated successfully"})
 }
 
 // DeleteProvider handles deleting an email provider
@@ -212,7 +212,7 @@ func (h *EmailProfileHandler) DeleteProvider(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Email provider deleted successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Email provider deleted successfully"})
 }
 
 // TestProvider handles testing an email provider
@@ -261,7 +261,7 @@ func (h *EmailProfileHandler) TestProvider(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Test email sent successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Test email sent successfully"})
 }
 
 // ListProfiles handles listing all email profiles
@@ -415,7 +415,7 @@ func (h *EmailProfileHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Email profile updated successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Email profile updated successfully"})
 }
 
 // DeleteProfile handles deleting an email profile
@@ -453,7 +453,7 @@ func (h *EmailProfileHandler) DeleteProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Email profile deleted successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Email profile deleted successfully"})
 }
 
 // SetDefaultProfile handles setting a profile as default
@@ -491,7 +491,7 @@ func (h *EmailProfileHandler) SetDefaultProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Default email profile set successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Default email profile set successfully"})
 }
 
 // GetProfileTemplates handles retrieving templates assigned to a profile
@@ -592,7 +592,7 @@ func (h *EmailProfileHandler) SetProfileTemplate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Profile template set successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Profile template set successfully"})
 }
 
 // RemoveProfileTemplate handles removing a template assignment from a profile
@@ -634,7 +634,7 @@ func (h *EmailProfileHandler) RemoveProfileTemplate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Profile template removed successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Profile template removed successfully"})
 }
 
 // SendEmail handles sending an email using a template
@@ -679,7 +679,7 @@ func (h *EmailProfileHandler) SendEmail(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Email sent successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Email sent successfully"})
 }
 
 // GetProfileStats handles retrieving statistics for an email profile
@@ -767,5 +767,5 @@ func (h *EmailProfileHandler) TestProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Test email sent successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Test email sent successfully"})
 }

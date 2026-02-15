@@ -227,7 +227,7 @@ func (h *APIKeyHandler) Revoke(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "API key revoked successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "API key revoked successfully"})
 }
 
 // Delete deletes an API key
@@ -267,5 +267,5 @@ func (h *APIKeyHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "API key deleted successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "API key deleted successfully"})
 }

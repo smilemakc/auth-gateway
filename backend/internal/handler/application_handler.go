@@ -447,7 +447,7 @@ func (h *ApplicationHandler) BanUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User banned successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "User banned successfully"})
 }
 
 // UnbanUser unbans a user from an application
@@ -498,7 +498,7 @@ func (h *ApplicationHandler) UnbanUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User unbanned successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "User unbanned successfully"})
 }
 
 // GetApplicationUserProfile returns a specific user's profile in an application
@@ -617,7 +617,7 @@ func (h *ApplicationHandler) DeleteApplicationUserProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User profile removed from application"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "User profile removed from application"})
 }
 
 // GetPublicBranding retrieves public branding for an application

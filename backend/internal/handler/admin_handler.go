@@ -278,7 +278,7 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "User deleted successfully"})
 }
 
 // ListAPIKeys returns all API keys
@@ -339,7 +339,7 @@ func (h *AdminHandler) RevokeAPIKey(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "API key revoked successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "API key revoked successfully"})
 }
 
 // ListAuditLogs returns audit logs

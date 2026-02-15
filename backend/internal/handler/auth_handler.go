@@ -216,7 +216,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Successfully logged out"})
 }
 
 // GetProfile retrieves the authenticated user's profile
@@ -360,7 +360,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		}()
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Password changed successfully"})
 }
 
 // RequestPasswordReset sends a password reset OTP code

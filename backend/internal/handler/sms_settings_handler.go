@@ -149,7 +149,7 @@ func (h *SMSSettingsHandler) GetActiveSettings(c *gin.Context) {
 	settings, err := h.smsSettingsRepo.GetActive(c.Request.Context())
 	if err != nil {
 		if err == models.ErrNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"message": "No active SMS settings found"})
+			c.JSON(http.StatusNotFound, models.MessageResponse{Message: "No active SMS settings found"})
 			return
 		}
 		h.logger.Error("Failed to get active SMS settings", map[string]interface{}{
