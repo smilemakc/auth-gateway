@@ -31,10 +31,11 @@ type Config struct {
 
 // ServerConfig contains server-related configuration
 type ServerConfig struct {
-	Port        string
-	Env         string
-	LogLevel    string
-	ExternalURL string // Base URL for Swagger docs (e.g., https://api.example.com)
+	Port           string
+	Env            string
+	LogLevel       string
+	ExternalURL    string   // Base URL for Swagger docs (e.g., https://api.example.com)
+	TrustedProxies []string // Trusted proxy IPs for X-Forwarded-For
 }
 
 // GRPCConfig contains gRPC server configuration
@@ -220,6 +221,7 @@ type SecurityConfig struct {
 	StrictTokenBinding            bool   // Reject refresh if IP/UserAgent changed
 	CSRFEnabled                   bool   // Enable Double Submit Cookie CSRF protection
 	OTPHMACSecret                 string // HMAC secret for OTP code hashing (prevents brute-force on 6-digit codes)
+	MaxActiveSessions             int    // Maximum active sessions per user (0 = unlimited)
 }
 
 // PasswordPolicyConfig contains password policy configuration
@@ -231,6 +233,7 @@ type PasswordPolicyConfig struct {
 	RequireSpecial   bool
 	MaxLength        int  // 0 means no maximum
 	CommonPasswords  bool // Check against common passwords list
+	CheckCompromised bool // Check passwords against HaveIBeenPwned API
 }
 
 type MetricsConfig struct {
@@ -304,10 +307,11 @@ func Load() (*Config, error) {
 	}
 	cfg := &Config{
 		Server: ServerConfig{
-			Port:        getEnv("PORT", "8181"),
-			Env:         getEnv("ENV", "development"),
-			LogLevel:    getEnv("LOG_LEVEL", "info"),
-			ExternalURL: getEnv("EXTERNAL_URL", ""), // e.g., https://api.example.com
+			Port:           getEnv("PORT", "8181"),
+			Env:            getEnv("ENV", "development"),
+			LogLevel:       getEnv("LOG_LEVEL", "info"),
+			ExternalURL:    getEnv("EXTERNAL_URL", ""), // e.g., https://api.example.com
+			TrustedProxies: getEnvAsSlice("TRUSTED_PROXIES", []string{}),
 		},
 		GRPC: GRPCConfig{
 			Port:                 getEnv("GRPC_PORT", "50051"),
@@ -420,6 +424,7 @@ func Load() (*Config, error) {
 			StrictTokenBinding:            getEnvAsBool("STRICT_TOKEN_BINDING", false),
 			CSRFEnabled:                   getEnvAsBool("CSRF_ENABLED", false),
 			OTPHMACSecret:                 getEnv("OTP_HMAC_SECRET", "change-me-in-production-otp-hmac-secret-32-chars-minimum"),
+			MaxActiveSessions:             getEnvAsInt("MAX_ACTIVE_SESSIONS", 0),
 			PasswordPolicy: PasswordPolicyConfig{
 				MinLength:        getEnvAsInt("PASSWORD_MIN_LENGTH", 8),
 				RequireUppercase: getEnvAsBool("PASSWORD_REQUIRE_UPPERCASE", false),
@@ -428,6 +433,7 @@ func Load() (*Config, error) {
 				RequireSpecial:   getEnvAsBool("PASSWORD_REQUIRE_SPECIAL", false),
 				MaxLength:        getEnvAsInt("PASSWORD_MAX_LENGTH", 0),
 				CommonPasswords:  getEnvAsBool("PASSWORD_CHECK_COMMON", false),
+				CheckCompromised: getEnvAsBool("PASSWORD_CHECK_COMPROMISED", false),
 			},
 		},
 		Metrics: MetricsConfig{

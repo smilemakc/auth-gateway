@@ -65,14 +65,16 @@ type SessionService struct {
 	sessionRepo      SessionStore
 	blacklistService BlackListStore
 	logger           *logger.Logger
+	maxSessions      int
 }
 
 // NewSessionService creates a new session service
-func NewSessionService(sessionRepo SessionStore, blacklistService *BlacklistService, logger *logger.Logger) *SessionService {
+func NewSessionService(sessionRepo SessionStore, blacklistService *BlacklistService, logger *logger.Logger, maxSessions int) *SessionService {
 	return &SessionService{
 		sessionRepo:      sessionRepo,
 		blacklistService: blacklistService,
 		logger:           logger,
+		maxSessions:      maxSessions,
 	}
 }
 
@@ -94,6 +96,26 @@ func (s *SessionService) CreateSessionWithParams(ctx context.Context, params Ses
 	sessionName := params.SessionName
 	if sessionName == "" {
 		sessionName = utils.GenerateSessionName(deviceInfo)
+	}
+
+	// Enforce session count limit
+	if s.maxSessions > 0 {
+		sessions, err := s.sessionRepo.GetUserSessions(ctx, params.UserID)
+		if err == nil && len(sessions) >= s.maxSessions {
+			// Revoke the oldest session to make room
+			oldest := sessions[len(sessions)-1]
+			for _, sess := range sessions {
+				if sess.CreatedAt.Before(oldest.CreatedAt) {
+					oldest = sess
+				}
+			}
+			s.logger.Info("revoking oldest session due to limit", map[string]interface{}{
+				"user_id":    params.UserID,
+				"session_id": oldest.ID,
+				"limit":      s.maxSessions,
+			})
+			_ = s.sessionRepo.RevokeSession(ctx, oldest.ID)
+		}
 	}
 
 	session := &models.Session{

@@ -32,6 +32,7 @@ type AuthService struct {
 	db                 TransactionDB
 	appRepo            ApplicationStore
 	strictTokenBinding bool
+	passwordChecker    *PasswordChecker
 }
 
 // TransactionDB defines the interface for database transactions
@@ -57,6 +58,7 @@ func NewAuthService(
 	loginAlertService *LoginAlertService,
 	webhookService *WebhookService,
 	strictTokenBinding bool,
+	passwordChecker *PasswordChecker,
 ) *AuthService {
 	return &AuthService{
 		userRepo:           userRepo,
@@ -75,6 +77,7 @@ func NewAuthService(
 		db:                 db,
 		appRepo:            appRepo,
 		strictTokenBinding: strictTokenBinding,
+		passwordChecker:    passwordChecker,
 	}
 }
 
@@ -116,6 +119,14 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 
 	if err := utils.ValidatePassword(req.Password, s.passwordPolicy); err != nil {
 		return nil, models.NewAppError(400, err.Error())
+	}
+
+	// Check if password has been compromised
+	if s.passwordChecker != nil {
+		if compromised, count := s.passwordChecker.IsCompromised(ctx, req.Password); compromised {
+			return nil, models.NewAppError(400, "PASSWORD_COMPROMISED",
+				fmt.Sprintf("This password has appeared in %d data breaches. Please choose a different password.", count))
+		}
 	}
 
 	// Check auth method is allowed for this application
@@ -553,6 +564,14 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 		return models.NewAppError(400, err.Error())
 	}
 
+	// Check if password has been compromised
+	if s.passwordChecker != nil {
+		if compromised, count := s.passwordChecker.IsCompromised(ctx, newPassword); compromised {
+			return models.NewAppError(400, "PASSWORD_COMPROMISED",
+				fmt.Sprintf("This password has appeared in %d data breaches. Please choose a different password.", count))
+		}
+	}
+
 	// Hash new password
 	newPasswordHash, err := utils.HashPassword(newPassword, s.bcryptCost)
 	if err != nil {
@@ -585,6 +604,14 @@ func (s *AuthService) ResetPassword(ctx context.Context, userID uuid.UUID, newPa
 	// Validate new password
 	if err := utils.ValidatePassword(newPassword, s.passwordPolicy); err != nil {
 		return models.NewAppError(400, err.Error())
+	}
+
+	// Check if password has been compromised
+	if s.passwordChecker != nil {
+		if compromised, count := s.passwordChecker.IsCompromised(ctx, newPassword); compromised {
+			return models.NewAppError(400, "PASSWORD_COMPROMISED",
+				fmt.Sprintf("This password has appeared in %d data breaches. Please choose a different password.", count))
+		}
 	}
 
 	// Hash new password

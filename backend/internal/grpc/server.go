@@ -108,3 +108,9 @@ func (s *Server) Stop() {
 	s.grpcServer.GracefulStop()
 	s.logger.Info("gRPC server stopped")
 }
+
+// ForceStop immediately stops the gRPC server without waiting for active connections
+func (s *Server) ForceStop() {
+	s.logger.Warn("Force stopping gRPC server...")
+	s.grpcServer.Stop()
+}

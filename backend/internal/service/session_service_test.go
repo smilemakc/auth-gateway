@@ -26,7 +26,7 @@ func setupSessionService() (*SessionService, *mockSessionStore, *mockTokenStore,
 	// Create BlacklistService with mocks
 	blacklistSvc := NewBlacklistService(mockCache, mockToken, mockSession, mockJWT, log, mAudit)
 
-	svc := NewSessionService(mockSession, blacklistSvc, log)
+	svc := NewSessionService(mockSession, blacklistSvc, log, 0)
 	return svc, mockSession, mockToken, mockCache, mockJWT, blacklistSvc
 }
 
@@ -351,5 +351,134 @@ func TestSessionService_RefreshSessionNonFatal(t *testing.T) {
 			NewExpiresAt: time.Now().Add(time.Hour),
 		})
 		assert.False(t, result)
+	})
+}
+
+func TestSessionService_MaxActiveSessions(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("UnlimitedSessions_WhenMaxSessionsIsZero", func(t *testing.T) {
+		mockSession := &mockSessionStore{}
+		mockToken := &mockTokenStore{}
+		mockCache := &mockCacheService{}
+		mAudit := &mockAuditLogger{}
+		mockJWT := &mockTokenService{
+			GetAccessTokenExpirationFunc:  func() time.Duration { return 15 * time.Minute },
+			GetRefreshTokenExpirationFunc: func() time.Duration { return 7 * 24 * time.Hour },
+		}
+		log := logger.New("session-test", logger.DebugLevel, false)
+		blacklistSvc := NewBlacklistService(mockCache, mockToken, mockSession, mockJWT, log, mAudit)
+		svc := NewSessionService(mockSession, blacklistSvc, log, 0)
+
+		userID := uuid.New()
+		mockSession.CreateSessionFunc = func(ctx context.Context, session *models.Session) error {
+			return nil
+		}
+
+		_, err := svc.CreateSessionWithParams(ctx, SessionCreationParams{
+			UserID:          userID,
+			TokenHash:       "hash",
+			AccessTokenHash: "access_hash",
+			IPAddress:       "127.0.0.1",
+			UserAgent:       "Test",
+			ExpiresAt:       time.Now().Add(time.Hour),
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("RevokesOldestSession_WhenLimitReached", func(t *testing.T) {
+		mockSession := &mockSessionStore{}
+		mockToken := &mockTokenStore{}
+		mockCache := &mockCacheService{}
+		mAudit := &mockAuditLogger{}
+		mockJWT := &mockTokenService{
+			GetAccessTokenExpirationFunc:  func() time.Duration { return 15 * time.Minute },
+			GetRefreshTokenExpirationFunc: func() time.Duration { return 7 * 24 * time.Hour },
+		}
+		log := logger.New("session-test", logger.DebugLevel, false)
+		blacklistSvc := NewBlacklistService(mockCache, mockToken, mockSession, mockJWT, log, mAudit)
+		svc := NewSessionService(mockSession, blacklistSvc, log, 3)
+
+		userID := uuid.New()
+		oldestSessionID := uuid.New()
+		now := time.Now()
+
+		existingSessions := []models.Session{
+			{ID: oldestSessionID, UserID: userID, CreatedAt: now.Add(-3 * time.Hour)},
+			{ID: uuid.New(), UserID: userID, CreatedAt: now.Add(-2 * time.Hour)},
+			{ID: uuid.New(), UserID: userID, CreatedAt: now.Add(-1 * time.Hour)},
+		}
+
+		mockSession.GetUserSessionsFunc = func(ctx context.Context, uid uuid.UUID) ([]models.Session, error) {
+			return existingSessions, nil
+		}
+
+		var revokedSessionID uuid.UUID
+		mockSession.RevokeSessionFunc = func(ctx context.Context, sessionID uuid.UUID) error {
+			revokedSessionID = sessionID
+			return nil
+		}
+
+		mockSession.CreateSessionFunc = func(ctx context.Context, session *models.Session) error {
+			return nil
+		}
+
+		_, err := svc.CreateSessionWithParams(ctx, SessionCreationParams{
+			UserID:          userID,
+			TokenHash:       "hash",
+			AccessTokenHash: "access_hash",
+			IPAddress:       "127.0.0.1",
+			UserAgent:       "Test",
+			ExpiresAt:       time.Now().Add(time.Hour),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, oldestSessionID, revokedSessionID)
+	})
+
+	t.Run("DoesNotRevoke_WhenBelowLimit", func(t *testing.T) {
+		mockSession := &mockSessionStore{}
+		mockToken := &mockTokenStore{}
+		mockCache := &mockCacheService{}
+		mAudit := &mockAuditLogger{}
+		mockJWT := &mockTokenService{
+			GetAccessTokenExpirationFunc:  func() time.Duration { return 15 * time.Minute },
+			GetRefreshTokenExpirationFunc: func() time.Duration { return 7 * 24 * time.Hour },
+		}
+		log := logger.New("session-test", logger.DebugLevel, false)
+		blacklistSvc := NewBlacklistService(mockCache, mockToken, mockSession, mockJWT, log, mAudit)
+		svc := NewSessionService(mockSession, blacklistSvc, log, 5)
+
+		userID := uuid.New()
+		now := time.Now()
+
+		existingSessions := []models.Session{
+			{ID: uuid.New(), UserID: userID, CreatedAt: now.Add(-2 * time.Hour)},
+			{ID: uuid.New(), UserID: userID, CreatedAt: now.Add(-1 * time.Hour)},
+		}
+
+		mockSession.GetUserSessionsFunc = func(ctx context.Context, uid uuid.UUID) ([]models.Session, error) {
+			return existingSessions, nil
+		}
+
+		revokeCalled := false
+		mockSession.RevokeSessionFunc = func(ctx context.Context, sessionID uuid.UUID) error {
+			revokeCalled = true
+			return nil
+		}
+
+		mockSession.CreateSessionFunc = func(ctx context.Context, session *models.Session) error {
+			return nil
+		}
+
+		_, err := svc.CreateSessionWithParams(ctx, SessionCreationParams{
+			UserID:          userID,
+			TokenHash:       "hash",
+			AccessTokenHash: "access_hash",
+			IPAddress:       "127.0.0.1",
+			UserAgent:       "Test",
+			ExpiresAt:       time.Now().Add(time.Hour),
+		})
+		assert.NoError(t, err)
+		assert.False(t, revokeCalled)
 	})
 }

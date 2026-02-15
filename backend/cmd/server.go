@@ -227,7 +227,11 @@ func runServer() {
 	middlewares := buildMiddlewares(deps, repos, services)
 	router := buildRouter(deps, services, handlers, middlewares)
 
-	startTokenCleanup(repos.Token, deps.cfg.Security.TokenBlacklistCleanupInterval, deps.log)
+	bgCtx, bgCancel := context.WithCancel(context.Background())
+	startTokenCleanup(bgCtx, repos.Token, deps.cfg.Security.TokenBlacklistCleanupInterval, deps.log)
+	if deps.cfg.Metrics.Enabled {
+		startMetricsCollection(bgCtx, deps.db, deps.redis, deps.log)
+	}
 
 	// Start LDAP sync job if LDAP service is available
 	var ldapSyncJob *jobs.LDAPSyncJob
@@ -307,6 +311,9 @@ func runServer() {
 		ldapSyncJob.Stop()
 	}
 
+	// Stop background goroutines
+	bgCancel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -316,7 +323,21 @@ func runServer() {
 		})
 	}
 
-	grpcSrv.Stop()
+	// Graceful gRPC shutdown with timeout
+	grpcDone := make(chan struct{})
+	go func() {
+		grpcSrv.Stop()
+		close(grpcDone)
+	}()
+
+	grpcTimeout := time.After(15 * time.Second)
+	select {
+	case <-grpcDone:
+		deps.log.Info("gRPC server stopped gracefully")
+	case <-grpcTimeout:
+		deps.log.Warn("gRPC server forced stop after timeout")
+		grpcSrv.ForceStop()
+	}
 
 	deps.log.Info("Servers exited successfully")
 }
@@ -446,7 +467,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 		deps.log.Info("Blacklist synchronized from database to Redis")
 	}
 
-	sessionService := service.NewSessionService(repos.Session, blacklistService, deps.log)
+	sessionService := service.NewSessionService(repos.Session, blacklistService, deps.log, deps.cfg.Security.MaxActiveSessions)
 	userService := service.NewUserService(repos.User, auditService)
 	apiKeyService := service.NewAPIKeyService(repos.APIKey, repos.User, auditService)
 	emailService := service.NewEmailService(&deps.cfg.SMTP)
@@ -479,7 +500,10 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	// LoginAlertService: detects logins from new devices and sends email alerts
 	loginAlertService := service.NewLoginAlertService(deps.redis, repos.Session, emailProfileService, geoService, deps.log)
 
-	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db, repos.Application, loginAlertService, webhookService, deps.cfg.Security.StrictTokenBinding)
+	// PasswordChecker: checks passwords against HaveIBeenPwned API
+	passwordChecker := service.NewPasswordChecker(deps.cfg.Security.PasswordPolicy.CheckCompromised)
+
+	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db, repos.Application, loginAlertService, webhookService, deps.cfg.Security.StrictTokenBinding, passwordChecker)
 	oauthService := service.NewOAuthService(repos.User, repos.OAuth, repos.Token, repos.Audit, repos.RBAC, deps.jwtService, sessionService, &http.Client{Timeout: 10 * time.Second}, repos.AppOAuthProvider, repos.Application, deps.cfg.Security.JITProvisioning, loginAlertService)
 
 	// OTP Service
@@ -699,6 +723,13 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 	}
 
 	router := gin.New()
+
+	if len(deps.cfg.Server.TrustedProxies) > 0 {
+		router.SetTrustedProxies(deps.cfg.Server.TrustedProxies)
+	} else {
+		// No trusted proxies = don't trust any proxy headers, use RemoteAddr
+		router.SetTrustedProxies(nil)
+	}
 
 	if deps.cfg.OIDC.Enabled {
 		tmpl, err := template.ParseGlob("internal/templates/*.html")
@@ -1184,42 +1215,48 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 }
 
 // startTokenCleanup starts a background routine to clean up expired tokens
-func startTokenCleanup(tokenRepo *repository.TokenRepository, interval time.Duration, log *logger.Logger) {
+func startTokenCleanup(ctx context.Context, tokenRepo *repository.TokenRepository, interval time.Duration, log *logger.Logger) {
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
-		for range ticker.C {
-			log.Debug("Running token cleanup")
-
-			// Use context with timeout for cleanup operation
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-			if err := tokenRepo.CleanupExpiredTokens(ctx); err != nil {
-				log.Error("Token cleanup failed", map[string]interface{}{
-					"error": err.Error(),
-				})
-			} else {
-				log.Debug("Token cleanup completed successfully")
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info("token cleanup stopped")
+				return
+			case <-ticker.C:
+				log.Debug("Running token cleanup")
+				cleanupCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+				if err := tokenRepo.CleanupExpiredTokens(cleanupCtx); err != nil {
+					log.Error("Token cleanup failed", map[string]interface{}{
+						"error": err.Error(),
+					})
+				} else {
+					log.Debug("Token cleanup completed successfully")
+				}
+				cancel()
 			}
-			cancel()
 		}
 	}()
 }
 
 // startMetricsCollection starts a background routine to collect and update metrics
-func startMetricsCollection(db *repository.Database, redis *service.RedisService, log *logger.Logger) {
+func startMetricsCollection(ctx context.Context, db *repository.Database, redis *service.RedisService, log *logger.Logger) {
 	go func() {
-		ticker := time.NewTicker(30 * time.Second) // Update every 30 seconds
+		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 
-		for range ticker.C {
-			// Update database connection pool metrics
-			stats := db.Stats()
-			metrics.UpdateDBConnections(stats)
-
-			// TODO: Update Redis metrics if Redis service exposes stats
-			// TODO: Update active sessions count
-			_ = redis
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info("metrics collection stopped")
+				return
+			case <-ticker.C:
+				stats := db.Stats()
+				metrics.UpdateDBConnections(stats)
+				_ = redis
+			}
 		}
 	}()
 }
