@@ -2,10 +2,12 @@ package handler
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 
+	"github.com/smilemakc/auth-gateway/internal/config"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
@@ -24,6 +26,7 @@ type AdvancedAdminHandler struct {
 	brandingRepo    *repository.BrandingRepository
 	systemRepo      *repository.SystemRepository
 	geoRepo         *repository.GeoRepository
+	cfg             *config.Config
 	log             *logger.Logger
 }
 
@@ -36,6 +39,7 @@ func NewAdvancedAdminHandler(
 	systemRepo *repository.SystemRepository,
 	geoRepo *repository.GeoRepository,
 	log *logger.Logger,
+	cfg *config.Config,
 ) *AdvancedAdminHandler {
 	return &AdvancedAdminHandler{
 		rbacService:     rbacService,
@@ -44,6 +48,7 @@ func NewAdvancedAdminHandler(
 		brandingRepo:    brandingRepo,
 		systemRepo:      systemRepo,
 		geoRepo:         geoRepo,
+		cfg:             cfg,
 		log:             log,
 	}
 }
@@ -1002,4 +1007,72 @@ func (h *AdvancedAdminHandler) GetGeoDistribution(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// GetPasswordPolicy godoc
+// @Summary Get password policy settings
+// @Description Get current password policy configuration and JWT TTL settings
+// @Tags Admin - System
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/system/password-policy [get]
+func (h *AdvancedAdminHandler) GetPasswordPolicy(c *gin.Context) {
+	response := map[string]interface{}{
+		"minLength":        h.cfg.Security.PasswordPolicy.MinLength,
+		"requireUppercase": h.cfg.Security.PasswordPolicy.RequireUppercase,
+		"requireLowercase": h.cfg.Security.PasswordPolicy.RequireLowercase,
+		"requireNumbers":   h.cfg.Security.PasswordPolicy.RequireNumbers,
+		"requireSpecial":   h.cfg.Security.PasswordPolicy.RequireSpecial,
+		"historyCount":     0,
+		"expiryDays":       0,
+		"jwtTtlMinutes":    int(h.cfg.JWT.AccessExpires.Minutes()),
+		"refreshTtlDays":   int(h.cfg.JWT.RefreshExpires.Hours() / 24),
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// UpdatePasswordPolicy godoc
+// @Summary Update password policy settings
+// @Description Update password policy configuration (admin only)
+// @Tags Admin - System
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param policy body map[string]interface{} true "Password policy data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/system/password-policy [put]
+func (h *AdvancedAdminHandler) UpdatePasswordPolicy(c *gin.Context) {
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
+		return
+	}
+
+	var req map[string]interface{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	jsonData, err := json.Marshal(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to serialize policy"})
+		return
+	}
+
+	err = h.systemRepo.UpdateSetting(c.Request.Context(), "password_policy", string(jsonData), &userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, req)
 }

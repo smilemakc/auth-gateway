@@ -641,7 +641,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	oauthHandler := handler.NewOAuthHandler(services.OAuth, deps.log, deps.cfg.OAuth.TelegramBotToken, secureCookie)
 	twoFAHandler := handler.NewTwoFactorHandler(services.TwoFA, services.User, services.EmailProfile, deps.log)
 	adminHandler := handler.NewAdminHandler(services.Admin, services.User, services.OTP, services.Audit, deps.log)
-	advancedAdminHandler := handler.NewAdvancedAdminHandler(services.RBAC, services.Session, services.IPFilter, repos.Branding, repos.System, repos.Geo, deps.log)
+	advancedAdminHandler := handler.NewAdvancedAdminHandler(services.RBAC, services.Session, services.IPFilter, repos.Branding, repos.System, repos.Geo, deps.log, deps.cfg)
 	webhookHandler := handler.NewWebhookHandler(services.Webhook, deps.log)
 	templateHandler := handler.NewTemplateHandler(services.Template, deps.log)
 
@@ -990,6 +990,8 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			{
 				systemGroup.PUT("/maintenance", handlers.AdvancedAdmin.SetMaintenanceMode)
 				systemGroup.GET("/health", handlers.AdvancedAdmin.GetSystemHealth)
+				systemGroup.GET("/password-policy", handlers.AdvancedAdmin.GetPasswordPolicy)
+				systemGroup.PUT("/password-policy", handlers.AdvancedAdmin.UpdatePasswordPolicy)
 			}
 
 			analyticsGroup := adminGroup.Group("/analytics")
