@@ -50,6 +50,7 @@ func NewServer(
 	// Build server options with unary and stream interceptors
 	serverOpts := []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(
+			rateLimitInterceptor(redis, grpcConfig.MaxRequestsPerMinute),
 			apiKeyAuthInterceptor(apiKeyService, appService, log),
 			contextExtractorInterceptor(log),
 			loggingInterceptor(log),

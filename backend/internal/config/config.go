@@ -39,11 +39,12 @@ type ServerConfig struct {
 
 // GRPCConfig contains gRPC server configuration
 type GRPCConfig struct {
-	Port              string
-	TLSEnabled        bool
-	TLSCert           string // Path to TLS certificate file
-	TLSKey            string // Path to TLS private key file
-	ReflectionEnabled bool   // Enable gRPC reflection (disable in production)
+	Port                 string
+	TLSEnabled           bool
+	TLSCert              string // Path to TLS certificate file
+	TLSKey               string // Path to TLS private key file
+	ReflectionEnabled    bool   // Enable gRPC reflection (disable in production)
+	MaxRequestsPerMinute int    // Rate limit: max requests per minute per API key
 }
 
 // Validate validates gRPC configuration
@@ -294,11 +295,12 @@ func Load() (*Config, error) {
 			ExternalURL: getEnv("EXTERNAL_URL", ""), // e.g., https://api.example.com
 		},
 		GRPC: GRPCConfig{
-			Port:              getEnv("GRPC_PORT", "50051"),
-			TLSEnabled:        getEnvAsBool("GRPC_TLS_ENABLED", false),
-			TLSCert:           getEnv("GRPC_TLS_CERT_FILE", ""),
-			TLSKey:            getEnv("GRPC_TLS_KEY_FILE", ""),
-			ReflectionEnabled: getEnvAsBool("GRPC_REFLECTION_ENABLED", false),
+			Port:                 getEnv("GRPC_PORT", "50051"),
+			TLSEnabled:           getEnvAsBool("GRPC_TLS_ENABLED", false),
+			TLSCert:              getEnv("GRPC_TLS_CERT_FILE", ""),
+			TLSKey:               getEnv("GRPC_TLS_KEY_FILE", ""),
+			ReflectionEnabled:    getEnvAsBool("GRPC_REFLECTION_ENABLED", false),
+			MaxRequestsPerMinute: getEnvAsInt("GRPC_MAX_REQUESTS_PER_MINUTE", 100),
 		},
 		Database: DatabaseConfig{
 			Host:           getEnv("DB_HOST", "localhost"),
