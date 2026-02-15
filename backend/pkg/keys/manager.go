@@ -3,6 +3,7 @@ package keys
 import (
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
@@ -200,14 +201,14 @@ func signData(data []byte, privateKey interface{}, algorithm Algorithm) ([]byte,
 		if !ok {
 			return nil, fmt.Errorf("invalid RSA private key")
 		}
-		return rsa.SignPKCS1v15(nil, rsaKey, crypto.SHA256, hash[:])
+		return rsa.SignPKCS1v15(rand.Reader, rsaKey, crypto.SHA256, hash[:])
 
 	case ES256:
 		ecdsaKey, ok := privateKey.(*ecdsa.PrivateKey)
 		if !ok {
 			return nil, fmt.Errorf("invalid ECDSA private key")
 		}
-		r, s, err := ecdsa.Sign(nil, ecdsaKey, hash[:])
+		r, s, err := ecdsa.Sign(rand.Reader, ecdsaKey, hash[:])
 		if err != nil {
 			return nil, err
 		}

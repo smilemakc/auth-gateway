@@ -51,9 +51,11 @@ func TestIsPasswordValid(t *testing.T) {
 		want     bool
 	}{
 		{"Valid password", "testPassword123", true},
-		{"Valid minimum length", "12345678", true},
-		{"Too short", "1234567", false},
+		{"Valid minimum length", "abcdefgh", true},
+		{"Too short", "abcdefg", false},
 		{"Empty", "", false},
+		{"Only digits no lowercase", "12345678", false},
+		{"Mixed valid", "pass1234", true},
 	}
 
 	for _, tt := range tests {
