@@ -39,6 +39,12 @@ const (
 	AuthService_SendEmail_FullMethodName                        = "/auth.AuthService/SendEmail"
 	AuthService_GetUserApplicationProfile_FullMethodName        = "/auth.AuthService/GetUserApplicationProfile"
 	AuthService_GetUserTelegramBots_FullMethodName              = "/auth.AuthService/GetUserTelegramBots"
+	AuthService_UpdateUserProfile_FullMethodName                = "/auth.AuthService/UpdateUserProfile"
+	AuthService_CreateUserProfile_FullMethodName                = "/auth.AuthService/CreateUserProfile"
+	AuthService_DeleteUserProfile_FullMethodName                = "/auth.AuthService/DeleteUserProfile"
+	AuthService_BanUser_FullMethodName                          = "/auth.AuthService/BanUser"
+	AuthService_UnbanUser_FullMethodName                        = "/auth.AuthService/UnbanUser"
+	AuthService_ListApplicationUsers_FullMethodName             = "/auth.AuthService/ListApplicationUsers"
 	AuthService_SyncUsers_FullMethodName                        = "/auth.AuthService/SyncUsers"
 	AuthService_GetApplicationAuthConfig_FullMethodName         = "/auth.AuthService/GetApplicationAuthConfig"
 	AuthService_CreateTokenExchange_FullMethodName              = "/auth.AuthService/CreateTokenExchange"
@@ -91,6 +97,18 @@ type AuthServiceClient interface {
 	GetUserApplicationProfile(ctx context.Context, in *GetUserAppProfileRequest, opts ...grpc.CallOption) (*UserAppProfileResponse, error)
 	// GetUserTelegramBots returns user's Telegram bot access for an application
 	GetUserTelegramBots(ctx context.Context, in *GetUserTelegramBotsRequest, opts ...grpc.CallOption) (*UserTelegramBotsResponse, error)
+	// UpdateUserProfile updates user's profile for a specific application
+	UpdateUserProfile(ctx context.Context, in *UpdateUserProfileRequest, opts ...grpc.CallOption) (*UserAppProfileResponse, error)
+	// CreateUserProfile creates a new user profile for a specific application
+	CreateUserProfile(ctx context.Context, in *CreateUserProfileRequest, opts ...grpc.CallOption) (*UserAppProfileResponse, error)
+	// DeleteUserProfile deletes user's profile for a specific application
+	DeleteUserProfile(ctx context.Context, in *DeleteUserProfileRequest, opts ...grpc.CallOption) (*GenericResponse, error)
+	// BanUser bans a user from a specific application
+	BanUser(ctx context.Context, in *BanUserRequest, opts ...grpc.CallOption) (*GenericResponse, error)
+	// UnbanUser unbans a user from a specific application
+	UnbanUser(ctx context.Context, in *UnbanUserRequest, opts ...grpc.CallOption) (*GenericResponse, error)
+	// ListApplicationUsers lists all users for a specific application with pagination
+	ListApplicationUsers(ctx context.Context, in *ListApplicationUsersRequest, opts ...grpc.CallOption) (*ListApplicationUsersResponse, error)
 	// SyncUsers returns users updated after a given timestamp for shadow table sync
 	SyncUsers(ctx context.Context, in *SyncUsersRequest, opts ...grpc.CallOption) (*SyncUsersResponse, error)
 	// GetApplicationAuthConfig returns auth configuration for a specific application
@@ -309,6 +327,66 @@ func (c *authServiceClient) GetUserTelegramBots(ctx context.Context, in *GetUser
 	return out, nil
 }
 
+func (c *authServiceClient) UpdateUserProfile(ctx context.Context, in *UpdateUserProfileRequest, opts ...grpc.CallOption) (*UserAppProfileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserAppProfileResponse)
+	err := c.cc.Invoke(ctx, AuthService_UpdateUserProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) CreateUserProfile(ctx context.Context, in *CreateUserProfileRequest, opts ...grpc.CallOption) (*UserAppProfileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserAppProfileResponse)
+	err := c.cc.Invoke(ctx, AuthService_CreateUserProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) DeleteUserProfile(ctx context.Context, in *DeleteUserProfileRequest, opts ...grpc.CallOption) (*GenericResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GenericResponse)
+	err := c.cc.Invoke(ctx, AuthService_DeleteUserProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) BanUser(ctx context.Context, in *BanUserRequest, opts ...grpc.CallOption) (*GenericResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GenericResponse)
+	err := c.cc.Invoke(ctx, AuthService_BanUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) UnbanUser(ctx context.Context, in *UnbanUserRequest, opts ...grpc.CallOption) (*GenericResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GenericResponse)
+	err := c.cc.Invoke(ctx, AuthService_UnbanUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) ListApplicationUsers(ctx context.Context, in *ListApplicationUsersRequest, opts ...grpc.CallOption) (*ListApplicationUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListApplicationUsersResponse)
+	err := c.cc.Invoke(ctx, AuthService_ListApplicationUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *authServiceClient) SyncUsers(ctx context.Context, in *SyncUsersRequest, opts ...grpc.CallOption) (*SyncUsersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SyncUsersResponse)
@@ -395,6 +473,18 @@ type AuthServiceServer interface {
 	GetUserApplicationProfile(context.Context, *GetUserAppProfileRequest) (*UserAppProfileResponse, error)
 	// GetUserTelegramBots returns user's Telegram bot access for an application
 	GetUserTelegramBots(context.Context, *GetUserTelegramBotsRequest) (*UserTelegramBotsResponse, error)
+	// UpdateUserProfile updates user's profile for a specific application
+	UpdateUserProfile(context.Context, *UpdateUserProfileRequest) (*UserAppProfileResponse, error)
+	// CreateUserProfile creates a new user profile for a specific application
+	CreateUserProfile(context.Context, *CreateUserProfileRequest) (*UserAppProfileResponse, error)
+	// DeleteUserProfile deletes user's profile for a specific application
+	DeleteUserProfile(context.Context, *DeleteUserProfileRequest) (*GenericResponse, error)
+	// BanUser bans a user from a specific application
+	BanUser(context.Context, *BanUserRequest) (*GenericResponse, error)
+	// UnbanUser unbans a user from a specific application
+	UnbanUser(context.Context, *UnbanUserRequest) (*GenericResponse, error)
+	// ListApplicationUsers lists all users for a specific application with pagination
+	ListApplicationUsers(context.Context, *ListApplicationUsersRequest) (*ListApplicationUsersResponse, error)
 	// SyncUsers returns users updated after a given timestamp for shadow table sync
 	SyncUsers(context.Context, *SyncUsersRequest) (*SyncUsersResponse, error)
 	// GetApplicationAuthConfig returns auth configuration for a specific application
@@ -472,6 +562,24 @@ func (UnimplementedAuthServiceServer) GetUserApplicationProfile(context.Context,
 }
 func (UnimplementedAuthServiceServer) GetUserTelegramBots(context.Context, *GetUserTelegramBotsRequest) (*UserTelegramBotsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUserTelegramBots not implemented")
+}
+func (UnimplementedAuthServiceServer) UpdateUserProfile(context.Context, *UpdateUserProfileRequest) (*UserAppProfileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateUserProfile not implemented")
+}
+func (UnimplementedAuthServiceServer) CreateUserProfile(context.Context, *CreateUserProfileRequest) (*UserAppProfileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateUserProfile not implemented")
+}
+func (UnimplementedAuthServiceServer) DeleteUserProfile(context.Context, *DeleteUserProfileRequest) (*GenericResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteUserProfile not implemented")
+}
+func (UnimplementedAuthServiceServer) BanUser(context.Context, *BanUserRequest) (*GenericResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BanUser not implemented")
+}
+func (UnimplementedAuthServiceServer) UnbanUser(context.Context, *UnbanUserRequest) (*GenericResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UnbanUser not implemented")
+}
+func (UnimplementedAuthServiceServer) ListApplicationUsers(context.Context, *ListApplicationUsersRequest) (*ListApplicationUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListApplicationUsers not implemented")
 }
 func (UnimplementedAuthServiceServer) SyncUsers(context.Context, *SyncUsersRequest) (*SyncUsersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SyncUsers not implemented")
@@ -866,6 +974,114 @@ func _AuthService_GetUserTelegramBots_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_UpdateUserProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).UpdateUserProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_UpdateUserProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).UpdateUserProfile(ctx, req.(*UpdateUserProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_CreateUserProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateUserProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).CreateUserProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_CreateUserProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).CreateUserProfile(ctx, req.(*CreateUserProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_DeleteUserProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteUserProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).DeleteUserProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_DeleteUserProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).DeleteUserProfile(ctx, req.(*DeleteUserProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_BanUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BanUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).BanUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_BanUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).BanUser(ctx, req.(*BanUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_UnbanUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnbanUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).UnbanUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_UnbanUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).UnbanUser(ctx, req.(*UnbanUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_ListApplicationUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListApplicationUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ListApplicationUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_ListApplicationUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ListApplicationUsers(ctx, req.(*ListApplicationUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthService_SyncUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SyncUsersRequest)
 	if err := dec(in); err != nil {
@@ -1024,6 +1240,30 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserTelegramBots",
 			Handler:    _AuthService_GetUserTelegramBots_Handler,
+		},
+		{
+			MethodName: "UpdateUserProfile",
+			Handler:    _AuthService_UpdateUserProfile_Handler,
+		},
+		{
+			MethodName: "CreateUserProfile",
+			Handler:    _AuthService_CreateUserProfile_Handler,
+		},
+		{
+			MethodName: "DeleteUserProfile",
+			Handler:    _AuthService_DeleteUserProfile_Handler,
+		},
+		{
+			MethodName: "BanUser",
+			Handler:    _AuthService_BanUser_Handler,
+		},
+		{
+			MethodName: "UnbanUser",
+			Handler:    _AuthService_UnbanUser_Handler,
+		},
+		{
+			MethodName: "ListApplicationUsers",
+			Handler:    _AuthService_ListApplicationUsers_Handler,
 		},
 		{
 			MethodName: "SyncUsers",

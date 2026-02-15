@@ -390,11 +390,95 @@ export interface UserAppProfileResponse {
   applicationId: string;
   displayName: string;
   avatarUrl: string;
-  locale: string;
-  timezone: string;
   appRoles: string[];
   isActive: boolean;
   createdAt: number;
+  errorMessage: string;
+  nickname: string;
+  metadata: { [key: string]: string };
+  isBanned: boolean;
+  banReason: string;
+  lastAccessAt: number;
+  updatedAt: number;
+}
+
+export interface UserAppProfileResponse_MetadataEntry {
+  key: string;
+  value: string;
+}
+
+/** UpdateUserProfileRequest contains data to update a user's application profile */
+export interface UpdateUserProfileRequest {
+  userId: string;
+  applicationId: string;
+  displayName: string;
+  avatarUrl: string;
+  nickname: string;
+  metadata: { [key: string]: string };
+  appRoles: string[];
+}
+
+export interface UpdateUserProfileRequest_MetadataEntry {
+  key: string;
+  value: string;
+}
+
+/** CreateUserProfileRequest contains data to create a user's application profile */
+export interface CreateUserProfileRequest {
+  userId: string;
+  applicationId: string;
+  displayName: string;
+  avatarUrl: string;
+  nickname: string;
+  metadata: { [key: string]: string };
+  appRoles: string[];
+}
+
+export interface CreateUserProfileRequest_MetadataEntry {
+  key: string;
+  value: string;
+}
+
+/** DeleteUserProfileRequest contains data to delete a user's application profile */
+export interface DeleteUserProfileRequest {
+  userId: string;
+  applicationId: string;
+}
+
+/** BanUserRequest contains data to ban a user from an application */
+export interface BanUserRequest {
+  userId: string;
+  applicationId: string;
+  reason: string;
+  bannedBy: string;
+}
+
+/** UnbanUserRequest contains data to unban a user from an application */
+export interface UnbanUserRequest {
+  userId: string;
+  applicationId: string;
+}
+
+/** ListApplicationUsersRequest contains pagination parameters for listing users */
+export interface ListApplicationUsersRequest {
+  applicationId: string;
+  page: number;
+  pageSize: number;
+}
+
+/** ListApplicationUsersResponse contains paginated list of user profiles */
+export interface ListApplicationUsersResponse {
+  profiles: UserAppProfileResponse[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/** GenericResponse contains a simple success/error response */
+export interface GenericResponse {
+  success: boolean;
+  message: string;
   errorMessage: string;
 }
 
@@ -573,6 +657,18 @@ export interface AuthService {
   GetUserApplicationProfile(request: GetUserAppProfileRequest): Promise<UserAppProfileResponse>;
   /** GetUserTelegramBots returns user's Telegram bot access for an application */
   GetUserTelegramBots(request: GetUserTelegramBotsRequest): Promise<UserTelegramBotsResponse>;
+  /** UpdateUserProfile updates user's profile for a specific application */
+  UpdateUserProfile(request: UpdateUserProfileRequest): Promise<UserAppProfileResponse>;
+  /** CreateUserProfile creates a new user profile for a specific application */
+  CreateUserProfile(request: CreateUserProfileRequest): Promise<UserAppProfileResponse>;
+  /** DeleteUserProfile deletes user's profile for a specific application */
+  DeleteUserProfile(request: DeleteUserProfileRequest): Promise<GenericResponse>;
+  /** BanUser bans a user from a specific application */
+  BanUser(request: BanUserRequest): Promise<GenericResponse>;
+  /** UnbanUser unbans a user from a specific application */
+  UnbanUser(request: UnbanUserRequest): Promise<GenericResponse>;
+  /** ListApplicationUsers lists all users for a specific application with pagination */
+  ListApplicationUsers(request: ListApplicationUsersRequest): Promise<ListApplicationUsersResponse>;
   /** SyncUsers returns users updated after a given timestamp for shadow table sync */
   SyncUsers(request: SyncUsersRequest): Promise<SyncUsersResponse>;
   /** GetApplicationAuthConfig returns auth configuration for a specific application */

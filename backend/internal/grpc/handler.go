@@ -1448,6 +1448,30 @@ func (h *AuthHandlerV2) GetUserTelegramBots(ctx context.Context, req *pb.GetUser
 	return nil, status.Errorf(codes.Unimplemented, "GetUserTelegramBots not implemented - handler requires UserTelegramRepository dependency")
 }
 
+func (h *AuthHandlerV2) UpdateUserProfile(ctx context.Context, req *pb.UpdateUserProfileRequest) (*pb.UserAppProfileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserProfile not implemented")
+}
+
+func (h *AuthHandlerV2) CreateUserProfile(ctx context.Context, req *pb.CreateUserProfileRequest) (*pb.UserAppProfileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateUserProfile not implemented")
+}
+
+func (h *AuthHandlerV2) DeleteUserProfile(ctx context.Context, req *pb.DeleteUserProfileRequest) (*pb.GenericResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserProfile not implemented")
+}
+
+func (h *AuthHandlerV2) BanUser(ctx context.Context, req *pb.BanUserRequest) (*pb.GenericResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BanUser not implemented")
+}
+
+func (h *AuthHandlerV2) UnbanUser(ctx context.Context, req *pb.UnbanUserRequest) (*pb.GenericResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnbanUser not implemented")
+}
+
+func (h *AuthHandlerV2) ListApplicationUsers(ctx context.Context, req *pb.ListApplicationUsersRequest) (*pb.ListApplicationUsersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListApplicationUsers not implemented")
+}
+
 // ========== Sync & Config Methods ==========
 
 // SyncUsers returns users updated after a given timestamp for shadow table sync
