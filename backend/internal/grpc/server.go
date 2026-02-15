@@ -79,8 +79,11 @@ func NewServer(
 	handler := NewAuthHandlerV2(jwtService, userRepo, tokenRepo, rbacRepo, apiKeyService, authService, oauthProviderService, otpService, emailProfileService, adminService, appService, redis, tokenExchangeService, log)
 	pb.RegisterAuthServiceServer(grpcServer, handler)
 
-	// Register reflection service for debugging
-	reflection.Register(grpcServer)
+	// Register reflection service only when explicitly enabled (should be disabled in production)
+	if grpcConfig.ReflectionEnabled {
+		reflection.Register(grpcServer)
+		log.Warn("gRPC reflection is enabled — disable in production via GRPC_REFLECTION_ENABLED=false")
+	}
 
 	return &Server{
 		grpcServer: grpcServer,
