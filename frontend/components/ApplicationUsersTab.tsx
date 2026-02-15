@@ -12,6 +12,7 @@ import { formatRelative } from '../lib/date';
 import { toast } from '../services/toast';
 import { confirm } from '../services/confirm';
 import UsersImportModal from './UsersImportModal';
+import { logger } from '@/lib/logger';
 
 interface ApplicationUsersTabProps {
   applicationId: string;
@@ -43,7 +44,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
       setBanningUserId(null);
       setBanReason('');
     } catch (error) {
-      console.error('Failed to ban user:', error);
+      logger.error('Failed to ban user:', error);
     }
   };
 
@@ -59,7 +60,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
           userId: profile.user_id,
         });
       } catch (error) {
-        console.error('Failed to unban user:', error);
+        logger.error('Failed to unban user:', error);
       }
     }
   };

@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useWebhookDetail, useCreateWebhook, useUpdateWebhook } from '../hooks/useWebhooks';
+import { logger } from '@/lib/logger';
 
 const AVAILABLE_EVENTS = [
   'user.login',
@@ -83,7 +84,7 @@ const WebhookEdit: React.FC = () => {
       }
       navigate('/developers/webhooks');
     } catch (err) {
-      console.error('Failed to save webhook:', err);
+      logger.error('Failed to save webhook:', err);
     }
   };
 

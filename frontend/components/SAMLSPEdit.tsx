@@ -5,6 +5,7 @@ import type { CreateSAMLSPRequest, UpdateSAMLSPRequest, SAMLServiceProvider } fr
 import { useSAMLSP, useCreateSAMLSP, useUpdateSAMLSP } from '../hooks/useSAML';
 import { toast } from '../services/toast';
 import { useLanguage } from '../services/i18n';
+import { logger } from '@/lib/logger';
 
 const SAMLSPEdit: React.FC = () => {
   const { t } = useLanguage();
@@ -89,7 +90,7 @@ const SAMLSPEdit: React.FC = () => {
       }
       navigate('/saml');
     } catch (error) {
-      console.error('Failed to save SAML SP:', error);
+      logger.error('Failed to save SAML SP:', error);
       toast.error(t('saml_edit.save_error'));
     }
   };

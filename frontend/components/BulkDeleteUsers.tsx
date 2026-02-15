@@ -7,6 +7,7 @@ import { useUsers } from '../hooks/useUsers';
 import { toast } from '../services/toast';
 import { confirm } from '../services/confirm';
 import { useLanguage } from '../services/i18n';
+import { logger } from '@/lib/logger';
 
 const BulkDeleteUsers: React.FC = () => {
   const navigate = useNavigate();
@@ -63,7 +64,7 @@ const BulkDeleteUsers: React.FC = () => {
       const result = await bulkDelete.mutateAsync({ user_ids: selectedUserIds });
       setResult(result);
     } catch (error) {
-      console.error('Bulk delete failed:', error);
+      logger.error('Bulk delete failed:', error);
       toast.error(t('bulk.delete_failed'));
     }
   };

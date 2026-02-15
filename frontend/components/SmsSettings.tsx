@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, AlertTriangle, Send, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useSmsSettingsActive, useUpdateSmsSettings, useCreateSmsSettings } from '../hooks/useSettings';
+import { logger } from '@/lib/logger';
 
 const SmsSettings: React.FC = () => {
   const { t } = useLanguage();
@@ -66,7 +67,7 @@ const SmsSettings: React.FC = () => {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      console.error('Failed to save SMS settings:', err);
+      logger.error('Failed to save SMS settings:', err);
     }
   };
 

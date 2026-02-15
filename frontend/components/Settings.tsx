@@ -7,6 +7,7 @@ import { useSystemStatus, usePasswordPolicy, useUpdatePasswordPolicy, useMainten
 import { PasswordPolicy } from '../types';
 import { toast } from '../services/toast';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const Settings: React.FC = () => {
   const { t } = useLanguage();
@@ -40,7 +41,7 @@ const Settings: React.FC = () => {
             message: 'System maintenance in progress',
           });
         } catch (error) {
-          console.error('Failed to toggle maintenance mode:', error);
+          logger.error('Failed to toggle maintenance mode:', error);
           toast.error('Failed to update maintenance mode');
         }
       }
@@ -62,7 +63,7 @@ const Settings: React.FC = () => {
         await updatePolicyMutation.mutateAsync(localPasswordPolicy);
         toast.success(t('common.saved'));
       } catch (error) {
-        console.error('Failed to save password policy:', error);
+        logger.error('Failed to save password policy:', error);
         toast.error('Failed to save settings');
       }
     }

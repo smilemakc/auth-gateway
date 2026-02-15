@@ -34,6 +34,7 @@ import { useUserApplicationProfile } from '../hooks/useApplications';
 import { formatDate, formatDateTime, formatRelative } from '../lib/date';
 import { toast } from '../services/toast';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const UserDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -69,7 +70,7 @@ const UserDetails: React.FC = () => {
         await revokeSessionMutation.mutateAsync(sessionId);
         toast.success(t('user.revoked_success'));
       } catch (error) {
-        console.error('Failed to revoke session:', error);
+        logger.error('Failed to revoke session:', error);
         toast.error('Failed to revoke session');
       }
     }

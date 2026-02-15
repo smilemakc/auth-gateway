@@ -20,6 +20,7 @@ import {
   useInitializeApplicationTemplates
 } from '../hooks/useApplicationTemplates';
 import type { EmailTemplate, EmailTemplateType } from '@auth-gateway/client-sdk';
+import { logger } from '@/lib/logger';
 
 interface ApplicationEmailTemplatesTabProps {
   applicationId: string;
@@ -90,7 +91,7 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
     try {
       await initializeTemplates.mutateAsync();
     } catch (err) {
-      console.error('Failed to initialize templates:', err);
+      logger.error('Failed to initialize templates:', err);
     }
   };
 

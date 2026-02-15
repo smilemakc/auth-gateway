@@ -8,6 +8,7 @@ import { formatDate } from '../lib/date';
 import { toast } from '../services/toast';
 import { confirm } from '../services/confirm';
 import { useLanguage } from '../services/i18n';
+import { logger } from '@/lib/logger';
 
 const GroupDetails: React.FC = () => {
   const { t } = useLanguage();
@@ -37,7 +38,7 @@ const GroupDetails: React.FC = () => {
         await deleteGroup.mutateAsync(group.id);
         navigate('/groups');
       } catch (error) {
-        console.error('Failed to delete group:', error);
+        logger.error('Failed to delete group:', error);
         toast.error(t('group_details.delete_error'));
       }
     }
@@ -53,7 +54,7 @@ const GroupDetails: React.FC = () => {
       setShowAddMembers(false);
       setSelectedUserIds([]);
     } catch (error) {
-      console.error('Failed to add members:', error);
+      logger.error('Failed to add members:', error);
       toast.error(t('group_details.add_error'));
     }
   };
@@ -68,7 +69,7 @@ const GroupDetails: React.FC = () => {
       try {
         await removeMember.mutateAsync({ groupId: id, userId });
       } catch (error) {
-        console.error('Failed to remove member:', error);
+        logger.error('Failed to remove member:', error);
         toast.error(t('group_details.remove_error'));
       }
     }

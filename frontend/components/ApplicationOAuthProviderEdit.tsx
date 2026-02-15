@@ -10,6 +10,7 @@ import {
   useDeleteApplicationOAuthProvider
 } from '../hooks/useApplicationOAuthProviders';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const ApplicationOAuthProviderEdit: React.FC = () => {
   const { applicationId, providerId } = useParams<{ applicationId: string; providerId: string }>();
@@ -69,7 +70,7 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
     e.preventDefault();
 
     if (!applicationId) {
-      console.error('Application ID is required');
+      logger.error('Application ID is required');
       return;
     }
 
@@ -112,7 +113,7 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
       }
       navigate(`/applications/${applicationId}`);
     } catch (err) {
-      console.error('Failed to save provider:', err);
+      logger.error('Failed to save provider:', err);
     }
   };
 
@@ -128,7 +129,7 @@ const ApplicationOAuthProviderEdit: React.FC = () => {
           await deleteMutation.mutateAsync({ appId: applicationId, id: providerId });
           navigate(`/applications/${applicationId}`);
         } catch (err) {
-          console.error('Failed to delete provider:', err);
+          logger.error('Failed to delete provider:', err);
         }
       }
     }

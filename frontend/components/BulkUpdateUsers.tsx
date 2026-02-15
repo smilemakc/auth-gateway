@@ -6,6 +6,7 @@ import { useBulkUpdateUsers } from '../hooks/useBulkOperations';
 import { useUsers } from '../hooks/useUsers';
 import { toast } from '../services/toast';
 import { useLanguage } from '../services/i18n';
+import { logger } from '@/lib/logger';
 
 const BulkUpdateUsers: React.FC = () => {
   const { t } = useLanguage();
@@ -66,7 +67,7 @@ const BulkUpdateUsers: React.FC = () => {
       const result = await bulkUpdate.mutateAsync({ users: updates });
       setResult(result);
     } catch (error) {
-      console.error('Bulk update failed:', error);
+      logger.error('Bulk update failed:', error);
       toast.error(t('bulk_update.update_error'));
     }
   };

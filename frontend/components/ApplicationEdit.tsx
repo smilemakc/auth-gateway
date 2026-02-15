@@ -12,6 +12,7 @@ import {
   useDeleteApplication,
 } from '../hooks/useApplications';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const AUTH_METHODS = [
   { value: 'password', label: 'apps.auth_methods.password', icon: KeyRound },
@@ -121,7 +122,7 @@ const ApplicationEdit: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Failed to save application:', error);
+      logger.error('Failed to save application:', error);
     }
   };
 
@@ -136,7 +137,7 @@ const ApplicationEdit: React.FC = () => {
         await deleteApplication.mutateAsync(id!);
         navigate('/applications');
       } catch (error) {
-        console.error('Failed to delete application:', error);
+        logger.error('Failed to delete application:', error);
       }
     }
   };

@@ -5,6 +5,7 @@ import { ArrowLeft, Save, HelpCircle, Eye, EyeOff, Loader2, ToggleLeft, ToggleRi
 import { useLanguage } from '../services/i18n';
 import { useOAuthProviderDetail, useCreateOAuthProvider, useUpdateOAuthProvider, useDeleteOAuthProvider } from '../hooks/useOAuth';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const OAuthProviderEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -81,7 +82,7 @@ const OAuthProviderEdit: React.FC = () => {
       }
       navigate('/oauth');
     } catch (err) {
-      console.error('Failed to save provider:', err);
+      logger.error('Failed to save provider:', err);
     }
   };
 
@@ -97,7 +98,7 @@ const OAuthProviderEdit: React.FC = () => {
           await deleteMutation.mutateAsync(id);
           navigate('/oauth');
         } catch (err) {
-          console.error('Failed to delete provider:', err);
+          logger.error('Failed to delete provider:', err);
         }
       }
     }

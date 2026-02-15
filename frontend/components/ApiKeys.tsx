@@ -6,6 +6,7 @@ import { useApiKeys, useRevokeApiKey, useDeleteApiKey, useCreateApiKey } from '.
 import { formatDate } from '../lib/date';
 import { toast } from '../services/toast';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const AVAILABLE_SCOPES = [
   'users:read',
@@ -58,7 +59,7 @@ const ApiKeys: React.FC = () => {
       try {
         await revokeApiKeyMutation.mutateAsync(id);
       } catch (error) {
-        console.error('Failed to revoke API key:', error);
+        logger.error('Failed to revoke API key:', error);
         toast.error('Failed to revoke API key');
       }
     }
@@ -74,7 +75,7 @@ const ApiKeys: React.FC = () => {
       try {
         await deleteApiKeyMutation.mutateAsync(id);
       } catch (error) {
-        console.error('Failed to delete API key:', error);
+        logger.error('Failed to delete API key:', error);
         toast.error('Failed to delete API key');
       }
     }
@@ -102,7 +103,7 @@ const ApiKeys: React.FC = () => {
       // The API returns the full key only once - show it to the user
       setGeneratedKey(result.plain_key);
     } catch (error) {
-      console.error('Failed to create API key:', error);
+      logger.error('Failed to create API key:', error);
       toast.error('Failed to create API key: ' + (error as Error).message);
     }
   };

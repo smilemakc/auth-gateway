@@ -5,6 +5,7 @@ import type { BulkUserCreate, BulkOperationResult } from '@auth-gateway/client-s
 import { useBulkCreateUsers } from '../hooks/useBulkOperations';
 import { toast } from '../services/toast';
 import { useLanguage } from '../services/i18n';
+import { logger } from '@/lib/logger';
 
 const BulkCreateUsers: React.FC = () => {
   const navigate = useNavigate();
@@ -138,7 +139,7 @@ const BulkCreateUsers: React.FC = () => {
       const result = await bulkCreate.mutateAsync({ users: validUsers });
       setResult(result);
     } catch (error) {
-      console.error('Bulk create failed:', error);
+      logger.error('Bulk create failed:', error);
       toast.error(t('bulk.create_failed'));
     }
   };

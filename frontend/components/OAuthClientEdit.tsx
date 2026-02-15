@@ -14,6 +14,7 @@ import type {
   GrantType,
   ClientType,
 } from '@auth-gateway/client-sdk';
+import { logger } from '@/lib/logger';
 
 const GRANT_TYPES: { value: GrantType; labelKey: string; descKey: string }[] = [
   { value: 'authorization_code', labelKey: 'oauth_edit.grant_auth_code', descKey: 'oauth_edit.grant_auth_code_desc' },
@@ -105,7 +106,7 @@ const OAuthClientEdit: React.FC = () => {
         navigate('/oauth-clients');
       }
     } catch (error) {
-      console.error('Failed to save client:', error);
+      logger.error('Failed to save client:', error);
     }
   };
 

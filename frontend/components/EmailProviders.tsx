@@ -22,6 +22,7 @@ import {
   useTestEmailProvider,
   EmailProvider,
 } from '../hooks/useEmailProviders';
+import { logger } from '@/lib/logger';
 
 const getProviderIcon = (type: string) => {
   switch (type) {
@@ -90,7 +91,7 @@ const EmailProviders: React.FC<EmailProvidersProps> = ({ embedded = false }) => 
       await deleteProvider.mutateAsync(id);
       setDeleteConfirm(null);
     } catch (err) {
-      console.error('Failed to delete provider:', err);
+      logger.error('Failed to delete provider:', err);
     }
   };
 

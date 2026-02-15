@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Eye, Code, RefreshCw, Check, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useApplicationTemplateDetail, useUpdateApplicationTemplate } from '../hooks/useApplicationTemplates';
+import { logger } from '@/lib/logger';
 
 const ApplicationTemplateEditor: React.FC = () => {
   const { appId, templateId } = useParams<{ appId: string; templateId: string }>();
@@ -33,7 +34,7 @@ const ApplicationTemplateEditor: React.FC = () => {
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       } catch (err) {
-        console.error('Failed to save template:', err);
+        logger.error('Failed to save template:', err);
       }
     }
   };

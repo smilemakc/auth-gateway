@@ -6,6 +6,7 @@ import { useLanguage } from '../services/i18n';
 import { useTelegramBots, useDeleteTelegramBot } from '../hooks/useTelegramBots';
 import { formatDate } from '../lib/date';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 interface TelegramBotsProps {
   applicationId: string;
@@ -28,7 +29,7 @@ const TelegramBots: React.FC<TelegramBotsProps> = ({ applicationId }) => {
       try {
         await deleteBotMutation.mutateAsync({ appId: applicationId, id: botId });
       } catch (err) {
-        console.error('Failed to delete bot:', err);
+        logger.error('Failed to delete bot:', err);
       }
     }
   };

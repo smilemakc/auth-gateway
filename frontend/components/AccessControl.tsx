@@ -28,6 +28,7 @@ import {
 } from '../hooks/useRBAC';
 import type { Permission, RoleDefinition } from '../types';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const AccessControl: React.FC = () => {
   const navigate = useNavigate();
@@ -99,7 +100,7 @@ const AccessControl: React.FC = () => {
         }
       });
     } catch (err) {
-      console.error('Failed to update role permissions:', err);
+      logger.error('Failed to update role permissions:', err);
     }
   };
 
@@ -125,7 +126,7 @@ const AccessControl: React.FC = () => {
         }
       });
     } catch (err) {
-      console.error('Failed to update role permissions:', err);
+      logger.error('Failed to update role permissions:', err);
     }
   };
 
@@ -143,7 +144,7 @@ const AccessControl: React.FC = () => {
       setNewRoleDescription('');
       setShowCreateRole(false);
     } catch (err) {
-      console.error('Failed to create role:', err);
+      logger.error('Failed to create role:', err);
     }
   };
 
@@ -157,7 +158,7 @@ const AccessControl: React.FC = () => {
       try {
         await deleteRoleMutation.mutateAsync(id);
       } catch (err) {
-        console.error('Failed to delete role:', err);
+        logger.error('Failed to delete role:', err);
       }
     }
   };
@@ -177,7 +178,7 @@ const AccessControl: React.FC = () => {
       setNewPermDescription('');
       setShowCreatePermission(false);
     } catch (err) {
-      console.error('Failed to create permission:', err);
+      logger.error('Failed to create permission:', err);
     }
   };
 

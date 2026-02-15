@@ -5,6 +5,7 @@ import type { CreateLDAPConfigRequest, UpdateLDAPConfigRequest, LDAPConfig } fro
 import { useLDAPConfig, useCreateLDAPConfig, useUpdateLDAPConfig, useTestLDAPConnection } from '../hooks/useLDAP';
 import { toast } from '../services/toast';
 import { useLanguage } from '../services/i18n';
+import { logger } from '@/lib/logger';
 
 const LDAPConfigEdit: React.FC = () => {
   const { t } = useLanguage();
@@ -152,7 +153,7 @@ const LDAPConfigEdit: React.FC = () => {
       }
       navigate('/ldap');
     } catch (error) {
-      console.error('Failed to save LDAP config:', error);
+      logger.error('Failed to save LDAP config:', error);
       toast.error(t('ldap_edit.save_error'));
     }
   };

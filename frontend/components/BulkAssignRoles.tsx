@@ -7,6 +7,7 @@ import { useUsers } from '../hooks/useUsers';
 import { useRoles } from '../hooks/useRBAC';
 import { toast } from '../services/toast';
 import { useLanguage } from '../services/i18n';
+import { logger } from '@/lib/logger';
 
 const BulkAssignRoles: React.FC = () => {
   const { t } = useLanguage();
@@ -71,7 +72,7 @@ const BulkAssignRoles: React.FC = () => {
       });
       setResult(result);
     } catch (error) {
-      console.error('Bulk assign roles failed:', error);
+      logger.error('Bulk assign roles failed:', error);
       toast.error(t('bulk_assign.assign_error'));
     }
   };

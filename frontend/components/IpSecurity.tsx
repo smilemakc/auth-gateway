@@ -6,6 +6,7 @@ import { useLanguage } from '../services/i18n';
 import { useWhitelistFilters, useBlacklistFilters, useCreateIpFilter, useDeleteIpFilter } from '../hooks/useIpFilters';
 import { formatDate } from '../lib/date';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const IpSecurity: React.FC = () => {
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ const IpSecurity: React.FC = () => {
       setNewIp('');
       setNewDescription('');
     } catch (err) {
-      console.error('Failed to add IP rule:', err);
+      logger.error('Failed to add IP rule:', err);
     }
   };
 
@@ -58,7 +59,7 @@ const IpSecurity: React.FC = () => {
       try {
         await deleteFilterMutation.mutateAsync(id);
       } catch (err) {
-        console.error('Failed to delete IP rule:', err);
+        logger.error('Failed to delete IP rule:', err);
       }
     }
   };

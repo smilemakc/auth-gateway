@@ -6,6 +6,7 @@ import { useLanguage } from '../services/i18n';
 import { useWebhooks, useDeleteWebhook } from '../hooks/useWebhooks';
 import { formatRelative } from '../lib/date';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const Webhooks: React.FC = () => {
   const [revealedSecrets, setRevealedSecrets] = useState<string[]>([]);
@@ -26,7 +27,7 @@ const Webhooks: React.FC = () => {
       try {
         await deleteWebhookMutation.mutateAsync(id);
       } catch (err) {
-        console.error('Failed to delete webhook:', err);
+        logger.error('Failed to delete webhook:', err);
       }
     }
   };

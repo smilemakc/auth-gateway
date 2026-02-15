@@ -20,6 +20,7 @@ import type { Role } from '@auth-gateway/client-sdk';
 import { useLanguage } from '../services/i18n';
 import { useUserDetail, useUpdateUser, useCreateUser } from '../hooks/useUsers';
 import { useRoles } from '../hooks/useRBAC';
+import { logger } from '@/lib/logger';
 
 interface UserFormData {
   full_name: string;
@@ -124,7 +125,7 @@ const UserEdit: React.FC = () => {
         navigate(`/users/${newUser.id}`);
       }
     } catch (err: unknown) {
-      console.error('Failed to save user:', err);
+      logger.error('Failed to save user:', err);
       const message = err instanceof Error ? err.message : 'Failed to save user';
       setError(message);
     }

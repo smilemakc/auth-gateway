@@ -10,6 +10,7 @@ import { formatDate } from '../lib/date';
 import { useSort } from '../hooks/useSort';
 import SortableHeader from './SortableHeader';
 import { toast } from '../services/toast';
+import { logger } from '@/lib/logger';
 
 const Users: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,7 +37,7 @@ const Users: React.FC = () => {
         data: { is_active: !currentStatus },
       });
     } catch (error) {
-      console.error('Failed to toggle user status:', error);
+      logger.error('Failed to toggle user status:', error);
       toast.error(t('users.status_update_error'));
     }
   };

@@ -7,6 +7,7 @@ import { useOAuthClients, useDeleteOAuthClient } from '../hooks/useOAuthClients'
 import { formatDate } from '../lib/date';
 import { toast } from '../services/toast';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const ServiceAccounts: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -30,7 +31,7 @@ const ServiceAccounts: React.FC = () => {
       try {
         await deleteClientMutation.mutateAsync(id);
       } catch (err: any) {
-        console.error('Failed to delete service account:', err);
+        logger.error('Failed to delete service account:', err);
         toast.error(err?.message || 'Failed to delete service account');
       }
     }

@@ -5,6 +5,7 @@ import { ArrowLeft, Save, Trash2, HelpCircle, Eye, EyeOff, Loader2, Send, Toggle
 import { useLanguage } from '../services/i18n';
 import { useTelegramBotDetail, useCreateTelegramBot, useUpdateTelegramBot, useDeleteTelegramBot } from '../hooks/useTelegramBots';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const TelegramBotEdit: React.FC = () => {
   const { applicationId, botId } = useParams<{ applicationId: string; botId: string }>();
@@ -56,7 +57,7 @@ const TelegramBotEdit: React.FC = () => {
     e.preventDefault();
 
     if (!applicationId) {
-      console.error('Application ID is required');
+      logger.error('Application ID is required');
       return;
     }
 
@@ -87,7 +88,7 @@ const TelegramBotEdit: React.FC = () => {
       }
       navigate(`/applications/${applicationId}/telegram-bots`);
     } catch (err) {
-      console.error('Failed to save bot:', err);
+      logger.error('Failed to save bot:', err);
     }
   };
 
@@ -103,7 +104,7 @@ const TelegramBotEdit: React.FC = () => {
           await deleteMutation.mutateAsync({ appId: applicationId, id: botId });
           navigate(`/applications/${applicationId}/telegram-bots`);
         } catch (err) {
-          console.error('Failed to delete bot:', err);
+          logger.error('Failed to delete bot:', err);
         }
       }
     }

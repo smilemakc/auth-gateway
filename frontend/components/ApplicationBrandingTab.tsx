@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Loader2, Save, Palette, Image, Mail, FileText } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useApplicationBranding, useUpdateApplicationBranding } from '../hooks/useApplications';
+import { logger } from '@/lib/logger';
 
 interface ApplicationBrandingTabProps {
   applicationId: string;
@@ -61,7 +62,7 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
         },
       });
     } catch (error) {
-      console.error('Failed to update branding:', error);
+      logger.error('Failed to update branding:', error);
     }
   };
 

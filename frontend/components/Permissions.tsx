@@ -5,6 +5,7 @@ import { ArrowLeft, Plus, Edit2, Trash2, Lock } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { usePermissions, useDeletePermission } from '../hooks/useRBAC';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const Permissions: React.FC = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const Permissions: React.FC = () => {
       try {
         await deleteMutation.mutateAsync(id);
       } catch (err) {
-        console.error('Failed to delete permission:', err);
+        logger.error('Failed to delete permission:', err);
       }
     }
   };

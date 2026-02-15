@@ -8,6 +8,7 @@ import { useRoles, useDeleteRole } from '../hooks/useRBAC';
 import { useApplication } from '../services/appContext';
 import { formatDate } from '../lib/date';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const Roles: React.FC = () => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ const Roles: React.FC = () => {
       try {
         await deleteRoleMutation.mutateAsync(id);
       } catch (err) {
-        console.error('Failed to delete role:', err);
+        logger.error('Failed to delete role:', err);
       }
     }
   };

@@ -9,6 +9,7 @@ import {
   CreateEmailProviderRequest,
   UpdateEmailProviderRequest,
 } from '../hooks/useEmailProviders';
+import { logger } from '@/lib/logger';
 
 type ProviderType = 'smtp' | 'sendgrid' | 'ses' | 'mailgun';
 
@@ -141,7 +142,7 @@ const EmailProviderEdit: React.FC = () => {
 
       navigate('/settings/email-providers');
     } catch (err) {
-      console.error('Failed to save provider:', err);
+      logger.error('Failed to save provider:', err);
     }
   };
 
