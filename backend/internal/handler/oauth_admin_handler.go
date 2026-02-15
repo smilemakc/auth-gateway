@@ -66,17 +66,17 @@ func (h *OAuthAdminHandler) CreateClient(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Param owner_id query string false "Filter by owner ID"
 // @Param is_active query bool false "Filter by active status"
-// @Success 200 {object} map[string]interface{} "Response with clients, total, page, per_page"
+// @Success 200 {object} models.OAuthClientListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients [get]
 func (h *OAuthAdminHandler) ListClients(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
 	var opts []service.OAuthClientListOption
 
@@ -96,7 +96,7 @@ func (h *OAuthAdminHandler) ListClients(c *gin.Context) {
 		opts = append(opts, service.OAuthClientListActive(&val))
 	}
 
-	clients, total, err := h.service.ListClients(c.Request.Context(), page, perPage, opts...)
+	clients, total, err := h.service.ListClients(c.Request.Context(), page, pageSize, opts...)
 	if err != nil {
 		h.logger.Error("Failed to list OAuth clients", map[string]interface{}{
 			"error": err.Error(),
@@ -105,11 +105,13 @@ func (h *OAuthAdminHandler) ListClients(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"clients":  clients,
-		"total":    total,
-		"page":     page,
-		"per_page": perPage,
+	totalPages := (total + pageSize - 1) / pageSize
+	c.JSON(http.StatusOK, models.OAuthClientListResponse{
+		Clients:    clients,
+		Total:      total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
 	})
 }
 
@@ -287,7 +289,7 @@ func (h *OAuthAdminHandler) RotateSecret(c *gin.Context) {
 // @Tags Admin - OAuth Scopes
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {object} map[string]interface{} "Response with scopes array"
+// @Success 200 {object} models.OAuthScopeListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -302,9 +304,7 @@ func (h *OAuthAdminHandler) ListScopes(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"scopes": scopes,
-	})
+	c.JSON(http.StatusOK, models.OAuthScopeListResponse{Scopes: scopes, Total: len(scopes)})
 }
 
 // CreateScope creates a custom OAuth scope
@@ -402,7 +402,7 @@ func (h *OAuthAdminHandler) DeleteScope(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param id path string true "Client ID"
-// @Success 200 {object} map[string]interface{} "Response with consents array"
+// @Success 200 {object} models.OAuthConsentListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -428,9 +428,7 @@ func (h *OAuthAdminHandler) ListClientConsents(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"consents": consents,
-	})
+	c.JSON(http.StatusOK, models.OAuthConsentListResponse{Consents: consents, Total: len(consents)})
 }
 
 // RevokeUserConsent revokes user consent for a client

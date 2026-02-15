@@ -276,7 +276,7 @@ func (s *SessionService) GetUserSessions(ctx context.Context, userID uuid.UUID, 
 		}
 		if session.User != nil {
 			resp.UserEmail = session.User.Email
-			resp.UserName = session.User.Username
+			resp.Username = session.User.Username
 		}
 		responseSessions = append(responseSessions, resp)
 	}
@@ -287,7 +287,7 @@ func (s *SessionService) GetUserSessions(ctx context.Context, userID uuid.UUID, 
 		Sessions:   responseSessions,
 		Total:      total,
 		Page:       page,
-		PerPage:    perPage,
+		PageSize:   perPage,
 		TotalPages: totalPages,
 	}, nil
 }
@@ -317,7 +317,7 @@ func (s *SessionService) GetAllSessions(ctx context.Context, page, perPage int) 
 		}
 		if session.User != nil {
 			resp.UserEmail = session.User.Email
-			resp.UserName = session.User.Username
+			resp.Username = session.User.Username
 		}
 		responseSessions = append(responseSessions, resp)
 	}
@@ -328,7 +328,7 @@ func (s *SessionService) GetAllSessions(ctx context.Context, page, perPage int) 
 		Sessions:   responseSessions,
 		Total:      total,
 		Page:       page,
-		PerPage:    perPage,
+		PageSize:   perPage,
 		TotalPages: totalPages,
 	}, nil
 }

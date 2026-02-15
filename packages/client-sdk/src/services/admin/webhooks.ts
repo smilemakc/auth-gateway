@@ -30,7 +30,7 @@ export class AdminWebhooksService extends BaseService {
   async list(page = 1, perPage = 20): Promise<WebhookListResponse> {
     const response = await this.http.get<WebhookListResponse>(
       '/api/admin/webhooks',
-      { query: { page, per_page: perPage } }
+      { query: { page, page_size: perPage } }
     );
     return response.data;
   }
@@ -112,7 +112,7 @@ export class AdminWebhooksService extends BaseService {
   ): Promise<WebhookDeliveryListResponse> {
     const response = await this.http.get<WebhookDeliveryListResponse>(
       `/api/admin/webhooks/${id}/deliveries`,
-      { query: { page, per_page: perPage } }
+      { query: { page, page_size: perPage } }
     );
     return response.data;
   }

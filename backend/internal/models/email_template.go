@@ -96,7 +96,7 @@ type EmailTemplateListResponse struct {
 	// Current page number
 	Page int `json:"page" example:"1"`
 	// Number of items per page
-	PerPage int `json:"per_page" example:"20"`
+	PageSize int `json:"page_size" example:"20"`
 	// Total number of pages
 	TotalPages int `json:"total_pages" example:"1"`
 }
@@ -110,7 +110,7 @@ type EmailTemplateVersionListResponse struct {
 	// Current page number
 	Page int `json:"page" example:"1"`
 	// Number of items per page
-	PerPage int `json:"per_page" example:"20"`
+	PageSize int `json:"page_size" example:"20"`
 	// Total number of pages
 	TotalPages int `json:"total_pages" example:"1"`
 }

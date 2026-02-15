@@ -29,7 +29,7 @@ func NewEmailProfileHandler(emailProfileService *service.EmailProfileService, lo
 // @Tags Email Providers
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {array} models.EmailProviderResponse
+// @Success 200 {object} models.EmailProviderListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -45,7 +45,13 @@ func (h *EmailProfileHandler) ListProviders(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, providers)
+	c.JSON(http.StatusOK, models.EmailProviderListResponse{
+		Providers:  providers,
+		Total:      len(providers),
+		Page:       1,
+		PageSize:   len(providers),
+		TotalPages: 1,
+	})
 }
 
 // GetProvider handles retrieving a specific email provider
@@ -264,7 +270,7 @@ func (h *EmailProfileHandler) TestProvider(c *gin.Context) {
 // @Tags Email Profiles
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {array} models.EmailProfile
+// @Success 200 {object} models.EmailProfileListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -280,7 +286,13 @@ func (h *EmailProfileHandler) ListProfiles(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, profiles)
+	c.JSON(http.StatusOK, models.EmailProfileListResponse{
+		Profiles:   profiles,
+		Total:      len(profiles),
+		Page:       1,
+		PageSize:   len(profiles),
+		TotalPages: 1,
+	})
 }
 
 // GetProfile handles retrieving a specific email profile
@@ -489,7 +501,7 @@ func (h *EmailProfileHandler) SetDefaultProfile(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param id path string true "Profile ID (UUID)"
-// @Success 200 {array} models.EmailProfileTemplate
+// @Success 200 {object} models.EmailProfileTemplateListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -518,7 +530,10 @@ func (h *EmailProfileHandler) GetProfileTemplates(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, templates)
+	c.JSON(http.StatusOK, models.EmailProfileTemplateListResponse{
+		Templates: templates,
+		Total:     len(templates),
+	})
 }
 
 // SetProfileTemplate handles assigning a template to a profile for a specific OTP type

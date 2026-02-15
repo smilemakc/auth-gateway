@@ -169,7 +169,7 @@ type AdminAPIKeyResponse struct {
 	// Email of the key owner
 	UserEmail string `json:"user_email,omitempty" example:"john@example.com"`
 	// Display name of the key owner
-	UserName string `json:"user_name,omitempty" example:"John Doe"`
+	OwnerName string `json:"owner_name,omitempty" example:"John Doe"`
 	// API key name
 	Name string `json:"name" example:"Production API Key"`
 	// API key prefix (first 12 characters)
@@ -198,4 +198,28 @@ type AdminAPIKeyListResponse struct {
 	Page int `json:"page" example:"1"`
 	// Number of items per page
 	PageSize int `json:"page_size" example:"50"`
+	// Total number of pages
+	TotalPages int `json:"total_pages"`
+}
+
+// AuditLogListResponse represents paginated audit log list
+type AuditLogListResponse struct {
+	// List of audit logs
+	Logs []*AdminAuditLogResponse `json:"logs"`
+	// Total number of audit logs
+	Total int `json:"total" example:"150"`
+	// Current page number
+	Page int `json:"page" example:"1"`
+	// Number of items per page
+	PageSize int `json:"page_size" example:"50"`
+	// Total number of pages
+	TotalPages int `json:"total_pages" example:"3"`
+}
+
+// OAuthAccountListResponse represents user OAuth accounts list
+type OAuthAccountListResponse struct {
+	// List of OAuth accounts
+	Accounts []*OAuthAccount `json:"accounts"`
+	// Total number of accounts
+	Total int `json:"total" example:"3"`
 }

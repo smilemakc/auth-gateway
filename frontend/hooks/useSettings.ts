@@ -13,32 +13,7 @@ export function useSystemStatus() {
 export function usePasswordPolicy() {
   return useQuery({
     queryKey: queryKeys.settings.passwordPolicy,
-    queryFn: async () => {
-      // Try to get password policy from system settings
-      // The exact endpoint might vary based on SDK implementation
-      try {
-        const health = await apiClient.admin.system.getHealth();
-        // If password policy is included in health response, return it
-        if (health && 'passwordPolicy' in health) {
-          return (health as any).passwordPolicy;
-        }
-        // Otherwise return a default policy
-        return {
-          minLength: 8,
-          requireUppercase: true,
-          requireLowercase: true,
-          requireNumbers: true,
-          requireSpecial: false,
-          historyCount: 3,
-          expiryDays: 90,
-          jwtTtlMinutes: 15,
-          refreshTtlDays: 7,
-        };
-      } catch (error) {
-        console.error('Failed to fetch password policy:', error);
-        throw error;
-      }
-    },
+    queryFn: () => apiClient.admin.system.getPasswordPolicy(),
   });
 }
 
@@ -46,28 +21,7 @@ export function useUpdatePasswordPolicy() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (policy: any) => {
-      // Password policy is currently config-based (environment variables)
-      // A backend endpoint to update these dynamically needs to be implemented
-      // For now, attempt to call the system settings endpoint
-      const response = await fetch('/api/admin/system/password-policy', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify(policy),
-      });
-      if (!response.ok) {
-        // If the endpoint doesn't exist (404), provide a clear message
-        if (response.status === 404) {
-          throw new Error('Password policy update endpoint not implemented. Password policy is currently configured via environment variables.');
-        }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Failed to update password policy: ${response.status}`);
-      }
-      return response.json();
-    },
+    mutationFn: (policy: any) => apiClient.admin.system.updatePasswordPolicy(policy),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.settings.passwordPolicy });
     },
@@ -126,7 +80,16 @@ export function useSmsSettings() {
 export function useSmsSettingsActive() {
   return useQuery({
     queryKey: ['smsSettings', 'active'],
-    queryFn: () => apiClient.admin.smsSettings.getActive(),
+    queryFn: async () => {
+      try {
+        return await apiClient.admin.smsSettings.getActive();
+      } catch (err: any) {
+        if (err?.status === 404 || err?.response?.status === 404) {
+          return null;
+        }
+        throw err;
+      }
+    },
   });
 }
 

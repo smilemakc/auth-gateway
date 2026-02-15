@@ -13,6 +13,7 @@ interface AdminAPIKeyListResponse {
   total: number;
   page: number;
   page_size: number;
+  total_pages: number;
 }
 
 /** Admin API Keys service for system-wide API key management */
@@ -42,7 +43,7 @@ export class AdminAPIKeysService extends BaseService {
    */
   async revoke(id: string): Promise<MessageResponse> {
     const response = await this.http.post<MessageResponse>(
-      `/admin/api-keys/${id}/revoke`
+      `/api/admin/api-keys/${id}/revoke`
     );
     return response.data;
   }

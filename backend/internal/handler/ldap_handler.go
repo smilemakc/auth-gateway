@@ -122,7 +122,7 @@ func (h *LDAPHandler) GetActiveConfig(c *gin.Context) {
 // @Tags Admin - LDAP
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {array} models.LDAPConfig
+// @Success 200 {object} models.LDAPConfigListResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/ldap/configs [get]
 func (h *LDAPHandler) ListConfigs(c *gin.Context) {
@@ -132,7 +132,10 @@ func (h *LDAPHandler) ListConfigs(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, configs)
+	c.JSON(http.StatusOK, models.LDAPConfigListResponse{
+		Configs: configs,
+		Total:   len(configs),
+	})
 }
 
 // UpdateConfig handles updating LDAP configuration
@@ -293,7 +296,7 @@ func (h *LDAPHandler) Sync(c *gin.Context) {
 // @Param id path string true "Configuration ID (UUID)"
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Page size" default(20)
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} models.LDAPSyncLogListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/ldap/config/{id}/sync-logs [get]
@@ -315,10 +318,12 @@ func (h *LDAPHandler) GetSyncLogs(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"logs":      logs,
-		"total":     total,
-		"page":      page,
-		"page_size": pageSize,
+	totalPages := (total + pageSize - 1) / pageSize
+	c.JSON(http.StatusOK, models.LDAPSyncLogListResponse{
+		Logs:       logs,
+		Total:      total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
 	})
 }

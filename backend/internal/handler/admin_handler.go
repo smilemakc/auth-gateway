@@ -130,7 +130,7 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param id path string true "User ID (UUID)"
-// @Success 200 {array} models.OAuthAccount
+// @Success 200 {object} models.OAuthAccountListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -156,7 +156,10 @@ func (h *AdminHandler) GetUserOAuthAccounts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, accounts)
+	c.JSON(http.StatusOK, models.OAuthAccountListResponse{
+		Accounts: accounts,
+		Total:    len(accounts),
+	})
 }
 
 // UpdateUser updates user information
@@ -390,7 +393,7 @@ func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
 	appID, _ := utils.GetApplicationIDFromContext(c)
 	if appID != nil {
 		offset := (page - 1) * pageSize
-		logs, total, err := h.auditService.ListByApp(c.Request.Context(), *appID, pageSize, offset)
+		rawLogs, total, err := h.auditService.ListByApp(c.Request.Context(), *appID, pageSize, offset)
 		if err != nil {
 			h.logger.Error("Failed to list audit logs", map[string]interface{}{
 				"error": err.Error(),
@@ -398,11 +401,29 @@ func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"logs":      logs,
-			"total":     total,
-			"page":      page,
-			"page_size": pageSize,
+		adminLogs := make([]*models.AdminAuditLogResponse, 0, len(rawLogs))
+		for _, log := range rawLogs {
+			resp := &models.AdminAuditLogResponse{
+				ID:        log.ID,
+				UserID:    log.UserID,
+				Action:    string(log.Action),
+				Status:    string(log.Status),
+				IP:        log.IPAddress,
+				UserAgent: log.UserAgent,
+				CreatedAt: log.CreatedAt,
+			}
+			if log.User != nil {
+				resp.UserEmail = log.User.Email
+			}
+			adminLogs = append(adminLogs, resp)
+		}
+		totalPages := (total + pageSize - 1) / pageSize
+		c.JSON(http.StatusOK, models.AuditLogListResponse{
+			Logs:       adminLogs,
+			Total:      total,
+			Page:       page,
+			PageSize:   pageSize,
+			TotalPages: totalPages,
 		})
 		return
 	}

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../services/queryClient';
+import { apiClient } from '../services/apiClient';
 import type {
   Application,
   ApplicationBranding,
@@ -13,41 +14,18 @@ import type {
   ImportUsersResponse,
 } from '../types';
 
-const API_BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api`;
-
-async function fetchWithAuth(url: string, options: RequestInit = {}) {
-  const token = localStorage.getItem('auth_gateway_access_token');
-  const appId = localStorage.getItem('auth_gateway_current_app_id');
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(appId ? { 'X-Application-ID': appId } : {}),
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Request failed' }));
-    throw new Error(error.message || error.error || 'Request failed');
-  }
-
-  return response.json();
-}
-
 // Applications CRUD
 export function useApplications(page: number = 1, pageSize: number = 20) {
   return useQuery<ListApplicationsResponse>({
     queryKey: queryKeys.applications.list(page, pageSize),
-    queryFn: () => fetchWithAuth(`${API_BASE}/admin/applications?page=${page}&per_page=${pageSize}`),
+    queryFn: () => apiClient.admin.applications.list(page, pageSize),
   });
 }
 
 export function useApplicationDetail(id: string) {
   return useQuery<Application>({
     queryKey: queryKeys.applications.detail(id),
-    queryFn: () => fetchWithAuth(`${API_BASE}/admin/applications/${id}`),
+    queryFn: () => apiClient.admin.applications.getById(id),
     enabled: !!id && id !== 'new',
   });
 }
@@ -57,10 +35,7 @@ export function useCreateApplication() {
 
   return useMutation({
     mutationFn: (data: CreateApplicationRequest) =>
-      fetchWithAuth(`${API_BASE}/admin/applications`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiClient.admin.applications.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
     },
@@ -72,10 +47,7 @@ export function useUpdateApplication() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateApplicationRequest }) =>
-      fetchWithAuth(`${API_BASE}/admin/applications/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+      apiClient.admin.applications.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.detail(variables.id) });
@@ -88,9 +60,7 @@ export function useDeleteApplication() {
 
   return useMutation({
     mutationFn: (id: string) =>
-      fetchWithAuth(`${API_BASE}/admin/applications/${id}`, {
-        method: 'DELETE',
-      }),
+      apiClient.admin.applications.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
     },
@@ -101,7 +71,7 @@ export function useDeleteApplication() {
 export function useApplicationBranding(applicationId: string) {
   return useQuery<ApplicationBranding>({
     queryKey: queryKeys.applications.branding(applicationId),
-    queryFn: () => fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/branding`),
+    queryFn: () => apiClient.admin.applications.getBranding(applicationId),
     enabled: !!applicationId && applicationId !== 'new',
   });
 }
@@ -111,10 +81,7 @@ export function useUpdateApplicationBranding() {
 
   return useMutation({
     mutationFn: ({ applicationId, data }: { applicationId: string; data: UpdateApplicationBrandingRequest }) =>
-      fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/branding`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+      apiClient.admin.applications.updateBranding(applicationId, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.branding(variables.applicationId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.detail(variables.applicationId) });
@@ -126,7 +93,7 @@ export function useUpdateApplicationBranding() {
 export function useApplicationUsers(applicationId: string, page: number = 1, pageSize: number = 20) {
   return useQuery<ListApplicationUsersResponse>({
     queryKey: queryKeys.applications.users(applicationId, page, pageSize),
-    queryFn: () => fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/users?page=${page}&per_page=${pageSize}`),
+    queryFn: () => apiClient.admin.applications.listUsers(applicationId, page, pageSize),
     enabled: !!applicationId && applicationId !== 'new',
   });
 }
@@ -136,10 +103,7 @@ export function useBanUserFromApplication() {
 
   return useMutation({
     mutationFn: ({ applicationId, userId, reason }: { applicationId: string; userId: string; reason: string }) =>
-      fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/users/${userId}/ban`, {
-        method: 'POST',
-        body: JSON.stringify({ reason }),
-      }),
+      apiClient.admin.applications.banUser(applicationId, userId, { reason }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.users(variables.applicationId, 1, 20) });
     },
@@ -151,9 +115,7 @@ export function useUnbanUserFromApplication() {
 
   return useMutation({
     mutationFn: ({ applicationId, userId }: { applicationId: string; userId: string }) =>
-      fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/users/${userId}/unban`, {
-        method: 'POST',
-      }),
+      apiClient.admin.applications.unbanUser(applicationId, userId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.users(variables.applicationId, 1, 20) });
     },
@@ -164,12 +126,8 @@ export function useImportUsers() {
   const queryClient = useQueryClient();
 
   return useMutation<ImportUsersResponse, Error, { appId: string; data: ImportUsersRequest }>({
-    mutationFn: async ({ appId, data }: { appId: string; data: ImportUsersRequest }) => {
-      return fetchWithAuth(`${API_BASE}/admin/users/import`, {
-        method: 'POST',
-        headers: { 'X-Application-ID': appId },
-        body: JSON.stringify(data),
-      });
+    mutationFn: async ({ data }: { appId: string; data: ImportUsersRequest }) => {
+      return apiClient.admin.applications.importUsers(data);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.users(variables.appId, 1, 20) });
@@ -183,10 +141,7 @@ export function useRotateApplicationSecret() {
 
   return useMutation({
     mutationFn: async (appId: string) => {
-      const resp = await fetchWithAuth(`${API_BASE}/admin/applications/${appId}/rotate-secret`, {
-        method: 'POST',
-      });
-      return resp;
+      return apiClient.admin.applications.rotateSecret(appId);
     },
     onSuccess: (_, appId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.detail(appId) });
@@ -198,13 +153,7 @@ export function useRotateApplicationSecret() {
 export function usePublicApplicationBranding(applicationId: string) {
   return useQuery<ApplicationBranding>({
     queryKey: ['public', 'applications', applicationId, 'branding'],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE}/applications/${applicationId}/branding`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch branding');
-      }
-      return response.json();
-    },
+    queryFn: () => apiClient.admin.applications.getPublicBranding(applicationId),
     enabled: !!applicationId,
   });
 }
@@ -213,12 +162,7 @@ export function usePublicApplicationBranding(applicationId: string) {
 export function useMyApplicationProfile(applicationId?: string) {
   return useQuery<UserApplicationProfile>({
     queryKey: ['user', 'application-profile', applicationId],
-    queryFn: () => {
-      const url = applicationId
-        ? `${API_BASE}/user/application-profile?application_id=${applicationId}`
-        : `${API_BASE}/user/application-profile`;
-      return fetchWithAuth(url);
-    },
+    queryFn: () => apiClient.admin.applications.getMyApplicationProfile(applicationId),
     enabled: true,
   });
 }
@@ -227,15 +171,8 @@ export function useUpdateMyApplicationProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ applicationId, data }: { applicationId?: string; data: Partial<UserApplicationProfile> }) => {
-      const url = applicationId
-        ? `${API_BASE}/user/application-profile?application_id=${applicationId}`
-        : `${API_BASE}/user/application-profile`;
-      return fetchWithAuth(url, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      });
-    },
+    mutationFn: ({ applicationId, data }: { applicationId?: string; data: Partial<UserApplicationProfile> }) =>
+      apiClient.admin.applications.updateMyApplicationProfile(data, applicationId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['user', 'application-profile', variables.applicationId] });
     },
@@ -248,7 +185,7 @@ export function useUserApplicationProfile(userId: string, applicationId: string)
     queryKey: ['admin', 'user-application-profile', userId, applicationId],
     queryFn: async () => {
       // Fetch the user from the application users list and find the specific user
-      const response = await fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/users?page=1&per_page=100`);
+      const response = await apiClient.admin.applications.listUsers(applicationId, 1, 100);
       const profile = response.profiles?.find((p: UserApplicationProfile) => p.user_id === userId);
       return profile || null;
     },

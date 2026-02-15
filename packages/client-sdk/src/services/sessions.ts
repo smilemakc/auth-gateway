@@ -21,7 +21,7 @@ export class SessionsService extends BaseService {
    */
   async list(page = 1, perPage = 20): Promise<SessionListResponse> {
     const response = await this.http.get<SessionListResponse>('/api/sessions', {
-      query: { page, per_page: perPage },
+      query: { page, page_size: perPage },
     });
     return response.data;
   }

@@ -47,7 +47,7 @@ export class APIKeysService extends BaseService {
    * @returns API key details
    */
   async get(id: string): Promise<APIKey> {
-    const response = await this.http.get<APIKey>(`/api-keys/${id}`);
+    const response = await this.http.get<APIKey>(`/api/api-keys/${id}`);
     return response.data;
   }
 
@@ -58,7 +58,7 @@ export class APIKeysService extends BaseService {
    * @returns Updated API key
    */
   async update(id: string, data: UpdateAPIKeyRequest): Promise<APIKey> {
-    const response = await this.http.put<APIKey>(`/api-keys/${id}`, data);
+    const response = await this.http.put<APIKey>(`/api/api-keys/${id}`, data);
     return response.data;
   }
 
@@ -69,7 +69,7 @@ export class APIKeysService extends BaseService {
    */
   async revoke(id: string): Promise<MessageResponse> {
     const response = await this.http.post<MessageResponse>(
-      `/api-keys/${id}/revoke`
+      `/api/api-keys/${id}/revoke`
     );
     return response.data;
   }
@@ -80,7 +80,7 @@ export class APIKeysService extends BaseService {
    * @returns Success message
    */
   async delete(id: string): Promise<MessageResponse> {
-    const response = await this.http.delete<MessageResponse>(`/api-keys/${id}`);
+    const response = await this.http.delete<MessageResponse>(`/api/api-keys/${id}`);
     return response.data;
   }
 

@@ -9,9 +9,9 @@ import (
 
 // Webhook represents a webhook configuration
 type Webhook struct {
-	ID            uuid.UUID       `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
-	ApplicationID *uuid.UUID      `bun:"application_id,type:uuid" json:"application_id,omitempty"`
-	Name          string          `json:"name" bun:"name" binding:"required,max=100"`
+	ID              uuid.UUID       `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	ApplicationID   *uuid.UUID      `bun:"application_id,type:uuid" json:"application_id,omitempty"`
+	Name            string          `json:"name" bun:"name" binding:"required,max=100"`
 	URL             string          `json:"url" bun:"url" binding:"required,url,max=500"`
 	SecretKey       string          `json:"secret_key,omitempty" bun:"secret_key"`      // Only sent on creation
 	Events          json.RawMessage `json:"events" bun:"events,type:jsonb"`             // JSON array of event types
@@ -101,7 +101,7 @@ type WebhookListResponse struct {
 	// Current page number
 	Page int `json:"page" example:"1"`
 	// Number of items per page
-	PerPage int `json:"per_page" example:"20"`
+	PageSize int `json:"page_size" example:"20"`
 	// Total number of pages
 	TotalPages int `json:"total_pages" example:"1"`
 }
@@ -115,7 +115,7 @@ type WebhookDeliveryListResponse struct {
 	// Current page number
 	Page int `json:"page" example:"1"`
 	// Number of items per page
-	PerPage int `json:"per_page" example:"20"`
+	PageSize int `json:"page_size" example:"20"`
 	// Total number of pages
 	TotalPages int `json:"total_pages" example:"8"`
 }

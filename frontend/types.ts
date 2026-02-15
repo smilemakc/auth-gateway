@@ -280,7 +280,7 @@ export interface ListApplicationsResponse {
   applications: Application[];
   total: number;
   page: number;
-  per_page: number;
+  page_size: number;
 }
 
 /** Response for listing application users */
@@ -288,7 +288,7 @@ export interface ListApplicationUsersResponse {
   profiles: UserApplicationProfile[];
   total: number;
   page: number;
-  per_page: number;
+  page_size: number;
 }
 
 /** User entry for import */

@@ -58,7 +58,7 @@ func NewAdvancedAdminHandler(
 // @Tags Admin - RBAC
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {array} models.Permission
+// @Success 200 {object} models.PermissionListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -78,7 +78,10 @@ func (h *AdvancedAdminHandler) ListPermissions(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, permissions)
+	c.JSON(http.StatusOK, models.PermissionListResponse{
+		Permissions: permissions,
+		Total:       len(permissions),
+	})
 }
 
 // CreatePermission godoc
@@ -194,7 +197,7 @@ func (h *AdvancedAdminHandler) DeletePermission(c *gin.Context) {
 // @Tags Admin - RBAC
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {array} models.Role
+// @Success 200 {object} models.RoleListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -214,7 +217,10 @@ func (h *AdvancedAdminHandler) ListRoles(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, roles)
+	c.JSON(http.StatusOK, models.RoleListResponse{
+		Roles: roles,
+		Total: len(roles),
+	})
 }
 
 // CreateRole godoc
@@ -380,7 +386,7 @@ func (h *AdvancedAdminHandler) GetPermissionMatrix(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Success 200 {object} models.SessionListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -393,16 +399,16 @@ func (h *AdvancedAdminHandler) ListUserSessions(c *gin.Context) {
 	}
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
 	if page < 1 {
 		page = 1
 	}
-	if perPage < 1 || perPage > 100 {
-		perPage = 20
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
 	}
 
-	sessions, err := h.sessionService.GetUserSessions(c.Request.Context(), *userID, page, perPage)
+	sessions, err := h.sessionService.GetUserSessions(c.Request.Context(), *userID, page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
@@ -546,44 +552,65 @@ func (h *AdvancedAdminHandler) GetSessionStats(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(50)
-// @Success 200 {array} models.ActiveSessionResponse
+// @Param page_size query int false "Page size" default(50)
+// @Success 200 {object} models.SessionListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/sessions [get]
 func (h *AdvancedAdminHandler) ListAllSessions(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "50"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
 
 	if page < 1 {
 		page = 1
 	}
-	if perPage < 1 || perPage > 100 {
-		perPage = 50
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 50
 	}
 
 	appID, _ := utils.GetApplicationIDFromContext(c)
 
 	if appID != nil {
-		sessions, total, err := h.sessionService.GetAppSessionsPaginated(c.Request.Context(), *appID, page, perPage)
+		sessions, total, err := h.sessionService.GetAppSessionsPaginated(c.Request.Context(), *appID, page, pageSize)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 			return
 		}
 
-		totalPages := (total + perPage - 1) / perPage
-		c.JSON(http.StatusOK, gin.H{
-			"sessions":    sessions,
-			"total":       total,
-			"page":        page,
-			"per_page":    perPage,
-			"total_pages": totalPages,
+		responseSessions := make([]models.ActiveSessionResponse, len(sessions))
+		for i, session := range sessions {
+			responseSessions[i] = models.ActiveSessionResponse{
+				ID:           session.ID,
+				UserID:       session.UserID,
+				DeviceType:   session.DeviceType,
+				OS:           session.OS,
+				Browser:      session.Browser,
+				UserAgent:    session.UserAgent,
+				IPAddress:    session.IPAddress,
+				SessionName:  session.SessionName,
+				LastActiveAt: session.LastActiveAt,
+				CreatedAt:    session.CreatedAt,
+				ExpiresAt:    session.ExpiresAt,
+			}
+			if session.User != nil {
+				responseSessions[i].UserEmail = session.User.Email
+				responseSessions[i].Username = session.User.Username
+			}
+		}
+
+		totalPages := (total + pageSize - 1) / pageSize
+		c.JSON(http.StatusOK, models.SessionListResponse{
+			Sessions:   responseSessions,
+			Total:      total,
+			Page:       page,
+			PageSize:   pageSize,
+			TotalPages: totalPages,
 		})
 		return
 	}
 
-	sessions, err := h.sessionService.GetAllSessions(c.Request.Context(), page, perPage)
+	sessions, err := h.sessionService.GetAllSessions(c.Request.Context(), page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
@@ -603,7 +630,7 @@ func (h *AdvancedAdminHandler) ListAllSessions(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Param type query string false "Filter type (whitelist/blacklist)"
 // @Success 200 {object} models.IPFilterListResponse
 // @Failure 401 {object} models.ErrorResponse
@@ -612,17 +639,17 @@ func (h *AdvancedAdminHandler) ListAllSessions(c *gin.Context) {
 // @Router /api/admin/ip-filters [get]
 func (h *AdvancedAdminHandler) ListIPFilters(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 	filterType := c.Query("type")
 
 	if page < 1 {
 		page = 1
 	}
-	if perPage < 1 || perPage > 100 {
-		perPage = 20
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
 	}
 
-	filters, err := h.ipFilterService.ListIPFilters(c.Request.Context(), page, perPage, filterType)
+	filters, err := h.ipFilterService.ListIPFilters(c.Request.Context(), page, pageSize, filterType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return

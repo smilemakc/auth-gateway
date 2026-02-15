@@ -60,7 +60,7 @@ const UserDetails: React.FC = () => {
     (key: any) => key.user_id === id
   );
   const logs = (logsData?.logs || logsData?.items || []).slice(0, 5);
-  const oauthAccounts = oauthAccountsData || [];
+  const oauthAccounts = oauthAccountsData?.accounts || [];
 
   const handleRevokeSession = async (sessionId: string) => {
     const ok = await confirm({ description: t('user.revoke_confirm'), variant: 'danger' });

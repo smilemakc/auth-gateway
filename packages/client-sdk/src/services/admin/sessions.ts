@@ -22,7 +22,7 @@ export class AdminSessionsService extends BaseService {
   async list(page = 1, perPage = 50): Promise<SessionListResponse> {
     const response = await this.http.get<Session[] | SessionListResponse>(
       '/api/admin/sessions',
-      { query: { page, per_page: perPage } }
+      { query: { page, page_size: perPage } }
     );
 
     // Backend may return array directly
@@ -31,7 +31,7 @@ export class AdminSessionsService extends BaseService {
         sessions: response.data,
         total: response.data.length,
         page,
-        per_page: perPage,
+        page_size: perPage,
       };
     }
 
@@ -61,7 +61,7 @@ export class AdminSessionsService extends BaseService {
   ): Promise<SessionListResponse> {
     const response = await this.http.get<SessionListResponse>(
       `/api/admin/users/${userId}/sessions`,
-      { query: { page, per_page: perPage } }
+      { query: { page, page_size: perPage } }
     );
     return response.data;
   }

@@ -25,3 +25,5 @@ export { AdminTelegramBotsService } from './telegram-bots';
 export { AdminUserTelegramService } from './user-telegram';
 export { AdminEmailService, type SendEmailRequest } from './email';
 export { AdminApplicationsService } from './applications';
+export { AdminEmailProvidersService } from './email-providers';
+export { AdminEmailProfilesService } from './email-profiles';

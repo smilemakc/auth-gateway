@@ -124,7 +124,7 @@ func (h *TelegramHandler) GetBot(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param id path string true "Application ID (UUID)"
-// @Success 200 {array} models.TelegramBot
+// @Success 200 {object} models.TelegramBotListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -149,7 +149,10 @@ func (h *TelegramHandler) ListBots(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, bots)
+	c.JSON(http.StatusOK, models.TelegramBotListResponse{
+		Bots:  bots,
+		Total: len(bots),
+	})
 }
 
 // UpdateBot updates a Telegram bot
@@ -254,7 +257,7 @@ func (h *TelegramHandler) DeleteBot(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param id path string true "User ID (UUID)"
-// @Success 200 {array} models.UserTelegramAccount
+// @Success 200 {object} models.UserTelegramAccountListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -279,7 +282,10 @@ func (h *TelegramHandler) ListUserTelegramAccounts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, accounts)
+	c.JSON(http.StatusOK, models.UserTelegramAccountListResponse{
+		Accounts: accounts,
+		Total:    len(accounts),
+	})
 }
 
 // ListUserTelegramBotAccess returns user's Telegram bot access records
@@ -290,7 +296,7 @@ func (h *TelegramHandler) ListUserTelegramAccounts(c *gin.Context) {
 // @Produce json
 // @Param id path string true "User ID (UUID)"
 // @Param app_id query string false "Application ID (UUID) to filter by"
-// @Success 200 {array} models.UserTelegramBotAccess
+// @Success 200 {object} models.UserTelegramBotAccessListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -339,7 +345,10 @@ func (h *TelegramHandler) ListUserTelegramBotAccess(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, botAccess)
+	c.JSON(http.StatusOK, models.UserTelegramBotAccessListResponse{
+		Access: botAccess,
+		Total:  len(botAccess),
+	})
 }
 
 func (h *TelegramHandler) parseIDParam(c *gin.Context, param string) (uuid.UUID, error) {

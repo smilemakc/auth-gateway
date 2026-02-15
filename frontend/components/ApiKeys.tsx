@@ -292,7 +292,7 @@ const ApiKeys: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">{apiKey.name}</h3>
-                    <p className="text-sm text-muted-foreground">{t('keys.owner')}: {apiKey.user_email || apiKey.user_name || 'N/A'}</p>
+                    <p className="text-sm text-muted-foreground">{t('keys.owner')}: {apiKey.user_email || apiKey.owner_name || 'N/A'}</p>
                   </div>
                 </div>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${

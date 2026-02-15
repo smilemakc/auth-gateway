@@ -123,8 +123,9 @@ type GroupResponse struct {
 
 // GroupListResponse represents a paginated list of groups
 type GroupListResponse struct {
-	Groups []GroupResponse `json:"groups"`
-	Total  int             `json:"total" example:"50"`
-	Page   int             `json:"page" example:"1"`
-	Size   int             `json:"size" example:"20"`
+	Groups     []GroupResponse `json:"groups"`
+	Total      int             `json:"total" example:"50"`
+	Page       int             `json:"page" example:"1"`
+	PageSize   int             `json:"page_size" example:"20"`
+	TotalPages int             `json:"total_pages"`
 }

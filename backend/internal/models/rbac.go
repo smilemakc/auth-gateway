@@ -62,7 +62,7 @@ type UserRole struct {
 	RoleID        uuid.UUID  `json:"role_id" bun:"role_id,pk,type:uuid"`
 	ApplicationID *uuid.UUID `bun:"application_id,type:uuid" json:"application_id,omitempty"`
 	AssignedAt    time.Time  `json:"assigned_at" bun:"assigned_at,nullzero,notnull,default:current_timestamp"`
-	AssignedBy *uuid.UUID `json:"assigned_by,omitempty" bun:"assigned_by,type:uuid"`
+	AssignedBy    *uuid.UUID `json:"assigned_by,omitempty" bun:"assigned_by,type:uuid"`
 
 	// Belongs-to relations
 	User *User `bun:"rel:belongs-to,join:user_id=id"`
@@ -193,4 +193,20 @@ type CheckPermissionResponse struct {
 	HasPermission bool `json:"has_permission" example:"true"`
 	// Name of the role that grants this permission
 	RoleName string `json:"role_name,omitempty" example:"admin"`
+}
+
+// PermissionListResponse represents permissions list
+type PermissionListResponse struct {
+	// List of permissions
+	Permissions []Permission `json:"permissions"`
+	// Total number of permissions
+	Total int `json:"total" example:"20"`
+}
+
+// RoleListResponse represents roles list
+type RoleListResponse struct {
+	// List of roles
+	Roles []Role `json:"roles"`
+	// Total number of roles
+	Total int `json:"total" example:"5"`
 }

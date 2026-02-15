@@ -85,6 +85,7 @@ export interface AdminUserListResponse {
   total: number;
   page: number;
   page_size: number;
+  total_pages: number;
 }
 
 /** Admin statistics response */

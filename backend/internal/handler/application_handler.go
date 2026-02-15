@@ -133,7 +133,7 @@ func (h *ApplicationHandler) GetApplication(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Param is_active query bool false "Filter by active status"
 // @Success 200 {object} models.ApplicationListResponse
 // @Failure 401 {object} models.ErrorResponse
@@ -350,7 +350,7 @@ func (h *ApplicationHandler) UpdateBranding(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Application ID (UUID)"
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Success 200 {object} models.UserAppProfileListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
@@ -742,12 +742,12 @@ func (h *ApplicationHandler) GetAuthConfig(c *gin.Context) {
 
 func (h *ApplicationHandler) getPagination(c *gin.Context) (int, int) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 	if page < 1 {
 		page = 1
 	}
-	if perPage < 1 || perPage > 100 {
-		perPage = 20
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
 	}
-	return page, perPage
+	return page, pageSize
 }

@@ -53,7 +53,13 @@ func (h *TemplateHandler) ListEmailTemplates(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"templates": templates})
+	c.JSON(http.StatusOK, models.EmailTemplateListResponse{
+		Templates:  templates,
+		Total:      len(templates),
+		Page:       1,
+		PageSize:   len(templates),
+		TotalPages: 1,
+	})
 }
 
 // GetEmailTemplate godoc
@@ -297,7 +303,13 @@ func (h *TemplateHandler) ListApplicationEmailTemplates(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"templates": templates})
+	c.JSON(http.StatusOK, models.EmailTemplateListResponse{
+		Templates:  templates,
+		Total:      len(templates),
+		Page:       1,
+		PageSize:   len(templates),
+		TotalPages: 1,
+	})
 }
 
 // CreateApplicationEmailTemplate godoc

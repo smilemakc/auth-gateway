@@ -27,8 +27,8 @@ export class AdminRBACService extends BaseService {
    * @returns List of permissions
    */
   async listPermissions(): Promise<Permission[]> {
-    const response = await this.http.get<Permission[]>('/api/admin/rbac/permissions');
-    return response.data;
+    const response = await this.http.get<{ permissions: Permission[]; total: number }>('/api/admin/rbac/permissions');
+    return response.data.permissions;
   }
 
   /**
@@ -45,13 +45,27 @@ export class AdminRBACService extends BaseService {
   }
 
   /**
+   * Update a permission
+   * @param id Permission ID
+   * @param data Permission update data
+   * @returns Updated permission
+   */
+  async updatePermission(id: string, data: { name?: string; description?: string }): Promise<Permission> {
+    const response = await this.http.put<Permission>(
+      `/api/admin/rbac/permissions/${id}`,
+      data
+    );
+    return response.data;
+  }
+
+  /**
    * Delete a permission
    * @param id Permission ID
    * @returns Success message
    */
   async deletePermission(id: string): Promise<MessageResponse> {
     const response = await this.http.delete<MessageResponse>(
-      `/admin/rbac/permissions/${id}`
+      `/api/admin/rbac/permissions/${id}`
     );
     return response.data;
   }
@@ -73,8 +87,8 @@ export class AdminRBACService extends BaseService {
    * @returns List of roles with their permissions
    */
   async listRoles(): Promise<Role[]> {
-    const response = await this.http.get<Role[]>('/api/admin/rbac/roles');
-    return response.data;
+    const response = await this.http.get<{ roles: Role[]; total: number }>('/api/admin/rbac/roles');
+    return response.data.roles;
   }
 
   /**
@@ -83,7 +97,7 @@ export class AdminRBACService extends BaseService {
    * @returns Role details with permissions
    */
   async getRole(id: string): Promise<Role> {
-    const response = await this.http.get<Role>(`/admin/rbac/roles/${id}`);
+    const response = await this.http.get<Role>(`/api/admin/rbac/roles/${id}`);
     return response.data;
   }
 
@@ -104,7 +118,7 @@ export class AdminRBACService extends BaseService {
    * @returns Updated role
    */
   async updateRole(id: string, data: UpdateRoleRequest): Promise<Role> {
-    const response = await this.http.put<Role>(`/admin/rbac/roles/${id}`, data);
+    const response = await this.http.put<Role>(`/api/admin/rbac/roles/${id}`, data);
     return response.data;
   }
 
@@ -115,7 +129,7 @@ export class AdminRBACService extends BaseService {
    */
   async deleteRole(id: string): Promise<MessageResponse> {
     const response = await this.http.delete<MessageResponse>(
-      `/admin/rbac/roles/${id}`
+      `/api/admin/rbac/roles/${id}`
     );
     return response.data;
   }

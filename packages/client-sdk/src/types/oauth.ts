@@ -49,3 +49,9 @@ export interface OAuthAccount {
   created_at: string;
   updated_at: string;
 }
+
+/** OAuth account list response */
+export interface OAuthAccountListResponse {
+  accounts: OAuthAccount[];
+  total: number;
+}

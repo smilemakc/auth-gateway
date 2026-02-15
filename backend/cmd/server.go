@@ -109,6 +109,7 @@ type repoSet struct {
 	AppOAuthProvider *repository.AppOAuthProviderRepository
 	TelegramBot      *repository.TelegramBotRepository
 	UserTelegram     *repository.UserTelegramRepository
+	SMSSettings      *repository.SMSSettingsRepository
 }
 
 type serviceSet struct {
@@ -169,6 +170,7 @@ type handlerSet struct {
 	Telegram         *handler.TelegramHandler
 	Migration        *handler.MigrationHandler
 	TokenExchange    *handler.TokenExchangeHandler
+	SMSSettings      *handler.SMSSettingsHandler
 }
 
 type middlewareSet struct {
@@ -418,6 +420,7 @@ func buildRepositories(deps *infra) *repoSet {
 		AppOAuthProvider: repository.NewAppOAuthProviderRepository(deps.db),
 		TelegramBot:      repository.NewTelegramBotRepository(deps.db),
 		UserTelegram:     repository.NewUserTelegramRepository(deps.db),
+		SMSSettings:      repository.NewSMSSettingsRepository(deps.db),
 	}
 }
 
@@ -635,6 +638,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	telegramHandler := handler.NewTelegramHandler(services.Telegram, deps.log)
 	migrationHandler := handler.NewMigrationHandler(services.Migration, deps.log)
 	tokenExchangeHandler := handler.NewTokenExchangeHandler(services.TokenExchange)
+	smsSettingsHandler := handler.NewSMSSettingsHandler(repos.SMSSettings, deps.log)
 
 	return &handlerSet{
 		Auth:             authHandler,
@@ -662,6 +666,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 		Telegram:         telegramHandler,
 		Migration:        migrationHandler,
 		TokenExchange:    tokenExchangeHandler,
+		SMSSettings:      smsSettingsHandler,
 	}
 }
 
@@ -1073,6 +1078,17 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 				emailProfilesGroup.DELETE("/:id/templates/:otp_type", handlers.EmailProfile.RemoveProfileTemplate)
 				emailProfilesGroup.GET("/:id/stats", handlers.EmailProfile.GetProfileStats)
 				emailProfilesGroup.POST("/:id/test", handlers.EmailProfile.TestProfile)
+			}
+
+			// SMS Settings Management
+			smsSettingsGroup := adminGroup.Group("/sms/settings")
+			{
+				smsSettingsGroup.GET("", handlers.SMSSettings.GetAllSettings)
+				smsSettingsGroup.POST("", handlers.SMSSettings.CreateSettings)
+				smsSettingsGroup.GET("/active", handlers.SMSSettings.GetActiveSettings)
+				smsSettingsGroup.GET("/:id", handlers.SMSSettings.GetSettings)
+				smsSettingsGroup.PUT("/:id", handlers.SMSSettings.UpdateSettings)
+				smsSettingsGroup.DELETE("/:id", handlers.SMSSettings.DeleteSettings)
 			}
 
 			// Application Management

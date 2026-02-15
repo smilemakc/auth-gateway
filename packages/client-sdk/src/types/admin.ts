@@ -23,7 +23,8 @@ export interface IPFilterListResponse {
   filters: IPFilter[];
   total: number;
   page: number;
-  per_page: number;
+  page_size: number;
+  total_pages: number;
 }
 
 /** Audit log entry */
@@ -46,6 +47,7 @@ export interface AuditLogListResponse {
   total: number;
   page: number;
   page_size: number;
+  total_pages: number;
 }
 
 /** Theme settings */
@@ -212,7 +214,8 @@ export interface WebhookListResponse {
   webhooks: Webhook[];
   total: number;
   page: number;
-  per_page: number;
+  page_size: number;
+  total_pages: number;
 }
 
 /** Webhook delivery list response */
@@ -220,7 +223,8 @@ export interface WebhookDeliveryListResponse {
   deliveries: WebhookDelivery[];
   total: number;
   page: number;
-  per_page: number;
+  page_size: number;
+  total_pages: number;
 }
 
 /** Create webhook response (includes secret key) */
@@ -285,6 +289,10 @@ export interface PreviewEmailTemplateResponse {
 /** Email template list response */
 export interface EmailTemplateListResponse {
   templates: EmailTemplate[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
 }
 
 /** Email template types response */
@@ -389,7 +397,8 @@ export interface GroupListResponse {
   groups: Group[];
   total: number;
   page: number;
-  size: number;
+  page_size: number;
+  total_pages: number;
 }
 
 /** Group members response */
@@ -402,7 +411,8 @@ export interface GroupMembersResponse {
   }>;
   total: number;
   page: number;
-  size: number;
+  page_size: number;
+  total_pages: number;
 }
 
 // ============================================
@@ -597,6 +607,7 @@ export interface SAMLSPListResponse {
   total: number;
   page: number;
   page_size: number;
+  total_pages: number;
 }
 
 /** SAML metadata response */
@@ -764,7 +775,8 @@ export interface ApplicationListResponse {
   applications: Application[];
   total: number;
   page: number;
-  per_page: number;
+  page_size: number;
+  total_pages: number;
 }
 
 /** Rotate application secret response */
@@ -794,7 +806,8 @@ export interface UserAppProfileListResponse {
   profiles: UserAppProfile[];
   total: number;
   page: number;
-  per_page: number;
+  page_size: number;
+  total_pages: number;
 }
 
 /** Ban user request */

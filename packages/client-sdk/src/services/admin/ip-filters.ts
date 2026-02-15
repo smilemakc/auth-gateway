@@ -31,7 +31,7 @@ export class AdminIPFiltersService extends BaseService {
   ): Promise<IPFilterListResponse> {
     const response = await this.http.get<IPFilterListResponse>(
       '/api/admin/ip-filters',
-      { query: { type, page, per_page: perPage } }
+      { query: { type, page, page_size: perPage } }
     );
     return response.data;
   }
@@ -53,7 +53,7 @@ export class AdminIPFiltersService extends BaseService {
    */
   async delete(id: string): Promise<MessageResponse> {
     const response = await this.http.delete<MessageResponse>(
-      `/admin/ip-filters/${id}`
+      `/api/admin/ip-filters/${id}`
     );
     return response.data;
   }

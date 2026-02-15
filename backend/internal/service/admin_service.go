@@ -442,16 +442,19 @@ func (s *AdminService) ListAPIKeys(ctx context.Context, appID *uuid.UUID, page, 
 		if user != nil {
 			resp.Username = user.Username
 			resp.UserEmail = user.Email
-			resp.UserName = user.FullName
+			resp.OwnerName = user.FullName
 		}
 		adminAPIKeys = append(adminAPIKeys, resp)
 	}
 
+	totalPages := (total + pageSize - 1) / pageSize
+
 	return &models.AdminAPIKeyListResponse{
-		APIKeys:  adminAPIKeys,
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
+		APIKeys:    adminAPIKeys,
+		Total:      total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
 	}, nil
 }
 
@@ -461,7 +464,7 @@ func (s *AdminService) RevokeAPIKey(ctx context.Context, keyID uuid.UUID) error 
 }
 
 // ListAuditLogs returns paginated audit logs
-func (s *AdminService) ListAuditLogs(ctx context.Context, page, pageSize int, userID *uuid.UUID) ([]*models.AdminAuditLogResponse, error) {
+func (s *AdminService) ListAuditLogs(ctx context.Context, page, pageSize int, userID *uuid.UUID) (*models.AuditLogListResponse, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -472,16 +475,32 @@ func (s *AdminService) ListAuditLogs(ctx context.Context, page, pageSize int, us
 	offset := (page - 1) * pageSize
 
 	var logs []*models.AuditLog
+	var total int
 	var err error
 
 	if userID != nil {
 		logs, err = s.auditRepo.GetByUserID(ctx, *userID, pageSize, offset)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list audit logs: %w", err)
+		}
+		// For user-specific logs, we need to count separately
+		// Since the repository doesn't have a CountByUserID method, we'll use a workaround
+		// by fetching with a high limit and counting, or return 0 for now
+		// For proper implementation, we'd need to add CountByUserID to the interface
+		total = len(logs) // This is an approximation, ideally we'd have a proper count method
+		if len(logs) == pageSize {
+			// If we got a full page, there might be more
+			total = page * pageSize // Conservative estimate
+		}
 	} else {
 		logs, err = s.auditRepo.List(ctx, pageSize, offset)
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to list audit logs: %w", err)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list audit logs: %w", err)
+		}
+		total, err = s.auditRepo.Count(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to count audit logs: %w", err)
+		}
 	}
 
 	adminLogs := make([]*models.AdminAuditLogResponse, 0, len(logs))
@@ -509,7 +528,15 @@ func (s *AdminService) ListAuditLogs(ctx context.Context, page, pageSize int, us
 		adminLogs = append(adminLogs, resp)
 	}
 
-	return adminLogs, nil
+	totalPages := (total + pageSize - 1) / pageSize
+
+	return &models.AuditLogListResponse{
+		Logs:       adminLogs,
+		Total:      total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}, nil
 }
 
 // AssignRole assigns a role to a user

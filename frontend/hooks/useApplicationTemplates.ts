@@ -1,34 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../services/queryClient';
+import { apiClient } from '../services/apiClient';
 import type {
   EmailTemplate,
   EmailTemplateType,
   CreateEmailTemplateRequest,
   UpdateEmailTemplateRequest,
 } from '@auth-gateway/client-sdk';
-
-const API_BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api`;
-
-async function fetchWithAuth(url: string, options: RequestInit = {}) {
-  const token = localStorage.getItem('auth_gateway_access_token');
-  const appId = localStorage.getItem('auth_gateway_current_app_id');
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(appId ? { 'X-Application-ID': appId } : {}),
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Request failed' }));
-    throw new Error(error.message || error.error || 'Request failed');
-  }
-
-  return response.json();
-}
 
 interface EmailTemplateListResponse {
   templates: EmailTemplate[];
@@ -37,7 +15,7 @@ interface EmailTemplateListResponse {
 export function useApplicationTemplates(applicationId: string) {
   return useQuery<EmailTemplateListResponse>({
     queryKey: queryKeys.applications.templates(applicationId),
-    queryFn: () => fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/email-templates`),
+    queryFn: () => apiClient.admin.applications.listTemplates(applicationId),
     enabled: !!applicationId && applicationId !== 'new',
   });
 }
@@ -45,7 +23,7 @@ export function useApplicationTemplates(applicationId: string) {
 export function useApplicationTemplateDetail(applicationId: string, templateId: string) {
   return useQuery<EmailTemplate>({
     queryKey: queryKeys.applications.templateDetail(applicationId, templateId),
-    queryFn: () => fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/email-templates/${templateId}`),
+    queryFn: () => apiClient.admin.applications.getTemplate(applicationId, templateId),
     enabled: !!applicationId && applicationId !== 'new' && !!templateId && templateId !== 'new',
   });
 }
@@ -55,10 +33,7 @@ export function useCreateApplicationTemplate(applicationId: string) {
 
   return useMutation({
     mutationFn: (data: CreateEmailTemplateRequest) =>
-      fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/email-templates`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiClient.admin.applications.createTemplate(applicationId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.templates(applicationId) });
     },
@@ -70,10 +45,7 @@ export function useUpdateApplicationTemplate(applicationId: string) {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateEmailTemplateRequest }) =>
-      fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/email-templates/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+      apiClient.admin.applications.updateTemplate(applicationId, id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.templates(applicationId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.templateDetail(applicationId, variables.id) });
@@ -86,9 +58,7 @@ export function useDeleteApplicationTemplate(applicationId: string) {
 
   return useMutation({
     mutationFn: (id: string) =>
-      fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/email-templates/${id}`, {
-        method: 'DELETE',
-      }),
+      apiClient.admin.applications.deleteTemplate(applicationId, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.templates(applicationId) });
     },
@@ -100,9 +70,7 @@ export function useInitializeApplicationTemplates(applicationId: string) {
 
   return useMutation({
     mutationFn: () =>
-      fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/email-templates/initialize`, {
-        method: 'POST',
-      }),
+      apiClient.admin.applications.initializeTemplates(applicationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.templates(applicationId) });
     },
@@ -114,9 +82,7 @@ export function useEnableApplicationTemplate(applicationId: string) {
 
   return useMutation({
     mutationFn: (id: string) =>
-      fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/email-templates/${id}/enable`, {
-        method: 'POST',
-      }),
+      apiClient.admin.applications.enableTemplate(applicationId, id),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.templates(applicationId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.templateDetail(applicationId, id) });
@@ -129,9 +95,7 @@ export function useDisableApplicationTemplate(applicationId: string) {
 
   return useMutation({
     mutationFn: (id: string) =>
-      fetchWithAuth(`${API_BASE}/admin/applications/${applicationId}/email-templates/${id}/disable`, {
-        method: 'POST',
-      }),
+      apiClient.admin.applications.disableTemplate(applicationId, id),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.templates(applicationId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.templateDetail(applicationId, id) });

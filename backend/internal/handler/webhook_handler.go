@@ -33,7 +33,7 @@ func NewWebhookHandler(webhookService *service.WebhookService, log *logger.Logge
 // @Accept json
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Security BearerAuth
 // @Success 200 {object} models.WebhookListResponse
 // @Failure 401 {object} models.ErrorResponse
@@ -49,20 +49,24 @@ func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to list webhooks"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"webhooks":    webhooks,
-			"total":       len(webhooks),
-			"page":        1,
-			"per_page":    len(webhooks),
-			"total_pages": 1,
+		wrapped := make([]models.WebhookWithCreator, len(webhooks))
+		for i, w := range webhooks {
+			wrapped[i] = models.WebhookWithCreator{Webhook: *w}
+		}
+		c.JSON(http.StatusOK, models.WebhookListResponse{
+			Webhooks:   wrapped,
+			Total:      len(wrapped),
+			Page:       1,
+			PageSize:   len(wrapped),
+			TotalPages: 1,
 		})
 		return
 	}
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
-	resp, err := h.webhookService.ListWebhooks(c.Request.Context(), page, perPage)
+	resp, err := h.webhookService.ListWebhooks(c.Request.Context(), page, pageSize)
 	if err != nil {
 		h.logger.Error("Failed to list webhooks", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to list webhooks"})
@@ -266,7 +270,7 @@ func (h *WebhookHandler) TestWebhook(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Webhook ID (UUID)"
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Security BearerAuth
 // @Success 200 {object} models.WebhookDeliveryListResponse
 // @Failure 400 {object} models.ErrorResponse
@@ -282,9 +286,9 @@ func (h *WebhookHandler) ListWebhookDeliveries(c *gin.Context) {
 	}
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
-	resp, err := h.webhookService.ListWebhookDeliveries(c.Request.Context(), id, page, perPage)
+	resp, err := h.webhookService.ListWebhookDeliveries(c.Request.Context(), id, page, pageSize)
 	if err != nil {
 		h.logger.Error("Failed to list deliveries", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to list deliveries"})

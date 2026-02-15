@@ -47,13 +47,16 @@ export class AdminAuditService extends BaseService {
       }
     );
 
-    // Backend returns an array directly, wrap it for consistency
+    // Fallback: if backend somehow returns raw array, wrap it
     if (Array.isArray(response.data)) {
+      const page = options.page ?? 1;
+      const pageSize = options.pageSize ?? 50;
       return {
         logs: response.data,
         total: response.data.length,
-        page: options.page ?? 1,
-        page_size: options.pageSize ?? 50,
+        page,
+        page_size: pageSize,
+        total_pages: Math.ceil(response.data.length / pageSize) || 1,
       };
     }
 

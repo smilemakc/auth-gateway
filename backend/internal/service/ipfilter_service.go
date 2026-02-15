@@ -64,7 +64,7 @@ func (s *IPFilterService) ListIPFilters(ctx context.Context, page, perPage int, 
 		Filters:    filters,
 		Total:      total,
 		Page:       page,
-		PerPage:    perPage,
+		PageSize:   perPage,
 		TotalPages: totalPages,
 	}, nil
 }
