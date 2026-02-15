@@ -16,21 +16,22 @@ import (
 
 // AuthService provides authentication operations
 type AuthService struct {
-	userRepo          UserStore
-	tokenRepo         TokenStore
-	rbacRepo          RBACStore
-	auditService      AuditLogger
-	jwtService        TokenService
-	blacklistService  *BlacklistService
-	redis             CacheService
-	sessionService    *SessionService
-	twoFAService      *TwoFactorService
-	loginAlertService *LoginAlertService
-	webhookService    *WebhookService
-	bcryptCost        int
-	passwordPolicy    utils.PasswordPolicy
-	db                TransactionDB
-	appRepo           ApplicationStore
+	userRepo           UserStore
+	tokenRepo          TokenStore
+	rbacRepo           RBACStore
+	auditService       AuditLogger
+	jwtService         TokenService
+	blacklistService   *BlacklistService
+	redis              CacheService
+	sessionService     *SessionService
+	twoFAService       *TwoFactorService
+	loginAlertService  *LoginAlertService
+	webhookService     *WebhookService
+	bcryptCost         int
+	passwordPolicy     utils.PasswordPolicy
+	db                 TransactionDB
+	appRepo            ApplicationStore
+	strictTokenBinding bool
 }
 
 // TransactionDB defines the interface for database transactions
@@ -55,23 +56,25 @@ func NewAuthService(
 	appRepo ApplicationStore,
 	loginAlertService *LoginAlertService,
 	webhookService *WebhookService,
+	strictTokenBinding bool,
 ) *AuthService {
 	return &AuthService{
-		userRepo:          userRepo,
-		tokenRepo:         tokenRepo,
-		rbacRepo:          rbacRepo,
-		auditService:      auditService,
-		jwtService:        jwtService,
-		blacklistService:  blacklistService,
-		redis:             redis,
-		sessionService:    sessionService,
-		twoFAService:      twoFAService,
-		loginAlertService: loginAlertService,
-		webhookService:    webhookService,
-		bcryptCost:        bcryptCost,
-		passwordPolicy:    passwordPolicy,
-		db:                db,
-		appRepo:           appRepo,
+		userRepo:           userRepo,
+		tokenRepo:          tokenRepo,
+		rbacRepo:           rbacRepo,
+		auditService:       auditService,
+		jwtService:         jwtService,
+		blacklistService:   blacklistService,
+		redis:              redis,
+		sessionService:     sessionService,
+		twoFAService:       twoFAService,
+		loginAlertService:  loginAlertService,
+		webhookService:     webhookService,
+		bcryptCost:         bcryptCost,
+		passwordPolicy:     passwordPolicy,
+		db:                 db,
+		appRepo:            appRepo,
+		strictTokenBinding: strictTokenBinding,
 	}
 }
 
@@ -431,6 +434,16 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 			return models.ErrTokenExpired
 		}
 
+		// Device binding: reject if IP changed (when strict mode enabled)
+		if s.strictTokenBinding && dbToken.IPAddress != "" && dbToken.IPAddress != ip {
+			s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				"reason":      "device_mismatch",
+				"original_ip": dbToken.IPAddress,
+				"current_ip":  ip,
+			})
+			return models.ErrTokenCompromised
+		}
+
 		// Revoke old refresh token
 		if err := tokenRepo.RevokeRefreshTokenWithTx(ctx, tx, oldTokenHash); err != nil {
 			return fmt.Errorf("failed to revoke old token: %w", err)
@@ -460,6 +473,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 			Browser:     deviceInfo.Browser,
 			SessionName: dbToken.SessionName, // Keep original session name
 			IPAddress:   ip,
+			UserAgent:   userAgent,
 		}
 
 		if err := tokenRepo.CreateRefreshTokenWithTx(ctx, tx, newDBToken); err != nil {
@@ -895,6 +909,7 @@ func (s *AuthService) finalizeAuth(ctx context.Context, user *models.User, ip, u
 		Browser:     deviceInfo.Browser,
 		SessionName: sessionName,
 		IPAddress:   ip,
+		UserAgent:   userAgent,
 	}
 
 	if err := s.tokenRepo.CreateRefreshToken(ctx, dbToken); err != nil {

@@ -36,7 +36,7 @@ func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBA
 	passwordPolicy := utils.DefaultPasswordPolicy()
 
 	// SessionService, TwoFactorService, LoginAlertService, and WebhookService are nil for tests
-	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, blacklistSvc, mCache, nil, nil, 10, passwordPolicy, mDB, nil, nil, nil)
+	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, blacklistSvc, mCache, nil, nil, 10, passwordPolicy, mDB, nil, nil, nil, false)
 	return svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache, blacklistSvc, mDB
 }
 

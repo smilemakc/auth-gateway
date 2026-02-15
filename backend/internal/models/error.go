@@ -25,6 +25,7 @@ var (
 	ErrInvalidToken          = &AppError{Code: http.StatusUnauthorized, Message: "Invalid token"}
 	ErrTokenExpired          = &AppError{Code: http.StatusUnauthorized, Message: "Token expired"}
 	ErrTokenRevoked          = &AppError{Code: http.StatusUnauthorized, Message: "Token revoked"}
+	ErrTokenCompromised      = &AppError{Code: http.StatusUnauthorized, Message: "Token may be compromised: device mismatch"}
 	ErrUnauthorized          = &AppError{Code: http.StatusUnauthorized, Message: "Unauthorized"}
 	ErrForbidden             = &AppError{Code: http.StatusForbidden, Message: "Forbidden"}
 	ErrBadRequest            = &AppError{Code: http.StatusBadRequest, Message: "Bad request"}
