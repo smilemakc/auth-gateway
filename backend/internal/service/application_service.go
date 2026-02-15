@@ -498,6 +498,10 @@ func (s *ApplicationService) UnbanUser(ctx context.Context, userID, applicationI
 	return nil
 }
 
+func (s *ApplicationService) DeleteUserProfile(ctx context.Context, userID, applicationID uuid.UUID) error {
+	return s.appRepo.DeleteUserProfile(ctx, userID, applicationID)
+}
+
 func (s *ApplicationService) CheckUserAccess(ctx context.Context, userID, applicationID uuid.UUID) error {
 	profile, err := s.appRepo.GetUserProfile(ctx, userID, applicationID)
 	if err != nil {

@@ -1113,6 +1113,9 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 
 				// Users
 				applicationsGroup.GET("/:id/users", handlers.Application.ListApplicationUsers)
+				applicationsGroup.GET("/:id/users/:user_id", handlers.Application.GetApplicationUserProfile)
+				applicationsGroup.PUT("/:id/users/:user_id", handlers.Application.UpdateApplicationUserProfile)
+				applicationsGroup.DELETE("/:id/users/:user_id", handlers.Application.DeleteApplicationUserProfile)
 				applicationsGroup.POST("/:id/users/:user_id/ban", handlers.Application.BanUser)
 				applicationsGroup.POST("/:id/users/:user_id/unban", handlers.Application.UnbanUser)
 

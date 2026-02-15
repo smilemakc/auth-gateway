@@ -104,6 +104,7 @@ func TestAPIKeyService_ValidateAPIKey(t *testing.T) {
 			return &models.APIKey{
 				ID:       uuid.New(),
 				UserID:   userID,
+				KeyHash:  keyHash,
 				IsActive: true,
 			}, nil
 		}

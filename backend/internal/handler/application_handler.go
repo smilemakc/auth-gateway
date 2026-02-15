@@ -502,6 +502,125 @@ func (h *ApplicationHandler) UnbanUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User unbanned successfully"})
 }
 
+// GetApplicationUserProfile returns a specific user's profile in an application
+// @Summary Get user profile in application
+// @Description Get a specific user's profile within an application (admin only)
+// @Tags Admin - Applications
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Application ID"
+// @Param user_id path string true "User ID"
+// @Success 200 {object} models.UserApplicationProfile
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/applications/{id}/users/{user_id} [get]
+func (h *ApplicationHandler) GetApplicationUserProfile(c *gin.Context) {
+	appID, err := h.parseIDParam(c, "id")
+	if err != nil {
+		return
+	}
+	userID, err := h.parseIDParam(c, "user_id")
+	if err != nil {
+		return
+	}
+
+	profile, err := h.appService.GetUserProfile(c.Request.Context(), userID, appID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.NewErrorResponse(
+			models.NewAppError(http.StatusNotFound, "PROFILE_NOT_FOUND", "User profile not found in this application"),
+		))
+		return
+	}
+
+	c.JSON(http.StatusOK, profile)
+}
+
+// UpdateApplicationUserProfile updates a specific user's profile in an application
+// @Summary Update user profile in application
+// @Description Update a specific user's profile within an application (admin only)
+// @Tags Admin - Applications
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Application ID"
+// @Param user_id path string true "User ID"
+// @Param request body models.UpdateUserAppProfileRequest true "Profile update data"
+// @Success 200 {object} models.UserApplicationProfile
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/applications/{id}/users/{user_id} [put]
+func (h *ApplicationHandler) UpdateApplicationUserProfile(c *gin.Context) {
+	appID, err := h.parseIDParam(c, "id")
+	if err != nil {
+		return
+	}
+	userID, err := h.parseIDParam(c, "user_id")
+	if err != nil {
+		return
+	}
+
+	var req models.UpdateUserAppProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "INVALID_REQUEST", err.Error()),
+		))
+		return
+	}
+
+	profile, err := h.appService.UpdateUserProfile(c.Request.Context(), userID, appID, &req)
+	if err != nil {
+		if err.Error() == "profile not found" {
+			c.JSON(http.StatusNotFound, models.NewErrorResponse(
+				models.NewAppError(http.StatusNotFound, "PROFILE_NOT_FOUND", "User profile not found"),
+			))
+			return
+		}
+		h.logger.Error("Failed to update user profile", map[string]interface{}{
+			"error":          err.Error(),
+			"user_id":        userID.String(),
+			"application_id": appID.String(),
+		})
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, profile)
+}
+
+// DeleteApplicationUserProfile removes a user's profile from an application
+// @Summary Delete user profile from application
+// @Description Remove a user's profile from an application (admin only)
+// @Tags Admin - Applications
+// @Security BearerAuth
+// @Param id path string true "Application ID"
+// @Param user_id path string true "User ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/applications/{id}/users/{user_id} [delete]
+func (h *ApplicationHandler) DeleteApplicationUserProfile(c *gin.Context) {
+	appID, err := h.parseIDParam(c, "id")
+	if err != nil {
+		return
+	}
+	userID, err := h.parseIDParam(c, "user_id")
+	if err != nil {
+		return
+	}
+
+	if err := h.appService.DeleteUserProfile(c.Request.Context(), userID, appID); err != nil {
+		h.logger.Error("Failed to delete user profile", map[string]interface{}{
+			"error":          err.Error(),
+			"user_id":        userID.String(),
+			"application_id": appID.String(),
+		})
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User profile removed from application"})
+}
+
 // GetPublicBranding retrieves public branding for an application
 // @Summary Get public application branding
 // @Description Get public branding configuration for an application (no auth required)
