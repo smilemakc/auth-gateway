@@ -295,6 +295,7 @@ type BlackListStore interface {
 	AddAccessToken(ctx context.Context, tokenHash string, userID *uuid.UUID) error
 	AddRefreshToken(ctx context.Context, tokenHash string, userID *uuid.UUID) error
 	BlacklistSessionTokens(ctx context.Context, session *models.Session) error
+	BlacklistAllUserSessions(ctx context.Context, userID uuid.UUID) error
 }
 
 // ApplicationStore defines the interface for application storage operations

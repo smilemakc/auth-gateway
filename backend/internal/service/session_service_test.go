@@ -24,7 +24,7 @@ func setupSessionService() (*SessionService, *mockSessionStore, *mockTokenStore,
 	log := logger.New("session-test", logger.DebugLevel, false)
 
 	// Create BlacklistService with mocks
-	blacklistSvc := NewBlacklistService(mockCache, mockToken, mockJWT, log, mAudit)
+	blacklistSvc := NewBlacklistService(mockCache, mockToken, mockSession, mockJWT, log, mAudit)
 
 	svc := NewSessionService(mockSession, blacklistSvc, log)
 	return svc, mockSession, mockToken, mockCache, mockJWT, blacklistSvc

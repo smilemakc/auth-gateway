@@ -64,6 +64,7 @@ func (s *Service) GenerateAccessToken(user *models.User, applicationID ...*uuid.
 		Roles:    roleNames,
 		IsActive: user.IsActive,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.New().String(),
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.accessExpires)),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
@@ -99,6 +100,7 @@ func (s *Service) GenerateRefreshToken(user *models.User, applicationID ...*uuid
 		Roles:    roleNames,
 		IsActive: user.IsActive,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.New().String(),
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.refreshExpires)),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
@@ -134,6 +136,7 @@ func (s *Service) GenerateTwoFactorToken(user *models.User, applicationID ...*uu
 		Roles:    roleNames,
 		IsActive: user.IsActive,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.New().String(),
 			ExpiresAt: jwt.NewNumericDate(now.Add(5 * time.Minute)), // 5 minutes expiration
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),

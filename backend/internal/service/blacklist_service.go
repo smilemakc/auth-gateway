@@ -16,6 +16,7 @@ import (
 type BlacklistService struct {
 	redis       CacheService
 	tokenRepo   TokenStore
+	sessionRepo SessionStore
 	jwtService  TokenService
 	logger      *logger.Logger
 	auditLogger AuditLogger
@@ -33,10 +34,11 @@ type SyncStats struct {
 }
 
 // NewBlacklistService creates a new blacklist service
-func NewBlacklistService(redis CacheService, tokenRepo TokenStore, jwtService TokenService, logger *logger.Logger, auditLogger AuditLogger) *BlacklistService {
+func NewBlacklistService(redis CacheService, tokenRepo TokenStore, sessionRepo SessionStore, jwtService TokenService, logger *logger.Logger, auditLogger AuditLogger) *BlacklistService {
 	return &BlacklistService{
 		redis:       redis,
 		tokenRepo:   tokenRepo,
+		sessionRepo: sessionRepo,
 		jwtService:  jwtService,
 		logger:      logger,
 		auditLogger: auditLogger,
@@ -263,5 +265,36 @@ func (s *BlacklistService) BlacklistSessionTokens(ctx context.Context, session *
 			"os":      session.OS,
 		},
 	})
+	return lastErr
+}
+
+// BlacklistAllUserSessions blacklists access and refresh tokens for all active sessions of a user.
+// This is used after password change/reset to immediately invalidate all existing tokens.
+func (s *BlacklistService) BlacklistAllUserSessions(ctx context.Context, userID uuid.UUID) error {
+	sessions, err := s.sessionRepo.GetUserSessions(ctx, userID)
+	if err != nil {
+		s.logger.Error("Failed to get user sessions for blacklisting", map[string]interface{}{
+			"user_id": userID.String(),
+			"error":   err.Error(),
+		})
+		return fmt.Errorf("failed to get user sessions: %w", err)
+	}
+
+	var lastErr error
+	blacklisted := 0
+	for i := range sessions {
+		if err := s.BlacklistSessionTokens(ctx, &sessions[i]); err != nil {
+			lastErr = err
+			continue
+		}
+		blacklisted++
+	}
+
+	s.logger.Info("Blacklisted all user sessions", map[string]interface{}{
+		"user_id":     userID.String(),
+		"total":       len(sessions),
+		"blacklisted": blacklisted,
+	})
+
 	return lastErr
 }

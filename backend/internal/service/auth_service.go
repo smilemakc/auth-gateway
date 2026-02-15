@@ -562,6 +562,11 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 		return fmt.Errorf("failed to revoke refresh tokens: %w", err)
 	}
 
+	// Blacklist all active session tokens so access tokens become invalid immediately
+	if err := s.blacklistService.BlacklistAllUserSessions(ctx, userID); err != nil {
+		return fmt.Errorf("failed to blacklist session tokens: %w", err)
+	}
+
 	// Log successful password change
 	s.logAudit(&userID, nil, models.ActionChangePassword, models.StatusSuccess, ip, userAgent, nil)
 
@@ -589,6 +594,11 @@ func (s *AuthService) ResetPassword(ctx context.Context, userID uuid.UUID, newPa
 	// Revoke all refresh tokens (force re-login)
 	if err := s.tokenRepo.RevokeAllUserTokens(ctx, userID); err != nil {
 		return fmt.Errorf("failed to revoke refresh tokens: %w", err)
+	}
+
+	// Blacklist all active session tokens so access tokens become invalid immediately
+	if err := s.blacklistService.BlacklistAllUserSessions(ctx, userID); err != nil {
+		return fmt.Errorf("failed to blacklist session tokens: %w", err)
 	}
 
 	// Log successful password reset

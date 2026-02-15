@@ -432,7 +432,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	}
 
 	auditService := service.NewAuditService(repos.Audit, geoService)
-	blacklistService := service.NewBlacklistService(deps.redis, repos.Token, deps.jwtService, deps.log, auditService)
+	blacklistService := service.NewBlacklistService(deps.redis, repos.Token, repos.Session, deps.jwtService, deps.log, auditService)
 
 	// Synchronize blacklist from database to Redis on startup
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
