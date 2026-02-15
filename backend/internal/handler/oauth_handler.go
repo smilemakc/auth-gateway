@@ -24,6 +24,7 @@ type OAuthHandler struct {
 	oauthService     *service.OAuthService
 	logger           *logger.Logger
 	telegramBotToken string
+	secureCookie     bool
 }
 
 // NewOAuthHandler creates a new OAuth handler
@@ -31,11 +32,13 @@ func NewOAuthHandler(
 	oauthService *service.OAuthService,
 	logger *logger.Logger,
 	telegramBotToken string,
+	secureCookie bool,
 ) *OAuthHandler {
 	return &OAuthHandler{
 		oauthService:     oauthService,
 		logger:           logger,
 		telegramBotToken: telegramBotToken,
+		secureCookie:     secureCookie,
 	}
 }
 
@@ -68,7 +71,7 @@ func (h *OAuthHandler) Login(c *gin.Context) {
 	}
 
 	// Store state in session/cookie for validation
-	c.SetCookie("oauth_state", state, 600, "/", "", false, true) // 10 minutes
+	c.SetCookie("oauth_state", state, 600, "/", "", h.secureCookie, true) // 10 minutes
 
 	// Get authorization URL (with optional app context)
 	appID, _ := utils.GetApplicationIDFromContext(c)
@@ -128,7 +131,7 @@ func (h *OAuthHandler) Callback(c *gin.Context) {
 	}
 
 	// Clear state cookie
-	c.SetCookie("oauth_state", "", -1, "/", "", false, true)
+	c.SetCookie("oauth_state", "", -1, "/", "", h.secureCookie, true)
 
 	if code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{

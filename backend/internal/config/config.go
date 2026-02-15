@@ -393,7 +393,7 @@ func Load() (*Config, error) {
 			APIWindow:     getEnvAsDuration("RATE_LIMIT_API_WINDOW", "1m"),
 		},
 		Security: SecurityConfig{
-			BcryptCost:                    getEnvAsInt("BCRYPT_COST", 10),
+			BcryptCost:                    getEnvAsInt("BCRYPT_COST", 12),
 			TokenBlacklistCleanupInterval: getEnvAsDuration("TOKEN_BLACKLIST_CLEANUP_INTERVAL", "1h"),
 			JITProvisioning:               getEnvAsBool("JIT_PROVISIONING_ENABLED", true), // Enabled by default
 			PasswordPolicy: PasswordPolicyConfig{

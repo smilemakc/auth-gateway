@@ -607,11 +607,13 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 }
 
 func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSet {
+	secureCookie := deps.cfg.Server.Env == "production"
+
 	authHandler := handler.NewAuthHandler(services.Auth, services.User, services.OTP, services.EmailProfile, deps.log)
 	healthHandler := handler.NewHealthHandler(deps.db, deps.redis)
 	apiKeyHandler := handler.NewAPIKeyHandler(services.APIKey, deps.log)
 	otpHandler := handler.NewOTPHandler(services.OTP, services.Auth, deps.log)
-	oauthHandler := handler.NewOAuthHandler(services.OAuth, deps.log, deps.cfg.OAuth.TelegramBotToken)
+	oauthHandler := handler.NewOAuthHandler(services.OAuth, deps.log, deps.cfg.OAuth.TelegramBotToken, secureCookie)
 	twoFAHandler := handler.NewTwoFactorHandler(services.TwoFA, services.User, services.EmailProfile, deps.log)
 	adminHandler := handler.NewAdminHandler(services.Admin, services.User, services.OTP, services.Audit, deps.log)
 	advancedAdminHandler := handler.NewAdvancedAdminHandler(services.RBAC, services.Session, services.IPFilter, repos.Branding, repos.System, repos.Geo, deps.log)
@@ -624,7 +626,6 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	}
 	oauthAdminHandler := handler.NewOAuthAdminHandler(services.MinimalOAuthSvc, deps.log)
 
-	secureCookie := deps.cfg.Server.Env == "production"
 	loginHandler := handler.NewLoginHandler(services.Auth, services.OTP, deps.jwtService, deps.log, secureCookie)
 	groupHandler := handler.NewGroupHandler(services.Group, deps.log)
 	ldapHandler := handler.NewLDAPHandler(services.LDAP, deps.log)
