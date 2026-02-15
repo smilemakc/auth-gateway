@@ -63,17 +63,19 @@ type BackupCodeStore interface {
 	DeleteAllByUserID(ctx context.Context, userID uuid.UUID) error
 }
 
-// RBACStore defines the interface for RBAC storage
-type RBACStore interface {
-	// Permission Methods
+// PermissionRepository handles permission CRUD operations
+type PermissionRepository interface {
 	CreatePermission(ctx context.Context, permission *models.Permission) error
 	GetPermissionByID(ctx context.Context, id uuid.UUID) (*models.Permission, error)
 	GetPermissionByName(ctx context.Context, name string) (*models.Permission, error)
 	ListPermissions(ctx context.Context) ([]models.Permission, error)
 	UpdatePermission(ctx context.Context, id uuid.UUID, description string) error
 	DeletePermission(ctx context.Context, id uuid.UUID) error
+	ListPermissionsByApp(ctx context.Context, appID *uuid.UUID) ([]models.Permission, error)
+}
 
-	// Role Methods
+// RoleRepository handles role CRUD operations
+type RoleRepository interface {
 	CreateRole(ctx context.Context, role *models.Role) error
 	GetRoleByID(ctx context.Context, id uuid.UUID) (*models.Role, error)
 	GetRoleByName(ctx context.Context, name string) (*models.Role, error)
@@ -81,28 +83,37 @@ type RBACStore interface {
 	UpdateRole(ctx context.Context, id uuid.UUID, displayName, description string) error
 	DeleteRole(ctx context.Context, id uuid.UUID) error
 	SetRolePermissions(ctx context.Context, roleID uuid.UUID, permissionIDs []uuid.UUID) error
+	GetRoleByNameAndApp(ctx context.Context, name string, appID *uuid.UUID) (*models.Role, error)
+	ListRolesByApp(ctx context.Context, appID *uuid.UUID) ([]models.Role, error)
+}
 
-	// User-Role Methods
+// UserRoleRepository handles user-role assignment operations
+type UserRoleRepository interface {
 	AssignRoleToUser(ctx context.Context, userID, roleID, assignedBy uuid.UUID) error
 	RemoveRoleFromUser(ctx context.Context, userID, roleID uuid.UUID) error
 	GetUserRoles(ctx context.Context, userID uuid.UUID) ([]models.Role, error)
 	SetUserRoles(ctx context.Context, userID uuid.UUID, roleIDs []uuid.UUID, assignedBy uuid.UUID) error
 	GetUsersWithRole(ctx context.Context, roleID uuid.UUID) ([]models.User, error)
+	GetUserRolesInApp(ctx context.Context, userID uuid.UUID, appID *uuid.UUID) ([]models.Role, error)
+	AssignRoleToUserInApp(ctx context.Context, userID, roleID, assignedBy uuid.UUID, appID *uuid.UUID) error
+}
 
-	// Permission Checking Methods
+// PermissionChecker handles permission checking operations
+type PermissionChecker interface {
 	HasPermission(ctx context.Context, userID uuid.UUID, permissionName string) (bool, error)
 	HasAnyPermission(ctx context.Context, userID uuid.UUID, permissionNames []string) (bool, error)
 	HasAllPermissions(ctx context.Context, userID uuid.UUID, permissionNames []string) (bool, error)
 	GetUserPermissions(ctx context.Context, userID uuid.UUID) ([]models.Permission, error)
 	GetPermissionMatrix(ctx context.Context) (*models.PermissionMatrix, error)
-
-	// Application-scoped Methods
-	GetRoleByNameAndApp(ctx context.Context, name string, appID *uuid.UUID) (*models.Role, error)
-	ListRolesByApp(ctx context.Context, appID *uuid.UUID) ([]models.Role, error)
-	ListPermissionsByApp(ctx context.Context, appID *uuid.UUID) ([]models.Permission, error)
 	HasPermissionInApp(ctx context.Context, userID uuid.UUID, permissionName string, appID *uuid.UUID) (bool, error)
-	GetUserRolesInApp(ctx context.Context, userID uuid.UUID, appID *uuid.UUID) ([]models.Role, error)
-	AssignRoleToUserInApp(ctx context.Context, userID, roleID, assignedBy uuid.UUID, appID *uuid.UUID) error
+}
+
+// RBACStore composes all RBAC sub-interfaces for backward compatibility
+type RBACStore interface {
+	PermissionRepository
+	RoleRepository
+	UserRoleRepository
+	PermissionChecker
 }
 
 // CacheService defines the interface for caching (Redis)
@@ -241,9 +252,8 @@ type SessionStore interface {
 	GetAppSessionsPaginated(ctx context.Context, appID uuid.UUID, page, perPage int) ([]models.Session, int, error)
 }
 
-// OAuthProviderStore defines the interface for OAuth provider operations
-type OAuthProviderStore interface {
-	// Client operations
+// OAuthClientRepository handles OAuth client CRUD
+type OAuthClientRepository interface {
 	CreateClient(ctx context.Context, client *models.OAuthClient) error
 	GetClientByID(ctx context.Context, id uuid.UUID) (*models.OAuthClient, error)
 	GetClientByClientID(ctx context.Context, clientID string) (*models.OAuthClient, error)
@@ -252,14 +262,18 @@ type OAuthProviderStore interface {
 	HardDeleteClient(ctx context.Context, id uuid.UUID) error
 	ListClients(ctx context.Context, page, perPage int, opts ...OAuthClientListOption) ([]*models.OAuthClient, int, error)
 	ListActiveClients(ctx context.Context) ([]*models.OAuthClient, error)
+}
 
-	// Authorization code operations
+// OAuthAuthCodeRepository handles authorization code operations
+type OAuthAuthCodeRepository interface {
 	CreateAuthorizationCode(ctx context.Context, code *models.AuthorizationCode) error
 	GetAuthorizationCode(ctx context.Context, codeHash string) (*models.AuthorizationCode, error)
 	MarkAuthorizationCodeUsed(ctx context.Context, id uuid.UUID) error
 	DeleteExpiredAuthorizationCodes(ctx context.Context) (int64, error)
+}
 
-	// Access token operations
+// OAuthTokenRepository handles OAuth access/refresh token operations
+type OAuthTokenRepository interface {
 	CreateAccessToken(ctx context.Context, token *models.OAuthAccessToken) error
 	GetAccessToken(ctx context.Context, tokenHash string) (*models.OAuthAccessToken, error)
 	GetAccessTokenByID(ctx context.Context, id uuid.UUID) (*models.OAuthAccessToken, error)
@@ -267,35 +281,49 @@ type OAuthProviderStore interface {
 	RevokeAllUserAccessTokens(ctx context.Context, userID, clientID uuid.UUID) error
 	RevokeAllClientAccessTokens(ctx context.Context, clientID uuid.UUID) error
 	DeleteExpiredAccessTokens(ctx context.Context) (int64, error)
-
-	// Refresh token operations
 	CreateRefreshToken(ctx context.Context, token *models.OAuthRefreshToken) error
 	GetRefreshToken(ctx context.Context, tokenHash string) (*models.OAuthRefreshToken, error)
 	RevokeRefreshToken(ctx context.Context, tokenHash string) error
 	RevokeAllUserRefreshTokens(ctx context.Context, userID, clientID uuid.UUID) error
 	RevokeAllClientRefreshTokens(ctx context.Context, clientID uuid.UUID) error
 	DeleteExpiredRefreshTokens(ctx context.Context) (int64, error)
+}
 
-	// User consent operations
+// OAuthConsentRepository handles user consent operations
+type OAuthConsentRepository interface {
 	CreateOrUpdateConsent(ctx context.Context, consent *models.UserConsent) error
 	GetUserConsent(ctx context.Context, userID, clientID uuid.UUID) (*models.UserConsent, error)
 	RevokeConsent(ctx context.Context, userID, clientID uuid.UUID) error
 	ListUserConsents(ctx context.Context, userID uuid.UUID) ([]*models.UserConsent, error)
 	ListClientConsents(ctx context.Context, clientID uuid.UUID) ([]*models.UserConsent, error)
+}
 
-	// Device code operations (RFC 8628)
+// OAuthDeviceCodeRepository handles device code operations (RFC 8628)
+type OAuthDeviceCodeRepository interface {
 	CreateDeviceCode(ctx context.Context, code *models.DeviceCode) error
 	GetDeviceCode(ctx context.Context, deviceCodeHash string) (*models.DeviceCode, error)
 	GetDeviceCodeByUserCode(ctx context.Context, userCode string) (*models.DeviceCode, error)
 	UpdateDeviceCodeStatus(ctx context.Context, id uuid.UUID, status models.DeviceCodeStatus, userID *uuid.UUID) error
 	DeleteExpiredDeviceCodes(ctx context.Context) (int64, error)
+}
 
-	// Scope operations
+// OAuthScopeRepository handles scope operations
+type OAuthScopeRepository interface {
 	CreateScope(ctx context.Context, scope *models.OAuthScope) error
 	GetScopeByName(ctx context.Context, name string) (*models.OAuthScope, error)
 	ListScopes(ctx context.Context) ([]*models.OAuthScope, error)
 	ListSystemScopes(ctx context.Context) ([]*models.OAuthScope, error)
 	DeleteScope(ctx context.Context, id uuid.UUID) error
+}
+
+// OAuthProviderStore composes all OAuth sub-interfaces for backward compatibility
+type OAuthProviderStore interface {
+	OAuthClientRepository
+	OAuthAuthCodeRepository
+	OAuthTokenRepository
+	OAuthConsentRepository
+	OAuthDeviceCodeRepository
+	OAuthScopeRepository
 }
 
 type BlackListStore interface {
@@ -307,9 +335,8 @@ type BlackListStore interface {
 	BlacklistAllUserSessions(ctx context.Context, userID uuid.UUID) error
 }
 
-// ApplicationStore defines the interface for application storage operations
-type ApplicationStore interface {
-	// Application CRUD
+// ApplicationCRUDRepository handles application CRUD
+type ApplicationCRUDRepository interface {
 	CreateApplication(ctx context.Context, app *models.Application) error
 	GetApplicationByID(ctx context.Context, id uuid.UUID) (*models.Application, error)
 	GetApplicationByName(ctx context.Context, name string) (*models.Application, error)
@@ -317,12 +344,16 @@ type ApplicationStore interface {
 	DeleteApplication(ctx context.Context, id uuid.UUID) error
 	ListApplications(ctx context.Context, page, perPage int, isActive *bool) ([]*models.Application, int, error)
 	GetBySecretHash(ctx context.Context, hash string) (*models.Application, error)
+}
 
-	// Application Branding
+// ApplicationBrandingRepository handles application branding
+type ApplicationBrandingRepository interface {
 	GetBranding(ctx context.Context, applicationID uuid.UUID) (*models.ApplicationBranding, error)
 	CreateOrUpdateBranding(ctx context.Context, branding *models.ApplicationBranding) error
+}
 
-	// User Application Profile
+// UserProfileRepository handles user application profiles
+type UserProfileRepository interface {
 	CreateUserProfile(ctx context.Context, profile *models.UserApplicationProfile) error
 	GetUserProfile(ctx context.Context, userID, applicationID uuid.UUID) (*models.UserApplicationProfile, error)
 	UpdateUserProfile(ctx context.Context, profile *models.UserApplicationProfile) error
@@ -330,10 +361,15 @@ type ApplicationStore interface {
 	ListUserProfiles(ctx context.Context, userID uuid.UUID) ([]*models.UserApplicationProfile, error)
 	ListApplicationUsers(ctx context.Context, applicationID uuid.UUID, page, perPage int) ([]*models.UserApplicationProfile, int, error)
 	UpdateLastAccess(ctx context.Context, userID, applicationID uuid.UUID) error
-
-	// User banning
 	BanUserFromApplication(ctx context.Context, userID, applicationID, bannedBy uuid.UUID, reason string) error
 	UnbanUserFromApplication(ctx context.Context, userID, applicationID uuid.UUID) error
+}
+
+// ApplicationStore composes all application sub-interfaces for backward compatibility
+type ApplicationStore interface {
+	ApplicationCRUDRepository
+	ApplicationBrandingRepository
+	UserProfileRepository
 }
 
 // AppOAuthProviderStore - per-app OAuth provider configuration
