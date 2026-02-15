@@ -59,16 +59,7 @@ func (h *OTPHandler) ResendVerification(c *gin.Context) {
 	}
 
 	if err := h.otpService.SendOTP(c.Request.Context(), &req); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to resend verification code", map[string]interface{}{
-			"error": err.Error(),
-			"email": req.Email,
-			"phone": req.Phone,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -104,16 +95,7 @@ func (h *OTPHandler) VerifyEmailOTP(c *gin.Context) {
 
 	response, err := h.otpService.VerifyOTP(c.Request.Context(), &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to verify code", map[string]interface{}{
-			"error": err.Error(),
-			"email": req.Email,
-			"phone": req.Phone,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -157,15 +139,7 @@ func (h *OTPHandler) SendOTP(c *gin.Context) {
 	}
 
 	if err := h.otpService.SendOTP(c.Request.Context(), &req); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to send OTP", map[string]interface{}{
-			"error": err.Error(),
-			"email": req.Email,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -196,15 +170,7 @@ func (h *OTPHandler) VerifyOTP(c *gin.Context) {
 
 	response, err := h.otpService.VerifyOTP(c.Request.Context(), &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to verify OTP", map[string]interface{}{
-			"error": err.Error(),
-			"email": req.Email,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -269,11 +235,7 @@ func (h *OTPHandler) RequestPasswordlessLogin(c *gin.Context) {
 	}
 
 	if err := h.otpService.SendOTP(c.Request.Context(), otpReq); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -314,11 +276,7 @@ func (h *OTPHandler) VerifyPasswordlessLogin(c *gin.Context) {
 
 	response, err := h.otpService.VerifyOTP(c.Request.Context(), verifyReq)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 

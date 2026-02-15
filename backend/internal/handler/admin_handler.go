@@ -108,11 +108,7 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 
 	user, err := h.adminService.GetUser(c.Request.Context(), userID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -141,11 +137,7 @@ func (h *AdminHandler) GetUserOAuthAccounts(c *gin.Context) {
 
 	accounts, err := h.adminService.GetUserOAuthAccounts(c.Request.Context(), userID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -194,11 +186,7 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 
 	user, err := h.adminService.UpdateUser(c.Request.Context(), userID, &req, *adminID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -238,11 +226,7 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 
 	user, err := h.adminService.CreateUser(c.Request.Context(), &req, *adminID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -270,11 +254,7 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 	}
 
 	if err := h.adminService.DeleteUser(c.Request.Context(), userID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -331,11 +311,7 @@ func (h *AdminHandler) RevokeAPIKey(c *gin.Context) {
 	}
 
 	if err := h.adminService.RevokeAPIKey(c.Request.Context(), keyID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -460,11 +436,7 @@ func (h *AdminHandler) AssignRole(c *gin.Context) {
 
 	user, err := h.adminService.AssignRole(c.Request.Context(), userID, req.RoleID, *adminID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -499,11 +471,7 @@ func (h *AdminHandler) RemoveRole(c *gin.Context) {
 
 	user, err := h.adminService.RemoveRole(c.Request.Context(), userID, roleID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -532,11 +500,7 @@ func (h *AdminHandler) SendPasswordReset(c *gin.Context) {
 
 	user, err := h.userService.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -563,16 +527,7 @@ func (h *AdminHandler) SendPasswordReset(c *gin.Context) {
 	}
 
 	if err := h.otpService.SendOTP(c.Request.Context(), otpReq); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to send password reset email", map[string]interface{}{
-			"error":   err.Error(),
-			"user_id": userID,
-			"email":   email,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -624,11 +579,7 @@ func (h *AdminHandler) Reset2FA(c *gin.Context) {
 	}
 
 	if err := h.adminService.AdminReset2FA(c.Request.Context(), userID, *adminID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 

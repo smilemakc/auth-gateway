@@ -61,11 +61,7 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 
 	authResp, err := h.authService.SignUp(c.Request.Context(), &req, ip, userAgent, deviceInfo, appID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -137,11 +133,7 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 
 	authResp, err := h.authService.SignIn(c.Request.Context(), &req, ip, userAgent, deviceInfo, appID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -175,11 +167,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 	authResp, err := h.authService.RefreshToken(c.Request.Context(), req.RefreshToken, ip, userAgent, deviceInfo)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -208,11 +196,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	userAgent := utils.GetUserAgent(c)
 
 	if err := h.authService.Logout(c.Request.Context(), token, ip, userAgent); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -239,11 +223,7 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 
 	user, err := h.userService.GetProfile(c.Request.Context(), *userID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -283,11 +263,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 
 	user, err := h.userService.UpdateProfile(c.Request.Context(), *userID, &req, ip, userAgent)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -326,11 +302,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	userAgent := utils.GetUserAgent(c)
 
 	if err := h.authService.ChangePassword(c.Request.Context(), *userID, req.OldPassword, req.NewPassword, ip, userAgent); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -407,15 +379,7 @@ func (h *AuthHandler) RequestPasswordReset(c *gin.Context) {
 	}
 
 	if err := h.otpService.SendOTP(c.Request.Context(), otpReq); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to send password reset email", map[string]interface{}{
-			"error": err.Error(),
-			"email": email,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -456,11 +420,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 
 	response, err := h.otpService.VerifyOTP(c.Request.Context(), verifyReq)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -493,11 +453,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	userAgent := utils.GetUserAgent(c)
 
 	if err := h.authService.ResetPassword(c.Request.Context(), user.ID, req.NewPassword, ip, userAgent); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -555,11 +511,7 @@ func (h *AuthHandler) Verify2FA(c *gin.Context) {
 
 	authResp, err := h.authService.Verify2FALogin(c.Request.Context(), req.TwoFactorToken, req.Code, ip, userAgent, deviceInfo)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -591,11 +543,7 @@ func (h *AuthHandler) InitPasswordlessRegistration(c *gin.Context) {
 	userAgent := utils.GetUserAgent(c)
 
 	if err := h.authService.InitPasswordlessRegistration(c.Request.Context(), &req, ip, userAgent); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -657,11 +605,7 @@ func (h *AuthHandler) CompletePasswordlessRegistration(c *gin.Context) {
 
 	response, err := h.otpService.VerifyOTP(c.Request.Context(), verifyReq)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -679,11 +623,7 @@ func (h *AuthHandler) CompletePasswordlessRegistration(c *gin.Context) {
 
 	authResp, err := h.authService.CompletePasswordlessRegistration(c.Request.Context(), &req, ip, userAgent, deviceInfo)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 

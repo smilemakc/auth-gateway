@@ -136,13 +136,7 @@ func (h *OAuthAdminHandler) GetClient(c *gin.Context) {
 
 	client, err := h.service.GetClient(c.Request.Context(), clientID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusNotFound, models.NewErrorResponse(
-			models.NewAppError(http.StatusNotFound, "Client not found"),
-		))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -181,15 +175,7 @@ func (h *OAuthAdminHandler) UpdateClient(c *gin.Context) {
 
 	client, err := h.service.UpdateClient(c.Request.Context(), clientID, &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to update OAuth client", map[string]interface{}{
-			"error":     err.Error(),
-			"client_id": clientID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -216,15 +202,7 @@ func (h *OAuthAdminHandler) DeleteClient(c *gin.Context) {
 	}
 
 	if err := h.service.DeleteClient(c.Request.Context(), clientID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to delete OAuth client", map[string]interface{}{
-			"error":     err.Error(),
-			"client_id": clientID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -253,15 +231,7 @@ func (h *OAuthAdminHandler) RotateSecret(c *gin.Context) {
 
 	clientSecret, err := h.service.RotateClientSecret(c.Request.Context(), clientID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to rotate client secret", map[string]interface{}{
-			"error":     err.Error(),
-			"client_id": clientID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -364,15 +334,7 @@ func (h *OAuthAdminHandler) DeleteScope(c *gin.Context) {
 	}
 
 	if err := h.service.DeleteScope(c.Request.Context(), scopeID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to delete OAuth scope", map[string]interface{}{
-			"error":    err.Error(),
-			"scope_id": scopeID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -438,16 +400,7 @@ func (h *OAuthAdminHandler) RevokeUserConsent(c *gin.Context) {
 	}
 
 	if err := h.service.RevokeConsent(c.Request.Context(), userID, clientID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to revoke user consent", map[string]interface{}{
-			"error":     err.Error(),
-			"client_id": clientID.String(),
-			"user_id":   userID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 

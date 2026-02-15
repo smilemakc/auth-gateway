@@ -180,11 +180,7 @@ func (h *SAMLHandler) CreateSP(c *gin.Context) {
 
 	sp, err := h.samlService.CreateSP(c.Request.Context(), &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -209,11 +205,7 @@ func (h *SAMLHandler) GetSP(c *gin.Context) {
 
 	sp, err := h.samlService.GetSP(c.Request.Context(), id)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -289,11 +281,7 @@ func (h *SAMLHandler) UpdateSP(c *gin.Context) {
 
 	sp, err := h.samlService.UpdateSP(c.Request.Context(), id, &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -316,11 +304,7 @@ func (h *SAMLHandler) DeleteSP(c *gin.Context) {
 	}
 
 	if err := h.samlService.DeleteSP(c.Request.Context(), id); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 

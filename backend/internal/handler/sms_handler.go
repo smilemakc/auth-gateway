@@ -47,15 +47,7 @@ func (h *SMSHandler) SendSMS(c *gin.Context) {
 
 	response, err := h.smsService.SendOTP(c.Request.Context(), &req, ipAddress)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to send SMS", map[string]interface{}{
-			"error": err.Error(),
-			"phone": req.Phone,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -81,15 +73,7 @@ func (h *SMSHandler) VerifySMS(c *gin.Context) {
 
 	response, err := h.smsService.VerifyOTP(c.Request.Context(), &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to verify SMS OTP", map[string]interface{}{
-			"error": err.Error(),
-			"phone": req.Phone,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 

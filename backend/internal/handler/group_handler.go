@@ -48,11 +48,7 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 
 	group, err := h.groupService.CreateGroup(c.Request.Context(), &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -91,11 +87,7 @@ func (h *GroupHandler) GetGroup(c *gin.Context) {
 
 	group, err := h.groupService.GetGroup(c.Request.Context(), id)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -168,11 +160,7 @@ func (h *GroupHandler) UpdateGroup(c *gin.Context) {
 
 	group, err := h.groupService.UpdateGroup(c.Request.Context(), id, &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -210,11 +198,7 @@ func (h *GroupHandler) DeleteGroup(c *gin.Context) {
 	}
 
 	if err := h.groupService.DeleteGroup(c.Request.Context(), id); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -250,11 +234,7 @@ func (h *GroupHandler) AddGroupMembers(c *gin.Context) {
 	}
 
 	if err := h.groupService.AddGroupMembers(c.Request.Context(), id, req.UserIDs); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -287,11 +267,7 @@ func (h *GroupHandler) RemoveGroupMember(c *gin.Context) {
 	}
 
 	if err := h.groupService.RemoveGroupMember(c.Request.Context(), groupID, userID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -321,11 +297,7 @@ func (h *GroupHandler) GetGroupMembers(c *gin.Context) {
 
 	users, total, err := h.groupService.GetGroupMembers(c.Request.Context(), id, page, pageSize)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 

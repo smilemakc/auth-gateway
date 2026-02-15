@@ -66,15 +66,7 @@ func (h *TwoFactorHandler) Setup(c *gin.Context) {
 	// Setup 2FA (password verification happens in service)
 	response, err := h.twoFAService.SetupTOTP(c.Request.Context(), *userID, req.Password)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to setup 2FA", map[string]interface{}{
-			"error":   err.Error(),
-			"user_id": userID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -110,11 +102,7 @@ func (h *TwoFactorHandler) Verify(c *gin.Context) {
 	}
 
 	if err := h.twoFAService.VerifyTOTPSetup(c.Request.Context(), *userID, req.Code); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -176,11 +164,7 @@ func (h *TwoFactorHandler) Disable(c *gin.Context) {
 	}
 
 	if err := h.twoFAService.DisableTOTP(c.Request.Context(), *userID, req.Password, req.Code); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -272,11 +256,7 @@ func (h *TwoFactorHandler) RegenerateBackupCodes(c *gin.Context) {
 
 	codes, err := h.twoFAService.RegenerateBackupCodes(c.Request.Context(), *userID, req.Password)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 

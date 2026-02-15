@@ -47,11 +47,7 @@ func (h *LDAPHandler) CreateConfig(c *gin.Context) {
 
 	config, err := h.ldapService.CreateConfig(c.Request.Context(), &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -77,11 +73,7 @@ func (h *LDAPHandler) GetConfig(c *gin.Context) {
 
 	config, err := h.ldapService.GetConfig(c.Request.Context(), id)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -101,11 +93,7 @@ func (h *LDAPHandler) GetConfig(c *gin.Context) {
 func (h *LDAPHandler) GetActiveConfig(c *gin.Context) {
 	config, err := h.ldapService.GetActiveConfig(c.Request.Context())
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -164,11 +152,7 @@ func (h *LDAPHandler) UpdateConfig(c *gin.Context) {
 
 	config, err := h.ldapService.UpdateConfig(c.Request.Context(), id, &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -192,11 +176,7 @@ func (h *LDAPHandler) DeleteConfig(c *gin.Context) {
 	}
 
 	if err := h.ldapService.DeleteConfig(c.Request.Context(), id); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -263,11 +243,7 @@ func (h *LDAPHandler) Sync(c *gin.Context) {
 
 	response, err := h.ldapService.Sync(c.Request.Context(), id, &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 

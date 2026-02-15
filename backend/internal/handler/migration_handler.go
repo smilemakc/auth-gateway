@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
@@ -48,11 +49,7 @@ func (h *MigrationHandler) ImportUsers(c *gin.Context) {
 			"application_id": appID.String(),
 			"error":          err.Error(),
 		})
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -81,11 +78,7 @@ func (h *MigrationHandler) ImportOAuthAccounts(c *gin.Context) {
 		h.logger.Error("Failed to import OAuth accounts", map[string]interface{}{
 			"error": err.Error(),
 		})
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -124,11 +117,7 @@ func (h *MigrationHandler) ImportRoles(c *gin.Context) {
 			"application_id": appID.String(),
 			"error":          err.Error(),
 		})
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 

@@ -789,12 +789,12 @@ func (h *ApplicationHandler) RotateSecret(c *gin.Context) {
 
 	secret, err := h.appService.RotateSecret(c.Request.Context(), id)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else if err == service.ErrApplicationNotFound {
+		if err == service.ErrApplicationNotFound {
 			c.JSON(http.StatusNotFound, models.NewErrorResponse(
 				models.NewAppError(http.StatusNotFound, "Application not found"),
 			))
+		} else if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
 		} else {
 			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(
 				models.NewAppError(http.StatusInternalServerError, "Failed to rotate secret"),

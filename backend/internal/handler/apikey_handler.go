@@ -57,11 +57,7 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 
 	resp, err := h.apiKeyService.Create(c.Request.Context(), *userID, &req, ip, userAgent)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -87,11 +83,7 @@ func (h *APIKeyHandler) List(c *gin.Context) {
 
 	apiKeys, err := h.apiKeyService.List(c.Request.Context(), *userID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -128,11 +120,7 @@ func (h *APIKeyHandler) Get(c *gin.Context) {
 
 	apiKey, err := h.apiKeyService.GetByID(c.Request.Context(), *userID, apiKeyID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -179,11 +167,7 @@ func (h *APIKeyHandler) Update(c *gin.Context) {
 
 	apiKey, err := h.apiKeyService.Update(c.Request.Context(), *userID, apiKeyID, &req, ip, userAgent)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -219,11 +203,7 @@ func (h *APIKeyHandler) Revoke(c *gin.Context) {
 	userAgent := utils.GetUserAgent(c)
 
 	if err := h.apiKeyService.Revoke(c.Request.Context(), *userID, apiKeyID, ip, userAgent); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -259,11 +239,7 @@ func (h *APIKeyHandler) Delete(c *gin.Context) {
 	userAgent := utils.GetUserAgent(c)
 
 	if err := h.apiKeyService.Delete(c.Request.Context(), *userID, apiKeyID, ip, userAgent); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
