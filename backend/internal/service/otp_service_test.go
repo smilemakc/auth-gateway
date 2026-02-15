@@ -7,10 +7,24 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/smilemakc/auth-gateway/internal/config"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
+
+func testConfig() *config.Config {
+	return &config.Config{
+		Security: config.SecurityConfig{
+			OTPHMACSecret: "test-otp-hmac-secret-for-testing-32-chars-minimum",
+		},
+		SMS: config.SMSConfig{
+			SMSMaxPerNumber: 5,
+			SMSMaxPerDay:    50,
+			SMSMaxPerHour:   10,
+		},
+	}
+}
 
 func setupOTPService() (*OTPService, *mockOTPStore, *mockUserStore, *mockEmailSender, *mockAuditLogger) {
 	mOTP := &mockOTPStore{}
@@ -18,8 +32,10 @@ func setupOTPService() (*OTPService, *mockOTPStore, *mockUserStore, *mockEmailSe
 	mEmail := &mockEmailSender{}
 	mAudit := &mockAuditLogger{}
 
+	cfg := testConfig()
 	svc := NewOTPService(mOTP, mUser, mAudit, OTPServiceOptions{
 		EmailSender: mEmail,
+		Config:      cfg,
 	})
 	return svc, mOTP, mUser, mEmail, mAudit
 }
@@ -84,7 +100,7 @@ func TestOTPService_VerifyOTP(t *testing.T) {
 	ctx := context.Background()
 	email := "test@example.com"
 	otpCode := "123456"
-	hashedCode, _ := utils.HashPassword(otpCode, 10)
+	hashedCode := utils.HMACHash(otpCode, svc.cfg.Security.OTPHMACSecret)
 
 	req := &models.VerifyOTPRequest{
 		Email: &email,

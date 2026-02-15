@@ -576,8 +576,8 @@ func (s *OAuthService) createUserFromOAuth(ctx context.Context, userInfo *models
 	user := &models.User{
 		ID:            uuid.New(),
 		Email:         email,
-		Username:      username,
-		FullName:      userInfo.Name,
+		Username:      utils.SanitizeUsername(username),
+		FullName:      utils.SanitizeHTML(userInfo.Name),
 		PasswordHash:  "", // OAuth users don't have passwords
 		IsActive:      true,
 		EmailVerified: userInfo.Email != "", // Mark as verified if email provided by OAuth

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -119,6 +120,37 @@ func TestNormalizePhone(t *testing.T) {
 			result := NormalizePhone(tt.input)
 			if result != tt.expected {
 				t.Fatalf("expected %q, got %q", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestValidateEmail(t *testing.T) {
+	tests := []struct {
+		name      string
+		email     string
+		wantError bool
+	}{
+		{"Valid email", "user@example.com", false},
+		{"Valid email with subdomain", "user@mail.example.com", false},
+		{"Valid email with plus", "user+tag@example.com", false},
+		{"Valid email with dot", "user.name@example.com", false},
+		{"Too long email total", "a@" + strings.Repeat("a", 253) + ".com", true},
+		{"Too long local part", strings.Repeat("a", 65) + "@example.com", true},
+		{"Header injection CRLF", "user@example.com\r\nBcc: attacker@evil.com", true},
+		{"Header injection CR", "user\r@example.com", true},
+		{"Header injection LF", "user\n@example.com", true},
+		{"Invalid format no @", "not-an-email", true},
+		{"Invalid format no domain", "user@", true},
+		{"Invalid format no local", "@example.com", true},
+		{"Empty email", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateEmail(tt.email)
+			if (err != nil) != tt.wantError {
+				t.Errorf("ValidateEmail(%q) error = %v, wantError %v", tt.email, err, tt.wantError)
 			}
 		})
 	}

@@ -113,8 +113,8 @@ func (s *AdminUserService) CreateUser(ctx context.Context, req *models.AdminCrea
 	user := &models.User{
 		ID:            uuid.New(),
 		Email:         req.Email,
-		Username:      req.Username,
-		FullName:      req.FullName,
+		Username:      utils.SanitizeUsername(req.Username),
+		FullName:      utils.SanitizeHTML(req.FullName),
 		AccountType:   req.AccountType,
 		IsActive:      true,
 		EmailVerified: true,
@@ -193,11 +193,11 @@ func (s *AdminUserService) UpdateUser(ctx context.Context, userID uuid.UUID, req
 	}
 
 	if req.Username != nil && *req.Username != "" {
-		user.Username = *req.Username
+		user.Username = utils.SanitizeUsername(*req.Username)
 	}
 
 	if req.FullName != nil {
-		user.FullName = *req.FullName
+		user.FullName = utils.SanitizeHTML(*req.FullName)
 	}
 
 	if req.Phone != nil {

@@ -101,12 +101,14 @@ func (s *AdminBulkService) ImportUsers(ctx context.Context, req *models.BulkImpo
 			continue
 		}
 
-		if email != "" && !utils.IsValidEmail(email) {
-			detail.Status = "error"
-			detail.Reason = "invalid email format"
-			errCount++
-			details = append(details, detail)
-			continue
+		if email != "" {
+			if err := utils.ValidateEmail(email); err != nil {
+				detail.Status = "error"
+				detail.Reason = err.Error()
+				errCount++
+				details = append(details, detail)
+				continue
+			}
 		}
 
 		if phone != "" && !utils.IsValidPhone(phone) {
@@ -137,7 +139,7 @@ func (s *AdminBulkService) ImportUsers(ctx context.Context, req *models.BulkImpo
 				skipped++
 			case "update":
 				if entry.FullName != "" {
-					existingUser.FullName = entry.FullName
+					existingUser.FullName = utils.SanitizeHTML(entry.FullName)
 				}
 				if entry.IsActive != nil {
 					existingUser.IsActive = *entry.IsActive
@@ -231,9 +233,9 @@ func (s *AdminBulkService) ImportUsers(ctx context.Context, req *models.BulkImpo
 		user := &models.User{
 			ID:            userID,
 			Email:         email,
-			Username:      username,
+			Username:      utils.SanitizeUsername(username),
 			PasswordHash:  passwordHash,
-			FullName:      entry.FullName,
+			FullName:      utils.SanitizeHTML(entry.FullName),
 			IsActive:      isActive,
 			EmailVerified: emailVerified,
 			PhoneVerified: phoneVerified,

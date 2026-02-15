@@ -116,8 +116,8 @@ func (s *SCIMService) CreateUser(ctx context.Context, scimUser *models.SCIMUser)
 	// Create user
 	user := &models.User{
 		Email:         email,
-		Username:      scimUser.UserName,
-		FullName:      s.formatSCIMName(scimUser.Name),
+		Username:      utils.SanitizeUsername(scimUser.UserName),
+		FullName:      utils.SanitizeHTML(s.formatSCIMName(scimUser.Name)),
 		IsActive:      scimUser.Active,
 		EmailVerified: true, // SCIM users are typically pre-verified
 	}
@@ -153,8 +153,8 @@ func (s *SCIMService) UpdateUser(ctx context.Context, id string, scimUser *model
 	if len(scimUser.Emails) > 0 {
 		user.Email = scimUser.Emails[0].Value
 	}
-	user.Username = scimUser.UserName
-	user.FullName = s.formatSCIMName(scimUser.Name)
+	user.Username = utils.SanitizeUsername(scimUser.UserName)
+	user.FullName = utils.SanitizeHTML(s.formatSCIMName(scimUser.Name))
 	user.IsActive = scimUser.Active
 
 	if err := s.userRepo.Update(ctx, user); err != nil {
@@ -340,11 +340,11 @@ func (s *SCIMService) applyReplaceOperation(user *models.User, path string, valu
 	switch path {
 	case "userName":
 		if str, ok := value.(string); ok {
-			user.Username = str
+			user.Username = utils.SanitizeUsername(str)
 		}
 	case "name.formatted":
 		if str, ok := value.(string); ok {
-			user.FullName = str
+			user.FullName = utils.SanitizeHTML(str)
 		}
 	case "emails[type eq \"primary\"].value":
 		if str, ok := value.(string); ok {

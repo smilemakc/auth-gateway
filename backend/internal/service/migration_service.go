@@ -63,8 +63,8 @@ func (s *MigrationService) ImportUsers(ctx context.Context, appID uuid.UUID, ent
 
 func (s *MigrationService) importSingleUser(ctx context.Context, appID uuid.UUID, entry models.ImportUserEntry) error {
 	email := utils.NormalizeEmail(entry.Email)
-	if !utils.IsValidEmail(email) {
-		return fmt.Errorf("invalid email format")
+	if err := utils.ValidateEmail(email); err != nil {
+		return err
 	}
 
 	exists, err := s.userRepo.EmailExists(ctx, email)
@@ -110,8 +110,8 @@ func (s *MigrationService) importSingleUser(ctx context.Context, appID uuid.UUID
 	user := &models.User{
 		ID:           uuid.New(),
 		Email:        email,
-		Username:     username,
-		FullName:     entry.FullName,
+		Username:     utils.SanitizeUsername(username),
+		FullName:     utils.SanitizeHTML(entry.FullName),
 		PasswordHash: passwordHash,
 		IsActive:     isActive,
 	}
@@ -163,8 +163,8 @@ func (s *MigrationService) ImportOAuthAccounts(ctx context.Context, entries []mo
 
 func (s *MigrationService) importSingleOAuthAccount(ctx context.Context, entry models.ImportOAuthEntry) error {
 	email := utils.NormalizeEmail(entry.Email)
-	if !utils.IsValidEmail(email) {
-		return fmt.Errorf("invalid email format")
+	if err := utils.ValidateEmail(email); err != nil {
+		return err
 	}
 
 	user, err := s.userRepo.GetByEmail(ctx, email, nil)

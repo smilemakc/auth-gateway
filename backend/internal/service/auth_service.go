@@ -91,9 +91,8 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 
 	if req.Email != "" {
 		email = utils.NormalizeEmail(req.Email)
-		// Validate email
-		if !utils.IsValidEmail(email) {
-			return nil, models.NewAppError(400, "Invalid email format")
+		if err := utils.ValidateEmail(email); err != nil {
+			return nil, models.NewAppError(400, err.Error())
 		}
 	}
 
@@ -145,9 +144,9 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 			ID:           uuid.New(),
 			Email:        email,
 			Phone:        utils.Ptr(phone),
-			Username:     username,
+			Username:     utils.SanitizeUsername(username),
 			PasswordHash: passwordHash,
-			FullName:     req.FullName,
+			FullName:     utils.SanitizeHTML(req.FullName),
 			IsActive:     true,
 		}
 
@@ -634,8 +633,8 @@ func (s *AuthService) InitPasswordlessRegistration(ctx context.Context, req *mod
 	// Normalize and validate email
 	if req.Email != nil && *req.Email != "" {
 		email = utils.NormalizeEmail(*req.Email)
-		if !utils.IsValidEmail(email) {
-			return models.NewAppError(400, "Invalid email format")
+		if err := utils.ValidateEmail(email); err != nil {
+			return models.NewAppError(400, err.Error())
 		}
 		identifier = email
 	}
@@ -747,9 +746,9 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 			ID:            uuid.New(),
 			Email:         pending.Email,
 			Phone:         utils.Ptr(pending.Phone),
-			Username:      pending.Username,
+			Username:      utils.SanitizeUsername(pending.Username),
 			PasswordHash:  "", // No password for passwordless registration
-			FullName:      pending.FullName,
+			FullName:      utils.SanitizeHTML(pending.FullName),
 			IsActive:      true,
 			EmailVerified: email != "", // Mark email as verified if registering via email
 			PhoneVerified: phone != "", // Mark phone as verified if registering via phone

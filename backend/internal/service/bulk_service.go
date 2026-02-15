@@ -80,8 +80,8 @@ func (s *BulkService) BulkCreateUsers(ctx context.Context, req *models.BulkCreat
 		// Create user
 		user := &models.User{
 			Email:         userReq.Email,
-			Username:      userReq.Username,
-			FullName:      userReq.FullName,
+			Username:      utils.SanitizeUsername(userReq.Username),
+			FullName:      utils.SanitizeHTML(userReq.FullName),
 			PasswordHash:  passwordHash,
 			IsActive:      userReq.IsActive,
 			EmailVerified: userReq.EmailVerified,
@@ -136,10 +136,10 @@ func (s *BulkService) BulkUpdateUsers(ctx context.Context, req *models.BulkUpdat
 			user.Email = *userReq.Email
 		}
 		if userReq.Username != nil {
-			user.Username = *userReq.Username
+			user.Username = utils.SanitizeUsername(*userReq.Username)
 		}
 		if userReq.FullName != nil {
-			user.FullName = *userReq.FullName
+			user.FullName = utils.SanitizeHTML(*userReq.FullName)
 		}
 		if userReq.IsActive != nil {
 			user.IsActive = *userReq.IsActive

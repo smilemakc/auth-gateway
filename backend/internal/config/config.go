@@ -186,6 +186,18 @@ type CORSConfig struct {
 	AllowCredentials bool
 }
 
+// Validate checks for insecure CORS configurations
+func (c *CORSConfig) Validate() error {
+	if c.AllowCredentials {
+		for _, origin := range c.AllowedOrigins {
+			if origin == "*" {
+				return fmt.Errorf("CORS: wildcard origin '*' with AllowCredentials is insecure (RFC 6454)")
+			}
+		}
+	}
+	return nil
+}
+
 // RateLimitConfig contains rate limiting configuration
 type RateLimitConfig struct {
 	SignupMax     int
@@ -205,8 +217,9 @@ type SecurityConfig struct {
 	PasswordPolicy                PasswordPolicyConfig
 	JITProvisioning               bool   // Enable Just-In-Time user provisioning for OAuth/OIDC logins
 	EncryptionKey                 string
-	StrictTokenBinding            bool // Reject refresh if IP/UserAgent changed
-	CSRFEnabled                   bool // Enable Double Submit Cookie CSRF protection
+	StrictTokenBinding            bool   // Reject refresh if IP/UserAgent changed
+	CSRFEnabled                   bool   // Enable Double Submit Cookie CSRF protection
+	OTPHMACSecret                 string // HMAC secret for OTP code hashing (prevents brute-force on 6-digit codes)
 }
 
 // PasswordPolicyConfig contains password policy configuration
@@ -406,6 +419,7 @@ func Load() (*Config, error) {
 			EncryptionKey:                 getEnv("ENCRYPTION_KEY", ""),
 			StrictTokenBinding:            getEnvAsBool("STRICT_TOKEN_BINDING", false),
 			CSRFEnabled:                   getEnvAsBool("CSRF_ENABLED", false),
+			OTPHMACSecret:                 getEnv("OTP_HMAC_SECRET", "change-me-in-production-otp-hmac-secret-32-chars-minimum"),
 			PasswordPolicy: PasswordPolicyConfig{
 				MinLength:        getEnvAsInt("PASSWORD_MIN_LENGTH", 8),
 				RequireUppercase: getEnvAsBool("PASSWORD_REQUIRE_UPPERCASE", false),
@@ -450,6 +464,11 @@ func Load() (*Config, error) {
 	// Validate gRPC configuration
 	if err := cfg.GRPC.Validate(); err != nil {
 		return nil, fmt.Errorf("gRPC configuration validation failed: %w", err)
+	}
+
+	// Validate CORS configuration
+	if err := cfg.CORS.Validate(); err != nil {
+		return nil, fmt.Errorf("CORS configuration validation failed: %w", err)
 	}
 
 	return cfg, nil
