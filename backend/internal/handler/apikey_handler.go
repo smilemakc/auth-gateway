@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
@@ -122,11 +121,8 @@ func (h *APIKeyHandler) Get(c *gin.Context) {
 		return
 	}
 
-	apiKeyID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
-		))
+	apiKeyID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -165,11 +161,8 @@ func (h *APIKeyHandler) Update(c *gin.Context) {
 		return
 	}
 
-	apiKeyID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
-		))
+	apiKeyID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -217,11 +210,8 @@ func (h *APIKeyHandler) Revoke(c *gin.Context) {
 		return
 	}
 
-	apiKeyID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
-		))
+	apiKeyID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -260,11 +250,8 @@ func (h *APIKeyHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	apiKeyID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
-		))
+	apiKeyID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 

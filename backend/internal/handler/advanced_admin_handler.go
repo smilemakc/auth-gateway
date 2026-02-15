@@ -128,9 +128,8 @@ func (h *AdvancedAdminHandler) CreatePermission(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/rbac/permissions/{id} [put]
 func (h *AdvancedAdminHandler) UpdatePermission(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid permission ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -140,8 +139,7 @@ func (h *AdvancedAdminHandler) UpdatePermission(c *gin.Context) {
 		return
 	}
 
-	err = h.rbacService.UpdatePermission(c.Request.Context(), id, &req)
-	if err != nil {
+	if err := h.rbacService.UpdatePermission(c.Request.Context(), id, &req); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -176,14 +174,12 @@ func (h *AdvancedAdminHandler) UpdatePermission(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/rbac/permissions/{id} [delete]
 func (h *AdvancedAdminHandler) DeletePermission(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid permission ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = h.rbacService.DeletePermission(c.Request.Context(), id)
-	if err != nil {
+	if err := h.rbacService.DeletePermission(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -274,9 +270,8 @@ func (h *AdvancedAdminHandler) CreateRole(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/rbac/roles/{id} [get]
 func (h *AdvancedAdminHandler) GetRole(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid role ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -305,9 +300,8 @@ func (h *AdvancedAdminHandler) GetRole(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/rbac/roles/{id} [put]
 func (h *AdvancedAdminHandler) UpdateRole(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid role ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -339,14 +333,12 @@ func (h *AdvancedAdminHandler) UpdateRole(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/rbac/roles/{id} [delete]
 func (h *AdvancedAdminHandler) DeleteRole(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid role ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = h.rbacService.DeleteRole(c.Request.Context(), id)
-	if err != nil {
+	if err := h.rbacService.DeleteRole(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -426,14 +418,12 @@ func (h *AdvancedAdminHandler) RevokeSession(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "User not authenticated"})
 		return
 	}
-	sessionID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid session ID"})
+	sessionID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = h.sessionService.RevokeSession(c.Request.Context(), *userID, sessionID)
-	if err != nil {
+	if err := h.sessionService.RevokeSession(c.Request.Context(), *userID, sessionID); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -454,14 +444,12 @@ func (h *AdvancedAdminHandler) RevokeSession(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/sessions/{id} [delete]
 func (h *AdvancedAdminHandler) AdminRevokeSession(c *gin.Context) {
-	sessionID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid session ID"})
+	sessionID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = h.sessionService.AdminRevokeSession(c.Request.Context(), sessionID)
-	if err != nil {
+	if err := h.sessionService.AdminRevokeSession(c.Request.Context(), sessionID); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -682,14 +670,12 @@ func (h *AdvancedAdminHandler) CreateIPFilter(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/ip-filters/{id} [delete]
 func (h *AdvancedAdminHandler) DeleteIPFilter(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid filter ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = h.ipFilterService.DeleteIPFilter(c.Request.Context(), id)
-	if err != nil {
+	if err := h.ipFilterService.DeleteIPFilter(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}

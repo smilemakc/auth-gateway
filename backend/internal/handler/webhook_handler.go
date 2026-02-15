@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
@@ -89,9 +88,8 @@ func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/webhooks/{id} [get]
 func (h *WebhookHandler) GetWebhook(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid webhook ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -166,9 +164,8 @@ func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
 		return
 	}
 
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid webhook ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -208,9 +205,8 @@ func (h *WebhookHandler) DeleteWebhook(c *gin.Context) {
 		return
 	}
 
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid webhook ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -239,9 +235,8 @@ func (h *WebhookHandler) DeleteWebhook(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/webhooks/{id}/test [post]
 func (h *WebhookHandler) TestWebhook(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid webhook ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -277,9 +272,8 @@ func (h *WebhookHandler) TestWebhook(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/webhooks/{id}/deliveries [get]
 func (h *WebhookHandler) ListWebhookDeliveries(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid webhook ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 

@@ -129,11 +129,8 @@ func (h *OAuthAdminHandler) ListClients(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients/{id} [get]
 func (h *OAuthAdminHandler) GetClient(c *gin.Context) {
-	clientID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid client ID"),
-		))
+	clientID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -169,11 +166,8 @@ func (h *OAuthAdminHandler) GetClient(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients/{id} [put]
 func (h *OAuthAdminHandler) UpdateClient(c *gin.Context) {
-	clientID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid client ID"),
-		))
+	clientID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -216,11 +210,8 @@ func (h *OAuthAdminHandler) UpdateClient(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients/{id} [delete]
 func (h *OAuthAdminHandler) DeleteClient(c *gin.Context) {
-	clientID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid client ID"),
-		))
+	clientID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -255,11 +246,8 @@ func (h *OAuthAdminHandler) DeleteClient(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients/{id}/rotate-secret [post]
 func (h *OAuthAdminHandler) RotateSecret(c *gin.Context) {
-	clientID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid client ID"),
-		))
+	clientID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -370,11 +358,8 @@ func (h *OAuthAdminHandler) CreateScope(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/scopes/{id} [delete]
 func (h *OAuthAdminHandler) DeleteScope(c *gin.Context) {
-	scopeID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid scope ID"),
-		))
+	scopeID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -409,11 +394,8 @@ func (h *OAuthAdminHandler) DeleteScope(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients/{id}/consents [get]
 func (h *OAuthAdminHandler) ListClientConsents(c *gin.Context) {
-	clientID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid client ID"),
-		))
+	clientID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -445,19 +427,13 @@ func (h *OAuthAdminHandler) ListClientConsents(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients/{id}/consents/{user_id} [delete]
 func (h *OAuthAdminHandler) RevokeUserConsent(c *gin.Context) {
-	clientID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid client ID"),
-		))
+	clientID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	userID, err := uuid.Parse(c.Param("user_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "user_id")
+	if !ok {
 		return
 	}
 

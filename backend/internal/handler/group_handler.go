@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
@@ -85,11 +84,8 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/groups/{id} [get]
 func (h *GroupHandler) GetGroup(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid group ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -157,11 +153,8 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/groups/{id} [put]
 func (h *GroupHandler) UpdateGroup(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid group ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -211,11 +204,8 @@ func (h *GroupHandler) UpdateGroup(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/groups/{id} [delete]
 func (h *GroupHandler) DeleteGroup(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid group ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -246,11 +236,8 @@ func (h *GroupHandler) DeleteGroup(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/groups/{id}/members [post]
 func (h *GroupHandler) AddGroupMembers(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid group ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -289,19 +276,13 @@ func (h *GroupHandler) AddGroupMembers(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/groups/{id}/members/{user_id} [delete]
 func (h *GroupHandler) RemoveGroupMember(c *gin.Context) {
-	groupID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid group ID"),
-		))
+	groupID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	userID, err := uuid.Parse(c.Param("user_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "user_id")
+	if !ok {
 		return
 	}
 
@@ -331,11 +312,8 @@ func (h *GroupHandler) RemoveGroupMember(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/groups/{id}/members [get]
 func (h *GroupHandler) GetGroupMembers(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid group ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 

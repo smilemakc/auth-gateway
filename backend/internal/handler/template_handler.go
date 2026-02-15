@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
@@ -77,9 +76,8 @@ func (h *TemplateHandler) ListEmailTemplates(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/templates/{id} [get]
 func (h *TemplateHandler) GetEmailTemplate(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid template ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -151,9 +149,8 @@ func (h *TemplateHandler) UpdateEmailTemplate(c *gin.Context) {
 		return
 	}
 
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid template ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -193,9 +190,8 @@ func (h *TemplateHandler) DeleteEmailTemplate(c *gin.Context) {
 		return
 	}
 
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid template ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -287,9 +283,8 @@ func (h *TemplateHandler) GetDefaultVariables(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/applications/{appId}/email-templates [get]
 func (h *TemplateHandler) ListApplicationEmailTemplates(c *gin.Context) {
-	appID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+	appID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -334,9 +329,8 @@ func (h *TemplateHandler) CreateApplicationEmailTemplate(c *gin.Context) {
 		return
 	}
 
-	appID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+	appID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -375,15 +369,13 @@ func (h *TemplateHandler) CreateApplicationEmailTemplate(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/applications/{appId}/email-templates/{id} [get]
 func (h *TemplateHandler) GetApplicationEmailTemplate(c *gin.Context) {
-	appID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+	appID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	templateID, err := uuid.Parse(c.Param("templateId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid template ID"})
+	templateID, ok := utils.ParseUUIDParam(c, "templateId")
+	if !ok {
 		return
 	}
 
@@ -424,15 +416,13 @@ func (h *TemplateHandler) UpdateApplicationEmailTemplate(c *gin.Context) {
 		return
 	}
 
-	appID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+	appID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	templateID, err := uuid.Parse(c.Param("templateId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid template ID"})
+	templateID, ok := utils.ParseUUIDParam(c, "templateId")
+	if !ok {
 		return
 	}
 
@@ -477,15 +467,13 @@ func (h *TemplateHandler) DeleteApplicationEmailTemplate(c *gin.Context) {
 		return
 	}
 
-	appID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+	appID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	templateID, err := uuid.Parse(c.Param("templateId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid template ID"})
+	templateID, ok := utils.ParseUUIDParam(c, "templateId")
+	if !ok {
 		return
 	}
 
@@ -534,9 +522,8 @@ func (h *TemplateHandler) InitializeApplicationTemplates(c *gin.Context) {
 		return
 	}
 
-	appID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+	appID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -569,15 +556,13 @@ func (h *TemplateHandler) InitializeApplicationTemplates(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/applications/{appId}/email-templates/{id}/preview [post]
 func (h *TemplateHandler) PreviewApplicationEmailTemplate(c *gin.Context) {
-	appID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid application ID"})
+	appID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	templateID, err := uuid.Parse(c.Param("templateId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid template ID"})
+	templateID, ok := utils.ParseUUIDParam(c, "templateId")
+	if !ok {
 		return
 	}
 

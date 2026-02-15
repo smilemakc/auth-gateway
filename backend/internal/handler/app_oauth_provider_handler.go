@@ -368,11 +368,8 @@ func (h *AppOAuthProviderHandler) CreateProviderAdmin(c *gin.Context) {
 
 // GetProviderAdmin gets an OAuth provider by ID from path param
 func (h *AppOAuthProviderHandler) GetProviderAdmin(c *gin.Context) {
-	providerID, err := uuid.Parse(c.Param("providerId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid provider ID"),
-		))
+	providerID, ok := utils.ParseUUIDParam(c, "providerId")
+	if !ok {
 		return
 	}
 
@@ -394,11 +391,8 @@ func (h *AppOAuthProviderHandler) GetProviderAdmin(c *gin.Context) {
 
 // UpdateProviderAdmin updates an OAuth provider by ID
 func (h *AppOAuthProviderHandler) UpdateProviderAdmin(c *gin.Context) {
-	providerID, err := uuid.Parse(c.Param("providerId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid provider ID"),
-		))
+	providerID, ok := utils.ParseUUIDParam(c, "providerId")
+	if !ok {
 		return
 	}
 
@@ -434,11 +428,8 @@ func (h *AppOAuthProviderHandler) UpdateProviderAdmin(c *gin.Context) {
 
 // DeleteProviderAdmin deletes an OAuth provider by ID
 func (h *AppOAuthProviderHandler) DeleteProviderAdmin(c *gin.Context) {
-	providerID, err := uuid.Parse(c.Param("providerId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid provider ID"),
-		))
+	providerID, ok := utils.ParseUUIDParam(c, "providerId")
+	if !ok {
 		return
 	}
 

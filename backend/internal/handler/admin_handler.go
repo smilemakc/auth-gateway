@@ -101,11 +101,8 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id} [get]
 func (h *AdminHandler) GetUser(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -137,11 +134,8 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id}/oauth-accounts [get]
 func (h *AdminHandler) GetUserOAuthAccounts(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -178,11 +172,8 @@ func (h *AdminHandler) GetUserOAuthAccounts(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id} [put]
 func (h *AdminHandler) UpdateUser(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -273,11 +264,8 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id} [delete]
 func (h *AdminHandler) DeleteUser(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -337,11 +325,8 @@ func (h *AdminHandler) ListAPIKeys(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/api-keys/{id}/revoke [post]
 func (h *AdminHandler) RevokeAPIKey(c *gin.Context) {
-	keyID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
-		))
+	keyID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -454,11 +439,8 @@ func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id}/roles [post]
 func (h *AdminHandler) AssignRole(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -505,19 +487,13 @@ func (h *AdminHandler) AssignRole(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id}/roles/{roleId} [delete]
 func (h *AdminHandler) RemoveRole(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	roleID, err := uuid.Parse(c.Param("roleId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid role ID"),
-		))
+	roleID, ok := utils.ParseUUIDParam(c, "roleId")
+	if !ok {
 		return
 	}
 
@@ -549,11 +525,8 @@ func (h *AdminHandler) RemoveRole(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id}/send-password-reset [post]
 func (h *AdminHandler) SendPasswordReset(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -639,11 +612,8 @@ func (h *AdminHandler) SendPasswordReset(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id}/reset-2fa [post]
 func (h *AdminHandler) Reset2FA(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 

@@ -202,11 +202,8 @@ func (h *SAMLHandler) CreateSP(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/saml/sp/{id} [get]
 func (h *SAMLHandler) GetSP(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid SP ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -277,11 +274,8 @@ func (h *SAMLHandler) ListSPs(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Router /api/admin/saml/sp/{id} [put]
 func (h *SAMLHandler) UpdateSP(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid SP ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -316,11 +310,8 @@ func (h *SAMLHandler) UpdateSP(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/saml/sp/{id} [delete]
 func (h *SAMLHandler) DeleteSP(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid SP ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
