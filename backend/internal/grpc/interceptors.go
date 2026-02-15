@@ -247,7 +247,7 @@ func apiKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *ser
 
 		// Authenticate based on credential type
 		if strings.HasPrefix(credential, "app_") {
-			// Application secret authentication — full access to all configured methods
+			// Application secret authentication
 			app, err := appService.ValidateSecret(ctx, credential)
 			if err != nil {
 				log.Warn("gRPC auth failed: invalid application secret", map[string]interface{}{
@@ -255,6 +255,20 @@ func apiKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *ser
 					"error":  err.Error(),
 				})
 				return nil, status.Error(codes.Unauthenticated, "invalid application secret")
+			}
+
+			// Scope enforcement: if application has AllowedGRPCScopes defined, restrict access
+			if len(app.AllowedGRPCScopes) > 0 {
+				requiredScope := string(methodScopes[info.FullMethod])
+				if !containsScope(app.AllowedGRPCScopes, requiredScope) {
+					log.Warn("gRPC auth failed: application scope restriction", map[string]interface{}{
+						"method":         info.FullMethod,
+						"required_scope": requiredScope,
+						"app_name":       app.Name,
+						"allowed_scopes": app.AllowedGRPCScopes,
+					})
+					return nil, status.Errorf(codes.PermissionDenied, "application not authorized for scope %q", requiredScope)
+				}
 			}
 
 			ctx = context.WithValue(ctx, GRPCApplicationIDKey, app.ID.String())
@@ -374,4 +388,14 @@ func streamAPIKeyAuthInterceptor(apiKeyService *service.APIKeyService, appServic
 
 		return handler(srv, ss)
 	}
+}
+
+// containsScope checks if a slice of scopes contains the given scope
+func containsScope(scopes []string, scope string) bool {
+	for _, s := range scopes {
+		if s == scope {
+			return true
+		}
+	}
+	return false
 }

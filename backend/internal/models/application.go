@@ -45,6 +45,7 @@ type Application struct {
 	SecretHash          string     `json:"-" bun:"secret_hash"`
 	SecretPrefix        string     `json:"secret_prefix,omitempty" bun:"secret_prefix"`
 	SecretLastRotatedAt *time.Time `json:"secret_last_rotated_at,omitempty" bun:"secret_last_rotated_at"`
+	AllowedGRPCScopes   []string   `json:"allowed_grpc_scopes,omitempty" bun:"allowed_grpc_scopes,type:jsonb,default:'[]'"`
 	CreatedAt           time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
 	UpdatedAt    time.Time  `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
 
