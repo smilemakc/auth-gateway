@@ -5,12 +5,12 @@ import (
 	"encoding/xml"
 	"net/http"
 	"net/url"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
@@ -234,8 +234,7 @@ func (h *SAMLHandler) GetSP(c *gin.Context) {
 // @Success 200 {object} models.ListSAMLSPsResponse
 // @Router /api/admin/saml/sp [get]
 func (h *SAMLHandler) ListSPs(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	page, pageSize := utils.ParsePagination(c)
 
 	sps, total, err := h.samlService.ListSPs(c.Request.Context(), page, pageSize)
 	if err != nil {

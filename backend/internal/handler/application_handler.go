@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -141,7 +140,7 @@ func (h *ApplicationHandler) GetApplication(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/applications [get]
 func (h *ApplicationHandler) ListApplications(c *gin.Context) {
-	page, perPage := h.getPagination(c)
+	page, perPage := utils.ParsePagination(c)
 
 	var isActive *bool
 	if isActiveStr := c.Query("is_active"); isActiveStr != "" {
@@ -367,7 +366,7 @@ func (h *ApplicationHandler) ListApplicationUsers(c *gin.Context) {
 		return
 	}
 
-	page, perPage := h.getPagination(c)
+	page, perPage := utils.ParsePagination(c)
 
 	response, err := h.appService.ListApplicationUsers(c.Request.Context(), id, page, perPage)
 	if err != nil {
@@ -859,14 +858,3 @@ func (h *ApplicationHandler) GetAuthConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, config)
 }
 
-func (h *ApplicationHandler) getPagination(c *gin.Context) (int, int) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
-	return page, pageSize
-}

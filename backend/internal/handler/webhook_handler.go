@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -63,8 +62,7 @@ func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	page, pageSize := utils.ParsePagination(c)
 
 	resp, err := h.webhookService.ListWebhooks(c.Request.Context(), page, pageSize)
 	if err != nil {
@@ -285,8 +283,7 @@ func (h *WebhookHandler) ListWebhookDeliveries(c *gin.Context) {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	page, pageSize := utils.ParsePagination(c)
 
 	resp, err := h.webhookService.ListWebhookDeliveries(c.Request.Context(), id, page, pageSize)
 	if err != nil {

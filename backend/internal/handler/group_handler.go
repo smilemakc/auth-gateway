@@ -2,12 +2,12 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
@@ -131,8 +131,7 @@ func (h *GroupHandler) GetGroup(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/groups [get]
 func (h *GroupHandler) ListGroups(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	page, pageSize := utils.ParsePagination(c)
 
 	response, err := h.groupService.ListGroups(c.Request.Context(), page, pageSize)
 	if err != nil {
@@ -340,8 +339,7 @@ func (h *GroupHandler) GetGroupMembers(c *gin.Context) {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	page, pageSize := utils.ParsePagination(c)
 
 	users, total, err := h.groupService.GetGroupMembers(c.Request.Context(), id, page, pageSize)
 	if err != nil {

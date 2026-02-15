@@ -71,8 +71,7 @@ func (h *AdminHandler) GetStats(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users [get]
 func (h *AdminHandler) ListUsers(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	page, pageSize := utils.ParsePagination(c)
 	appID, _ := utils.GetApplicationIDFromContext(c)
 
 	response, err := h.adminService.ListUsers(c.Request.Context(), appID, page, pageSize)
@@ -308,8 +307,7 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/api-keys [get]
 func (h *AdminHandler) ListAPIKeys(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
+	page, pageSize := utils.ParsePagination(c, 50)
 	appID, _ := utils.GetApplicationIDFromContext(c)
 
 	result, err := h.adminService.ListAPIKeys(c.Request.Context(), appID, page, pageSize)
@@ -375,8 +373,7 @@ func (h *AdminHandler) RevokeAPIKey(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/audit-logs [get]
 func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
+	page, pageSize := utils.ParsePagination(c, 50)
 
 	var userID *uuid.UUID
 	if userIDStr := c.Query("user_id"); userIDStr != "" {

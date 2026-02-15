@@ -398,15 +398,7 @@ func (h *AdvancedAdminHandler) ListUserSessions(c *gin.Context) {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page, pageSize := utils.ParsePagination(c)
 
 	sessions, err := h.sessionService.GetUserSessions(c.Request.Context(), *userID, page, pageSize)
 	if err != nil {
@@ -559,15 +551,7 @@ func (h *AdvancedAdminHandler) GetSessionStats(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/sessions [get]
 func (h *AdvancedAdminHandler) ListAllSessions(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
-
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 50
-	}
+	page, pageSize := utils.ParsePagination(c, 50)
 
 	appID, _ := utils.GetApplicationIDFromContext(c)
 
@@ -638,16 +622,8 @@ func (h *AdvancedAdminHandler) ListAllSessions(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/ip-filters [get]
 func (h *AdvancedAdminHandler) ListIPFilters(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	page, pageSize := utils.ParsePagination(c)
 	filterType := c.Query("type")
-
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
 
 	filters, err := h.ipFilterService.ListIPFilters(c.Request.Context(), page, pageSize, filterType)
 	if err != nil {
