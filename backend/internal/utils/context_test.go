@@ -136,3 +136,29 @@ func TestGetDeviceInfoFromContext(t *testing.T) {
 	assert.NotNil(t, info)
 	assert.Equal(t, "unknown", info.Browser) // Basic check
 }
+
+func TestMustGetUserID_Present(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	uid := uuid.New()
+	c.Set(UserIDKey, uid)
+
+	result, ok := MustGetUserID(c)
+	assert.True(t, ok)
+	assert.Equal(t, uid, result)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.False(t, c.IsAborted())
+}
+
+func TestMustGetUserID_Missing(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	result, ok := MustGetUserID(c)
+	assert.False(t, ok)
+	assert.Equal(t, uuid.Nil, result)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.True(t, c.IsAborted())
+}

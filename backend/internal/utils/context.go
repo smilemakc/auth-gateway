@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
@@ -29,6 +31,18 @@ func GetUserIDFromContext(c *gin.Context) (*uuid.UUID, bool) {
 	}
 
 	return &userID, true
+}
+
+// MustGetUserID extracts the user ID from context and responds with 401 if not found.
+// Returns the user ID and true on success. On failure, it responds and aborts — caller should return.
+func MustGetUserID(c *gin.Context) (uuid.UUID, bool) {
+	userID, exists := GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+		c.Abort()
+		return uuid.Nil, false
+	}
+	return *userID, true
 }
 
 // GetApplicationIDFromContext retrieves the application ID from the Gin context

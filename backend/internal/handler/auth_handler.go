@@ -215,13 +215,12 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/profile [get]
 func (h *AuthHandler) GetProfile(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	user, err := h.userService.GetProfile(c.Request.Context(), *userID)
+	user, err := h.userService.GetProfile(c.Request.Context(), userID)
 	if err != nil {
 		utils.RespondWithError(c, err)
 		return
@@ -244,9 +243,8 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/profile [put]
 func (h *AuthHandler) UpdateProfile(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -261,7 +259,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
 
-	user, err := h.userService.UpdateProfile(c.Request.Context(), *userID, &req, ip, userAgent)
+	user, err := h.userService.UpdateProfile(c.Request.Context(), userID, &req, ip, userAgent)
 	if err != nil {
 		utils.RespondWithError(c, err)
 		return
@@ -284,9 +282,8 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/change-password [post]
 func (h *AuthHandler) ChangePassword(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -301,7 +298,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
 
-	if err := h.authService.ChangePassword(c.Request.Context(), *userID, req.OldPassword, req.NewPassword, ip, userAgent); err != nil {
+	if err := h.authService.ChangePassword(c.Request.Context(), userID, req.OldPassword, req.NewPassword, ip, userAgent); err != nil {
 		utils.RespondWithError(c, err)
 		return
 	}
@@ -311,7 +308,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			user, err := h.userService.GetProfile(ctx, *userID)
+			user, err := h.userService.GetProfile(ctx, userID)
 			if err != nil {
 				return
 			}

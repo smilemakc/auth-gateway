@@ -46,10 +46,8 @@ func (h *SMSSettingsHandler) CreateSettings(c *gin.Context) {
 		return
 	}
 
-	// Get user ID from context
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -81,7 +79,7 @@ func (h *SMSSettingsHandler) CreateSettings(c *gin.Context) {
 		MaxPerHour:         maxPerHour,
 		MaxPerDay:          maxPerDay,
 		MaxPerNumber:       maxPerNumber,
-		CreatedBy:          userID,
+		CreatedBy:          &userID,
 		CreatedAt:          time.Now(),
 		UpdatedAt:          time.Now(),
 	}

@@ -40,9 +40,8 @@ func NewApplicationHandler(appService *service.ApplicationService, logger *logge
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/applications [post]
 func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -54,7 +53,7 @@ func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 		return
 	}
 
-	app, secret, err := h.appService.CreateApplication(c.Request.Context(), &req, userID)
+	app, secret, err := h.appService.CreateApplication(c.Request.Context(), &req, &userID)
 	if err != nil {
 		if err == service.ErrInvalidApplicationName {
 			c.JSON(http.StatusBadRequest, models.NewErrorResponse(
@@ -425,13 +424,12 @@ func (h *ApplicationHandler) BanUser(c *gin.Context) {
 		return
 	}
 
-	adminID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	adminID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	if err := h.appService.BanUser(c.Request.Context(), userID, appID, *adminID, req.Reason); err != nil {
+	if err := h.appService.BanUser(c.Request.Context(), userID, appID, adminID, req.Reason); err != nil {
 		if err == service.ErrUserProfileNotFound {
 			c.JSON(http.StatusNotFound, models.NewErrorResponse(
 				models.NewAppError(http.StatusNotFound, "User profile not found in this application"),
@@ -682,13 +680,12 @@ func (h *ApplicationHandler) GetMyProfile(c *gin.Context) {
 		return
 	}
 
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	profile, err := h.appService.GetOrCreateUserProfile(c.Request.Context(), *userID, appID)
+	profile, err := h.appService.GetOrCreateUserProfile(c.Request.Context(), userID, appID)
 	if err != nil {
 		h.logger.Error("Failed to get user profile", map[string]interface{}{
 			"error":          err.Error(),
@@ -726,9 +723,8 @@ func (h *ApplicationHandler) UpdateMyProfile(c *gin.Context) {
 		return
 	}
 
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -744,7 +740,7 @@ func (h *ApplicationHandler) UpdateMyProfile(c *gin.Context) {
 		return
 	}
 
-	profile, err := h.appService.UpdateUserProfile(c.Request.Context(), *userID, appID, &req)
+	profile, err := h.appService.UpdateUserProfile(c.Request.Context(), userID, appID, &req)
 	if err != nil {
 		if err == service.ErrUserProfileNotFound {
 			c.JSON(http.StatusNotFound, models.NewErrorResponse(

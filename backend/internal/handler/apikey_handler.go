@@ -38,9 +38,8 @@ func NewAPIKeyHandler(apiKeyService *service.APIKeyService, log *logger.Logger) 
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/api-keys [post]
 func (h *APIKeyHandler) Create(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -55,7 +54,7 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
 
-	resp, err := h.apiKeyService.Create(c.Request.Context(), *userID, &req, ip, userAgent)
+	resp, err := h.apiKeyService.Create(c.Request.Context(), userID, &req, ip, userAgent)
 	if err != nil {
 		utils.RespondWithError(c, err)
 		return
@@ -75,13 +74,12 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/api-keys [get]
 func (h *APIKeyHandler) List(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	apiKeys, err := h.apiKeyService.List(c.Request.Context(), *userID)
+	apiKeys, err := h.apiKeyService.List(c.Request.Context(), userID)
 	if err != nil {
 		utils.RespondWithError(c, err)
 		return
@@ -107,9 +105,8 @@ func (h *APIKeyHandler) List(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/api-keys/{id} [get]
 func (h *APIKeyHandler) Get(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -118,7 +115,7 @@ func (h *APIKeyHandler) Get(c *gin.Context) {
 		return
 	}
 
-	apiKey, err := h.apiKeyService.GetByID(c.Request.Context(), *userID, apiKeyID)
+	apiKey, err := h.apiKeyService.GetByID(c.Request.Context(), userID, apiKeyID)
 	if err != nil {
 		utils.RespondWithError(c, err)
 		return
@@ -143,9 +140,8 @@ func (h *APIKeyHandler) Get(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/api-keys/{id} [put]
 func (h *APIKeyHandler) Update(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -165,7 +161,7 @@ func (h *APIKeyHandler) Update(c *gin.Context) {
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
 
-	apiKey, err := h.apiKeyService.Update(c.Request.Context(), *userID, apiKeyID, &req, ip, userAgent)
+	apiKey, err := h.apiKeyService.Update(c.Request.Context(), userID, apiKeyID, &req, ip, userAgent)
 	if err != nil {
 		utils.RespondWithError(c, err)
 		return
@@ -188,9 +184,8 @@ func (h *APIKeyHandler) Update(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/api-keys/{id}/revoke [post]
 func (h *APIKeyHandler) Revoke(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -202,7 +197,7 @@ func (h *APIKeyHandler) Revoke(c *gin.Context) {
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
 
-	if err := h.apiKeyService.Revoke(c.Request.Context(), *userID, apiKeyID, ip, userAgent); err != nil {
+	if err := h.apiKeyService.Revoke(c.Request.Context(), userID, apiKeyID, ip, userAgent); err != nil {
 		utils.RespondWithError(c, err)
 		return
 	}
@@ -224,9 +219,8 @@ func (h *APIKeyHandler) Revoke(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/api-keys/{id} [delete]
 func (h *APIKeyHandler) Delete(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -238,7 +232,7 @@ func (h *APIKeyHandler) Delete(c *gin.Context) {
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
 
-	if err := h.apiKeyService.Delete(c.Request.Context(), *userID, apiKeyID, ip, userAgent); err != nil {
+	if err := h.apiKeyService.Delete(c.Request.Context(), userID, apiKeyID, ip, userAgent); err != nil {
 		utils.RespondWithError(c, err)
 		return
 	}

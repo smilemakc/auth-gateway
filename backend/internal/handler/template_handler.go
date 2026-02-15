@@ -105,9 +105,8 @@ func (h *TemplateHandler) GetEmailTemplate(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/templates [post]
 func (h *TemplateHandler) CreateEmailTemplate(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -117,7 +116,7 @@ func (h *TemplateHandler) CreateEmailTemplate(c *gin.Context) {
 		return
 	}
 
-	template, err := h.templateService.CreateEmailTemplate(c.Request.Context(), &req, *userID)
+	template, err := h.templateService.CreateEmailTemplate(c.Request.Context(), &req, userID)
 	if err != nil {
 		h.logger.Error("Failed to create template", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
@@ -143,9 +142,8 @@ func (h *TemplateHandler) CreateEmailTemplate(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/templates/{id} [put]
 func (h *TemplateHandler) UpdateEmailTemplate(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -160,7 +158,7 @@ func (h *TemplateHandler) UpdateEmailTemplate(c *gin.Context) {
 		return
 	}
 
-	if err := h.templateService.UpdateEmailTemplate(c.Request.Context(), id, &req, *userID); err != nil {
+	if err := h.templateService.UpdateEmailTemplate(c.Request.Context(), id, &req, userID); err != nil {
 		h.logger.Error("Failed to update template", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
@@ -184,9 +182,8 @@ func (h *TemplateHandler) UpdateEmailTemplate(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/templates/{id} [delete]
 func (h *TemplateHandler) DeleteEmailTemplate(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -195,7 +192,7 @@ func (h *TemplateHandler) DeleteEmailTemplate(c *gin.Context) {
 		return
 	}
 
-	if err := h.templateService.DeleteEmailTemplate(c.Request.Context(), id, *userID); err != nil {
+	if err := h.templateService.DeleteEmailTemplate(c.Request.Context(), id, userID); err != nil {
 		h.logger.Error("Failed to delete template", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Template not found"})
 		return
@@ -323,9 +320,8 @@ func (h *TemplateHandler) ListApplicationEmailTemplates(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/applications/{appId}/email-templates [post]
 func (h *TemplateHandler) CreateApplicationEmailTemplate(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -340,7 +336,7 @@ func (h *TemplateHandler) CreateApplicationEmailTemplate(c *gin.Context) {
 		return
 	}
 
-	template, err := h.templateService.CreateEmailTemplateForApp(c.Request.Context(), appID, &req, *userID)
+	template, err := h.templateService.CreateEmailTemplateForApp(c.Request.Context(), appID, &req, userID)
 	if err != nil {
 		h.logger.Error("Failed to create application template", map[string]interface{}{
 			"error":          err.Error(),
@@ -410,9 +406,8 @@ func (h *TemplateHandler) GetApplicationEmailTemplate(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/applications/{appId}/email-templates/{id} [put]
 func (h *TemplateHandler) UpdateApplicationEmailTemplate(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -432,7 +427,7 @@ func (h *TemplateHandler) UpdateApplicationEmailTemplate(c *gin.Context) {
 		return
 	}
 
-	if err := h.templateService.UpdateEmailTemplateForApp(c.Request.Context(), appID, templateID, &req, *userID); err != nil {
+	if err := h.templateService.UpdateEmailTemplateForApp(c.Request.Context(), appID, templateID, &req, userID); err != nil {
 		h.logger.Error("Failed to update application template", map[string]interface{}{
 			"error":          err.Error(),
 			"application_id": appID.String(),
@@ -461,9 +456,8 @@ func (h *TemplateHandler) UpdateApplicationEmailTemplate(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/applications/{appId}/email-templates/{id} [delete]
 func (h *TemplateHandler) DeleteApplicationEmailTemplate(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -488,7 +482,7 @@ func (h *TemplateHandler) DeleteApplicationEmailTemplate(c *gin.Context) {
 		return
 	}
 
-	if err := h.templateService.DeleteEmailTemplate(c.Request.Context(), templateID, *userID); err != nil {
+	if err := h.templateService.DeleteEmailTemplate(c.Request.Context(), templateID, userID); err != nil {
 		h.logger.Error("Failed to delete application template", map[string]interface{}{
 			"error":          err.Error(),
 			"application_id": appID.String(),
@@ -516,9 +510,8 @@ func (h *TemplateHandler) DeleteApplicationEmailTemplate(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/applications/{appId}/email-templates/initialize [post]
 func (h *TemplateHandler) InitializeApplicationTemplates(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -527,7 +520,7 @@ func (h *TemplateHandler) InitializeApplicationTemplates(c *gin.Context) {
 		return
 	}
 
-	if err := h.templateService.InitializeTemplatesForApp(c.Request.Context(), appID, *userID); err != nil {
+	if err := h.templateService.InitializeTemplatesForApp(c.Request.Context(), appID, userID); err != nil {
 		h.logger.Error("Failed to initialize application templates", map[string]interface{}{
 			"error":          err.Error(),
 			"application_id": appID.String(),

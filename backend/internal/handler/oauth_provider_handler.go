@@ -603,11 +603,7 @@ func (h *OAuthProviderHandler) oauthError(c *gin.Context, status int, errorCode,
 }
 
 func (h *OAuthProviderHandler) getUserIDFromContext(c *gin.Context) (uuid.UUID, bool) {
-	userIDPtr, exists := utils.GetUserIDFromContext(c)
-	if !exists || userIDPtr == nil {
-		return uuid.Nil, false
-	}
-	return *userIDPtr, true
+	return utils.MustGetUserID(c)
 }
 
 func (h *OAuthProviderHandler) mapErrorToOAuthCode(err error) string {

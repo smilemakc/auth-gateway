@@ -117,9 +117,8 @@ func (h *WebhookHandler) GetWebhook(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/webhooks [post]
 func (h *WebhookHandler) CreateWebhook(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -129,7 +128,7 @@ func (h *WebhookHandler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
-	webhook, secretKey, err := h.webhookService.CreateWebhook(c.Request.Context(), &req, *userID)
+	webhook, secretKey, err := h.webhookService.CreateWebhook(c.Request.Context(), &req, userID)
 	if err != nil {
 		h.logger.Error("Failed to create webhook", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
@@ -158,9 +157,8 @@ func (h *WebhookHandler) CreateWebhook(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/webhooks/{id} [put]
 func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -175,7 +173,7 @@ func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
 		return
 	}
 
-	if err := h.webhookService.UpdateWebhook(c.Request.Context(), id, &req, *userID); err != nil {
+	if err := h.webhookService.UpdateWebhook(c.Request.Context(), id, &req, userID); err != nil {
 		h.logger.Error("Failed to update webhook", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
@@ -199,9 +197,8 @@ func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/webhooks/{id} [delete]
 func (h *WebhookHandler) DeleteWebhook(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -210,7 +207,7 @@ func (h *WebhookHandler) DeleteWebhook(c *gin.Context) {
 		return
 	}
 
-	if err := h.webhookService.DeleteWebhook(c.Request.Context(), id, *userID); err != nil {
+	if err := h.webhookService.DeleteWebhook(c.Request.Context(), id, userID); err != nil {
 		h.logger.Error("Failed to delete webhook", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Webhook not found"})
 		return

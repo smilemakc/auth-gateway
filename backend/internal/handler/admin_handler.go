@@ -177,14 +177,12 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Get admin ID from context
-	adminID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	adminID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	user, err := h.adminService.UpdateUser(c.Request.Context(), userID, &req, *adminID)
+	user, err := h.adminService.UpdateUser(c.Request.Context(), userID, &req, adminID)
 	if err != nil {
 		utils.RespondWithError(c, err)
 		return
@@ -217,14 +215,12 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Get admin ID from context
-	adminID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	adminID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	user, err := h.adminService.CreateUser(c.Request.Context(), &req, *adminID)
+	user, err := h.adminService.CreateUser(c.Request.Context(), &req, adminID)
 	if err != nil {
 		utils.RespondWithError(c, err)
 		return
@@ -428,13 +424,12 @@ func (h *AdminHandler) AssignRole(c *gin.Context) {
 		return
 	}
 
-	adminID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	adminID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	user, err := h.adminService.AssignRole(c.Request.Context(), userID, req.RoleID, *adminID)
+	user, err := h.adminService.AssignRole(c.Request.Context(), userID, req.RoleID, adminID)
 	if err != nil {
 		utils.RespondWithError(c, err)
 		return
@@ -572,13 +567,12 @@ func (h *AdminHandler) Reset2FA(c *gin.Context) {
 		return
 	}
 
-	adminID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	adminID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	if err := h.adminService.AdminReset2FA(c.Request.Context(), userID, *adminID); err != nil {
+	if err := h.adminService.AdminReset2FA(c.Request.Context(), userID, adminID); err != nil {
 		utils.RespondWithError(c, err)
 		return
 	}
