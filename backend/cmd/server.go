@@ -714,6 +714,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 	router.Use(middleware.Recovery(deps.log))
 	router.Use(middleware.Logger(deps.log))
 	router.Use(middleware.SetupCORS(&deps.cfg.CORS))
+	router.Use(middleware.SecurityHeaders())
 	router.Use(middlewares.Maintenance.CheckMaintenance())
 	router.Use(middlewares.IPFilter.CheckIPFilter())
 	router.Use(middlewares.Application.ExtractApplicationID())
