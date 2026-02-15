@@ -716,11 +716,13 @@ export interface Application {
   description?: string;
   homepage_url?: string;
   callback_urls?: string[];
-  allowed_auth_methods: AuthMethod[];
+  allowed_auth_methods: (AuthMethod | string)[];
   is_active: boolean;
   is_system: boolean;
   owner_id?: string;
   secret_prefix?: string;
+  secret_last_rotated_at?: string;
+  owner?: { id: string; email?: string; username?: string; full_name?: string };
   created_at: string;
   updated_at: string;
   branding?: ApplicationBranding;
@@ -749,7 +751,7 @@ export interface CreateApplicationRequest {
   description?: string;
   homepage_url?: string;
   callback_urls?: string[];
-  allowed_auth_methods?: AuthMethod[];
+  allowed_auth_methods?: (AuthMethod | string)[];
   is_active?: boolean;
 }
 
@@ -766,7 +768,7 @@ export interface UpdateApplicationRequest {
   description?: string;
   homepage_url?: string;
   callback_urls?: string[];
-  allowed_auth_methods?: AuthMethod[];
+  allowed_auth_methods?: (AuthMethod | string)[];
   is_active?: boolean;
 }
 
@@ -793,12 +795,18 @@ export interface UserAppProfile {
   display_name?: string;
   avatar_url?: string;
   nickname?: string;
+  metadata?: Record<string, unknown>;
   app_roles?: string[];
   is_active: boolean;
   is_banned: boolean;
   ban_reason?: string;
+  banned_at?: string;
+  banned_by?: string;
+  last_access_at?: string;
   created_at: string;
   updated_at: string;
+  user?: { id: string; email?: string; username?: string; full_name?: string };
+  application?: Application;
 }
 
 /** User app profile list response */
@@ -832,7 +840,69 @@ export interface AuthConfigResponse {
   application_id: string;
   name: string;
   display_name: string;
-  allowed_auth_methods: AuthMethod[];
+  allowed_auth_methods: (AuthMethod | string)[];
   oauth_providers?: string[];
   branding?: ApplicationBranding;
+}
+
+/** Request to ban a user from application */
+export interface BanUserFromApplicationRequest {
+  reason: string;
+}
+
+/** Response for listing application users */
+export interface ListApplicationUsersResponse {
+  profiles: UserAppProfile[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/** User entry for import */
+export interface ImportUserEntry {
+  id?: string;
+  email: string;
+  username?: string;
+  password_hash_import?: string;
+  full_name?: string;
+  is_active?: boolean;
+  skip_email_verification?: boolean;
+  app_roles?: string[];
+}
+
+/** Request to import users */
+export interface ImportUsersRequest {
+  users: ImportUserEntry[];
+  on_conflict: 'skip' | 'update' | 'error';
+}
+
+/** Response from import users */
+export interface ImportUsersResponse {
+  imported: number;
+  skipped: number;
+  updated: number;
+  errors: number;
+  details: ImportDetail[];
+}
+
+/** Detail of a single import operation */
+export interface ImportDetail {
+  email: string;
+  status: string;
+  reason?: string;
+  user_id?: string;
+}
+
+/** Update application branding request */
+export interface UpdateApplicationBrandingRequest {
+  logo_url?: string;
+  favicon_url?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  background_color?: string;
+  custom_css?: string;
+  company_name?: string;
+  support_email?: string;
+  terms_url?: string;
+  privacy_url?: string;
 }
