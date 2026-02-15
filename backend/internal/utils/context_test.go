@@ -91,24 +91,33 @@ func TestGetUserRoleFromContext(t *testing.T) {
 func TestGetClientIP(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	t.Run("X-Forwarded-For", func(t *testing.T) {
+	t.Run("DelegatesToGinClientIP", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request, _ = http.NewRequest("GET", "/", nil)
-		c.Request.Header.Set("X-Forwarded-For", "10.0.0.1")
+		c.Request.RemoteAddr = "192.168.1.1:12345"
 
 		ip := GetClientIP(c)
-		assert.Equal(t, "10.0.0.1", ip)
+		assert.Equal(t, "192.168.1.1", ip)
 	})
 
-	t.Run("X-Real-IP", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Request, _ = http.NewRequest("GET", "/", nil)
-		c.Request.Header.Set("X-Real-IP", "10.0.0.2")
+	t.Run("IgnoresProxyHeadersWithoutTrust", func(t *testing.T) {
+		// SEC-07: X-Forwarded-For is NOT trusted when SetTrustedProxies(nil) is called
+		r := gin.New()
+		r.SetTrustedProxies(nil) // mirrors cmd/server.go setup
 
-		ip := GetClientIP(c)
-		assert.Equal(t, "10.0.0.2", ip)
+		var capturedIP string
+		r.GET("/test", func(c *gin.Context) {
+			capturedIP = GetClientIP(c)
+		})
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/test", nil)
+		req.RemoteAddr = "192.168.1.1:12345"
+		req.Header.Set("X-Forwarded-For", "10.0.0.1")
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, "192.168.1.1", capturedIP)
 	})
 }
 
