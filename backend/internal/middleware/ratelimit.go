@@ -14,12 +14,12 @@ import (
 
 // RateLimitMiddleware provides rate limiting functionality
 type RateLimitMiddleware struct {
-	redis  *service.RedisService
+	redis  service.RedisServicer
 	config *config.RateLimitConfig
 }
 
 // NewRateLimitMiddleware creates a new rate limit middleware
-func NewRateLimitMiddleware(redis *service.RedisService, cfg *config.RateLimitConfig) *RateLimitMiddleware {
+func NewRateLimitMiddleware(redis service.RedisServicer, cfg *config.RateLimitConfig) *RateLimitMiddleware {
 	return &RateLimitMiddleware{
 		redis:  redis,
 		config: cfg,

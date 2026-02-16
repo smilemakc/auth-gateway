@@ -12,11 +12,11 @@ import (
 
 // RBACMiddleware provides permission-based access control
 type RBACMiddleware struct {
-	rbacService *service.RBACService
+	rbacService service.RBACServicer
 }
 
 // NewRBACMiddleware creates a new RBAC middleware
-func NewRBACMiddleware(rbacService *service.RBACService) *RBACMiddleware {
+func NewRBACMiddleware(rbacService service.RBACServicer) *RBACMiddleware {
 	return &RBACMiddleware{
 		rbacService: rbacService,
 	}

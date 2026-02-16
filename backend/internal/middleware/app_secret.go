@@ -11,10 +11,10 @@ import (
 )
 
 type AppSecretMiddleware struct {
-	appService *service.ApplicationService
+	appService service.ApplicationServicer
 }
 
-func NewAppSecretMiddleware(appService *service.ApplicationService) *AppSecretMiddleware {
+func NewAppSecretMiddleware(appService service.ApplicationServicer) *AppSecretMiddleware {
 	return &AppSecretMiddleware{appService: appService}
 }
 

@@ -6,20 +6,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 )
 
 // APIKeyMiddleware validates API keys and application secrets
 type APIKeyMiddleware struct {
-	apiKeyService *service.APIKeyService
-	appService    *service.ApplicationService
-	rbacRepo      *repository.RBACRepository
+	apiKeyService service.APIKeyServicer
+	appService    service.ApplicationServicer
+	rbacRepo      service.UserRoleRepository
 }
 
 // NewAPIKeyMiddleware creates a new API key middleware
-func NewAPIKeyMiddleware(apiKeyService *service.APIKeyService, appService *service.ApplicationService, rbacRepo *repository.RBACRepository) *APIKeyMiddleware {
+func NewAPIKeyMiddleware(apiKeyService service.APIKeyServicer, appService service.ApplicationServicer, rbacRepo service.UserRoleRepository) *APIKeyMiddleware {
 	return &APIKeyMiddleware{
 		apiKeyService: apiKeyService,
 		appService:    appService,

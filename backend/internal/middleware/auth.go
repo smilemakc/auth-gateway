@@ -15,12 +15,12 @@ import (
 // AuthMiddleware validates JWT tokens and sets user context
 type AuthMiddleware struct {
 	jwtService       *jwt.Service
-	blacklistService *service.BlacklistService
+	blacklistService service.BlacklistServicer
 	apiKeyMiddleware *APIKeyMiddleware
 }
 
 // NewAuthMiddleware creates a new auth middleware
-func NewAuthMiddleware(jwtService *jwt.Service, blacklistService *service.BlacklistService) *AuthMiddleware {
+func NewAuthMiddleware(jwtService *jwt.Service, blacklistService service.BlacklistServicer) *AuthMiddleware {
 	return &AuthMiddleware{
 		jwtService:       jwtService,
 		blacklistService: blacklistService,

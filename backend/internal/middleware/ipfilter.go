@@ -12,11 +12,11 @@ import (
 
 // IPFilterMiddleware provides IP-based access control
 type IPFilterMiddleware struct {
-	ipFilterService *service.IPFilterService
+	ipFilterService service.IPFilterServicer
 }
 
 // NewIPFilterMiddleware creates a new IP filter middleware
-func NewIPFilterMiddleware(ipFilterService *service.IPFilterService) *IPFilterMiddleware {
+func NewIPFilterMiddleware(ipFilterService service.IPFilterServicer) *IPFilterMiddleware {
 	return &IPFilterMiddleware{
 		ipFilterService: ipFilterService,
 	}
