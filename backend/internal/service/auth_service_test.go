@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/pquerna/otp/totp"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
@@ -817,4 +818,358 @@ func TestAuthService_CompletePasswordlessRegistration(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, 400, appErr.Code)
 	})
+}
+
+// setupAuthServiceWith2FA creates an AuthService with a TwoFactorService for 2FA-related tests.
+func setupAuthServiceWith2FA() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBACStore, *mockAuditLogger, *mockTokenService, *mockCacheService, *mockBlacklistChecker, *mockTransactionDB, *mockBackupCodeStore) {
+	mUser := &mockUserStore{}
+	mToken := &mockTokenStore{}
+	mRBAC := &mockRBACStore{}
+	mAudit := &mockAuditLogger{}
+	mJWT := &mockTokenService{}
+	mCache := &mockCacheService{}
+	mDB := &mockTransactionDB{}
+	mBlacklist := &mockBlacklistChecker{}
+	mSessionMgr := &mockSessionManager{}
+	mBackupCode := &mockBackupCodeStore{}
+
+	// Create TwoFactorService with mocks
+	twoFAService := NewTwoFactorService(mUser, mBackupCode, "auth-gateway")
+
+	// Create default password policy
+	passwordPolicy := utils.DefaultPasswordPolicy()
+
+	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, mBlacklist, mCache, mSessionMgr, twoFAService, 10, passwordPolicy, mDB, nil, nil, nil, false, nil)
+	return svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache, mBlacklist, mDB, mBackupCode
+}
+
+func TestAuthService_Verify2FALogin_ShouldSucceed_WhenValidTOTPCode(t *testing.T) {
+	// Arrange
+	svc, mUser, mToken, _, mAudit, mJWT, _, _, _, _ := setupAuthServiceWith2FA()
+	ctx := context.Background()
+	userID := uuid.New()
+
+	// Generate a real TOTP secret for testing
+	totpSecret := "JBSWY3DPEHPK3PXP" // Test secret
+
+	// Mock ValidateAccessToken (validates the 2FA token)
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	// Mock GetByID - return user with TOTP enabled
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return &models.User{
+			ID:          userID,
+			Email:       "2fa@example.com",
+			Username:    "twofa_user",
+			TOTPEnabled: true,
+			TOTPSecret:  &totpSecret,
+			IsActive:    true,
+			Roles:       []models.Role{{Name: "user"}},
+		}, nil
+	}
+
+	// Generate a valid TOTP code
+	code, err := totp.GenerateCode(totpSecret, time.Now())
+	assert.NoError(t, err)
+
+	// Mock token generation (finalizeAuth)
+	mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
+		return "2fa-access-token", nil
+	}
+	mJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
+		return "2fa-refresh-token", nil
+	}
+	mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
+	mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
+	mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }
+	mAudit.LogFunc = func(params AuditLogParams) {}
+
+	// Act
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token-string", code, "1.1.1.1", "Mozilla/5.0", models.DeviceInfo{})
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, "2fa-access-token", resp.AccessToken)
+	assert.Equal(t, "2fa-refresh-token", resp.RefreshToken)
+}
+
+func TestAuthService_Verify2FALogin_ShouldFail_WhenInvalidTOTPCode(t *testing.T) {
+	// Arrange
+	svc, mUser, _, _, mAudit, mJWT, _, _, _, _ := setupAuthServiceWith2FA()
+	ctx := context.Background()
+	userID := uuid.New()
+	totpSecret := "JBSWY3DPEHPK3PXP"
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	// GetByID called twice: once from Verify2FALogin, once from TwoFactorService.VerifyTOTP
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return &models.User{
+			ID:          userID,
+			Email:       "2fa@example.com",
+			TOTPEnabled: true,
+			TOTPSecret:  &totpSecret,
+			IsActive:    true,
+		}, nil
+	}
+
+	auditCalled := false
+	mAudit.LogFunc = func(params AuditLogParams) {
+		if params.Action == models.ActionSignInFailed {
+			auditCalled = true
+		}
+	}
+
+	// Act - use an invalid code
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token", "000000", "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	appErr, ok := err.(*models.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, 401, appErr.Code)
+	assert.Contains(t, appErr.Message, "Invalid 2FA code")
+	assert.True(t, auditCalled, "audit log should record the failed 2FA attempt")
+}
+
+func TestAuthService_Verify2FALogin_ShouldFail_WhenInvalidToken(t *testing.T) {
+	// Arrange
+	svc, _, _, _, _, mJWT, _, _, _, _ := setupAuthServiceWith2FA()
+	ctx := context.Background()
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return nil, errors.New("token expired")
+	}
+
+	// Act
+	resp, err := svc.Verify2FALogin(ctx, "expired-2fa-token", "123456", "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	appErr, ok := err.(*models.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, 401, appErr.Code)
+	assert.Contains(t, appErr.Message, "Invalid or expired 2FA token")
+}
+
+func TestAuthService_Verify2FALogin_ShouldSucceed_WhenValidBackupCode(t *testing.T) {
+	// Arrange
+	svc, mUser, mToken, _, mAudit, mJWT, _, _, _, mBackupCode := setupAuthServiceWith2FA()
+	ctx := context.Background()
+	userID := uuid.New()
+	totpSecret := "JBSWY3DPEHPK3PXP"
+	backupCodeID := uuid.New()
+
+	// Generate a real backup code hash
+	backupCodePlain := "ABCD1234"
+	backupCodeHash, _ := utils.HashPassword(backupCodePlain, 10)
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	// GetByID is called multiple times: once in Verify2FALogin, once in TwoFactorService.VerifyTOTP
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return &models.User{
+			ID:          userID,
+			Email:       "backup@example.com",
+			Username:    "backup_user",
+			TOTPEnabled: true,
+			TOTPSecret:  &totpSecret,
+			IsActive:    true,
+			Roles:       []models.Role{{Name: "user"}},
+		}, nil
+	}
+
+	// Mock backup code store - return unused backup codes
+	mBackupCode.GetUnusedByUserIDFunc = func(ctx context.Context, uid uuid.UUID) ([]*models.BackupCode, error) {
+		return []*models.BackupCode{
+			{ID: backupCodeID, UserID: userID, CodeHash: backupCodeHash, Used: false},
+		}, nil
+	}
+	mBackupCode.MarkAsUsedFunc = func(ctx context.Context, id uuid.UUID) error {
+		assert.Equal(t, backupCodeID, id)
+		return nil
+	}
+
+	// Mock token generation
+	mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
+		return "backup-access-token", nil
+	}
+	mJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
+		return "backup-refresh-token", nil
+	}
+	mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
+	mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
+	mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }
+	mAudit.LogFunc = func(params AuditLogParams) {}
+
+	// Act - use backup code instead of TOTP code
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token", backupCodePlain, "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, "backup-access-token", resp.AccessToken)
+	assert.Equal(t, "backup-refresh-token", resp.RefreshToken)
+}
+
+func TestAuthService_Verify2FALogin_ShouldFail_WhenUserNotFound(t *testing.T) {
+	// Arrange
+	svc, mUser, _, _, _, mJWT, _, _, _, _ := setupAuthServiceWith2FA()
+	ctx := context.Background()
+	userID := uuid.New()
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return nil, errors.New("user not found")
+	}
+
+	// Act
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token", "123456", "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "user not found")
+}
+
+func TestAuthService_Verify2FALogin_ShouldFail_When2FANotEnabled(t *testing.T) {
+	// Arrange
+	svc, mUser, _, _, _, mJWT, _, _, _, _ := setupAuthServiceWith2FA()
+	ctx := context.Background()
+	userID := uuid.New()
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return &models.User{
+			ID:          userID,
+			Email:       "no2fa@example.com",
+			TOTPEnabled: false, // 2FA not enabled
+			IsActive:    true,
+		}, nil
+	}
+
+	// Act
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token", "123456", "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	appErr, ok := err.(*models.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, 400, appErr.Code)
+	assert.Contains(t, appErr.Message, "2FA not enabled")
+}
+
+func TestAuthService_Verify2FALogin_ShouldFail_WhenTOTPSecretNil(t *testing.T) {
+	// Arrange: TOTPEnabled is true but TOTPSecret is nil (inconsistent state)
+	svc, mUser, _, _, _, mJWT, _, _, _, _ := setupAuthServiceWith2FA()
+	ctx := context.Background()
+	userID := uuid.New()
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return &models.User{
+			ID:          userID,
+			Email:       "nilsecret@example.com",
+			TOTPEnabled: true,
+			TOTPSecret:  nil, // Secret is nil
+			IsActive:    true,
+		}, nil
+	}
+
+	// Act
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token", "123456", "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	appErr, ok := err.(*models.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, 400, appErr.Code)
+	assert.Contains(t, appErr.Message, "2FA not enabled")
+}
+
+func TestAuthService_Verify2FALogin_ShouldFail_WhenNo2FAServiceAndInvalidCode(t *testing.T) {
+	// Arrange: AuthService without TwoFactorService, invalid TOTP code
+	svc, mUser, _, _, mAudit, mJWT, _, _, _ := setupAuthService()
+	ctx := context.Background()
+	userID := uuid.New()
+	totpSecret := "JBSWY3DPEHPK3PXP"
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return &models.User{
+			ID:          userID,
+			Email:       "no2fasvc@example.com",
+			TOTPEnabled: true,
+			TOTPSecret:  &totpSecret,
+			IsActive:    true,
+		}, nil
+	}
+
+	auditCalled := false
+	mAudit.LogFunc = func(params AuditLogParams) {
+		if params.Action == models.ActionSignInFailed {
+			auditCalled = true
+		}
+	}
+
+	// Act
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token", "000000", "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	appErr, ok := err.(*models.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, 401, appErr.Code)
+	assert.Contains(t, appErr.Message, "Invalid 2FA code")
+	assert.True(t, auditCalled)
+}
+
+func TestAuthService_VerifyBackupCode_ShouldReturnDeprecated_WhenTwoFAServiceExists(t *testing.T) {
+	// Arrange
+	svc, _, _, _, _, _, _, _, _, _ := setupAuthServiceWith2FA()
+	userID := uuid.New()
+
+	// Act
+	valid, err := svc.verifyBackupCode(userID, "any-code")
+
+	// Assert
+	assert.Error(t, err)
+	assert.False(t, valid)
+	assert.Contains(t, err.Error(), "deprecated")
+}
+
+func TestAuthService_VerifyBackupCode_ShouldReturnFalse_WhenNoTwoFAService(t *testing.T) {
+	// Arrange
+	svc, _, _, _, _, _, _, _, _ := setupAuthService()
+
+	// Act
+	valid, err := svc.verifyBackupCode(uuid.New(), "any-code")
+
+	// Assert
+	assert.NoError(t, err)
+	assert.False(t, valid)
 }
