@@ -14,7 +14,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
@@ -226,36 +225,36 @@ func buildDeviceInfo(clientInfo ClientInfo) models.DeviceInfo {
 type AuthHandlerV2 struct {
 	pb.UnimplementedAuthServiceServer
 	jwtService           *jwt.Service
-	userRepo             *repository.UserRepository
-	tokenRepo            *repository.TokenRepository
-	rbacRepo             *repository.RBACRepository
-	apiKeyService        *service.APIKeyService
-	authService          *service.AuthService
-	oauthProviderService *service.OAuthProviderService
-	otpService           *service.OTPService
-	emailProfileService  *service.EmailProfileService
-	adminService         *service.AdminService
-	appService           *service.ApplicationService
-	redis                *service.RedisService
-	tokenExchangeService *service.TokenExchangeService
+	userRepo             service.UserStore
+	tokenRepo            service.TokenStore
+	rbacRepo             service.RBACStore
+	apiKeyService        service.APIKeyServicer
+	authService          service.AuthServicer
+	oauthProviderService service.OAuthProviderServicer
+	otpService           service.OTPServicer
+	emailProfileService  service.EmailProfileServicer
+	adminService         service.AdminServicer
+	appService           service.ApplicationServicer
+	redis                service.RedisServicer
+	tokenExchangeService service.TokenExchangeServicer
 	logger               *logger.Logger
 }
 
 // NewAuthHandlerV2 creates a new auth handler with API key support
 func NewAuthHandlerV2(
 	jwtService *jwt.Service,
-	userRepo *repository.UserRepository,
-	tokenRepo *repository.TokenRepository,
-	rbacRepo *repository.RBACRepository,
-	apiKeyService *service.APIKeyService,
-	authService *service.AuthService,
-	oauthProviderService *service.OAuthProviderService,
-	otpService *service.OTPService,
-	emailProfileService *service.EmailProfileService,
-	adminService *service.AdminService,
-	appService *service.ApplicationService,
-	redis *service.RedisService,
-	tokenExchangeService *service.TokenExchangeService,
+	userRepo service.UserStore,
+	tokenRepo service.TokenStore,
+	rbacRepo service.RBACStore,
+	apiKeyService service.APIKeyServicer,
+	authService service.AuthServicer,
+	oauthProviderService service.OAuthProviderServicer,
+	otpService service.OTPServicer,
+	emailProfileService service.EmailProfileServicer,
+	adminService service.AdminServicer,
+	appService service.ApplicationServicer,
+	redis service.RedisServicer,
+	tokenExchangeService service.TokenExchangeServicer,
 	log *logger.Logger,
 ) *AuthHandlerV2 {
 	return &AuthHandlerV2{

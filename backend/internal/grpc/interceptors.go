@@ -220,7 +220,7 @@ var methodScopes = map[string]models.APIKeyScope{
 // The handler exists but returns codes.Unimplemented. Deny-by-default interceptor blocks it.
 
 // apiKeyAuthInterceptor validates API key authentication for all gRPC requests
-func apiKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *service.ApplicationService, log *logger.Logger) grpc.UnaryServerInterceptor {
+func apiKeyAuthInterceptor(apiKeyService service.APIKeyServicer, appService service.ApplicationServicer, log *logger.Logger) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req interface{},
@@ -349,7 +349,7 @@ func apiKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *ser
 }
 
 // streamAPIKeyAuthInterceptor validates API key or application secret authentication for streaming gRPC requests.
-func streamAPIKeyAuthInterceptor(apiKeyService *service.APIKeyService, appService *service.ApplicationService, log *logger.Logger) grpc.StreamServerInterceptor {
+func streamAPIKeyAuthInterceptor(apiKeyService service.APIKeyServicer, appService service.ApplicationServicer, log *logger.Logger) grpc.StreamServerInterceptor {
 	return func(
 		srv interface{},
 		ss grpc.ServerStream,
