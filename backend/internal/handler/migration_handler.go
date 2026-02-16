@@ -12,11 +12,11 @@ import (
 )
 
 type MigrationHandler struct {
-	migrationService *service.MigrationService
+	migrationService service.MigrationServicer
 	logger           *logger.Logger
 }
 
-func NewMigrationHandler(migrationService *service.MigrationService, logger *logger.Logger) *MigrationHandler {
+func NewMigrationHandler(migrationService service.MigrationServicer, logger *logger.Logger) *MigrationHandler {
 	return &MigrationHandler{
 		migrationService: migrationService,
 		logger:           logger,

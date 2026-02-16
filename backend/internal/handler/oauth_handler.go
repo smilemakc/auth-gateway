@@ -21,7 +21,7 @@ import (
 
 // OAuthHandler handles OAuth-related requests
 type OAuthHandler struct {
-	oauthService     *service.OAuthService
+	oauthService     service.OAuthServicer
 	logger           *logger.Logger
 	telegramBotToken string
 	secureCookie     bool
@@ -29,7 +29,7 @@ type OAuthHandler struct {
 
 // NewOAuthHandler creates a new OAuth handler
 func NewOAuthHandler(
-	oauthService *service.OAuthService,
+	oauthService service.OAuthServicer,
 	logger *logger.Logger,
 	telegramBotToken string,
 	secureCookie bool,

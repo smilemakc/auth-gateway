@@ -14,11 +14,11 @@ import (
 // HealthHandler handles health check requests
 type HealthHandler struct {
 	db    *repository.Database
-	redis *service.RedisService
+	redis service.RedisServicer
 }
 
 // NewHealthHandler creates a new health handler
-func NewHealthHandler(db *repository.Database, redis *service.RedisService) *HealthHandler {
+func NewHealthHandler(db *repository.Database, redis service.RedisServicer) *HealthHandler {
 	return &HealthHandler{
 		db:    db,
 		redis: redis,

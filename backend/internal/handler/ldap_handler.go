@@ -12,12 +12,12 @@ import (
 
 // LDAPHandler handles LDAP-related HTTP requests
 type LDAPHandler struct {
-	ldapService *service.LDAPService
+	ldapService service.LDAPServicer
 	logger      *logger.Logger
 }
 
 // NewLDAPHandler creates a new LDAP handler
-func NewLDAPHandler(ldapService *service.LDAPService, logger *logger.Logger) *LDAPHandler {
+func NewLDAPHandler(ldapService service.LDAPServicer, logger *logger.Logger) *LDAPHandler {
 	return &LDAPHandler{
 		ldapService: ldapService,
 		logger:      logger,

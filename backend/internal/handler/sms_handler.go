@@ -12,12 +12,12 @@ import (
 
 // SMSHandler handles SMS-related requests
 type SMSHandler struct {
-	smsService *service.SMSService
+	smsService service.SMSServicer
 	logger     *logger.Logger
 }
 
 // NewSMSHandler creates a new SMS handler
-func NewSMSHandler(smsService *service.SMSService, logger *logger.Logger) *SMSHandler {
+func NewSMSHandler(smsService service.SMSServicer, logger *logger.Logger) *SMSHandler {
 	return &SMSHandler{
 		smsService: smsService,
 		logger:     logger,

@@ -25,8 +25,8 @@ const (
 
 // LoginHandler handles the login page for OAuth flows
 type LoginHandler struct {
-	authService  *service.AuthService
-	otpService   *service.OTPService
+	authService  service.AuthServicer
+	otpService   service.OTPServicer
 	jwtService   *jwt.Service
 	logger       *logger.Logger
 	secureCookie bool
@@ -34,8 +34,8 @@ type LoginHandler struct {
 
 // NewLoginHandler creates a new login handler
 func NewLoginHandler(
-	authService *service.AuthService,
-	otpService *service.OTPService,
+	authService service.AuthServicer,
+	otpService service.OTPServicer,
 	jwtService *jwt.Service,
 	logger *logger.Logger,
 	secureCookie bool,

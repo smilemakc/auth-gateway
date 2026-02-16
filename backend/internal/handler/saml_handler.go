@@ -16,12 +16,12 @@ import (
 
 // SAMLHandler handles SAML-related HTTP requests
 type SAMLHandler struct {
-	samlService *service.SAMLService
+	samlService service.SAMLServicer
 	logger      *logger.Logger
 }
 
 // NewSAMLHandler creates a new SAML handler
-func NewSAMLHandler(samlService *service.SAMLService, logger *logger.Logger) *SAMLHandler {
+func NewSAMLHandler(samlService service.SAMLServicer, logger *logger.Logger) *SAMLHandler {
 	return &SAMLHandler{
 		samlService: samlService,
 		logger:      logger,

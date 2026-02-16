@@ -14,17 +14,17 @@ import (
 
 // TwoFactorHandler handles 2FA-related requests
 type TwoFactorHandler struct {
-	twoFAService        *service.TwoFactorService
-	userService         *service.UserService
-	emailProfileService *service.EmailProfileService
+	twoFAService        service.TwoFactorServicer
+	userService         service.UserServicer
+	emailProfileService service.EmailProfileServicer
 	logger              *logger.Logger
 }
 
 // NewTwoFactorHandler creates a new 2FA handler
 func NewTwoFactorHandler(
-	twoFAService *service.TwoFactorService,
-	userService *service.UserService,
-	emailProfileService *service.EmailProfileService,
+	twoFAService service.TwoFactorServicer,
+	userService service.UserServicer,
+	emailProfileService service.EmailProfileServicer,
 	logger *logger.Logger,
 ) *TwoFactorHandler {
 	return &TwoFactorHandler{

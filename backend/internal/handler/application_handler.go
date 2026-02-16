@@ -13,11 +13,11 @@ import (
 )
 
 type ApplicationHandler struct {
-	appService *service.ApplicationService
+	appService service.ApplicationServicer
 	logger     *logger.Logger
 }
 
-func NewApplicationHandler(appService *service.ApplicationService, logger *logger.Logger) *ApplicationHandler {
+func NewApplicationHandler(appService service.ApplicationServicer, logger *logger.Logger) *ApplicationHandler {
 	return &ApplicationHandler{
 		appService: appService,
 		logger:     logger,

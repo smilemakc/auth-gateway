@@ -7,19 +7,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
+	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
 // SMSSettingsHandler handles SMS settings management (admin only)
 type SMSSettingsHandler struct {
-	smsSettingsRepo *repository.SMSSettingsRepository
+	smsSettingsRepo service.SMSSettingsRepositoryInterface
 	logger          *logger.Logger
 }
 
 // NewSMSSettingsHandler creates a new SMS settings handler
-func NewSMSSettingsHandler(smsSettingsRepo *repository.SMSSettingsRepository, logger *logger.Logger) *SMSSettingsHandler {
+func NewSMSSettingsHandler(smsSettingsRepo service.SMSSettingsRepositoryInterface, logger *logger.Logger) *SMSSettingsHandler {
 	return &SMSSettingsHandler{
 		smsSettingsRepo: smsSettingsRepo,
 		logger:          logger,

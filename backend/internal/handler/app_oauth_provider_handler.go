@@ -12,11 +12,11 @@ import (
 )
 
 type AppOAuthProviderHandler struct {
-	service *service.AppOAuthProviderService
+	service service.AppOAuthProviderServicer
 	logger  *logger.Logger
 }
 
-func NewAppOAuthProviderHandler(service *service.AppOAuthProviderService, logger *logger.Logger) *AppOAuthProviderHandler {
+func NewAppOAuthProviderHandler(service service.AppOAuthProviderServicer, logger *logger.Logger) *AppOAuthProviderHandler {
 	return &AppOAuthProviderHandler{
 		service: service,
 		logger:  logger,

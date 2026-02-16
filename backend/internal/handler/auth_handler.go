@@ -15,15 +15,15 @@ import (
 
 // AuthHandler handles authentication-related HTTP requests
 type AuthHandler struct {
-	authService         *service.AuthService
-	userService         *service.UserService
-	otpService          *service.OTPService
-	emailProfileService *service.EmailProfileService
+	authService         service.AuthServicer
+	userService         service.UserServicer
+	otpService          service.OTPServicer
+	emailProfileService service.EmailProfileServicer
 	logger              *logger.Logger
 }
 
 // NewAuthHandler creates a new auth handler
-func NewAuthHandler(authService *service.AuthService, userService *service.UserService, otpService *service.OTPService, emailProfileService *service.EmailProfileService, log *logger.Logger) *AuthHandler {
+func NewAuthHandler(authService service.AuthServicer, userService service.UserServicer, otpService service.OTPServicer, emailProfileService service.EmailProfileServicer, log *logger.Logger) *AuthHandler {
 	return &AuthHandler{
 		authService:         authService,
 		userService:         userService,

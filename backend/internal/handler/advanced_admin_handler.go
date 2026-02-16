@@ -9,7 +9,6 @@ import (
 
 	"github.com/smilemakc/auth-gateway/internal/config"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
@@ -20,24 +19,24 @@ import (
 
 // AdvancedAdminHandler handles advanced admin endpoints
 type AdvancedAdminHandler struct {
-	rbacService     *service.RBACService
-	sessionService  *service.SessionService
-	ipFilterService *service.IPFilterService
-	brandingRepo    *repository.BrandingRepository
-	systemRepo      *repository.SystemRepository
-	geoRepo         *repository.GeoRepository
+	rbacService     service.RBACServicer
+	sessionService  service.SessionServicer
+	ipFilterService service.IPFilterServicer
+	brandingRepo    service.BrandingRepositoryInterface
+	systemRepo      service.SystemRepositoryInterface
+	geoRepo         service.GeoRepositoryInterface
 	cfg             *config.Config
 	log             *logger.Logger
 }
 
 // NewAdvancedAdminHandler creates a new advanced admin handler
 func NewAdvancedAdminHandler(
-	rbacService *service.RBACService,
-	sessionService *service.SessionService,
-	ipFilterService *service.IPFilterService,
-	brandingRepo *repository.BrandingRepository,
-	systemRepo *repository.SystemRepository,
-	geoRepo *repository.GeoRepository,
+	rbacService service.RBACServicer,
+	sessionService service.SessionServicer,
+	ipFilterService service.IPFilterServicer,
+	brandingRepo service.BrandingRepositoryInterface,
+	systemRepo service.SystemRepositoryInterface,
+	geoRepo service.GeoRepositoryInterface,
 	log *logger.Logger,
 	cfg *config.Config,
 ) *AdvancedAdminHandler {

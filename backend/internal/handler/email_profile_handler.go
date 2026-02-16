@@ -12,11 +12,11 @@ import (
 )
 
 type EmailProfileHandler struct {
-	emailProfileService *service.EmailProfileService
+	emailProfileService service.EmailProfileServicer
 	logger              *logger.Logger
 }
 
-func NewEmailProfileHandler(emailProfileService *service.EmailProfileService, logger *logger.Logger) *EmailProfileHandler {
+func NewEmailProfileHandler(emailProfileService service.EmailProfileServicer, logger *logger.Logger) *EmailProfileHandler {
 	return &EmailProfileHandler{
 		emailProfileService: emailProfileService,
 		logger:              logger,

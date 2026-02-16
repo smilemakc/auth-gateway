@@ -12,15 +12,15 @@ import (
 
 // OTPHandler handles OTP-related requests
 type OTPHandler struct {
-	otpService  *service.OTPService
-	authService *service.AuthService
+	otpService  service.OTPServicer
+	authService service.AuthServicer
 	logger      *logger.Logger
 }
 
 // NewOTPHandler creates a new OTP handler
 func NewOTPHandler(
-	otpService *service.OTPService,
-	authService *service.AuthService,
+	otpService service.OTPServicer,
+	authService service.AuthServicer,
 	logger *logger.Logger,
 ) *OTPHandler {
 	return &OTPHandler{

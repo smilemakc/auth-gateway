@@ -12,12 +12,12 @@ import (
 
 // BulkHandler handles bulk operations HTTP requests
 type BulkHandler struct {
-	bulkService *service.BulkService
+	bulkService service.BulkServicer
 	logger      *logger.Logger
 }
 
 // NewBulkHandler creates a new bulk handler
-func NewBulkHandler(bulkService *service.BulkService, logger *logger.Logger) *BulkHandler {
+func NewBulkHandler(bulkService service.BulkServicer, logger *logger.Logger) *BulkHandler {
 	return &BulkHandler{
 		bulkService: bulkService,
 		logger:      logger,

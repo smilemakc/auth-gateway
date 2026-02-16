@@ -10,10 +10,10 @@ import (
 )
 
 type TokenExchangeHandler struct {
-	tokenExchangeService *service.TokenExchangeService
+	tokenExchangeService service.TokenExchangeServicer
 }
 
-func NewTokenExchangeHandler(tokenExchangeService *service.TokenExchangeService) *TokenExchangeHandler {
+func NewTokenExchangeHandler(tokenExchangeService service.TokenExchangeServicer) *TokenExchangeHandler {
 	return &TokenExchangeHandler{
 		tokenExchangeService: tokenExchangeService,
 	}

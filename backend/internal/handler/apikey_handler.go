@@ -12,12 +12,12 @@ import (
 
 // APIKeyHandler handles API key-related HTTP requests
 type APIKeyHandler struct {
-	apiKeyService *service.APIKeyService
+	apiKeyService service.APIKeyServicer
 	logger        *logger.Logger
 }
 
 // NewAPIKeyHandler creates a new API key handler
-func NewAPIKeyHandler(apiKeyService *service.APIKeyService, log *logger.Logger) *APIKeyHandler {
+func NewAPIKeyHandler(apiKeyService service.APIKeyServicer, log *logger.Logger) *APIKeyHandler {
 	return &APIKeyHandler{
 		apiKeyService: apiKeyService,
 		logger:        log,

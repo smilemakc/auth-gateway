@@ -11,11 +11,11 @@ import (
 )
 
 type TelegramHandler struct {
-	telegramService *service.TelegramService
+	telegramService service.TelegramServicer
 	logger          *logger.Logger
 }
 
-func NewTelegramHandler(telegramService *service.TelegramService, logger *logger.Logger) *TelegramHandler {
+func NewTelegramHandler(telegramService service.TelegramServicer, logger *logger.Logger) *TelegramHandler {
 	return &TelegramHandler{
 		telegramService: telegramService,
 		logger:          logger,

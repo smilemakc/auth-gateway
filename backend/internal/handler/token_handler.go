@@ -13,15 +13,15 @@ import (
 
 type TokenHandler struct {
 	jwtService    *jwt.Service
-	apiKeyService *service.APIKeyService
-	redis         *service.RedisService
+	apiKeyService service.APIKeyServicer
+	redis         service.RedisServicer
 	logger        *logger.Logger
 }
 
 func NewTokenHandler(
 	jwtService *jwt.Service,
-	apiKeyService *service.APIKeyService,
-	redis *service.RedisService,
+	apiKeyService service.APIKeyServicer,
+	redis service.RedisServicer,
 	log *logger.Logger,
 ) *TokenHandler {
 	return &TokenHandler{

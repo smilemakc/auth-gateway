@@ -12,12 +12,12 @@ import (
 
 // GroupHandler handles group-related HTTP requests
 type GroupHandler struct {
-	groupService *service.GroupService
+	groupService service.GroupServicer
 	logger       *logger.Logger
 }
 
 // NewGroupHandler creates a new group handler
-func NewGroupHandler(groupService *service.GroupService, logger *logger.Logger) *GroupHandler {
+func NewGroupHandler(groupService service.GroupServicer, logger *logger.Logger) *GroupHandler {
 	return &GroupHandler{
 		groupService: groupService,
 		logger:       logger,

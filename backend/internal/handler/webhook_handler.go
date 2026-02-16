@@ -12,12 +12,12 @@ import (
 
 // WebhookHandler handles webhook endpoints
 type WebhookHandler struct {
-	webhookService *service.WebhookService
+	webhookService service.WebhookServicer
 	logger         *logger.Logger
 }
 
 // NewWebhookHandler creates a new webhook handler
-func NewWebhookHandler(webhookService *service.WebhookService, log *logger.Logger) *WebhookHandler {
+func NewWebhookHandler(webhookService service.WebhookServicer, log *logger.Logger) *WebhookHandler {
 	return &WebhookHandler{
 		webhookService: webhookService,
 		logger:         log,

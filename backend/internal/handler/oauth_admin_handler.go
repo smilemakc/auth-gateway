@@ -12,11 +12,11 @@ import (
 )
 
 type OAuthAdminHandler struct {
-	service *service.OAuthProviderService
+	service service.OAuthProviderServicer
 	logger  *logger.Logger
 }
 
-func NewOAuthAdminHandler(service *service.OAuthProviderService, logger *logger.Logger) *OAuthAdminHandler {
+func NewOAuthAdminHandler(service service.OAuthProviderServicer, logger *logger.Logger) *OAuthAdminHandler {
 	return &OAuthAdminHandler{
 		service: service,
 		logger:  logger,

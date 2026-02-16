@@ -15,15 +15,15 @@ import (
 
 // AdminHandler handles admin operations
 type AdminHandler struct {
-	adminService *service.AdminService
-	userService  *service.UserService
-	otpService   *service.OTPService
-	auditService *service.AuditService
+	adminService service.AdminServicer
+	userService  service.UserServicer
+	otpService   service.OTPServicer
+	auditService service.AuditServicer
 	logger       *logger.Logger
 }
 
 // NewAdminHandler creates a new admin handler
-func NewAdminHandler(adminService *service.AdminService, userService *service.UserService, otpService *service.OTPService, auditService *service.AuditService, logger *logger.Logger) *AdminHandler {
+func NewAdminHandler(adminService service.AdminServicer, userService service.UserServicer, otpService service.OTPServicer, auditService service.AuditServicer, logger *logger.Logger) *AdminHandler {
 	return &AdminHandler{
 		adminService: adminService,
 		userService:  userService,

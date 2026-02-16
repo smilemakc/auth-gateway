@@ -12,12 +12,12 @@ import (
 
 // TemplateHandler handles email template endpoints
 type TemplateHandler struct {
-	templateService *service.TemplateService
+	templateService service.TemplateServicer
 	logger          *logger.Logger
 }
 
 // NewTemplateHandler creates a new template handler
-func NewTemplateHandler(templateService *service.TemplateService, log *logger.Logger) *TemplateHandler {
+func NewTemplateHandler(templateService service.TemplateServicer, log *logger.Logger) *TemplateHandler {
 	return &TemplateHandler{
 		templateService: templateService,
 		logger:          log,
