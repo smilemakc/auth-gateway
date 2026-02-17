@@ -10,7 +10,7 @@ import { ThemeProvider } from './lib/theme';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import Users from './components/Users';
-import UserDetails from './components/UserDetails';
+import { UserDetails } from './components/users/index';
 import UserEdit from './components/UserEdit';
 import Sessions from './components/Sessions';
 import ApiKeys from './components/ApiKeys';

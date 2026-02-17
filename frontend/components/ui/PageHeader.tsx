@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 
 interface PageHeaderProps {
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   onBack?: () => void;
   action?: React.ReactNode;
 }
