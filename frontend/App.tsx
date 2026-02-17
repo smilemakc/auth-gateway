@@ -52,15 +52,15 @@ import BulkDeleteUsers from './components/BulkDeleteUsers';
 import BulkAssignRoles from './components/BulkAssignRoles';
 import SCIMSettings from './components/SCIMSettings';
 import Applications from './components/Applications';
-import ApplicationEdit from './components/ApplicationEdit';
-import ApplicationDetails from './components/ApplicationDetails';
-import ApplicationBrandingTab from './components/ApplicationBrandingTab';
-import ApplicationUsersTab from './components/ApplicationUsersTab';
+import {
+  ApplicationEdit,
+  ApplicationDetails,
+  ApplicationOAuthProviderEdit,
+} from './components/application-management';
 import ApplicationTemplateEditor from './components/ApplicationTemplateEditor';
 import EmailProviders from './components/EmailProviders';
 import { EmailProviderEdit } from './components/email-provider-edit';
 import EmailSettings from './components/EmailSettings';
-import ApplicationOAuthProviderEdit from './components/ApplicationOAuthProviderEdit';
 import TelegramBotEdit from './components/TelegramBotEdit';
 import { ToastContainer } from './components/Toast';
 import { ConfirmDialog } from './components/ConfirmDialog';
