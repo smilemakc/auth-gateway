@@ -4,7 +4,7 @@ import { ArrowLeft, Loader, Search, Shield } from 'lucide-react';
 import type { BulkOperationResult, AdminUserResponse, Role } from '@auth-gateway/client-sdk';
 import { useBulkAssignRoles } from '../hooks/useBulkOperations';
 import { useUsers } from '../hooks/useUsers';
-import { useRoles } from '../hooks/useRBAC';
+import { useRoles } from '../hooks/rbac';
 import { toast } from '../services/toast';
 import { useLanguage } from '../services/i18n';
 import { logger } from '@/lib/logger';

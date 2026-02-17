@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Permission } from '../types';
 import { ArrowLeft, Save, Shield, Check, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
-import { useRoleDetail, useCreateRole, useUpdateRole, usePermissions } from '../hooks/useRBAC';
+import { useRoleDetail, useCreateRole, useUpdateRole, usePermissions } from '../hooks/rbac';
 import { useApplication } from '../services/appContext';
 
 interface RoleFormState {

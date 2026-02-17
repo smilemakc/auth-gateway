@@ -19,7 +19,7 @@ import type {
 import type { Role } from '@auth-gateway/client-sdk';
 import { useLanguage } from '../services/i18n';
 import { useUserDetail, useUpdateUser, useCreateUser } from '../hooks/useUsers';
-import { useRoles } from '../hooks/useRBAC';
+import { useRoles } from '../hooks/rbac';
 import { logger } from '@/lib/logger';
 
 interface UserFormData {

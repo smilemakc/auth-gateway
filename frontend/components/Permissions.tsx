@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Permission } from '../types';
 import { ArrowLeft, Plus, Edit2, Trash2, Lock } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
-import { usePermissions, useDeletePermission } from '../hooks/useRBAC';
+import { usePermissions, useDeletePermission } from '../hooks/rbac';
 import { confirm } from '../services/confirm';
 import { logger } from '@/lib/logger';
 

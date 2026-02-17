@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { RoleDefinition } from '../types';
 import { ArrowLeft, Shield, Plus, Edit2, Trash2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
-import { useRoles, useDeleteRole } from '../hooks/useRBAC';
+import { useRoles, useDeleteRole } from '../hooks/rbac';
 import { useApplication } from '../services/appContext';
 import { formatDate } from '../lib/date';
 import { confirm } from '../services/confirm';

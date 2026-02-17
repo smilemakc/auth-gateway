@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Permission } from '../types';
 import { ArrowLeft, Save, Lock, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
-import { usePermissionDetail, useCreatePermission } from '../hooks/useRBAC';
+import { usePermissionDetail, useCreatePermission } from '../hooks/rbac';
 
 const PermissionEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
