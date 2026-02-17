@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Upload, X, ChevronLeft, CheckCircle, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import { useLanguage } from '../services/i18n';
-import { useImportUsers } from '../hooks/useApplications';
-import { toast } from '../services/toast';
-import type { ImportUserEntry, ImportUsersRequest, ImportUsersResponse, ImportDetail } from '../types';
+import { useLanguage } from '../../services/i18n';
+import { useImportUsers } from '../../hooks/useApplications';
+import { toast } from '../../services/toast';
+import type { ImportUserEntry, ImportUsersRequest, ImportUsersResponse, ImportDetail } from '../../types';
 
 interface UsersImportModalProps {
   applicationId: string;

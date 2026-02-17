@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Users, UserPlus, UserMinus, UserCheck, FileSpreadsheet } from 'lucide-react';
-import { useLanguage } from '../services/i18n';
+import { useLanguage } from '../../services/i18n';
 
 const BulkOperations: React.FC = () => {
   const { t } = useLanguage();
@@ -85,4 +85,3 @@ const BulkOperations: React.FC = () => {
 };
 
 export default BulkOperations;
-

@@ -9,7 +9,7 @@ import {
 import type { UserApplicationProfile } from '../../types';
 import { toast } from '../../services/toast';
 import { confirm } from '../../services/confirm';
-import UsersImportModal from '../UsersImportModal';
+import { UsersImportModal } from '../bulk-operations';
 import { logger } from '@/lib/logger';
 import UsersStatsCards from './UsersStatsCards';
 import UsersTable from './UsersTable';

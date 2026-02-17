@@ -9,26 +9,25 @@ import { LanguageProvider } from './services/i18n';
 import { ThemeProvider } from './lib/theme';
 import { Layout } from './components/app-layout';
 import Dashboard from './components/Dashboard';
-import Users from './components/Users';
+import { Users } from './components/user-list';
 import { UserDetails } from './components/users/index';
-import UserEdit from './components/UserEdit';
+import { UserEdit } from './components/user-edit';
 import Sessions from './components/Sessions';
-import ApiKeys from './components/ApiKeys';
+import { ApiKeys } from './components/api-keys';
 import OAuthProviders from './components/OAuthProviders';
-import OAuthProviderEdit from './components/OAuthProviderEdit';
-import OAuthClients from './components/OAuthClients';
+import { OAuthProviderEdit, OAuthClients } from './components/oauth-management';
 import { OAuthClientEdit } from './components/oauth-client-edit';
 import AuditLogs from './components/AuditLogs';
-import Settings from './components/Settings';
+import { Settings } from './components/settings-page';
 import EmailTemplates from './components/EmailTemplates';
 import EmailTemplateEditor from './components/EmailTemplateEditor';
 import Roles from './components/Roles';
-import RoleEditor from './components/RoleEditor';
+import { RoleEditor } from './components/role-editor';
 import Permissions from './components/Permissions';
 import PermissionEdit from './components/PermissionEdit';
 import { AccessControl } from './components/access-control';
-import IpSecurity from './components/IpSecurity';
-import Branding from './components/Branding';
+import { IpSecurity } from './components/ip-security';
+import { Branding } from './components/branding-config';
 import Webhooks from './components/Webhooks';
 import WebhookEdit from './components/WebhookEdit';
 import ServiceAccounts from './components/ServiceAccounts';
@@ -38,30 +37,32 @@ import TokenInspector from './components/TokenInspector';
 import Login from './components/Login';
 import Groups from './components/Groups';
 import GroupEdit from './components/GroupEdit';
-import GroupDetails from './components/GroupDetails';
+import { GroupDetails } from './components/group-details';
 import LDAPConfigs from './components/LDAPConfigs';
 import { LDAPConfigEdit } from './components/ldap-config-edit';
 import LDAPSyncLogs from './components/LDAPSyncLogs';
 import SAMLSPs from './components/SAMLSPs';
-import SAMLSPEdit from './components/SAMLSPEdit';
+import { SAMLSPEdit } from './components/saml';
 import SAMLMetadata from './components/SAMLMetadata';
-import BulkOperations from './components/BulkOperations';
-import BulkCreateUsers from './components/BulkCreateUsers';
-import BulkUpdateUsers from './components/BulkUpdateUsers';
-import BulkDeleteUsers from './components/BulkDeleteUsers';
-import BulkAssignRoles from './components/BulkAssignRoles';
+import {
+  BulkOperations,
+  BulkCreateUsers,
+  BulkUpdateUsers,
+  BulkDeleteUsers,
+  BulkAssignRoles,
+} from './components/bulk-operations';
 import SCIMSettings from './components/SCIMSettings';
-import Applications from './components/Applications';
+import { Applications } from './components/application-list';
 import {
   ApplicationEdit,
   ApplicationDetails,
   ApplicationOAuthProviderEdit,
 } from './components/application-management';
 import ApplicationTemplateEditor from './components/ApplicationTemplateEditor';
-import EmailProviders from './components/EmailProviders';
+import { EmailProviders } from './components/email-management';
 import { EmailProviderEdit } from './components/email-provider-edit';
 import EmailSettings from './components/EmailSettings';
-import TelegramBotEdit from './components/TelegramBotEdit';
+import { TelegramBotEdit } from './components/telegram';
 import { ToastContainer } from './components/Toast';
 import { ConfirmDialog } from './components/ConfirmDialog';
 

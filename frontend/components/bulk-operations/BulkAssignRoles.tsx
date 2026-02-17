@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader, Search, Shield } from 'lucide-react';
-import type { BulkOperationResult, AdminUserResponse, Role } from '@auth-gateway/client-sdk';
-import { useBulkAssignRoles } from '../hooks/useBulkOperations';
-import { useUsers } from '../hooks/useUsers';
-import { useRoles } from '../hooks/rbac';
-import { toast } from '../services/toast';
-import { useLanguage } from '../services/i18n';
+import type { BulkOperationResult } from '@auth-gateway/client-sdk';
+import { useBulkAssignRoles } from '../../hooks/useBulkOperations';
+import { useUsers } from '../../hooks/useUsers';
+import { useRoles } from '../../hooks/rbac';
+import { toast } from '../../services/toast';
+import { useLanguage } from '../../services/i18n';
 import { logger } from '@/lib/logger';
 
 const BulkAssignRoles: React.FC = () => {
@@ -151,7 +151,6 @@ const BulkAssignRoles: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Role Selection */}
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <Shield size={20} />
@@ -179,7 +178,6 @@ const BulkAssignRoles: React.FC = () => {
           </div>
         </div>
 
-        {/* User Selection */}
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-foreground">
@@ -281,4 +279,3 @@ const BulkAssignRoles: React.FC = () => {
 };
 
 export default BulkAssignRoles;
-

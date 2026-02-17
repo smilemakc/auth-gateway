@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader, AlertTriangle, Search } from 'lucide-react';
-import type { BulkOperationResult, AdminUserResponse } from '@auth-gateway/client-sdk';
-import { useBulkDeleteUsers } from '../hooks/useBulkOperations';
-import { useUsers } from '../hooks/useUsers';
-import { toast } from '../services/toast';
-import { confirm } from '../services/confirm';
-import { useLanguage } from '../services/i18n';
+import type { BulkOperationResult } from '@auth-gateway/client-sdk';
+import { useBulkDeleteUsers } from '../../hooks/useBulkOperations';
+import { useUsers } from '../../hooks/useUsers';
+import { toast } from '../../services/toast';
+import { confirm } from '../../services/confirm';
+import { useLanguage } from '../../services/i18n';
 import { logger } from '@/lib/logger';
 
 const BulkDeleteUsers: React.FC = () => {
