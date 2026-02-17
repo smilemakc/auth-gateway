@@ -52,7 +52,7 @@ const BulkDeleteUsers: React.FC = () => {
 
     const ok = await confirm({
       title: t('confirm.delete_title'),
-      description: t('bulk.delete_confirm', { count: selectedUserIds.length }),
+      description: `${t('bulk.delete_confirm')} (${selectedUserIds.length})`,
       variant: 'danger',
     });
 
@@ -145,7 +145,7 @@ const BulkDeleteUsers: React.FC = () => {
       <div className="bg-card rounded-xl shadow-sm border border-border p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">
-            {t('bulk.select_users', { count: selectedUserIds.length })}
+            {t('bulk.select_users')} ({selectedUserIds.length})
           </h2>
           <div className="flex items-center gap-4">
             <div className="relative">

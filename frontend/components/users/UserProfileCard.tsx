@@ -18,7 +18,7 @@ interface Role {
 
 interface UserProfileCardProps {
   user: {
-    profile_picture_url: string;
+    profile_picture_url?: string;
     full_name: string;
     username: string;
     email: string;
@@ -38,7 +38,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ user }) => {
     <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
       <div className="p-6 text-center border-b border-border">
         <img
-          src={user.profile_picture_url}
+          src={user.profile_picture_url || ''}
           alt={user.full_name}
           className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-muted"
         />

@@ -9,12 +9,13 @@ import { toast } from '../../services/toast';
 import { confirm } from '../../services/confirm';
 import { logger } from '@/lib/logger';
 import { CreateApiKeyModal } from './CreateApiKeyModal';
+import type { APIKeyScope } from '@auth-gateway/client-sdk';
 
 const ApiKeys: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
-  const [newKeyScopes, setNewKeyScopes] = useState<string[]>(['token:validate']);
+  const [newKeyScopes, setNewKeyScopes] = useState<APIKeyScope[]>(['token:validate']);
   const [newKeyExpiresIn, setNewKeyExpiresIn] = useState<number | undefined>(undefined);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const { t } = useLanguage();
@@ -98,10 +99,11 @@ const ApiKeys: React.FC = () => {
   };
 
   const toggleScope = (scope: string) => {
+    const apiKeyScope = scope as APIKeyScope;
     setNewKeyScopes(prev =>
-      prev.includes(scope)
-        ? prev.filter(s => s !== scope)
-        : [...prev, scope]
+      prev.includes(apiKeyScope)
+        ? prev.filter(s => s !== apiKeyScope)
+        : [...prev, apiKeyScope]
     );
   };
 

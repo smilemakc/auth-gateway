@@ -42,7 +42,7 @@ const BulkCreateResults: React.FC<BulkCreateResultsProps> = ({
               {result.errors.map((error, index) => (
                 <div key={index} className="bg-destructive/10 border border-border rounded-lg p-3">
                   <div className="text-sm text-destructive">
-                    <span className="font-medium">{t('bulk.row', { row: error.index + 1 })}:</span> {error.message}
+                    <span className="font-medium">{t('bulk.row')} {error.index + 1}:</span> {error.message}
                     {error.email && <span className="text-destructive"> ({error.email})</span>}
                   </div>
                 </div>

@@ -72,7 +72,7 @@ export function useAddGroupMembers() {
       apiClient.admin.groups.addMembers(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.groups.detail(variables.id) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.groups.members(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ['groups', 'members', variables.id] });
     },
   });
 }
@@ -85,7 +85,7 @@ export function useRemoveGroupMember() {
       apiClient.admin.groups.removeMember(groupId, userId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.groups.detail(variables.groupId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.groups.members(variables.groupId) });
+      queryClient.invalidateQueries({ queryKey: ['groups', 'members', variables.groupId] });
     },
   });
 }

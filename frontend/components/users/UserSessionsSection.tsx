@@ -12,7 +12,7 @@ interface Session {
   id: string;
   user_agent: string;
   ip_address: string;
-  is_current: boolean;
+  is_current?: boolean;
   last_active_at: string;
 }
 

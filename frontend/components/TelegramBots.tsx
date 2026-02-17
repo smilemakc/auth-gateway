@@ -87,9 +87,9 @@ const TelegramBots: React.FC<TelegramBotsProps> = ({ applicationId }) => {
                 </div>
                 <div>
                   {bot.is_auth_bot ? (
-                    <Shield className="text-primary" size={20} title={t('tg.auth_bot')} />
+                    <span title={t('tg.auth_bot')}><Shield className="text-primary" size={20} /></span>
                   ) : (
-                    <ShieldOff className="text-muted-foreground" size={20} title={t('tg.not_auth_bot')} />
+                    <span title={t('tg.not_auth_bot')}><ShieldOff className="text-muted-foreground" size={20} /></span>
                   )}
                 </div>
               </div>

@@ -21,7 +21,7 @@ const BulkCreateManualEntry: React.FC<BulkCreateManualEntryProps> = ({
   return (
     <div className="bg-card rounded-xl shadow-sm border border-border p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-foreground">{t('bulk.users_count', { count: users.length })}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t('bulk.users_count')} {users.length}</h2>
         <button
           onClick={onAddUser}
           className="px-4 py-2 bg-primary hover:bg-primary-600 text-primary-foreground rounded-lg text-sm transition-colors"
@@ -34,7 +34,7 @@ const BulkCreateManualEntry: React.FC<BulkCreateManualEntryProps> = ({
         {users.map((user, index) => (
           <div key={index} className="border border-border rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-foreground">{t('bulk.user_number', { number: index + 1 })}</span>
+              <span className="text-sm font-medium text-foreground">{t('bulk.user_number')} {index + 1}</span>
               <button
                 onClick={() => onRemoveUser(index)}
                 className="text-destructive hover:text-destructive/80 text-sm"

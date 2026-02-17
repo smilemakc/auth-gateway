@@ -144,7 +144,7 @@ const IpSecurity: React.FC = () => {
                         {rule.description || <span className="text-muted-foreground italic">{t('ip.no_description')}</span>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {rule.created_by || '-'}
+                        {(rule as any).created_by || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {rule.created_at ? formatDate(rule.created_at) : '-'}

@@ -291,11 +291,11 @@ export function createBrandTheme(options: {
 
   return {
     light: createTheme(
-      { id: `${id}-light`, name: `${name} Light`, mode: 'light', branding, colors: lightColors },
+      { id: `${id}-light`, name: `${name} Light`, mode: 'light', branding, colors: lightColors as ThemeColors },
       lightTheme
     ),
     dark: createTheme(
-      { id: `${id}-dark`, name: `${name} Dark`, mode: 'dark', branding, colors: lightColors },
+      { id: `${id}-dark`, name: `${name} Dark`, mode: 'dark', branding, colors: lightColors as ThemeColors },
       darkTheme
     ),
   };

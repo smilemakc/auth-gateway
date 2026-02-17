@@ -42,9 +42,9 @@ const Branding: React.FC = () => {
           secondary_color: brandingData.theme?.secondary_color || '#1E40AF',
           background_color: brandingData.theme?.background_color || '#F3F4F6'
         },
-        loginPageTitle: brandingData.login_page_title || 'Sign in to your account',
-        loginPageSubtitle: brandingData.login_page_subtitle || 'Welcome back! Please enter your details.',
-        showSocialLogins: brandingData.show_social_logins ?? true,
+        loginPageTitle: 'Sign in to your account',
+        loginPageSubtitle: 'Welcome back! Please enter your details.',
+        showSocialLogins: true,
       });
     }
   }, [brandingData]);

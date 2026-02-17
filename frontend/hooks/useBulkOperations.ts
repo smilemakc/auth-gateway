@@ -48,7 +48,8 @@ export function useBulkAssignRoles() {
     mutationFn: (data: BulkAssignRolesRequest) => apiClient.admin.bulk.bulkAssignRoles(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.rbac.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.rbac.roles.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.rbac.permissions.all });
     },
   });
 }

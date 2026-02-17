@@ -27,14 +27,15 @@ const SmsSettings: React.FC = () => {
 
   useEffect(() => {
     if (activeSettings) {
+      const cfg = activeSettings.config as Record<string, string>;
       setConfig({
         provider: activeSettings.provider || 'mock',
-        awsRegion: activeSettings.aws_region || '',
-        awsAccessKeyId: activeSettings.aws_access_key_id || '',
-        awsSecretAccessKey: activeSettings.aws_secret_access_key || '',
-        twilioAccountSid: activeSettings.twilio_account_sid || '',
-        twilioAuthToken: activeSettings.twilio_auth_token || '',
-        twilioPhoneNumber: activeSettings.twilio_phone_number || '',
+        awsRegion: cfg.aws_region || '',
+        awsAccessKeyId: cfg.aws_access_key_id || '',
+        awsSecretAccessKey: cfg.aws_secret_access_key || '',
+        twilioAccountSid: cfg.twilio_account_sid || '',
+        twilioAuthToken: cfg.twilio_auth_token || '',
+        twilioPhoneNumber: cfg.twilio_phone_number || '',
       });
     }
   }, [activeSettings]);

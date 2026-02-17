@@ -10,6 +10,7 @@ import { confirm } from '../../services/confirm';
 import { useLanguage } from '../../services/i18n';
 import { logger } from '@/lib/logger';
 import { GroupMembersSection } from './GroupMembersSection';
+import type { AdminUserResponse } from '@auth-gateway/client-sdk';
 
 const GroupDetails: React.FC = () => {
   const { t } = useLanguage();
@@ -70,10 +71,10 @@ const GroupDetails: React.FC = () => {
     );
   }
 
-  const members = membersData?.users || [];
-  const availableUsers = usersData?.users.filter(
+  const members = (membersData?.users || []) as AdminUserResponse[];
+  const availableUsers = (usersData?.users.filter(
     (u) => !members.some((m) => m.id === u.id)
-  ) || [];
+  ) || []) as AdminUserResponse[];
 
   return (
     <div className="space-y-6">

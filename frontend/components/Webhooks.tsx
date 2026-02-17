@@ -104,7 +104,7 @@ const Webhooks: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="font-medium text-foreground font-mono text-sm truncate max-w-xs" title={webhook.url}>{webhook.url}</span>
-                        <span className="text-xs text-muted-foreground mt-0.5">{webhook.description}</span>
+                        <span className="text-xs text-muted-foreground mt-0.5">{webhook.name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -124,7 +124,7 @@ const Webhooks: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <code className="text-xs font-mono bg-muted px-2 py-1 rounded border border-border text-muted-foreground w-24 truncate">
-                          {revealedSecrets.includes(webhook.id) ? (webhook.secret || 'N/A') : 'whsec_••••••••'}
+                          {revealedSecrets.includes(webhook.id) ? (webhook.secret_key || 'N/A') : 'whsec_••••••••'}
                         </code>
                         <button
                           onClick={() => toggleSecret(webhook.id)}
