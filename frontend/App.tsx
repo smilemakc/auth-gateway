@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from './services/authContext';
 import { ApplicationProvider } from './services/appContext';
 import { LanguageProvider } from './services/i18n';
 import { ThemeProvider } from './lib/theme';
-import Layout from './components/Layout';
+import { Layout } from './components/app-layout';
 import Dashboard from './components/Dashboard';
 import Users from './components/Users';
 import { UserDetails } from './components/users/index';
