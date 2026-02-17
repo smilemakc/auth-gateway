@@ -1,9 +1,9 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Loader2, Lock, Plus, X } from 'lucide-react';
-import { useLanguage } from '../services/i18n';
-import { useCreatePermission, useDeletePermission } from '../hooks/rbac';
-import type { Permission } from '../types';
-import { confirm } from '../services/confirm';
+import { useLanguage } from '../../services/i18n';
+import { useCreatePermission, useDeletePermission } from '../../hooks/rbac';
+import type { Permission } from '../../types';
+import { confirm } from '../../services/confirm';
 import { logger } from '@/lib/logger';
 
 const COMMON_ACTIONS = ['create', 'read', 'update', 'delete', 'list', 'manage', 'export', 'import'];

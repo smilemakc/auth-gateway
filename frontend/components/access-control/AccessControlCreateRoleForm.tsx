@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Loader2, Plus } from 'lucide-react';
-import { useLanguage } from '../services/i18n';
-import { useCreateRole } from '../hooks/rbac';
+import { useLanguage } from '../../services/i18n';
+import { useCreateRole } from '../../hooks/rbac';
 import { logger } from '@/lib/logger';
 
 interface AccessControlCreateRoleFormProps {

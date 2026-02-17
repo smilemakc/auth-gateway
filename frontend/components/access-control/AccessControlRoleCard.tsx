@@ -1,9 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { AlertCircle, Check, ChevronDown, ChevronRight, Lock, Shield, Trash2 } from 'lucide-react';
-import { useLanguage } from '../services/i18n';
-import { useDeleteRole, useUpdateRole } from '../hooks/rbac';
-import type { Permission, RoleDefinition } from '../types';
-import { confirm } from '../services/confirm';
+import { useLanguage } from '../../services/i18n';
+import { useDeleteRole, useUpdateRole } from '../../hooks/rbac';
+import type { Permission, RoleDefinition } from '../../types';
+import { confirm } from '../../services/confirm';
 import { logger } from '@/lib/logger';
 
 interface AccessControlRoleCardProps {

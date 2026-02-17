@@ -26,7 +26,7 @@ import Roles from './components/Roles';
 import RoleEditor from './components/RoleEditor';
 import Permissions from './components/Permissions';
 import PermissionEdit from './components/PermissionEdit';
-import AccessControl from './components/AccessControl';
+import { AccessControl } from './components/access-control';
 import IpSecurity from './components/IpSecurity';
 import Branding from './components/Branding';
 import Webhooks from './components/Webhooks';
