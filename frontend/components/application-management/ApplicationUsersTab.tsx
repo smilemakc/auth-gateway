@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Loader2, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner } from '../ui';
 import {
   useApplicationUsers,
   useBanUserFromApplication,
@@ -63,11 +64,7 @@ const ApplicationUsersTab: React.FC<ApplicationUsersTabProps> = ({ applicationId
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

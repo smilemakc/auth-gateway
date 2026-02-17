@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner } from '../ui';
 import { useSystemStatus, usePasswordPolicy, useUpdatePasswordPolicy, useMaintenanceMode, useMaintenanceModeStatus } from '../../hooks/useSettings';
 import { PasswordPolicy } from '../../types';
 import { toast } from '../../services/toast';
@@ -75,11 +76,7 @@ const Settings: React.FC = () => {
   };
 
   if (statusLoading || policyLoading || maintenanceLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingSpinner className="min-h-screen" />;
   }
 
   if (statusError || policyError) {

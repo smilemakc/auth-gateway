@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShieldAlert, ShieldCheck, Plus, Trash2, Search, Info, Loader2 } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, Plus, Trash2, Search, Info } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
 import { useWhitelistFilters, useBlacklistFilters, useCreateIpFilter, useDeleteIpFilter } from '../../hooks/useIpFilters';
+import { LoadingSpinner, PageHeader } from '../ui';
 import { formatDate } from '../../lib/date';
 import { confirm } from '../../services/confirm';
 import { logger } from '@/lib/logger';
@@ -62,20 +63,11 @@ const IpSecurity: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/settings')}
-            className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
-          >
-            <ArrowLeft size={24} />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{t('ip.title')}</h1>
-            <p className="text-muted-foreground mt-1">{t('settings.ip_desc')}</p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={t('ip.title')}
+        subtitle={t('settings.ip_desc')}
+        onBack={() => navigate('/settings')}
+      />
 
       {/* Tabs */}
       <div className="bg-card rounded-xl shadow-sm border border-border p-1 flex">
@@ -128,9 +120,7 @@ const IpSecurity: React.FC = () => {
 
         {/* List */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
+          <LoadingSpinner className="py-12" />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-border">

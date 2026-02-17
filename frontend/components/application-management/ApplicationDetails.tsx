@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { Users, Palette, Settings, Mail, Globe, Bot, Plug } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner } from '../ui';
 import { useApplicationDetail, useApplicationBranding } from '../../hooks/useApplications';
 import ApplicationDetailsHeader from './ApplicationDetailsHeader';
 import ApplicationDetailsOverviewTab from './ApplicationDetailsOverviewTab';
@@ -29,11 +30,7 @@ const ApplicationDetails: React.FC = () => {
   const { data: branding } = useApplicationBranding(id || '');
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error || !application) {

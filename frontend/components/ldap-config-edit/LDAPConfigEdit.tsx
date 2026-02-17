@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Save, X, Loader } from 'lucide-react';
+import { LoadingSpinner } from '../ui';
 import type { CreateLDAPConfigRequest, UpdateLDAPConfigRequest } from '@auth-gateway/client-sdk';
 import { useLDAPConfig, useCreateLDAPConfig, useUpdateLDAPConfig, useTestLDAPConnection } from '../../hooks/useLDAP';
 import { toast } from '../../services/toast';
@@ -166,11 +167,7 @@ const LDAPConfigEdit: React.FC = () => {
   };
 
   if (isLoadingConfig && !isNew) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingSpinner className="min-h-screen" />;
   }
 
   return (

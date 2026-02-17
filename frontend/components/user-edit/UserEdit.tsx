@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft,
   Save,
   AlertCircle,
 } from 'lucide-react';
+import { LoadingSpinner, PageHeader } from '../ui';
 import type {
   AdminCreateUserRequest,
   AdminUpdateUserRequest,
@@ -142,24 +142,15 @@ const UserEdit: React.FC = () => {
   };
 
   if (userLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingSpinner className="min-h-screen" />;
   }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => navigate(isEditMode ? `/users/${id}` : '/users')}
-          className="p-2 hover:bg-card rounded-lg transition-colors text-muted-foreground"
-        >
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-2xl font-bold text-foreground">{isEditMode ? t('user.edit.title') : t('user.create.title')}</h1>
-      </div>
+      <PageHeader
+        title={isEditMode ? t('user.edit.title') : t('user.create.title')}
+        onBack={() => navigate(isEditMode ? `/users/${id}` : '/users')}
+      />
 
       <form onSubmit={handleSubmit} className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
 

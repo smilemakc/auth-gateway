@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Boxes } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner } from '../ui';
 import { useApplications, useDeleteApplication, useUpdateApplication } from '../../hooks/useApplications';
 import type { Application } from '../../types';
 import { confirm } from '../../services/confirm';
@@ -35,11 +36,7 @@ const Applications: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

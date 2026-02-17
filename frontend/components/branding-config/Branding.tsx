@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Palette, Image as ImageIcon, Layout, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { ArrowLeft, Save, Palette, Image as ImageIcon, Layout, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner } from '../ui';
 import { useBranding, useUpdateBranding } from '../../hooks/useSettings';
 import { toast } from '../../services/toast';
 import { BrandingPreview } from './BrandingPreview';
@@ -86,11 +87,7 @@ const Branding: React.FC = () => {
   };
 
   if (loadingBranding) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

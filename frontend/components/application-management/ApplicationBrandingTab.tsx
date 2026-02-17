@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, Save } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner } from '../ui';
 import { useApplicationBranding, useUpdateApplicationBranding } from '../../hooks/useApplications';
 import { logger } from '@/lib/logger';
 import BrandingVisualSection from './BrandingVisualSection';
@@ -70,11 +71,7 @@ const ApplicationBrandingTab: React.FC<ApplicationBrandingTabProps> = ({ applica
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

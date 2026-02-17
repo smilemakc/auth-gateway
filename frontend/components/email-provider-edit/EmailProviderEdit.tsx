@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner, PageHeader } from '../ui';
 import {
   useEmailProvider,
   useCreateEmailProvider,
@@ -153,35 +154,18 @@ const EmailProviderEdit: React.FC = () => {
   };
 
   if (isLoading && !isNew) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   const isPending = createProvider.isPending || updateProvider.isPending;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link
-          to="/settings/email-providers"
-          className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {isNew ? t('email.new_provider') : t('email.edit_provider')}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {isNew
-              ? t('email.new_provider_desc')
-              : t('email.edit_provider_desc')}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={isNew ? t('email.new_provider') : t('email.edit_provider')}
+        subtitle={isNew ? t('email.new_provider_desc') : t('email.edit_provider_desc')}
+        onBack={() => navigate('/settings/email-providers')}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <EmailProviderTestSection

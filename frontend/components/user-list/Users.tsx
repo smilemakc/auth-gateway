@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Filter, Users as UsersIcon } from 'lucide-react';
+import { LoadingSpinner } from '../ui';
 import type { AdminUserResponse } from '@auth-gateway/client-sdk';
 import { useLanguage } from '../../services/i18n';
 import { useUsers, useUpdateUser } from '../../hooks/useUsers';
@@ -41,11 +42,7 @@ const Users: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingSpinner className="min-h-screen" />;
   }
 
   if (error) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Save, X, Loader, Download } from 'lucide-react';
+import { LoadingSpinner } from '../ui';
 import type { CreateSAMLSPRequest, UpdateSAMLSPRequest } from '@auth-gateway/client-sdk';
 import { useSAMLSP, useCreateSAMLSP, useUpdateSAMLSP } from '../../hooks/useSAML';
 import { toast } from '../../services/toast';
@@ -101,11 +102,7 @@ const SAMLSPEdit: React.FC = () => {
   };
 
   if (isLoadingSP && !isNew) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingSpinner className="min-h-screen" />;
   }
 
   return (

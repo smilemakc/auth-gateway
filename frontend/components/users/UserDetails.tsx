@@ -11,7 +11,7 @@ import { useUserApplicationProfile } from '../../hooks/useApplications';
 import { toast } from '../../services/toast';
 import { confirm } from '../../services/confirm';
 import { logger } from '@/lib/logger';
-import { PageHeader } from '../ui';
+import { LoadingSpinner, PageHeader } from '../ui';
 import UserProfileCard from './UserProfileCard';
 import UserSecuritySection from './UserSecuritySection';
 import UserSessionsSection from './UserSessionsSection';
@@ -80,11 +80,7 @@ const UserDetails: React.FC = () => {
   };
 
   if (userLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingSpinner className="min-h-screen" />;
   }
 
   if (userError || !user) {

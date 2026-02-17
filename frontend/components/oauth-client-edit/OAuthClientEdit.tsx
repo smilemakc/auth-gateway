@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner, PageHeader } from '../ui';
 import {
   useOAuthClientDetail,
   useCreateOAuthClient,
@@ -120,11 +121,7 @@ const OAuthClientEdit: React.FC = () => {
   };
 
   if (!isNew && loadingClient) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (newClientSecret) {
@@ -143,22 +140,11 @@ const OAuthClientEdit: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate('/oauth-clients')}
-          className="p-2 hover:bg-accent rounded-lg transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {isNew ? t('oauth_edit.create_title') : t('oauth_edit.edit_title')}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {isNew ? t('oauth_edit.create_desc') : t('oauth_edit.edit_desc')}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={isNew ? t('oauth_edit.create_title') : t('oauth_edit.edit_title')}
+        subtitle={isNew ? t('oauth_edit.create_desc') : t('oauth_edit.edit_desc')}
+        onBack={() => navigate('/oauth-clients')}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <OAuthClientBasicFields

@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Permission } from '../../types';
-import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
+import { Save, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner, PageHeader } from '../ui';
 import { useRoleDetail, useCreateRole, useUpdateRole, usePermissions } from '../../hooks/rbac';
 import { useApplication } from '../../services/appContext';
 import { RolePermissionsMatrix } from './RolePermissionsMatrix';
@@ -118,11 +119,7 @@ const RoleEditor: React.FC = () => {
   const isPageLoading = (isEditMode && roleLoading) || permissionsLoading;
 
   if (isPageLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   const groupedPermissions = availablePermissions.reduce((acc, perm) => {
@@ -133,22 +130,13 @@ const RoleEditor: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate('/settings/access-control?tab=roles')}
-          className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
-        >
-          <ArrowLeft size={24} />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{isNewMode ? t('common.create') : t('common.edit')}</h1>
-          {currentApplication && isNewMode && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {t('role_edit.created_for')}: <span className="font-medium text-foreground">{currentApplication.name}</span>
-            </p>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title={isNewMode ? t('common.create') : t('common.edit')}
+        subtitle={currentApplication && isNewMode
+          ? <>{t('role_edit.created_for')}: <span className="font-medium text-foreground">{currentApplication.name}</span></>
+          : undefined}
+        onBack={() => navigate('/settings/access-control?tab=roles')}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Role Details */}

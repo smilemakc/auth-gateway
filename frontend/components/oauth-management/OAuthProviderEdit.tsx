@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, HelpCircle, Loader2 } from 'lucide-react';
+import { Save, HelpCircle, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
 import { useOAuthProviderDetail, useCreateOAuthProvider, useUpdateOAuthProvider, useDeleteOAuthProvider } from '../../hooks/useOAuth';
+import { LoadingSpinner, PageHeader } from '../ui';
 import { confirm } from '../../services/confirm';
 import { logger } from '@/lib/logger';
 import { OAuthProviderFormFields } from './OAuthProviderFormFields';
@@ -108,24 +109,15 @@ const OAuthProviderEdit: React.FC = () => {
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   if (isEditMode && loadingProvider) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate('/oauth')}
-          className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
-        >
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-2xl font-bold text-foreground">{isEditMode ? t('oauth.configure') : t('oauth.add')}</h1>
-      </div>
+      <PageHeader
+        title={isEditMode ? t('oauth.configure') : t('oauth.add')}
+        onBack={() => navigate('/oauth')}
+      />
 
       <form onSubmit={handleSubmit} className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
         <div className="p-6 border-b border-border bg-muted flex items-start gap-3">

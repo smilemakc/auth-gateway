@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, HelpCircle, Loader2, Send } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner } from '../ui';
 import { useTelegramBotDetail, useCreateTelegramBot, useUpdateTelegramBot, useDeleteTelegramBot } from '../../hooks/useTelegramBots';
 import { confirm } from '../../services/confirm';
 import { logger } from '@/lib/logger';
@@ -118,11 +119,7 @@ const TelegramBotEdit: React.FC = () => {
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   if (isEditMode && loadingBot) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

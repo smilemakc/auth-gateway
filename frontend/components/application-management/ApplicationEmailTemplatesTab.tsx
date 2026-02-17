@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner } from '../ui';
 import {
   useApplicationTemplates,
   useInitializeApplicationTemplates
@@ -36,11 +37,7 @@ const ApplicationEmailTemplatesTab: React.FC<ApplicationEmailTemplatesTabProps> 
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

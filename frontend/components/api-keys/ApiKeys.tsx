@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Trash2, Ban, Copy, CheckCircle, Plus, Key } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner } from '../ui';
 import { useApiKeys, useRevokeApiKey, useDeleteApiKey, useCreateApiKey } from '../../hooks/useApiKeys';
 import { formatDate } from '../../lib/date';
 import { toast } from '../../services/toast';
@@ -105,11 +106,7 @@ const ApiKeys: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingSpinner className="min-h-screen" />;
   }
 
   if (error) {

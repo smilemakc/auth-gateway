@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useLanguage } from '../../services/i18n';
+import { LoadingSpinner, PageHeader } from '../ui';
 import {
   useApplicationDetail,
   useCreateApplication,
@@ -161,35 +162,18 @@ const ApplicationEdit: React.FC = () => {
   };
 
   if (isEditMode && isLoadingApp) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   const isPending = createApplication.isPending || updateApplication.isPending;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link
-          to={isEditMode ? `/applications/${id}` : '/applications'}
-          className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {isEditMode ? t('apps.edit') : t('apps.create')}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {isEditMode
-              ? t('apps.edit_desc')
-              : t('apps.create_desc')}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={isEditMode ? t('apps.edit') : t('apps.create')}
+        subtitle={isEditMode ? t('apps.edit_desc') : t('apps.create_desc')}
+        onBack={() => navigate(isEditMode ? `/applications/${id}` : '/applications')}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <ApplicationEditBasicInfoSection
