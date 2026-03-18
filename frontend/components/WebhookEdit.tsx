@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useWebhookDetail, useCreateWebhook, useUpdateWebhook } from '../hooks/useWebhooks';
+import { logger } from '@/lib/logger';
 
 const AVAILABLE_EVENTS = [
   'user.login',
@@ -28,7 +29,6 @@ const WebhookEdit: React.FC = () => {
 
   const [formData, setFormData] = useState({
     url: '',
-    description: '',
     events: [] as string[],
     is_active: true
   });
@@ -41,7 +41,6 @@ const WebhookEdit: React.FC = () => {
     if (isEditMode && existingWebhook) {
       setFormData({
         url: existingWebhook.url || '',
-        description: existingWebhook.description || '',
         events: existingWebhook.events || [],
         is_active: existingWebhook.is_active ?? true
       });
@@ -65,17 +64,15 @@ const WebhookEdit: React.FC = () => {
     try {
       if (isNewMode) {
         await createWebhookMutation.mutateAsync({
+          name: formData.url,
           url: formData.url,
-          description: formData.description,
           events: formData.events,
-          is_active: formData.is_active
         });
       } else if (id) {
         await updateWebhookMutation.mutateAsync({
           id,
           data: {
             url: formData.url,
-            description: formData.description,
             events: formData.events,
             is_active: formData.is_active
           }
@@ -83,7 +80,7 @@ const WebhookEdit: React.FC = () => {
       }
       navigate('/developers/webhooks');
     } catch (err) {
-      console.error('Failed to save webhook:', err);
+      logger.error('Failed to save webhook:', err);
     }
   };
 
@@ -123,17 +120,6 @@ const WebhookEdit: React.FC = () => {
                 placeholder="https://api.example.com/webhooks"
                 value={formData.url}
                 onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Description</label>
-              <input
-                type="text"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="e.g. Sync users to marketing CRM"
                 className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring outline-none"
               />
             </div>

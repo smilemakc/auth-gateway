@@ -12,24 +12,9 @@ export function useSessions(page: number = 1, pageSize: number = 50) {
 }
 
 export function useUserSessions(userId: string, page: number = 1, pageSize: number = 50) {
-  const appId = useCurrentAppId();
   return useQuery({
-    queryKey: [...queryKeys.sessions.byUser(userId, page, pageSize), appId],
-    queryFn: async () => {
-      // Get all sessions and filter by userId
-      // The SDK might have a specific method for this
-      const response = await apiClient.admin.sessions.list(page, pageSize);
-
-      // Client-side filtering if backend doesn't support it
-      const sessions = (response.sessions || []).filter(
-        (session: any) => session.user_id === userId
-      );
-
-      return {
-        ...response,
-        sessions,
-      };
-    },
+    queryKey: [...queryKeys.sessions.byUser(userId, page, pageSize)],
+    queryFn: () => apiClient.admin.sessions.listUserSessions(userId, page, pageSize),
     enabled: !!userId,
   });
 }

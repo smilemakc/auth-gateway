@@ -498,10 +498,14 @@ func (s *ApplicationService) UnbanUser(ctx context.Context, userID, applicationI
 	return nil
 }
 
+func (s *ApplicationService) DeleteUserProfile(ctx context.Context, userID, applicationID uuid.UUID) error {
+	return s.appRepo.DeleteUserProfile(ctx, userID, applicationID)
+}
+
 func (s *ApplicationService) CheckUserAccess(ctx context.Context, userID, applicationID uuid.UUID) error {
 	profile, err := s.appRepo.GetUserProfile(ctx, userID, applicationID)
 	if err != nil {
-		return nil
+		return fmt.Errorf("user has no access to application: %w", err)
 	}
 
 	if profile.IsBanned {
@@ -594,6 +598,10 @@ func (s *ApplicationService) ValidateSecret(ctx context.Context, secret string) 
 	hash := utils.HashToken(secret)
 	app, err := s.appRepo.GetBySecretHash(ctx, hash)
 	if err != nil {
+		return nil, models.NewAppError(401, "Invalid application secret")
+	}
+	// Defense-in-depth: constant-time verification of hash match
+	if !utils.CompareHashConstantTime(hash, app.SecretHash) {
 		return nil, models.NewAppError(401, "Invalid application secret")
 	}
 	if !app.IsActive {

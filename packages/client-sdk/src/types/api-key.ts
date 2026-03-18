@@ -48,5 +48,5 @@ export interface ListAPIKeysResponse {
 /** Admin API key response with user info */
 export interface AdminAPIKeyResponse extends APIKey {
   user_email?: string;
-  user_name?: string;
+  owner_name?: string;
 }

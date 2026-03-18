@@ -18,10 +18,10 @@ export class AdminUserTelegramService extends BaseService {
    * @returns Array of Telegram accounts
    */
   async getAccounts(userId: string): Promise<UserTelegramAccount[]> {
-    const response = await this.http.get<UserTelegramAccount[]>(
+    const response = await this.http.get<{ accounts: UserTelegramAccount[]; total: number }>(
       `/api/admin/users/${userId}/telegram-accounts`
     );
-    return response.data;
+    return response.data.accounts;
   }
 
   /**
@@ -32,10 +32,10 @@ export class AdminUserTelegramService extends BaseService {
    */
   async getBotAccess(userId: string, appId?: string): Promise<UserTelegramBotAccess[]> {
     const query = appId ? { app_id: appId } : undefined;
-    const response = await this.http.get<UserTelegramBotAccess[]>(
+    const response = await this.http.get<{ access: UserTelegramBotAccess[]; total: number }>(
       `/api/admin/users/${userId}/telegram-bot-access`,
       { query }
     );
-    return response.data;
+    return response.data.access;
   }
 }

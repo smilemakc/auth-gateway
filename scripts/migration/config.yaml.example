@@ -14,21 +14,27 @@ source:
   users_table: "users"
   id_strategy: "preserve_uuid"  # preserve_uuid | generate_new
 
+  # Column mapping: key = internal field name, value = column name in source DB.
+  # Include only columns that exist in your source table.
+  # At least one of email, phone, or username is required per user.
   columns:
     id: "id"
-    email: "email"
+    email: "email"              # Optional — omit if source has no email
     username: "username"
-    password_hash: "password_hash"
     full_name: "full_name"
     phone: "phone"
     is_active: "is_active"
+    email_verified: "email_verified"
+    phone_verified: "phone_verified"  # Optional
     created_at: "created_at"
+    # password_hash: "password_hash"  # Optional — omit if source uses OTP/Telegram-only auth
 
 target:
   base_url: "http://auth-gateway:3000"
   api_key: "${AUTH_GATEWAY_API_KEY}"
   application_id: "uuid-of-application"
 
+# Password migration. Set strategy to "none" if source has no passwords (OTP-only, Telegram, etc.)
 password:
   strategy: "transfer"          # transfer | force_reset | none
   source_algorithm: "bcrypt"    # bcrypt | argon2 | scrypt | md5 | sha256
@@ -37,8 +43,27 @@ conflicts:
   strategy: "skip"    # skip | update | error
 
 deduplication:
-  key: "email"              # email | phone | email_or_phone
-  strategy: "keep_latest"   # keep_latest | keep_first | error
+  key: "email"              # email | phone | username | email_or_phone | username_or_email
+  strategy: "keep_latest"   # none | keep_latest | keep_first | error
+
+# Validation settings — skip email/phone format validation for dirty source data
+validation:
+  skip_email_validation: false
+  skip_phone_validation: false
+
+# Roles migration — map source role IDs to Auth Gateway role names
+roles:
+  enabled: false
+  # For single column in users table (e.g. role_id INT):
+  source_column: "role_id"
+  # For M2M table (e.g. user_roles):
+  # source_table: "user_roles"
+  # source_user_id_column: "user_id"
+  # source_role_id_column: "role_id"
+  mapping:
+    1: "admin"
+    2: "user"
+    3: "manager"
 
 shadow:
   enabled: true

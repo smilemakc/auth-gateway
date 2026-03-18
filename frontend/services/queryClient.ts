@@ -14,7 +14,7 @@ const queryConfig: DefaultOptions = {
     retry: 0,
     onError: (error) => {
       const friendlyError = getUserFriendlyError(error);
-      console.error(`[Mutation Error] ${friendlyError.title}: ${friendlyError.message}`);
+      if (import.meta.env.DEV) console.error(`[Mutation Error] ${friendlyError.title}: ${friendlyError.message}`);
       // Could integrate with a toast notification system here
     },
   },

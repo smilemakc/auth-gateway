@@ -4,10 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { RoleDefinition } from '../types';
 import { ArrowLeft, Shield, Plus, Edit2, Trash2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
-import { useRoles, useDeleteRole } from '../hooks/useRBAC';
+import { useRoles, useDeleteRole } from '../hooks/rbac';
 import { useApplication } from '../services/appContext';
 import { formatDate } from '../lib/date';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const Roles: React.FC = () => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ const Roles: React.FC = () => {
       try {
         await deleteRoleMutation.mutateAsync(id);
       } catch (err) {
-        console.error('Failed to delete role:', err);
+        logger.error('Failed to delete role:', err);
       }
     }
   };

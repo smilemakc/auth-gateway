@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 )
 
 type UserService struct {
@@ -39,7 +40,7 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 
 	// Update fields
 	if req.FullName != "" {
-		user.FullName = req.FullName
+		user.FullName = utils.SanitizeHTML(req.FullName)
 	}
 	if req.ProfilePictureURL != "" {
 		user.ProfilePictureURL = req.ProfilePictureURL

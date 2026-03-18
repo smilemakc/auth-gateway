@@ -29,16 +29,16 @@ type TelegramBot struct {
 type UserTelegramAccount struct {
 	bun.BaseModel `bun:"table:user_telegram_accounts,alias:uta"`
 
-	ID             uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()" example:"123e4567-e89b-12d3-a456-426614174000"`
-	UserID         uuid.UUID  `json:"user_id" bun:"user_id,notnull,type:uuid" example:"123e4567-e89b-12d3-a456-426614174000"`
-	TelegramUserID int64      `json:"telegram_user_id" bun:"telegram_user_id,notnull" example:"123456789"`
-	Username       *string    `json:"username,omitempty" bun:"username" example:"johndoe"`
-	FirstName      string     `json:"first_name" bun:"first_name,notnull" example:"John"`
-	LastName       *string    `json:"last_name,omitempty" bun:"last_name" example:"Doe"`
-	PhotoURL       *string    `json:"photo_url,omitempty" bun:"photo_url" example:"https://t.me/i/userpic/320/johndoe.jpg"`
-	AuthDate       time.Time  `json:"auth_date" bun:"auth_date,notnull" example:"2024-01-15T10:30:00Z"`
-	CreatedAt      time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
-	UpdatedAt      time.Time  `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
+	ID             uuid.UUID `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()" example:"123e4567-e89b-12d3-a456-426614174000"`
+	UserID         uuid.UUID `json:"user_id" bun:"user_id,notnull,type:uuid" example:"123e4567-e89b-12d3-a456-426614174000"`
+	TelegramUserID int64     `json:"telegram_user_id" bun:"telegram_user_id,notnull" example:"123456789"`
+	Username       *string   `json:"username,omitempty" bun:"username" example:"johndoe"`
+	FirstName      string    `json:"first_name" bun:"first_name,notnull" example:"John"`
+	LastName       *string   `json:"last_name,omitempty" bun:"last_name" example:"Doe"`
+	PhotoURL       *string   `json:"photo_url,omitempty" bun:"photo_url" example:"https://t.me/i/userpic/320/johndoe.jpg"`
+	AuthDate       time.Time `json:"auth_date" bun:"auth_date,notnull" example:"2024-01-15T10:30:00Z"`
+	CreatedAt      time.Time `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
+	UpdatedAt      time.Time `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp" example:"2024-01-15T10:30:00Z"`
 
 	User *User `json:"user,omitempty" bun:"rel:belongs-to,join:user_id=id"`
 }
@@ -76,4 +76,28 @@ type UpdateTelegramBotRequest struct {
 	DisplayName *string `json:"display_name,omitempty" binding:"omitempty,max=100" example:"My Auth Bot"`
 	IsAuthBot   *bool   `json:"is_auth_bot,omitempty" example:"false"`
 	IsActive    *bool   `json:"is_active,omitempty" example:"true"`
+}
+
+// TelegramBotListResponse represents Telegram bots list
+type TelegramBotListResponse struct {
+	// List of Telegram bots
+	Bots []*TelegramBot `json:"bots"`
+	// Total number of bots
+	Total int `json:"total" example:"2"`
+}
+
+// UserTelegramAccountListResponse represents user Telegram accounts list
+type UserTelegramAccountListResponse struct {
+	// List of Telegram accounts
+	Accounts []*UserTelegramAccount `json:"accounts"`
+	// Total number of accounts
+	Total int `json:"total" example:"1"`
+}
+
+// UserTelegramBotAccessListResponse represents user Telegram bot access list
+type UserTelegramBotAccessListResponse struct {
+	// List of bot access entries
+	Access []*UserTelegramBotAccess `json:"access"`
+	// Total number of access entries
+	Total int `json:"total" example:"2"`
 }

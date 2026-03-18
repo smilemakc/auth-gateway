@@ -100,17 +100,7 @@ export function useSendPasswordReset() {
 export function useUserOAuthAccounts(userId: string) {
   return useQuery({
     queryKey: ['users', 'oauth-accounts', userId],
-    queryFn: async () => {
-      const response = await fetch(`/api/admin/users/${userId}/oauth-accounts`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch OAuth accounts: ${response.status}`);
-      }
-      return response.json();
-    },
+    queryFn: () => apiClient.admin.users.getOAuthAccounts(userId),
     enabled: !!userId,
   });
 }

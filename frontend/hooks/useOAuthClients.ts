@@ -12,7 +12,7 @@ export function useOAuthClients(page: number = 1, pageSize: number = 20, isActiv
   const appId = useCurrentAppId();
   return useQuery({
     queryKey: [...queryKeys.oauthClients.list(page, pageSize), appId, isActive],
-    queryFn: () => apiClient.admin.oauthClients.list({ page, per_page: pageSize, is_active: isActive }),
+    queryFn: () => apiClient.admin.oauthClients.list({ page, page_size: pageSize, is_active: isActive }),
   });
 }
 

@@ -44,6 +44,8 @@ type GRPCConfig struct {
 	Metadata map[string]string
 
 	// APIKey for gRPC authentication. Sent as x-api-key metadata on every call.
+	// Supports both API keys (agw_...) and application secrets (app_...).
+	// When using an app secret, application_id is automatically resolved from context.
 	APIKey string
 }
 
@@ -137,6 +139,7 @@ func (c *GRPCClient) SetClientName(name string) {
 
 // SetAPIKey sets the API key for gRPC authentication.
 // The key is sent as x-api-key metadata on every call.
+// Supports both API keys (agw_...) and application secrets (app_...).
 func (c *GRPCClient) SetAPIKey(apiKey string) {
 	c.SetMetadata("x-api-key", apiKey)
 }

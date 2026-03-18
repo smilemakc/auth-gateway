@@ -507,3 +507,33 @@ func IsValidOIDCScope(scope string) bool {
 	}
 	return false
 }
+
+// OAuthClientListResponse represents paginated OAuth client list
+type OAuthClientListResponse struct {
+	// List of OAuth clients
+	Clients []*OAuthClient `json:"clients"`
+	// Total number of clients
+	Total int `json:"total" example:"15"`
+	// Current page number
+	Page int `json:"page" example:"1"`
+	// Number of items per page
+	PageSize int `json:"page_size" example:"20"`
+	// Total number of pages
+	TotalPages int `json:"total_pages" example:"1"`
+}
+
+// OAuthScopeListResponse represents OAuth scopes list
+type OAuthScopeListResponse struct {
+	// List of OAuth scopes
+	Scopes []*OAuthScope `json:"scopes"`
+	// Total number of scopes
+	Total int `json:"total" example:"10"`
+}
+
+// OAuthConsentListResponse represents OAuth client consents list
+type OAuthConsentListResponse struct {
+	// List of consents
+	Consents []*UserConsent `json:"consents"`
+	// Total number of consents
+	Total int `json:"total" example:"5"`
+}

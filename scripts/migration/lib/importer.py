@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 from . import (
     ConflictStrategy,
@@ -14,6 +17,7 @@ from . import (
     ImportStatus,
     PasswordConfig,
     PasswordStrategy,
+    RolesConfig,
     SourceUser,
     TargetConfig,
 )
@@ -26,11 +30,13 @@ class AuthGatewayImporter:
         password_config: PasswordConfig,
         conflict_strategy: ConflictStrategy,
         workers: int = 4,
+        roles_config: RolesConfig | None = None,
     ):
         self.config = config
         self.password_config = password_config
         self.conflict_strategy = conflict_strategy
         self.workers = workers
+        self.roles_config = roles_config
         self.stats = ImportStats()
         self._client: httpx.AsyncClient | None = None
 
@@ -77,17 +83,28 @@ class AuthGatewayImporter:
 
     def _build_import_entry(self, user: SourceUser) -> dict[str, Any]:
         entry: dict[str, Any] = {
-            "email": user.email,
-            "username": user.username or self._generate_username(user.email),
             "is_active": user.is_active,
-            "skip_email_verification": True,
+            "email_verified": user.email_verified,
+            "phone_verified": user.phone_verified,
         }
 
-        if user.full_name:
-            entry["full_name"] = user.full_name
+        if user.email:
+            entry["email"] = user.email
 
         if user.phone:
             entry["phone"] = user.phone
+
+        # Username: explicit → email prefix → phone digits
+        username = user.username
+        if not username and user.email:
+            username = user.email.split("@")[0]
+        if not username and user.phone:
+            username = user.phone.lstrip("+")
+        if username:
+            entry["username"] = username
+
+        if user.full_name:
+            entry["full_name"] = user.full_name
 
         if self.password_config.strategy == PasswordStrategy.TRANSFER and user.password_hash:
             entry["password_hash_import"] = user.password_hash
@@ -95,10 +112,17 @@ class AuthGatewayImporter:
         if user.id:
             entry["id"] = user.id
 
-        return entry
+        # Map source role IDs to Auth Gateway role names
+        if self.roles_config and self.roles_config.enabled and user.roles:
+            app_roles = [
+                self.roles_config.mapping[r]
+                for r in user.roles
+                if r in self.roles_config.mapping
+            ]
+            if app_roles:
+                entry["app_roles"] = app_roles
 
-    def _generate_username(self, email: str) -> str:
-        return email.split("@")[0]
+        return entry
 
     async def import_batch(self, batch: list[SourceUser]) -> list[ImportResult]:
         if not self._client:
@@ -131,10 +155,10 @@ class AuthGatewayImporter:
             for i, user in enumerate(batch):
                 detail = details[i] if i < len(details) else {}
                 status_str = detail.get("status", "created")
-                ag_id = detail.get("ag_id")
-                note = detail.get("note", "")
+                ag_id = detail.get("user_id")
+                note = detail.get("reason", "")
 
-                if status_str == "created":
+                if status_str in ("created", "imported"):
                     status = ImportStatus.CREATED
                 elif status_str == "existing":
                     status = ImportStatus.EXISTING
@@ -154,7 +178,8 @@ class AuthGatewayImporter:
             return results
 
         except httpx.HTTPStatusError as e:
-            error_msg = f"HTTP {e.response.status_code}: {e.response.text}"
+            error_msg = f"HTTP {e.response.status_code}: {e.response.text[:500]}"
+            logger.error("Batch import failed: %s", error_msg)
             for user in batch:
                 self.stats.errors += 1
                 self.stats.total += 1
@@ -165,6 +190,7 @@ class AuthGatewayImporter:
 
         except Exception as e:
             error_msg = f"Request failed: {str(e)}"
+            logger.error("Batch import exception: %s", error_msg)
             for user in batch:
                 self.stats.errors += 1
                 self.stats.total += 1

@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Bot, Copy, AlertTriangle, CheckCircle, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useOAuthClientDetail, useCreateOAuthClient, useUpdateOAuthClient } from '../hooks/useOAuthClients';
+import { logger } from '@/lib/logger';
 
 const ServiceAccountEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -66,7 +67,7 @@ const ServiceAccountEdit: React.FC = () => {
         navigate('/developers/service-accounts');
       }
     } catch (err) {
-      console.error('Failed to save service account:', err);
+      logger.error('Failed to save service account:', err);
     }
   };
 

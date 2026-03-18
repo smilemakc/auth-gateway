@@ -22,10 +22,10 @@ export class AdminAppOAuthProvidersService extends BaseService {
    * @returns Array of OAuth providers
    */
   async list(appId: string): Promise<ApplicationOAuthProvider[]> {
-    const response = await this.http.get<ApplicationOAuthProvider[]>(
+    const response = await this.http.get<{ providers: ApplicationOAuthProvider[]; total: number }>(
       `/api/admin/applications/${appId}/oauth-providers`
     );
-    return response.data;
+    return response.data.providers;
   }
 
   /**

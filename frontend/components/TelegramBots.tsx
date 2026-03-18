@@ -6,6 +6,7 @@ import { useLanguage } from '../services/i18n';
 import { useTelegramBots, useDeleteTelegramBot } from '../hooks/useTelegramBots';
 import { formatDate } from '../lib/date';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 interface TelegramBotsProps {
   applicationId: string;
@@ -28,7 +29,7 @@ const TelegramBots: React.FC<TelegramBotsProps> = ({ applicationId }) => {
       try {
         await deleteBotMutation.mutateAsync({ appId: applicationId, id: botId });
       } catch (err) {
-        console.error('Failed to delete bot:', err);
+        logger.error('Failed to delete bot:', err);
       }
     }
   };
@@ -86,9 +87,9 @@ const TelegramBots: React.FC<TelegramBotsProps> = ({ applicationId }) => {
                 </div>
                 <div>
                   {bot.is_auth_bot ? (
-                    <Shield className="text-primary" size={20} title={t('tg.auth_bot')} />
+                    <span title={t('tg.auth_bot')}><Shield className="text-primary" size={20} /></span>
                   ) : (
-                    <ShieldOff className="text-muted-foreground" size={20} title={t('tg.not_auth_bot')} />
+                    <span title={t('tg.not_auth_bot')}><ShieldOff className="text-muted-foreground" size={20} /></span>
                   )}
                 </div>
               </div>

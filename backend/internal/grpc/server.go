@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/smilemakc/auth-gateway/internal/config"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
@@ -27,18 +26,18 @@ type Server struct {
 func NewServer(
 	grpcConfig *config.GRPCConfig,
 	jwtService *jwt.Service,
-	userRepo *repository.UserRepository,
-	tokenRepo *repository.TokenRepository,
-	rbacRepo *repository.RBACRepository,
-	apiKeyService *service.APIKeyService,
-	authService *service.AuthService,
-	oauthProviderService *service.OAuthProviderService,
-	otpService *service.OTPService,
-	emailProfileService *service.EmailProfileService,
-	adminService *service.AdminService,
-	appService *service.ApplicationService,
-	redis *service.RedisService,
-	tokenExchangeService *service.TokenExchangeService,
+	userRepo service.UserStore,
+	tokenRepo service.TokenStore,
+	rbacRepo service.RBACStore,
+	apiKeyService service.APIKeyServicer,
+	authService service.AuthServicer,
+	oauthProviderService service.OAuthProviderServicer,
+	otpService service.OTPServicer,
+	emailProfileService service.EmailProfileServicer,
+	adminService service.AdminServicer,
+	appService service.ApplicationServicer,
+	redis service.RedisServicer,
+	tokenExchangeService service.TokenExchangeServicer,
 	log *logger.Logger,
 ) (*Server, error) {
 	// Create listener
@@ -50,13 +49,14 @@ func NewServer(
 	// Build server options with unary and stream interceptors
 	serverOpts := []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(
+			rateLimitInterceptor(redis, grpcConfig.MaxRequestsPerMinute),
 			apiKeyAuthInterceptor(apiKeyService, appService, log),
 			contextExtractorInterceptor(log),
 			loggingInterceptor(log),
 			recoveryInterceptor(log),
 		),
 		grpc.ChainStreamInterceptor(
-			streamAPIKeyAuthInterceptor(apiKeyService, log),
+			streamAPIKeyAuthInterceptor(apiKeyService, appService, log),
 		),
 	}
 
@@ -79,8 +79,11 @@ func NewServer(
 	handler := NewAuthHandlerV2(jwtService, userRepo, tokenRepo, rbacRepo, apiKeyService, authService, oauthProviderService, otpService, emailProfileService, adminService, appService, redis, tokenExchangeService, log)
 	pb.RegisterAuthServiceServer(grpcServer, handler)
 
-	// Register reflection service for debugging
-	reflection.Register(grpcServer)
+	// Register reflection service only when explicitly enabled (should be disabled in production)
+	if grpcConfig.ReflectionEnabled {
+		reflection.Register(grpcServer)
+		log.Warn("gRPC reflection is enabled — disable in production via GRPC_REFLECTION_ENABLED=false")
+	}
 
 	return &Server{
 		grpcServer: grpcServer,
@@ -103,4 +106,10 @@ func (s *Server) Stop() {
 	s.logger.Info("Stopping gRPC server...")
 	s.grpcServer.GracefulStop()
 	s.logger.Info("gRPC server stopped")
+}
+
+// ForceStop immediately stops the gRPC server without waiting for active connections
+func (s *Server) ForceStop() {
+	s.logger.Warn("Force stopping gRPC server...")
+	s.grpcServer.Stop()
 }

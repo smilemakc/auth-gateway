@@ -5,6 +5,7 @@ import type { CreateGroupRequest, UpdateGroupRequest, Group } from '@auth-gatewa
 import { useGroup, useCreateGroup, useUpdateGroup, useGroups } from '../hooks/useGroups';
 import { toast } from '../services/toast';
 import { useLanguage } from '../services/i18n';
+import { logger } from '@/lib/logger';
 
 const GroupEdit: React.FC = () => {
   const { t } = useLanguage();
@@ -80,7 +81,7 @@ const GroupEdit: React.FC = () => {
       }
       navigate('/groups');
     } catch (error: any) {
-      console.error('Failed to save group:', error);
+      logger.error('Failed to save group:', error);
       const errorMessage = error?.response?.data?.message || error?.message || t('group_edit.save_error');
       toast.error(`Error: ${errorMessage}`);
     }

@@ -2,10 +2,8 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
@@ -14,12 +12,12 @@ import (
 
 // WebhookHandler handles webhook endpoints
 type WebhookHandler struct {
-	webhookService *service.WebhookService
+	webhookService service.WebhookServicer
 	logger         *logger.Logger
 }
 
 // NewWebhookHandler creates a new webhook handler
-func NewWebhookHandler(webhookService *service.WebhookService, log *logger.Logger) *WebhookHandler {
+func NewWebhookHandler(webhookService service.WebhookServicer, log *logger.Logger) *WebhookHandler {
 	return &WebhookHandler{
 		webhookService: webhookService,
 		logger:         log,
@@ -33,7 +31,7 @@ func NewWebhookHandler(webhookService *service.WebhookService, log *logger.Logge
 // @Accept json
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Security BearerAuth
 // @Success 200 {object} models.WebhookListResponse
 // @Failure 401 {object} models.ErrorResponse
@@ -49,20 +47,23 @@ func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to list webhooks"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"webhooks":    webhooks,
-			"total":       len(webhooks),
-			"page":        1,
-			"per_page":    len(webhooks),
-			"total_pages": 1,
+		wrapped := make([]models.WebhookWithCreator, len(webhooks))
+		for i, w := range webhooks {
+			wrapped[i] = models.WebhookWithCreator{Webhook: *w}
+		}
+		c.JSON(http.StatusOK, models.WebhookListResponse{
+			Webhooks:   wrapped,
+			Total:      len(wrapped),
+			Page:       1,
+			PageSize:   len(wrapped),
+			TotalPages: 1,
 		})
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	page, pageSize := utils.ParsePagination(c)
 
-	resp, err := h.webhookService.ListWebhooks(c.Request.Context(), page, perPage)
+	resp, err := h.webhookService.ListWebhooks(c.Request.Context(), page, pageSize)
 	if err != nil {
 		h.logger.Error("Failed to list webhooks", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to list webhooks"})
@@ -87,9 +88,8 @@ func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/webhooks/{id} [get]
 func (h *WebhookHandler) GetWebhook(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid webhook ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -117,9 +117,8 @@ func (h *WebhookHandler) GetWebhook(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/webhooks [post]
 func (h *WebhookHandler) CreateWebhook(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -129,7 +128,7 @@ func (h *WebhookHandler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
-	webhook, secretKey, err := h.webhookService.CreateWebhook(c.Request.Context(), &req, *userID)
+	webhook, secretKey, err := h.webhookService.CreateWebhook(c.Request.Context(), &req, userID)
 	if err != nil {
 		h.logger.Error("Failed to create webhook", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
@@ -158,15 +157,13 @@ func (h *WebhookHandler) CreateWebhook(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/webhooks/{id} [put]
 func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid webhook ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -176,7 +173,7 @@ func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
 		return
 	}
 
-	if err := h.webhookService.UpdateWebhook(c.Request.Context(), id, &req, *userID); err != nil {
+	if err := h.webhookService.UpdateWebhook(c.Request.Context(), id, &req, userID); err != nil {
 		h.logger.Error("Failed to update webhook", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
@@ -200,19 +197,17 @@ func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/webhooks/{id} [delete]
 func (h *WebhookHandler) DeleteWebhook(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
-	if !ok || userID == nil {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "Unauthorized"})
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid webhook ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	if err := h.webhookService.DeleteWebhook(c.Request.Context(), id, *userID); err != nil {
+	if err := h.webhookService.DeleteWebhook(c.Request.Context(), id, userID); err != nil {
 		h.logger.Error("Failed to delete webhook", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Webhook not found"})
 		return
@@ -237,9 +232,8 @@ func (h *WebhookHandler) DeleteWebhook(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/webhooks/{id}/test [post]
 func (h *WebhookHandler) TestWebhook(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid webhook ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -266,7 +260,7 @@ func (h *WebhookHandler) TestWebhook(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Webhook ID (UUID)"
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Security BearerAuth
 // @Success 200 {object} models.WebhookDeliveryListResponse
 // @Failure 400 {object} models.ErrorResponse
@@ -275,16 +269,14 @@ func (h *WebhookHandler) TestWebhook(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/webhooks/{id}/deliveries [get]
 func (h *WebhookHandler) ListWebhookDeliveries(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid webhook ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	page, pageSize := utils.ParsePagination(c)
 
-	resp, err := h.webhookService.ListWebhookDeliveries(c.Request.Context(), id, page, perPage)
+	resp, err := h.webhookService.ListWebhookDeliveries(c.Request.Context(), id, page, pageSize)
 	if err != nil {
 		h.logger.Error("Failed to list deliveries", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to list deliveries"})

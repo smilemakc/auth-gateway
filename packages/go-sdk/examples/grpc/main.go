@@ -12,14 +12,16 @@ import (
 )
 
 func main() {
-	// Create a gRPC client with API key authentication
+	// Create a gRPC client with API key or application secret authentication
 	// The gRPC API is ideal for microservice-to-microservice communication
-	// All gRPC methods require a valid API key with appropriate scopes
+	// All gRPC methods require authentication via:
+	// - API key (agw_...) with scope-based permissions
+	// - Application secret (app_...) with automatic application_id resolution
 	grpcClient, err := authgateway.NewGRPCClient(authgateway.GRPCConfig{
 		Address:     "localhost:50051",
 		Insecure:    true, // Use true for development, false for production with TLS
 		DialTimeout: 10 * time.Second,
-		APIKey:      "agw_YOUR_API_KEY", // Required: API key for gRPC authentication
+		APIKey:      "agw_YOUR_API_KEY", // API key or "app_YOUR_APP_SECRET"
 	})
 	if err != nil {
 		log.Fatalf("Failed to create gRPC client: %v", err)

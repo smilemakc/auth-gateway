@@ -7,19 +7,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
+	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
 // SMSSettingsHandler handles SMS settings management (admin only)
 type SMSSettingsHandler struct {
-	smsSettingsRepo *repository.SMSSettingsRepository
+	smsSettingsRepo service.SMSSettingsRepositoryInterface
 	logger          *logger.Logger
 }
 
 // NewSMSSettingsHandler creates a new SMS settings handler
-func NewSMSSettingsHandler(smsSettingsRepo *repository.SMSSettingsRepository, logger *logger.Logger) *SMSSettingsHandler {
+func NewSMSSettingsHandler(smsSettingsRepo service.SMSSettingsRepositoryInterface, logger *logger.Logger) *SMSSettingsHandler {
 	return &SMSSettingsHandler{
 		smsSettingsRepo: smsSettingsRepo,
 		logger:          logger,
@@ -46,10 +46,8 @@ func (h *SMSSettingsHandler) CreateSettings(c *gin.Context) {
 		return
 	}
 
-	// Get user ID from context
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -81,7 +79,7 @@ func (h *SMSSettingsHandler) CreateSettings(c *gin.Context) {
 		MaxPerHour:         maxPerHour,
 		MaxPerDay:          maxPerDay,
 		MaxPerNumber:       maxPerNumber,
-		CreatedBy:          userID,
+		CreatedBy:          &userID,
 		CreatedAt:          time.Now(),
 		UpdatedAt:          time.Now(),
 	}
@@ -149,7 +147,7 @@ func (h *SMSSettingsHandler) GetActiveSettings(c *gin.Context) {
 	settings, err := h.smsSettingsRepo.GetActive(c.Request.Context())
 	if err != nil {
 		if err == models.ErrNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"message": "No active SMS settings found"})
+			c.JSON(http.StatusNotFound, models.MessageResponse{Message: "No active SMS settings found"})
 			return
 		}
 		h.logger.Error("Failed to get active SMS settings", map[string]interface{}{

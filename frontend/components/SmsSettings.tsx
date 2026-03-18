@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, AlertTriangle, Send, Loader2 } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import { useSmsSettingsActive, useUpdateSmsSettings, useCreateSmsSettings } from '../hooks/useSettings';
+import { logger } from '@/lib/logger';
 
 const SmsSettings: React.FC = () => {
   const { t } = useLanguage();
@@ -26,14 +27,15 @@ const SmsSettings: React.FC = () => {
 
   useEffect(() => {
     if (activeSettings) {
+      const cfg = activeSettings.config as Record<string, string>;
       setConfig({
         provider: activeSettings.provider || 'mock',
-        awsRegion: activeSettings.aws_region || '',
-        awsAccessKeyId: activeSettings.aws_access_key_id || '',
-        awsSecretAccessKey: activeSettings.aws_secret_access_key || '',
-        twilioAccountSid: activeSettings.twilio_account_sid || '',
-        twilioAuthToken: activeSettings.twilio_auth_token || '',
-        twilioPhoneNumber: activeSettings.twilio_phone_number || '',
+        awsRegion: cfg.aws_region || '',
+        awsAccessKeyId: cfg.aws_access_key_id || '',
+        awsSecretAccessKey: cfg.aws_secret_access_key || '',
+        twilioAccountSid: cfg.twilio_account_sid || '',
+        twilioAuthToken: cfg.twilio_auth_token || '',
+        twilioPhoneNumber: cfg.twilio_phone_number || '',
       });
     }
   }, [activeSettings]);
@@ -66,7 +68,7 @@ const SmsSettings: React.FC = () => {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      console.error('Failed to save SMS settings:', err);
+      logger.error('Failed to save SMS settings:', err);
     }
   };
 

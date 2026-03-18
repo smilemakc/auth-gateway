@@ -6,6 +6,7 @@ import { useLanguage } from '../services/i18n';
 import { useApplicationOAuthProviders, useDeleteApplicationOAuthProvider } from '../hooks/useApplicationOAuthProviders';
 import { formatDate } from '../lib/date';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 interface ApplicationOAuthProvidersProps {
   applicationId: string;
@@ -44,7 +45,7 @@ const ApplicationOAuthProviders: React.FC<ApplicationOAuthProvidersProps> = ({ a
       try {
         await deleteProviderMutation.mutateAsync({ appId: applicationId, id });
       } catch (err) {
-        console.error('Failed to delete provider:', err);
+        logger.error('Failed to delete provider:', err);
       }
     }
   };

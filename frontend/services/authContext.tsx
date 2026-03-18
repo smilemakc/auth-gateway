@@ -21,7 +21,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Handle auth failure event from apiClient (e.g., when token refresh fails)
   const handleAuthFailure = useCallback(() => {
-    console.log('[AuthContext] Auth failure event received - logging out user');
+    if (import.meta.env.DEV) console.log('[AuthContext] Auth failure event received - logging out user');
     setUser(null);
   }, []);
 
@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const profile = await apiClient.auth.getProfile();
           setUser(profile as User);
         } catch (error) {
-          console.error('Failed to fetch profile:', error);
+          if (import.meta.env.DEV) console.error('Failed to fetch profile:', error);
           localStorage.removeItem('auth_gateway_access_token');
           localStorage.removeItem('auth_gateway_refresh_token');
           localStorage.removeItem('auth_token');
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       apiClient.setHeader('X-Application-ID', savedAppId);
     }
 
-    console.log('[Auth] Login response:', response);
+    if (import.meta.env.DEV) console.log('[Auth] Login response:', response);
 
     // Manually store tokens if SDK didn't do it
     // Check various possible response formats
@@ -76,30 +76,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const refreshToken = (response as any).refreshToken || (response as any).tokens?.refreshToken || (response as any).refresh_token;
 
     if (accessToken) {
-      console.log('[Auth] Manually storing access token');
+      if (import.meta.env.DEV) console.log('[Auth] Manually storing access token');
       localStorage.setItem('auth_gateway_access_token', accessToken);
     }
 
     if (refreshToken) {
-      console.log('[Auth] Manually storing refresh token');
+      if (import.meta.env.DEV) console.log('[Auth] Manually storing refresh token');
       localStorage.setItem('auth_gateway_refresh_token', refreshToken);
     }
 
     // Set user state
     setUser(response.user as User);
 
-    // Debug: Check if tokens are stored
-    console.log('[Auth] Tokens after login:', {
-      accessToken: !!localStorage.getItem('auth_gateway_access_token'),
-      refreshToken: !!localStorage.getItem('auth_gateway_refresh_token'),
-    });
+    if (import.meta.env.DEV) {
+      console.log('[Auth] Tokens after login:', {
+        accessToken: !!localStorage.getItem('auth_gateway_access_token'),
+        refreshToken: !!localStorage.getItem('auth_gateway_refresh_token'),
+      });
+    }
   };
 
   const logout = async () => {
     try {
       await apiClient.auth.logout();
     } catch (error) {
-      console.error('Logout error:', error);
+      if (import.meta.env.DEV) console.error('Logout error:', error);
     } finally {
       // Clear all auth-related items
       localStorage.removeItem('auth_gateway_access_token');

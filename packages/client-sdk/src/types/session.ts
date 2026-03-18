@@ -7,7 +7,7 @@ export interface Session {
   id: string;
   user_id: string;
   user_email?: string;
-  user_name?: string;
+  username?: string;
   device_type: string;
   os: string;
   browser: string;
@@ -24,7 +24,8 @@ export interface SessionListResponse {
   sessions: Session[];
   total: number;
   page: number;
-  per_page?: number;
+  page_size?: number;
+  total_pages?: number;
 }
 
 /** Session statistics (admin) */

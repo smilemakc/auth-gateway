@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
@@ -13,12 +12,12 @@ import (
 
 // APIKeyHandler handles API key-related HTTP requests
 type APIKeyHandler struct {
-	apiKeyService *service.APIKeyService
+	apiKeyService service.APIKeyServicer
 	logger        *logger.Logger
 }
 
 // NewAPIKeyHandler creates a new API key handler
-func NewAPIKeyHandler(apiKeyService *service.APIKeyService, log *logger.Logger) *APIKeyHandler {
+func NewAPIKeyHandler(apiKeyService service.APIKeyServicer, log *logger.Logger) *APIKeyHandler {
 	return &APIKeyHandler{
 		apiKeyService: apiKeyService,
 		logger:        log,
@@ -39,9 +38,8 @@ func NewAPIKeyHandler(apiKeyService *service.APIKeyService, log *logger.Logger) 
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/api-keys [post]
 func (h *APIKeyHandler) Create(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -56,13 +54,9 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
 
-	resp, err := h.apiKeyService.Create(c.Request.Context(), *userID, &req, ip, userAgent)
+	resp, err := h.apiKeyService.Create(c.Request.Context(), userID, &req, ip, userAgent)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -80,19 +74,14 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/api-keys [get]
 func (h *APIKeyHandler) List(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	apiKeys, err := h.apiKeyService.List(c.Request.Context(), *userID)
+	apiKeys, err := h.apiKeyService.List(c.Request.Context(), userID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -116,27 +105,19 @@ func (h *APIKeyHandler) List(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/api-keys/{id} [get]
 func (h *APIKeyHandler) Get(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	apiKeyID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
-		))
+	apiKeyID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	apiKey, err := h.apiKeyService.GetByID(c.Request.Context(), *userID, apiKeyID)
+	apiKey, err := h.apiKeyService.GetByID(c.Request.Context(), userID, apiKeyID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -159,17 +140,13 @@ func (h *APIKeyHandler) Get(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/api-keys/{id} [put]
 func (h *APIKeyHandler) Update(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	apiKeyID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
-		))
+	apiKeyID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -184,13 +161,9 @@ func (h *APIKeyHandler) Update(c *gin.Context) {
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
 
-	apiKey, err := h.apiKeyService.Update(c.Request.Context(), *userID, apiKeyID, &req, ip, userAgent)
+	apiKey, err := h.apiKeyService.Update(c.Request.Context(), userID, apiKeyID, &req, ip, userAgent)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -211,33 +184,25 @@ func (h *APIKeyHandler) Update(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/api-keys/{id}/revoke [post]
 func (h *APIKeyHandler) Revoke(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	apiKeyID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
-		))
+	apiKeyID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
 
-	if err := h.apiKeyService.Revoke(c.Request.Context(), *userID, apiKeyID, ip, userAgent); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+	if err := h.apiKeyService.Revoke(c.Request.Context(), userID, apiKeyID, ip, userAgent); err != nil {
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "API key revoked successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "API key revoked successfully"})
 }
 
 // Delete deletes an API key
@@ -254,31 +219,23 @@ func (h *APIKeyHandler) Revoke(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/api-keys/{id} [delete]
 func (h *APIKeyHandler) Delete(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	apiKeyID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
-		))
+	apiKeyID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	ip := utils.GetClientIP(c)
 	userAgent := utils.GetUserAgent(c)
 
-	if err := h.apiKeyService.Delete(c.Request.Context(), *userID, apiKeyID, ip, userAgent); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+	if err := h.apiKeyService.Delete(c.Request.Context(), userID, apiKeyID, ip, userAgent); err != nil {
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "API key deleted successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "API key deleted successfully"})
 }

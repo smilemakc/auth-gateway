@@ -12,7 +12,7 @@ type User struct {
 	// Unique user identifier
 	ID uuid.UUID `json:"id" bun:"id,pk,type:uuid" example:"123e4567-e89b-12d3-a456-426614174000"`
 	// User's email address
-	Email string `json:"email" bun:"email,notnull,unique" example:"user@example.com"`
+	Email string `json:"email" bun:"email,notnull" example:"user@example.com"`
 	// User's phone number (optional)
 	Phone *string `json:"phone,omitempty" bun:"phone" example:"+1234567890"`
 	// Unique username for the user
@@ -234,14 +234,18 @@ type SyncUsersResponse struct {
 	SyncTimestamp string             `json:"sync_timestamp"`
 }
 
-// BulkImportUserEntry represents a single user in the bulk import request
+// BulkImportUserEntry represents a single user in the bulk import request.
+// At least one of Email, Phone, or Username must be provided.
 type BulkImportUserEntry struct {
 	ID                    *uuid.UUID `json:"id,omitempty"`
-	Email                 string     `json:"email" binding:"required,email"`
+	Email                 string     `json:"email,omitempty" binding:"omitempty,email"`
+	Phone                 *string    `json:"phone,omitempty"`
 	Username              string     `json:"username,omitempty"`
 	PasswordHashImport    string     `json:"password_hash_import,omitempty"`
 	FullName              string     `json:"full_name,omitempty"`
 	IsActive              *bool      `json:"is_active,omitempty"`
+	EmailVerified         *bool      `json:"email_verified,omitempty"`
+	PhoneVerified         *bool      `json:"phone_verified,omitempty"`
 	SkipEmailVerification bool       `json:"skip_email_verification,omitempty"`
 	AppRoles              []string   `json:"app_roles,omitempty"`
 }
@@ -254,10 +258,12 @@ type BulkImportUsersRequest struct {
 
 // ImportDetail represents the result for a single user import
 type ImportDetail struct {
-	Email  string `json:"email"`
-	Status string `json:"status"`
-	Reason string `json:"reason,omitempty"`
-	UserID string `json:"user_id,omitempty"`
+	Email    string `json:"email,omitempty"`
+	Phone    string `json:"phone,omitempty"`
+	Username string `json:"username,omitempty"`
+	Status   string `json:"status"`
+	Reason   string `json:"reason,omitempty"`
+	UserID   string `json:"user_id,omitempty"`
 }
 
 // ImportUsersResponse represents the bulk import response

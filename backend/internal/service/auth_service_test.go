@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/pquerna/otp/totp"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
-	"github.com/smilemakc/auth-gateway/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/uptrace/bun"
 )
 
-func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBACStore, *mockAuditLogger, *mockTokenService, *mockCacheService, *BlacklistService, *mockTransactionDB) {
+func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBACStore, *mockAuditLogger, *mockTokenService, *mockCacheService, *mockBlacklistChecker, *mockTransactionDB) {
 	mUser := &mockUserStore{}
 	mToken := &mockTokenStore{}
 	mRBAC := &mockRBACStore{}
@@ -24,18 +24,16 @@ func setupAuthService() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBA
 	mCache := &mockCacheService{}
 	mDB := &mockTransactionDB{}
 
-	// Create logger for tests
-	log := logger.New("auth-test", logger.DebugLevel, false)
-
-	// Create blacklist service with mocks
-	blacklistSvc := NewBlacklistService(mCache, mToken, mJWT, log, mAudit)
+	// Create mocks for blacklist and session
+	mBlacklist := &mockBlacklistChecker{}
+	mSessionMgr := &mockSessionManager{}
 
 	// Create default password policy
 	passwordPolicy := utils.DefaultPasswordPolicy()
 
-	// SessionService, TwoFactorService, LoginAlertService, and WebhookService are nil for tests
-	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, blacklistSvc, mCache, nil, nil, 10, passwordPolicy, mDB, nil, nil, nil)
-	return svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache, blacklistSvc, mDB
+	// TwoFactorService, LoginAlertService, WebhookService, and PasswordChecker are nil for tests
+	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, mBlacklist, mCache, mSessionMgr, nil, 10, passwordPolicy, mDB, nil, nil, nil, false, nil)
+	return svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache, mBlacklist, mDB
 }
 
 func TestAuthService_SignUp(t *testing.T) {
@@ -107,6 +105,96 @@ func TestAuthService_SignUp(t *testing.T) {
 		resp, err := svc.SignUp(ctx, validReq, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
 		assert.ErrorIs(t, err, models.ErrUsernameAlreadyExists)
 		assert.Nil(t, resp)
+	})
+
+	t.Run("InvalidPassword_TooShort", func(t *testing.T) {
+		// Default policy requires min 8 chars and at least one lowercase letter.
+		// A 3-char password should fail validation before any repo call.
+		shortPwdReq := &models.CreateUserRequest{
+			Email:    "short@example.com",
+			Username: "shortpwd",
+			Password: "ab",
+			FullName: "Short Pwd",
+		}
+
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.SignUp(ctx, shortPwdReq, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		appErr, ok := err.(*models.AppError)
+		assert.True(t, ok, "expected AppError for invalid password")
+		assert.Equal(t, 400, appErr.Code)
+	})
+
+	t.Run("InvalidPassword_NoLowercase", func(t *testing.T) {
+		// Default policy requires lowercase. All-uppercase password should fail.
+		noLowerReq := &models.CreateUserRequest{
+			Email:    "nolower@example.com",
+			Username: "nolower",
+			Password: "ABCDEFGH12",
+			FullName: "No Lower",
+		}
+
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.SignUp(ctx, noLowerReq, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		appErr, ok := err.(*models.AppError)
+		assert.True(t, ok, "expected AppError for missing lowercase")
+		assert.Equal(t, 400, appErr.Code)
+	})
+
+	t.Run("DBError_OnCreate", func(t *testing.T) {
+		// Generic database error (not a unique constraint violation)
+		mRBAC.GetRoleByNameFunc = func(ctx context.Context, name string) (*models.Role, error) {
+			return &models.Role{ID: uuid.New(), Name: "user"}, nil
+		}
+		mUser.CreateFunc = func(ctx context.Context, user *models.User) error {
+			return errors.New("database connection lost")
+		}
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.SignUp(ctx, validReq, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Contains(t, err.Error(), "database connection lost")
+	})
+
+	t.Run("RoleNotFound", func(t *testing.T) {
+		// GetRoleByName returns error when default "user" role doesn't exist
+		mRBAC.GetRoleByNameFunc = func(ctx context.Context, name string) (*models.Role, error) {
+			return nil, errors.New("role not found")
+		}
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.SignUp(ctx, validReq, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Contains(t, err.Error(), "failed to get default role")
+	})
+
+	t.Run("GetByIDAfterCreate_Error", func(t *testing.T) {
+		// User is created successfully but reloading with roles fails
+		mRBAC.GetRoleByNameFunc = func(ctx context.Context, name string) (*models.Role, error) {
+			return &models.Role{ID: uuid.New(), Name: "user"}, nil
+		}
+		mUser.CreateFunc = func(ctx context.Context, user *models.User) error {
+			return nil
+		}
+		mRBAC.AssignRoleToUserFunc = func(ctx context.Context, userID, roleID, assignedBy uuid.UUID) error {
+			return nil
+		}
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+			return nil, errors.New("db read replica down")
+		}
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.SignUp(ctx, validReq, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Contains(t, err.Error(), "failed to reload user with roles")
 	})
 }
 
@@ -200,6 +288,105 @@ func TestAuthService_SignIn(t *testing.T) {
 		assert.Equal(t, "2fa_token", resp.TwoFactorToken)
 		assert.Empty(t, resp.AccessToken)
 	})
+
+	t.Run("InactiveUser_StillSignsIn", func(t *testing.T) {
+		// SignIn does NOT explicitly check IsActive (passes nil to GetByEmail).
+		// An inactive user with correct credentials will still authenticate.
+		mUser.GetByEmailFunc = func(ctx context.Context, email string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+			return &models.User{
+				ID:           userID,
+				Email:        req.Email,
+				PasswordHash: hash,
+				IsActive:     false,
+			}, nil
+		}
+		mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "at", nil }
+		mJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "rt", nil }
+		mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
+		mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
+		mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.SignIn(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, "at", resp.AccessToken)
+	})
+
+	t.Run("DBError_GetByEmail", func(t *testing.T) {
+		// GetByEmail returns a generic DB error (not "not found").
+		// SignIn still performs password check against dummy hash, so result is ErrInvalidCredentials.
+		mUser.GetByEmailFunc = func(ctx context.Context, email string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+			return nil, errors.New("connection refused")
+		}
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.SignIn(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
+		assert.ErrorIs(t, err, models.ErrInvalidCredentials)
+		assert.Nil(t, resp)
+	})
+
+	t.Run("TokenGenerationError", func(t *testing.T) {
+		// Password matches but JWT access token generation fails in finalizeAuth
+		mUser.GetByEmailFunc = func(ctx context.Context, email string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+			return &models.User{
+				ID:           userID,
+				Email:        req.Email,
+				PasswordHash: hash,
+				IsActive:     true,
+			}, nil
+		}
+		mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
+			return "", errors.New("signing key unavailable")
+		}
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.SignIn(ctx, req, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Contains(t, err.Error(), "failed to generate access token")
+	})
+
+	t.Run("SignIn_ViaPhone_Success", func(t *testing.T) {
+		phone := "+1234567890"
+		phoneReq := &models.SignInRequest{
+			Phone:    &phone,
+			Password: password,
+		}
+		mUser.GetByPhoneFunc = func(ctx context.Context, p string, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+			return &models.User{
+				ID:           userID,
+				Phone:        &phone,
+				PasswordHash: hash,
+				IsActive:     true,
+			}, nil
+		}
+		mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "at_phone", nil }
+		mJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) { return "rt_phone", nil }
+		mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
+		mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
+		mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.SignIn(ctx, phoneReq, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, "at_phone", resp.AccessToken)
+	})
+
+	t.Run("NoEmailOrPhone", func(t *testing.T) {
+		emptyReq := &models.SignInRequest{
+			Password: password,
+		}
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.SignIn(ctx, emptyReq, "1.1.1.1", "ua", models.DeviceInfo{}, nil)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		appErr, ok := err.(*models.AppError)
+		assert.True(t, ok)
+		assert.Equal(t, 400, appErr.Code)
+	})
 }
 
 func TestAuthService_RefreshToken(t *testing.T) {
@@ -257,6 +444,75 @@ func TestAuthService_RefreshToken(t *testing.T) {
 		assert.ErrorIs(t, err, models.ErrTokenRevoked)
 		assert.Nil(t, resp)
 	})
+
+	t.Run("InvalidToken", func(t *testing.T) {
+		// ValidateRefreshToken returns error - token is malformed/expired
+		mJWT.ValidateRefreshTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+			return nil, errors.New("token is expired")
+		}
+		auditCalled := false
+		mAudit.LogFunc = func(params AuditLogParams) {
+			auditCalled = true
+			assert.Equal(t, models.ActionRefreshToken, params.Action)
+			assert.Equal(t, models.StatusFailed, params.Status)
+		}
+
+		resp, err := svc.RefreshToken(ctx, "invalid_token", "1.1.1.1", "ua", models.DeviceInfo{})
+		assert.ErrorIs(t, err, models.ErrInvalidToken)
+		assert.Nil(t, resp)
+		assert.True(t, auditCalled, "audit log should be called for invalid token")
+	})
+
+	t.Run("BlacklistedToken", func(t *testing.T) {
+		// Token validates but is found in the blacklist
+		mJWT.ValidateRefreshTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+			return &jwt.Claims{UserID: userID}, nil
+		}
+		// Use the BlacklistChecker mock, not the CacheService mock.
+		// RefreshToken calls s.blacklistService.IsBlacklisted which returns bool (not bool, error).
+		// The setupAuthService creates a mockBlacklistChecker that is separate from mCache.
+		// We need to recreate the service with a blacklist mock that returns true.
+		svcBL, mUserBL, _, _, mAuditBL, mJWTBL, _, mBlacklistBL, _ := setupAuthService()
+
+		mJWTBL.ValidateRefreshTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+			return &jwt.Claims{UserID: userID}, nil
+		}
+		mBlacklistBL.IsBlacklistedFunc = func(ctx context.Context, tokenHash string) bool {
+			return true
+		}
+		auditCalled := false
+		mAuditBL.LogFunc = func(params AuditLogParams) {
+			auditCalled = true
+			assert.Equal(t, models.ActionRefreshToken, params.Action)
+			assert.Equal(t, models.StatusFailed, params.Status)
+		}
+		// GetByID should NOT be called since we short-circuit on blacklist
+		mUserBL.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+			t.Fatal("GetByID should not be called when token is blacklisted")
+			return nil, nil
+		}
+
+		resp, err := svcBL.RefreshToken(ctx, refreshToken, "1.1.1.1", "ua", models.DeviceInfo{})
+		assert.ErrorIs(t, err, models.ErrTokenRevoked)
+		assert.Nil(t, resp)
+		assert.True(t, auditCalled, "audit log should be called for blacklisted token")
+	})
+
+	t.Run("UserNotFound", func(t *testing.T) {
+		// Token is valid and not blacklisted, but GetByID fails
+		mJWT.ValidateRefreshTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+			return &jwt.Claims{UserID: userID}, nil
+		}
+		mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+			return nil, errors.New("user not found")
+		}
+		mAudit.LogFunc = func(params AuditLogParams) {}
+
+		resp, err := svc.RefreshToken(ctx, refreshToken, "1.1.1.1", "ua", models.DeviceInfo{})
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Contains(t, err.Error(), "user not found")
+	})
 }
 
 func TestAuthService_Logout(t *testing.T) {
@@ -279,6 +535,58 @@ func TestAuthService_Logout(t *testing.T) {
 
 		err := svc.Logout(ctx, accessToken, "1.1.1.1", "ua")
 		assert.NoError(t, err)
+	})
+
+	t.Run("InvalidToken", func(t *testing.T) {
+		// ExtractClaims returns error for malformed token
+		mJWT.ExtractClaimsFunc = func(tokenString string) (*jwt.Claims, error) {
+			return nil, errors.New("malformed token")
+		}
+
+		err := svc.Logout(ctx, "bad_token", "1.1.1.1", "ua")
+		assert.ErrorIs(t, err, models.ErrInvalidToken)
+	})
+
+	t.Run("BlacklistError", func(t *testing.T) {
+		// ExtractClaims succeeds but AddAccessToken (blacklist) fails.
+		// Logout uses s.blacklistService.AddAccessToken, not mCache.AddToBlacklist.
+		svcBL, _, mTokenBL, _, _, mJWTBL, _, mBlacklistBL, _ := setupAuthService()
+
+		mJWTBL.ExtractClaimsFunc = func(tokenString string) (*jwt.Claims, error) {
+			return &jwt.Claims{UserID: userID}, nil
+		}
+		mBlacklistBL.AddAccessTokenFunc = func(ctx context.Context, tokenHash string, uid *uuid.UUID) error {
+			return errors.New("redis unavailable")
+		}
+		// RevokeAllUserTokens should NOT be reached
+		mTokenBL.RevokeAllUserTokensFunc = func(ctx context.Context, id uuid.UUID) error {
+			t.Fatal("RevokeAllUserTokens should not be called when blacklist fails")
+			return nil
+		}
+
+		err := svcBL.Logout(ctx, accessToken, "1.1.1.1", "ua")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to blacklist token")
+	})
+
+	t.Run("RevokeTokensError", func(t *testing.T) {
+		// ExtractClaims and AddAccessToken succeed, but RevokeAllUserTokens fails
+		svcRT, _, mTokenRT, _, mAuditRT, mJWTRT, _, mBlacklistRT, _ := setupAuthService()
+
+		mJWTRT.ExtractClaimsFunc = func(tokenString string) (*jwt.Claims, error) {
+			return &jwt.Claims{UserID: userID}, nil
+		}
+		mBlacklistRT.AddAccessTokenFunc = func(ctx context.Context, tokenHash string, uid *uuid.UUID) error {
+			return nil
+		}
+		mTokenRT.RevokeAllUserTokensFunc = func(ctx context.Context, id uuid.UUID) error {
+			return errors.New("database timeout")
+		}
+		mAuditRT.LogFunc = func(params AuditLogParams) {}
+
+		err := svcRT.Logout(ctx, accessToken, "1.1.1.1", "ua")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to revoke refresh tokens")
 	})
 }
 
@@ -510,4 +818,358 @@ func TestAuthService_CompletePasswordlessRegistration(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, 400, appErr.Code)
 	})
+}
+
+// setupAuthServiceWith2FA creates an AuthService with a TwoFactorService for 2FA-related tests.
+func setupAuthServiceWith2FA() (*AuthService, *mockUserStore, *mockTokenStore, *mockRBACStore, *mockAuditLogger, *mockTokenService, *mockCacheService, *mockBlacklistChecker, *mockTransactionDB, *mockBackupCodeStore) {
+	mUser := &mockUserStore{}
+	mToken := &mockTokenStore{}
+	mRBAC := &mockRBACStore{}
+	mAudit := &mockAuditLogger{}
+	mJWT := &mockTokenService{}
+	mCache := &mockCacheService{}
+	mDB := &mockTransactionDB{}
+	mBlacklist := &mockBlacklistChecker{}
+	mSessionMgr := &mockSessionManager{}
+	mBackupCode := &mockBackupCodeStore{}
+
+	// Create TwoFactorService with mocks
+	twoFAService := NewTwoFactorService(mUser, mBackupCode, "auth-gateway")
+
+	// Create default password policy
+	passwordPolicy := utils.DefaultPasswordPolicy()
+
+	svc := NewAuthService(mUser, mToken, mRBAC, mAudit, mJWT, mBlacklist, mCache, mSessionMgr, twoFAService, 10, passwordPolicy, mDB, nil, nil, nil, false, nil)
+	return svc, mUser, mToken, mRBAC, mAudit, mJWT, mCache, mBlacklist, mDB, mBackupCode
+}
+
+func TestAuthService_Verify2FALogin_ShouldSucceed_WhenValidTOTPCode(t *testing.T) {
+	// Arrange
+	svc, mUser, mToken, _, mAudit, mJWT, _, _, _, _ := setupAuthServiceWith2FA()
+	ctx := context.Background()
+	userID := uuid.New()
+
+	// Generate a real TOTP secret for testing
+	totpSecret := "JBSWY3DPEHPK3PXP" // Test secret
+
+	// Mock ValidateAccessToken (validates the 2FA token)
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	// Mock GetByID - return user with TOTP enabled
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return &models.User{
+			ID:          userID,
+			Email:       "2fa@example.com",
+			Username:    "twofa_user",
+			TOTPEnabled: true,
+			TOTPSecret:  &totpSecret,
+			IsActive:    true,
+			Roles:       []models.Role{{Name: "user"}},
+		}, nil
+	}
+
+	// Generate a valid TOTP code
+	code, err := totp.GenerateCode(totpSecret, time.Now())
+	assert.NoError(t, err)
+
+	// Mock token generation (finalizeAuth)
+	mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
+		return "2fa-access-token", nil
+	}
+	mJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
+		return "2fa-refresh-token", nil
+	}
+	mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
+	mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
+	mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }
+	mAudit.LogFunc = func(params AuditLogParams) {}
+
+	// Act
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token-string", code, "1.1.1.1", "Mozilla/5.0", models.DeviceInfo{})
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, "2fa-access-token", resp.AccessToken)
+	assert.Equal(t, "2fa-refresh-token", resp.RefreshToken)
+}
+
+func TestAuthService_Verify2FALogin_ShouldFail_WhenInvalidTOTPCode(t *testing.T) {
+	// Arrange
+	svc, mUser, _, _, mAudit, mJWT, _, _, _, _ := setupAuthServiceWith2FA()
+	ctx := context.Background()
+	userID := uuid.New()
+	totpSecret := "JBSWY3DPEHPK3PXP"
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	// GetByID called twice: once from Verify2FALogin, once from TwoFactorService.VerifyTOTP
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return &models.User{
+			ID:          userID,
+			Email:       "2fa@example.com",
+			TOTPEnabled: true,
+			TOTPSecret:  &totpSecret,
+			IsActive:    true,
+		}, nil
+	}
+
+	auditCalled := false
+	mAudit.LogFunc = func(params AuditLogParams) {
+		if params.Action == models.ActionSignInFailed {
+			auditCalled = true
+		}
+	}
+
+	// Act - use an invalid code
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token", "000000", "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	appErr, ok := err.(*models.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, 401, appErr.Code)
+	assert.Contains(t, appErr.Message, "Invalid 2FA code")
+	assert.True(t, auditCalled, "audit log should record the failed 2FA attempt")
+}
+
+func TestAuthService_Verify2FALogin_ShouldFail_WhenInvalidToken(t *testing.T) {
+	// Arrange
+	svc, _, _, _, _, mJWT, _, _, _, _ := setupAuthServiceWith2FA()
+	ctx := context.Background()
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return nil, errors.New("token expired")
+	}
+
+	// Act
+	resp, err := svc.Verify2FALogin(ctx, "expired-2fa-token", "123456", "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	appErr, ok := err.(*models.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, 401, appErr.Code)
+	assert.Contains(t, appErr.Message, "Invalid or expired 2FA token")
+}
+
+func TestAuthService_Verify2FALogin_ShouldSucceed_WhenValidBackupCode(t *testing.T) {
+	// Arrange
+	svc, mUser, mToken, _, mAudit, mJWT, _, _, _, mBackupCode := setupAuthServiceWith2FA()
+	ctx := context.Background()
+	userID := uuid.New()
+	totpSecret := "JBSWY3DPEHPK3PXP"
+	backupCodeID := uuid.New()
+
+	// Generate a real backup code hash
+	backupCodePlain := "ABCD1234"
+	backupCodeHash, _ := utils.HashPassword(backupCodePlain, 10)
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	// GetByID is called multiple times: once in Verify2FALogin, once in TwoFactorService.VerifyTOTP
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return &models.User{
+			ID:          userID,
+			Email:       "backup@example.com",
+			Username:    "backup_user",
+			TOTPEnabled: true,
+			TOTPSecret:  &totpSecret,
+			IsActive:    true,
+			Roles:       []models.Role{{Name: "user"}},
+		}, nil
+	}
+
+	// Mock backup code store - return unused backup codes
+	mBackupCode.GetUnusedByUserIDFunc = func(ctx context.Context, uid uuid.UUID) ([]*models.BackupCode, error) {
+		return []*models.BackupCode{
+			{ID: backupCodeID, UserID: userID, CodeHash: backupCodeHash, Used: false},
+		}, nil
+	}
+	mBackupCode.MarkAsUsedFunc = func(ctx context.Context, id uuid.UUID) error {
+		assert.Equal(t, backupCodeID, id)
+		return nil
+	}
+
+	// Mock token generation
+	mJWT.GenerateAccessTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
+		return "backup-access-token", nil
+	}
+	mJWT.GenerateRefreshTokenFunc = func(user *models.User, applicationID ...*uuid.UUID) (string, error) {
+		return "backup-refresh-token", nil
+	}
+	mJWT.GetAccessTokenExpirationFunc = func() time.Duration { return time.Hour }
+	mJWT.GetRefreshTokenExpirationFunc = func() time.Duration { return 24 * time.Hour }
+	mToken.CreateRefreshTokenFunc = func(ctx context.Context, token *models.RefreshToken) error { return nil }
+	mAudit.LogFunc = func(params AuditLogParams) {}
+
+	// Act - use backup code instead of TOTP code
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token", backupCodePlain, "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, "backup-access-token", resp.AccessToken)
+	assert.Equal(t, "backup-refresh-token", resp.RefreshToken)
+}
+
+func TestAuthService_Verify2FALogin_ShouldFail_WhenUserNotFound(t *testing.T) {
+	// Arrange
+	svc, mUser, _, _, _, mJWT, _, _, _, _ := setupAuthServiceWith2FA()
+	ctx := context.Background()
+	userID := uuid.New()
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return nil, errors.New("user not found")
+	}
+
+	// Act
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token", "123456", "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "user not found")
+}
+
+func TestAuthService_Verify2FALogin_ShouldFail_When2FANotEnabled(t *testing.T) {
+	// Arrange
+	svc, mUser, _, _, _, mJWT, _, _, _, _ := setupAuthServiceWith2FA()
+	ctx := context.Background()
+	userID := uuid.New()
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return &models.User{
+			ID:          userID,
+			Email:       "no2fa@example.com",
+			TOTPEnabled: false, // 2FA not enabled
+			IsActive:    true,
+		}, nil
+	}
+
+	// Act
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token", "123456", "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	appErr, ok := err.(*models.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, 400, appErr.Code)
+	assert.Contains(t, appErr.Message, "2FA not enabled")
+}
+
+func TestAuthService_Verify2FALogin_ShouldFail_WhenTOTPSecretNil(t *testing.T) {
+	// Arrange: TOTPEnabled is true but TOTPSecret is nil (inconsistent state)
+	svc, mUser, _, _, _, mJWT, _, _, _, _ := setupAuthServiceWith2FA()
+	ctx := context.Background()
+	userID := uuid.New()
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return &models.User{
+			ID:          userID,
+			Email:       "nilsecret@example.com",
+			TOTPEnabled: true,
+			TOTPSecret:  nil, // Secret is nil
+			IsActive:    true,
+		}, nil
+	}
+
+	// Act
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token", "123456", "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	appErr, ok := err.(*models.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, 400, appErr.Code)
+	assert.Contains(t, appErr.Message, "2FA not enabled")
+}
+
+func TestAuthService_Verify2FALogin_ShouldFail_WhenNo2FAServiceAndInvalidCode(t *testing.T) {
+	// Arrange: AuthService without TwoFactorService, invalid TOTP code
+	svc, mUser, _, _, mAudit, mJWT, _, _, _ := setupAuthService()
+	ctx := context.Background()
+	userID := uuid.New()
+	totpSecret := "JBSWY3DPEHPK3PXP"
+
+	mJWT.ValidateAccessTokenFunc = func(tokenString string) (*jwt.Claims, error) {
+		return &jwt.Claims{UserID: userID}, nil
+	}
+
+	mUser.GetByIDFunc = func(ctx context.Context, id uuid.UUID, isActive *bool, opts ...UserGetOption) (*models.User, error) {
+		return &models.User{
+			ID:          userID,
+			Email:       "no2fasvc@example.com",
+			TOTPEnabled: true,
+			TOTPSecret:  &totpSecret,
+			IsActive:    true,
+		}, nil
+	}
+
+	auditCalled := false
+	mAudit.LogFunc = func(params AuditLogParams) {
+		if params.Action == models.ActionSignInFailed {
+			auditCalled = true
+		}
+	}
+
+	// Act
+	resp, err := svc.Verify2FALogin(ctx, "2fa-token", "000000", "1.1.1.1", "ua", models.DeviceInfo{})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	appErr, ok := err.(*models.AppError)
+	assert.True(t, ok)
+	assert.Equal(t, 401, appErr.Code)
+	assert.Contains(t, appErr.Message, "Invalid 2FA code")
+	assert.True(t, auditCalled)
+}
+
+func TestAuthService_VerifyBackupCode_ShouldReturnDeprecated_WhenTwoFAServiceExists(t *testing.T) {
+	// Arrange
+	svc, _, _, _, _, _, _, _, _, _ := setupAuthServiceWith2FA()
+	userID := uuid.New()
+
+	// Act
+	valid, err := svc.verifyBackupCode(userID, "any-code")
+
+	// Assert
+	assert.Error(t, err)
+	assert.False(t, valid)
+	assert.Contains(t, err.Error(), "deprecated")
+}
+
+func TestAuthService_VerifyBackupCode_ShouldReturnFalse_WhenNoTwoFAService(t *testing.T) {
+	// Arrange
+	svc, _, _, _, _, _, _, _, _ := setupAuthService()
+
+	// Act
+	valid, err := svc.verifyBackupCode(uuid.New(), "any-code")
+
+	// Assert
+	assert.NoError(t, err)
+	assert.False(t, valid)
 }

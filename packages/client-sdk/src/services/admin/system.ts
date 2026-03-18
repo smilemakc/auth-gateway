@@ -137,4 +137,23 @@ export class AdminSystemService extends BaseService {
       .sort((a, b) => b.login_count - a.login_count)
       .slice(0, limit);
   }
+
+  /**
+   * Get password policy configuration
+   * @returns Password policy settings
+   */
+  async getPasswordPolicy(): Promise<any> {
+    const response = await this.http.get<any>('/api/admin/system/password-policy');
+    return response.data;
+  }
+
+  /**
+   * Update password policy configuration
+   * @param policy Password policy settings
+   * @returns Updated password policy
+   */
+  async updatePasswordPolicy(policy: any): Promise<any> {
+    const response = await this.http.put<any>('/api/admin/system/password-policy', policy);
+    return response.data;
+  }
 }

@@ -31,18 +31,21 @@ type Config struct {
 
 // ServerConfig contains server-related configuration
 type ServerConfig struct {
-	Port        string
-	Env         string
-	LogLevel    string
-	ExternalURL string // Base URL for Swagger docs (e.g., https://api.example.com)
+	Port           string
+	Env            string
+	LogLevel       string
+	ExternalURL    string   // Base URL for Swagger docs (e.g., https://api.example.com)
+	TrustedProxies []string // Trusted proxy IPs for X-Forwarded-For
 }
 
 // GRPCConfig contains gRPC server configuration
 type GRPCConfig struct {
-	Port       string
-	TLSEnabled bool
-	TLSCert    string // Path to TLS certificate file
-	TLSKey     string // Path to TLS private key file
+	Port                 string
+	TLSEnabled           bool
+	TLSCert              string // Path to TLS certificate file
+	TLSKey               string // Path to TLS private key file
+	ReflectionEnabled    bool   // Enable gRPC reflection (disable in production)
+	MaxRequestsPerMinute int    // Rate limit: max requests per minute per API key
 }
 
 // Validate validates gRPC configuration
@@ -116,12 +119,13 @@ func (c *JWTConfig) Validate() error {
 
 // OAuthConfig contains OAuth provider configurations
 type OAuthConfig struct {
-	Google      OAuthProvider
-	Yandex      OAuthProvider
-	GitHub      OAuthProvider
-	Instagram   OAuthProvider
-	OneC        CustomOAuthProvider
-	FrontendURL string
+	Google           OAuthProvider
+	Yandex           OAuthProvider
+	GitHub           OAuthProvider
+	Instagram        OAuthProvider
+	OneC             CustomOAuthProvider
+	FrontendURL      string
+	TelegramBotToken string
 }
 
 // OAuthProvider represents a single OAuth provider configuration
@@ -183,6 +187,18 @@ type CORSConfig struct {
 	AllowCredentials bool
 }
 
+// Validate checks for insecure CORS configurations
+func (c *CORSConfig) Validate() error {
+	if c.AllowCredentials {
+		for _, origin := range c.AllowedOrigins {
+			if origin == "*" {
+				return fmt.Errorf("CORS: wildcard origin '*' with AllowCredentials is insecure (RFC 6454)")
+			}
+		}
+	}
+	return nil
+}
+
 // RateLimitConfig contains rate limiting configuration
 type RateLimitConfig struct {
 	SignupMax     int
@@ -200,7 +216,23 @@ type SecurityConfig struct {
 	BcryptCost                    int
 	TokenBlacklistCleanupInterval time.Duration
 	PasswordPolicy                PasswordPolicyConfig
-	JITProvisioning               bool // Enable Just-In-Time user provisioning for OAuth/OIDC logins
+	JITProvisioning               bool   // Enable Just-In-Time user provisioning for OAuth/OIDC logins
+	EncryptionKey                 string
+	StrictTokenBinding            bool   // Reject refresh if IP/UserAgent changed
+	CSRFEnabled                   bool   // Enable Double Submit Cookie CSRF protection
+	OTPHMACSecret                 string // HMAC secret for OTP code hashing (prevents brute-force on 6-digit codes)
+	MaxActiveSessions             int    // Maximum active sessions per user (0 = unlimited)
+}
+
+// Validate checks security configuration for common misconfigurations
+func (c *SecurityConfig) Validate(env string) error {
+	if env == "production" && c.OTPHMACSecret == "change-me-in-production-otp-hmac-secret-32-chars-minimum" {
+		return fmt.Errorf("OTP_HMAC_SECRET must be changed from default value in production")
+	}
+	if len(c.OTPHMACSecret) < 32 {
+		return fmt.Errorf("OTP_HMAC_SECRET must be at least 32 characters long (current: %d)", len(c.OTPHMACSecret))
+	}
+	return nil
 }
 
 // PasswordPolicyConfig contains password policy configuration
@@ -212,6 +244,7 @@ type PasswordPolicyConfig struct {
 	RequireSpecial   bool
 	MaxLength        int  // 0 means no maximum
 	CommonPasswords  bool // Check against common passwords list
+	CheckCompromised bool // Check passwords against HaveIBeenPwned API
 }
 
 type MetricsConfig struct {
@@ -285,16 +318,19 @@ func Load() (*Config, error) {
 	}
 	cfg := &Config{
 		Server: ServerConfig{
-			Port:        getEnv("PORT", "8181"),
-			Env:         getEnv("ENV", "development"),
-			LogLevel:    getEnv("LOG_LEVEL", "info"),
-			ExternalURL: getEnv("EXTERNAL_URL", ""), // e.g., https://api.example.com
+			Port:           getEnv("PORT", "8181"),
+			Env:            getEnv("ENV", "development"),
+			LogLevel:       getEnv("LOG_LEVEL", "info"),
+			ExternalURL:    getEnv("EXTERNAL_URL", ""), // e.g., https://api.example.com
+			TrustedProxies: getEnvAsSlice("TRUSTED_PROXIES", []string{}),
 		},
 		GRPC: GRPCConfig{
-			Port:       getEnv("GRPC_PORT", "50051"),
-			TLSEnabled: getEnvAsBool("GRPC_TLS_ENABLED", false),
-			TLSCert:    getEnv("GRPC_TLS_CERT_FILE", ""),
-			TLSKey:     getEnv("GRPC_TLS_KEY_FILE", ""),
+			Port:                 getEnv("GRPC_PORT", "50051"),
+			TLSEnabled:           getEnvAsBool("GRPC_TLS_ENABLED", false),
+			TLSCert:              getEnv("GRPC_TLS_CERT_FILE", ""),
+			TLSKey:               getEnv("GRPC_TLS_KEY_FILE", ""),
+			ReflectionEnabled:    getEnvAsBool("GRPC_REFLECTION_ENABLED", false),
+			MaxRequestsPerMinute: getEnvAsInt("GRPC_MAX_REQUESTS_PER_MINUTE", 100),
 		},
 		Database: DatabaseConfig{
 			Host:           getEnv("DB_HOST", "localhost"),
@@ -350,7 +386,8 @@ func Load() (*Config, error) {
 				UserInfoURL:  getEnv("OAUTH_ONEC_USERINFO_URL", ""),
 				Scopes:       getEnv("OAUTH_ONEC_SCOPES", "openid profile email"),
 			},
-			FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3001"),
+			FrontendURL:      getEnv("FRONTEND_URL", "http://localhost:3001"),
+			TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
 		},
 		SMTP: SMTPConfig{
 			Host:      getEnv("SMTP_HOST", "smtp.gmail.com"),
@@ -391,9 +428,14 @@ func Load() (*Config, error) {
 			APIWindow:     getEnvAsDuration("RATE_LIMIT_API_WINDOW", "1m"),
 		},
 		Security: SecurityConfig{
-			BcryptCost:                    getEnvAsInt("BCRYPT_COST", 10),
+			BcryptCost:                    getEnvAsInt("BCRYPT_COST", 12),
 			TokenBlacklistCleanupInterval: getEnvAsDuration("TOKEN_BLACKLIST_CLEANUP_INTERVAL", "1h"),
 			JITProvisioning:               getEnvAsBool("JIT_PROVISIONING_ENABLED", true), // Enabled by default
+			EncryptionKey:                 getEnv("ENCRYPTION_KEY", ""),
+			StrictTokenBinding:            getEnvAsBool("STRICT_TOKEN_BINDING", false),
+			CSRFEnabled:                   getEnvAsBool("CSRF_ENABLED", false),
+			OTPHMACSecret:                 getEnv("OTP_HMAC_SECRET", "change-me-in-production-otp-hmac-secret-32-chars-minimum"),
+			MaxActiveSessions:             getEnvAsInt("MAX_ACTIVE_SESSIONS", 0),
 			PasswordPolicy: PasswordPolicyConfig{
 				MinLength:        getEnvAsInt("PASSWORD_MIN_LENGTH", 8),
 				RequireUppercase: getEnvAsBool("PASSWORD_REQUIRE_UPPERCASE", false),
@@ -402,6 +444,7 @@ func Load() (*Config, error) {
 				RequireSpecial:   getEnvAsBool("PASSWORD_REQUIRE_SPECIAL", false),
 				MaxLength:        getEnvAsInt("PASSWORD_MAX_LENGTH", 0),
 				CommonPasswords:  getEnvAsBool("PASSWORD_CHECK_COMMON", false),
+				CheckCompromised: getEnvAsBool("PASSWORD_CHECK_COMPROMISED", false),
 			},
 		},
 		Metrics: MetricsConfig{
@@ -438,6 +481,16 @@ func Load() (*Config, error) {
 	// Validate gRPC configuration
 	if err := cfg.GRPC.Validate(); err != nil {
 		return nil, fmt.Errorf("gRPC configuration validation failed: %w", err)
+	}
+
+	// Validate CORS configuration
+	if err := cfg.CORS.Validate(); err != nil {
+		return nil, fmt.Errorf("CORS configuration validation failed: %w", err)
+	}
+
+	// Validate security configuration
+	if err := cfg.Security.Validate(cfg.Server.Env); err != nil {
+		return nil, fmt.Errorf("security configuration validation failed: %w", err)
 	}
 
 	return cfg, nil

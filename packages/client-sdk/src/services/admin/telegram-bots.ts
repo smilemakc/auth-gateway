@@ -22,10 +22,10 @@ export class AdminTelegramBotsService extends BaseService {
    * @returns Array of Telegram bots
    */
   async list(appId: string): Promise<TelegramBot[]> {
-    const response = await this.http.get<TelegramBot[]>(
+    const response = await this.http.get<{ bots: TelegramBot[]; total: number }>(
       `/api/admin/applications/${appId}/telegram-bots`
     );
-    return response.data;
+    return response.data.bots;
   }
 
   /**

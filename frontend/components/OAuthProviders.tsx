@@ -6,6 +6,7 @@ import { useLanguage } from '../services/i18n';
 import { useOAuthProviders, useDeleteOAuthProvider, useToggleOAuthProvider } from '../hooks/useOAuth';
 import { formatDate } from '../lib/date';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 // Icon mapper
 const getProviderIcon = (provider: string) => {
@@ -32,7 +33,7 @@ const OAuthProviders: React.FC = () => {
     try {
       await toggleProviderMutation.mutateAsync({ id, enabled: !currentActive });
     } catch (err) {
-      console.error('Failed to toggle provider:', err);
+      logger.error('Failed to toggle provider:', err);
     }
   };
 
@@ -46,7 +47,7 @@ const OAuthProviders: React.FC = () => {
       try {
         await deleteProviderMutation.mutateAsync(id);
       } catch (err) {
-        console.error('Failed to delete provider:', err);
+        logger.error('Failed to delete provider:', err);
       }
     }
   };

@@ -1,27 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-const API_BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api`;
-
-async function fetchWithAuth(url: string, options: RequestInit = {}) {
-  const token = localStorage.getItem('auth_gateway_access_token');
-  const appId = localStorage.getItem('auth_gateway_current_app_id');
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(appId ? { 'X-Application-ID': appId } : {}),
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Request failed' }));
-    throw new Error(error.message || error.error || 'Request failed');
-  }
-
-  return response.json();
-}
+import { apiClient } from '../services/apiClient';
 
 // Types
 export interface EmailProvider {
@@ -124,14 +102,14 @@ export const emailQueryKeys = {
 export function useEmailProviders() {
   return useQuery<EmailProvider[]>({
     queryKey: emailQueryKeys.providers,
-    queryFn: () => fetchWithAuth(`${API_BASE}/admin/email-providers`),
+    queryFn: () => apiClient.admin.emailProviders.list(),
   });
 }
 
 export function useEmailProvider(id: string) {
   return useQuery<EmailProvider>({
     queryKey: emailQueryKeys.provider(id),
-    queryFn: () => fetchWithAuth(`${API_BASE}/admin/email-providers/${id}`),
+    queryFn: () => apiClient.admin.emailProviders.get(id),
     enabled: !!id && id !== 'new',
   });
 }
@@ -141,10 +119,7 @@ export function useCreateEmailProvider() {
 
   return useMutation({
     mutationFn: (data: CreateEmailProviderRequest) =>
-      fetchWithAuth(`${API_BASE}/admin/email-providers`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiClient.admin.emailProviders.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: emailQueryKeys.providers });
     },
@@ -156,10 +131,7 @@ export function useUpdateEmailProvider() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateEmailProviderRequest }) =>
-      fetchWithAuth(`${API_BASE}/admin/email-providers/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+      apiClient.admin.emailProviders.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: emailQueryKeys.providers });
       queryClient.invalidateQueries({ queryKey: emailQueryKeys.provider(variables.id) });
@@ -172,9 +144,7 @@ export function useDeleteEmailProvider() {
 
   return useMutation({
     mutationFn: (id: string) =>
-      fetchWithAuth(`${API_BASE}/admin/email-providers/${id}`, {
-        method: 'DELETE',
-      }),
+      apiClient.admin.emailProviders.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: emailQueryKeys.providers });
     },
@@ -184,10 +154,7 @@ export function useDeleteEmailProvider() {
 export function useTestEmailProvider() {
   return useMutation({
     mutationFn: ({ id, email }: { id: string; email: string }) =>
-      fetchWithAuth(`${API_BASE}/admin/email-providers/${id}/test`, {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-      }),
+      apiClient.admin.emailProviders.test(id, email),
   });
 }
 
@@ -195,14 +162,14 @@ export function useTestEmailProvider() {
 export function useEmailProfiles() {
   return useQuery<EmailProfile[]>({
     queryKey: emailQueryKeys.profiles,
-    queryFn: () => fetchWithAuth(`${API_BASE}/admin/email-profiles`),
+    queryFn: () => apiClient.admin.emailProfiles.list(),
   });
 }
 
 export function useEmailProfile(id: string) {
   return useQuery<EmailProfile>({
     queryKey: emailQueryKeys.profile(id),
-    queryFn: () => fetchWithAuth(`${API_BASE}/admin/email-profiles/${id}`),
+    queryFn: () => apiClient.admin.emailProfiles.get(id),
     enabled: !!id && id !== 'new',
   });
 }
@@ -212,10 +179,7 @@ export function useCreateEmailProfile() {
 
   return useMutation({
     mutationFn: (data: CreateEmailProfileRequest) =>
-      fetchWithAuth(`${API_BASE}/admin/email-profiles`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiClient.admin.emailProfiles.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: emailQueryKeys.profiles });
     },
@@ -227,10 +191,7 @@ export function useUpdateEmailProfile() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateEmailProfileRequest }) =>
-      fetchWithAuth(`${API_BASE}/admin/email-profiles/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+      apiClient.admin.emailProfiles.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: emailQueryKeys.profiles });
       queryClient.invalidateQueries({ queryKey: emailQueryKeys.profile(variables.id) });
@@ -243,9 +204,7 @@ export function useDeleteEmailProfile() {
 
   return useMutation({
     mutationFn: (id: string) =>
-      fetchWithAuth(`${API_BASE}/admin/email-profiles/${id}`, {
-        method: 'DELETE',
-      }),
+      apiClient.admin.emailProfiles.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: emailQueryKeys.profiles });
     },
@@ -257,9 +216,7 @@ export function useSetDefaultEmailProfile() {
 
   return useMutation({
     mutationFn: (id: string) =>
-      fetchWithAuth(`${API_BASE}/admin/email-profiles/${id}/set-default`, {
-        method: 'POST',
-      }),
+      apiClient.admin.emailProfiles.setDefault(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: emailQueryKeys.profiles });
     },
@@ -269,9 +226,6 @@ export function useSetDefaultEmailProfile() {
 export function useTestEmailProfile() {
   return useMutation({
     mutationFn: ({ id, email }: { id: string; email: string }) =>
-      fetchWithAuth(`${API_BASE}/admin/email-profiles/${id}/test`, {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-      }),
+      apiClient.admin.emailProfiles.test(id, email),
   });
 }

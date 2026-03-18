@@ -16,21 +16,23 @@ import (
 
 // AuthService provides authentication operations
 type AuthService struct {
-	userRepo          UserStore
-	tokenRepo         TokenStore
-	rbacRepo          RBACStore
-	auditService      AuditLogger
-	jwtService        TokenService
-	blacklistService  *BlacklistService
-	redis             CacheService
-	sessionService    *SessionService
-	twoFAService      *TwoFactorService
-	loginAlertService *LoginAlertService
-	webhookService    *WebhookService
-	bcryptCost        int
-	passwordPolicy    utils.PasswordPolicy
-	db                TransactionDB
-	appRepo           ApplicationStore
+	userRepo           UserStore
+	tokenRepo          TransactionalTokenStore
+	rbacRepo           RBACStore
+	auditService       AuditLogger
+	jwtService         TokenService
+	blacklistService   BlacklistChecker
+	redis              CacheService
+	sessionService     SessionManager
+	twoFAService       *TwoFactorService
+	loginAlertService  *LoginAlertService
+	webhookService     *WebhookService
+	bcryptCost         int
+	passwordPolicy     utils.PasswordPolicy
+	db                 TransactionDB
+	appRepo            ApplicationStore
+	strictTokenBinding bool
+	passwordChecker    *PasswordChecker
 }
 
 // TransactionDB defines the interface for database transactions
@@ -41,13 +43,13 @@ type TransactionDB interface {
 // NewAuthService creates a new auth service
 func NewAuthService(
 	userRepo UserStore,
-	tokenRepo TokenStore,
+	tokenRepo TransactionalTokenStore,
 	rbacRepo RBACStore,
 	auditService AuditLogger,
 	jwtService TokenService,
-	blacklistService *BlacklistService,
+	blacklistService BlacklistChecker,
 	redis CacheService,
-	sessionService *SessionService,
+	sessionService SessionManager,
 	twoFAService *TwoFactorService,
 	bcryptCost int,
 	passwordPolicy utils.PasswordPolicy,
@@ -55,23 +57,27 @@ func NewAuthService(
 	appRepo ApplicationStore,
 	loginAlertService *LoginAlertService,
 	webhookService *WebhookService,
+	strictTokenBinding bool,
+	passwordChecker *PasswordChecker,
 ) *AuthService {
 	return &AuthService{
-		userRepo:          userRepo,
-		tokenRepo:         tokenRepo,
-		rbacRepo:          rbacRepo,
-		auditService:      auditService,
-		jwtService:        jwtService,
-		blacklistService:  blacklistService,
-		redis:             redis,
-		sessionService:    sessionService,
-		twoFAService:      twoFAService,
-		loginAlertService: loginAlertService,
-		webhookService:    webhookService,
-		bcryptCost:        bcryptCost,
-		passwordPolicy:    passwordPolicy,
-		db:                db,
-		appRepo:           appRepo,
+		userRepo:           userRepo,
+		tokenRepo:          tokenRepo,
+		rbacRepo:           rbacRepo,
+		auditService:       auditService,
+		jwtService:         jwtService,
+		blacklistService:   blacklistService,
+		redis:              redis,
+		sessionService:     sessionService,
+		twoFAService:       twoFAService,
+		loginAlertService:  loginAlertService,
+		webhookService:     webhookService,
+		bcryptCost:         bcryptCost,
+		passwordPolicy:     passwordPolicy,
+		db:                 db,
+		appRepo:            appRepo,
+		strictTokenBinding: strictTokenBinding,
+		passwordChecker:    passwordChecker,
 	}
 }
 
@@ -88,9 +94,8 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 
 	if req.Email != "" {
 		email = utils.NormalizeEmail(req.Email)
-		// Validate email
-		if !utils.IsValidEmail(email) {
-			return nil, models.NewAppError(400, "Invalid email format")
+		if err := utils.ValidateEmail(email); err != nil {
+			return nil, models.NewAppError(400, err.Error())
 		}
 	}
 
@@ -114,6 +119,14 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 
 	if err := utils.ValidatePassword(req.Password, s.passwordPolicy); err != nil {
 		return nil, models.NewAppError(400, err.Error())
+	}
+
+	// Check if password has been compromised
+	if s.passwordChecker != nil {
+		if compromised, count := s.passwordChecker.IsCompromised(ctx, req.Password); compromised {
+			return nil, models.NewAppError(400, "PASSWORD_COMPROMISED",
+				fmt.Sprintf("This password has appeared in %d data breaches. Please choose a different password.", count))
+		}
 	}
 
 	// Check auth method is allowed for this application
@@ -142,9 +155,9 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 			ID:           uuid.New(),
 			Email:        email,
 			Phone:        utils.Ptr(phone),
-			Username:     username,
+			Username:     utils.SanitizeUsername(username),
 			PasswordHash: passwordHash,
-			FullName:     req.FullName,
+			FullName:     utils.SanitizeHTML(req.FullName),
 			IsActive:     true,
 		}
 
@@ -153,7 +166,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 			if err := userRepo.CreateWithTx(ctx, tx, user); err != nil {
 				// Database will return unique_violation error if email/username/phone already exists
 				// handlePgError will convert it to appropriate error
-				s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(nil, appID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "create_failed",
 					"error":  err.Error(),
 				})
@@ -162,7 +175,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		} else {
 			// Fallback to non-transactional method if type assertion fails
 			if err := s.userRepo.Create(ctx, user); err != nil {
-				s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(nil, appID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "create_failed",
 					"error":  err.Error(),
 				})
@@ -173,7 +186,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		// Assign default "user" role to the new user
 		if rbacRepo, ok := s.rbacRepo.(*repository.RBACRepository); ok {
 			if err := rbacRepo.AssignRoleToUserWithTx(ctx, tx, user.ID, defaultRole.ID, user.ID); err != nil {
-				s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(&user.ID, appID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "role_assignment_failed",
 					"error":  err.Error(),
 				})
@@ -182,7 +195,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 		} else {
 			// Fallback to non-transactional method if type assertion fails
 			if err := s.rbacRepo.AssignRoleToUser(ctx, user.ID, defaultRole.ID, user.ID); err != nil {
-				s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(&user.ID, appID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "role_assignment_failed",
 					"error":  err.Error(),
 				})
@@ -211,7 +224,7 @@ func (s *AuthService) SignUp(ctx context.Context, req *models.CreateUserRequest,
 	}
 
 	// Log successful signup
-	s.logAudit(&user.ID, models.ActionSignUp, models.StatusSuccess, ip, userAgent, nil)
+	s.logAudit(&user.ID, appID, models.ActionSignUp, models.StatusSuccess, ip, userAgent, nil)
 
 	return authResp, nil
 }
@@ -261,7 +274,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 		if user != nil {
 			userID = &user.ID
 		}
-		s.logAudit(userID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+		s.logAudit(userID, appID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "invalid_credentials",
 		})
 		return nil, models.ErrInvalidCredentials
@@ -270,7 +283,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	// If we reach here but user is nil, it means password matched dummy hash
 	// This should be extremely rare, but handle it for safety
 	if user == nil {
-		s.logAudit(nil, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+		s.logAudit(nil, appID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "invalid_credentials",
 		})
 		return nil, models.ErrInvalidCredentials
@@ -298,7 +311,7 @@ func (s *AuthService) SignIn(ctx context.Context, req *models.SignInRequest, ip,
 	}
 
 	// Log successful signin
-	s.logAudit(&user.ID, models.ActionSignIn, models.StatusSuccess, ip, userAgent, nil)
+	s.logAudit(&user.ID, appID, models.ActionSignIn, models.StatusSuccess, ip, userAgent, nil)
 
 	return authResp, nil
 }
@@ -328,13 +341,13 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 		if s.twoFAService != nil {
 			valid, err := s.twoFAService.VerifyTOTP(ctx, user.ID, code)
 			if err != nil || !valid {
-				s.logAudit(&user.ID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(&user.ID, claims.ApplicationID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "invalid_2fa_code",
 				})
 				return nil, models.NewAppError(401, "Invalid 2FA code")
 			}
 		} else {
-			s.logAudit(&user.ID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			s.logAudit(&user.ID, claims.ApplicationID, models.ActionSignInFailed, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": "invalid_2fa_code",
 			})
 			return nil, models.NewAppError(401, "Invalid 2FA code")
@@ -348,7 +361,7 @@ func (s *AuthService) Verify2FALogin(ctx context.Context, twoFactorToken, code, 
 	}
 
 	// Log successful signin with 2FA
-	s.logAudit(&user.ID, models.ActionSignIn, models.StatusSuccess, ip, userAgent, map[string]interface{}{
+	s.logAudit(&user.ID, claims.ApplicationID, models.ActionSignIn, models.StatusSuccess, ip, userAgent, map[string]interface{}{
 		"2fa": true,
 	})
 
@@ -373,7 +386,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	// Validate refresh token
 	claims, err := s.jwtService.ValidateRefreshToken(refreshToken)
 	if err != nil {
-		s.logAudit(nil, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+		s.logAudit(nil, nil, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "invalid_token",
 		})
 		return nil, models.ErrInvalidToken
@@ -382,7 +395,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	// Check if token is blacklisted using unified blacklist service
 	oldTokenHash := utils.HashToken(refreshToken)
 	if s.blacklistService.IsBlacklisted(ctx, oldTokenHash) {
-		s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+		s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "token_blacklisted",
 		})
 		return nil, models.ErrTokenRevoked
@@ -402,37 +415,41 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	var refreshExpiration time.Duration
 
 	err = s.db.RunInTx(ctx, func(ctx context.Context, tx bun.Tx) error {
-		// Get token with row lock (SELECT FOR UPDATE)
-		tokenRepo, ok := s.tokenRepo.(*repository.TokenRepository)
-		if !ok {
-			return fmt.Errorf("token repository does not support transactions")
-		}
-
 		// Check if token exists and is not revoked (with lock)
-		dbToken, err = tokenRepo.GetRefreshTokenForUpdate(ctx, tx, oldTokenHash)
+		dbToken, err = s.tokenRepo.GetRefreshTokenForUpdate(ctx, tx, oldTokenHash)
 		if err != nil {
-			s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": "token_not_found",
 			})
 			return models.ErrInvalidToken
 		}
 
 		if dbToken.IsRevoked() {
-			s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": "token_revoked",
 			})
 			return models.ErrTokenRevoked
 		}
 
 		if dbToken.IsExpired() {
-			s.logAudit(&claims.UserID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+			s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
 				"reason": "token_expired",
 			})
 			return models.ErrTokenExpired
 		}
 
+		// Device binding: reject if IP changed (when strict mode enabled)
+		if s.strictTokenBinding && dbToken.IPAddress != "" && dbToken.IPAddress != ip {
+			s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionRefreshToken, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				"reason":      "device_mismatch",
+				"original_ip": dbToken.IPAddress,
+				"current_ip":  ip,
+			})
+			return models.ErrTokenCompromised
+		}
+
 		// Revoke old refresh token
-		if err := tokenRepo.RevokeRefreshTokenWithTx(ctx, tx, oldTokenHash); err != nil {
+		if err := s.tokenRepo.RevokeRefreshTokenWithTx(ctx, tx, oldTokenHash); err != nil {
 			return fmt.Errorf("failed to revoke old token: %w", err)
 		}
 
@@ -460,9 +477,10 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 			Browser:     deviceInfo.Browser,
 			SessionName: dbToken.SessionName, // Keep original session name
 			IPAddress:   ip,
+			UserAgent:   userAgent,
 		}
 
-		if err := tokenRepo.CreateRefreshTokenWithTx(ctx, tx, newDBToken); err != nil {
+		if err := s.tokenRepo.CreateRefreshTokenWithTx(ctx, tx, newDBToken); err != nil {
 			return fmt.Errorf("failed to create new refresh token: %w", err)
 		}
 
@@ -490,7 +508,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken, ip, userAg
 	}
 
 	// Log successful refresh
-	s.logAudit(&user.ID, models.ActionRefreshToken, models.StatusSuccess, ip, userAgent, nil)
+	s.logAudit(&user.ID, claims.ApplicationID, models.ActionRefreshToken, models.StatusSuccess, ip, userAgent, nil)
 
 	return &models.AuthResponse{
 		AccessToken:  newAccessToken,
@@ -520,7 +538,7 @@ func (s *AuthService) Logout(ctx context.Context, accessToken, ip, userAgent str
 	}
 
 	// Log successful logout
-	s.logAudit(&claims.UserID, models.ActionSignOut, models.StatusSuccess, ip, userAgent, nil)
+	s.logAudit(&claims.UserID, claims.ApplicationID, models.ActionSignOut, models.StatusSuccess, ip, userAgent, nil)
 
 	return nil
 }
@@ -535,7 +553,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 
 	// Verify old password
 	if err := utils.CheckPassword(user.PasswordHash, oldPassword); err != nil {
-		s.logAudit(&userID, models.ActionChangePassword, models.StatusFailed, ip, userAgent, map[string]interface{}{
+		s.logAudit(&userID, nil, models.ActionChangePassword, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason": "invalid_old_password",
 		})
 		return models.ErrInvalidCredentials
@@ -544,6 +562,14 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 	// Validate new password
 	if err := utils.ValidatePassword(newPassword, s.passwordPolicy); err != nil {
 		return models.NewAppError(400, err.Error())
+	}
+
+	// Check if password has been compromised
+	if s.passwordChecker != nil {
+		if compromised, count := s.passwordChecker.IsCompromised(ctx, newPassword); compromised {
+			return models.NewAppError(400, "PASSWORD_COMPROMISED",
+				fmt.Sprintf("This password has appeared in %d data breaches. Please choose a different password.", count))
+		}
 	}
 
 	// Hash new password
@@ -562,8 +588,13 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 		return fmt.Errorf("failed to revoke refresh tokens: %w", err)
 	}
 
+	// Blacklist all active session tokens so access tokens become invalid immediately
+	if err := s.blacklistService.BlacklistAllUserSessions(ctx, userID); err != nil {
+		return fmt.Errorf("failed to blacklist session tokens: %w", err)
+	}
+
 	// Log successful password change
-	s.logAudit(&userID, models.ActionChangePassword, models.StatusSuccess, ip, userAgent, nil)
+	s.logAudit(&userID, nil, models.ActionChangePassword, models.StatusSuccess, ip, userAgent, nil)
 
 	return nil
 }
@@ -575,6 +606,14 @@ func (s *AuthService) ResetPassword(ctx context.Context, userID uuid.UUID, newPa
 		return models.NewAppError(400, err.Error())
 	}
 
+	// Check if password has been compromised
+	if s.passwordChecker != nil {
+		if compromised, count := s.passwordChecker.IsCompromised(ctx, newPassword); compromised {
+			return models.NewAppError(400, "PASSWORD_COMPROMISED",
+				fmt.Sprintf("This password has appeared in %d data breaches. Please choose a different password.", count))
+		}
+	}
+
 	// Hash new password
 	newPasswordHash, err := utils.HashPassword(newPassword, s.bcryptCost)
 	if err != nil {
@@ -591,8 +630,13 @@ func (s *AuthService) ResetPassword(ctx context.Context, userID uuid.UUID, newPa
 		return fmt.Errorf("failed to revoke refresh tokens: %w", err)
 	}
 
+	// Blacklist all active session tokens so access tokens become invalid immediately
+	if err := s.blacklistService.BlacklistAllUserSessions(ctx, userID); err != nil {
+		return fmt.Errorf("failed to blacklist session tokens: %w", err)
+	}
+
 	// Log successful password reset
-	s.logAudit(&userID, models.ActionChangePassword, models.StatusSuccess, ip, userAgent, map[string]interface{}{
+	s.logAudit(&userID, nil, models.ActionChangePassword, models.StatusSuccess, ip, userAgent, map[string]interface{}{
 		"reset": true,
 	})
 
@@ -616,8 +660,8 @@ func (s *AuthService) InitPasswordlessRegistration(ctx context.Context, req *mod
 	// Normalize and validate email
 	if req.Email != nil && *req.Email != "" {
 		email = utils.NormalizeEmail(*req.Email)
-		if !utils.IsValidEmail(email) {
-			return models.NewAppError(400, "Invalid email format")
+		if err := utils.ValidateEmail(email); err != nil {
+			return models.NewAppError(400, err.Error())
 		}
 		identifier = email
 	}
@@ -669,7 +713,7 @@ func (s *AuthService) InitPasswordlessRegistration(ctx context.Context, req *mod
 	}
 
 	// Log init registration
-	s.logAudit(nil, models.ActionSignUp, models.StatusSuccess, ip, userAgent, map[string]interface{}{
+	s.logAudit(nil, nil, models.ActionSignUp, models.StatusSuccess, ip, userAgent, map[string]interface{}{
 		"step":       "init",
 		"identifier": identifier,
 	})
@@ -703,7 +747,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 	// Retrieve pending registration from Redis
 	pending, err := s.redis.GetPendingRegistration(ctx, identifier)
 	if err != nil {
-		s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+		s.logAudit(nil, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 			"reason":     "pending_not_found",
 			"identifier": identifier,
 		})
@@ -729,9 +773,9 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 			ID:            uuid.New(),
 			Email:         pending.Email,
 			Phone:         utils.Ptr(pending.Phone),
-			Username:      pending.Username,
+			Username:      utils.SanitizeUsername(pending.Username),
 			PasswordHash:  "", // No password for passwordless registration
-			FullName:      pending.FullName,
+			FullName:      utils.SanitizeHTML(pending.FullName),
 			IsActive:      true,
 			EmailVerified: email != "", // Mark email as verified if registering via email
 			PhoneVerified: phone != "", // Mark phone as verified if registering via phone
@@ -744,14 +788,14 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 				if err == models.ErrUsernameAlreadyExists {
 					user.Username = fmt.Sprintf("%s_%d", pending.Username, time.Now().UnixNano()%10000)
 					if err := userRepo.CreateWithTx(ctx, tx, user); err != nil {
-						s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+						s.logAudit(nil, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 							"reason": "create_failed",
 							"error":  err.Error(),
 						})
 						return err
 					}
 				} else {
-					s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+					s.logAudit(nil, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 						"reason": "create_failed",
 						"error":  err.Error(),
 					})
@@ -765,14 +809,14 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 				if err == models.ErrUsernameAlreadyExists {
 					user.Username = fmt.Sprintf("%s_%d", pending.Username, time.Now().UnixNano()%10000)
 					if err := s.userRepo.Create(ctx, user); err != nil {
-						s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+						s.logAudit(nil, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 							"reason": "create_failed",
 							"error":  err.Error(),
 						})
 						return err
 					}
 				} else {
-					s.logAudit(nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+					s.logAudit(nil, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 						"reason": "create_failed",
 						"error":  err.Error(),
 					})
@@ -784,7 +828,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 		// Assign default "user" role
 		if rbacRepo, ok := s.rbacRepo.(*repository.RBACRepository); ok {
 			if err := rbacRepo.AssignRoleToUserWithTx(ctx, tx, user.ID, defaultRole.ID, user.ID); err != nil {
-				s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(&user.ID, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "role_assignment_failed",
 					"error":  err.Error(),
 				})
@@ -793,7 +837,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 		} else {
 			// Fallback to non-transactional method if type assertion fails
 			if err := s.rbacRepo.AssignRoleToUser(ctx, user.ID, defaultRole.ID, user.ID); err != nil {
-				s.logAudit(&user.ID, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
+				s.logAudit(&user.ID, nil, models.ActionSignUp, models.StatusFailed, ip, userAgent, map[string]interface{}{
 					"reason": "role_assignment_failed",
 					"error":  err.Error(),
 				})
@@ -827,7 +871,7 @@ func (s *AuthService) CompletePasswordlessRegistration(ctx context.Context, req 
 	}
 
 	// Log successful signup
-	s.logAudit(&user.ID, models.ActionSignUp, models.StatusSuccess, ip, userAgent, map[string]interface{}{
+	s.logAudit(&user.ID, nil, models.ActionSignUp, models.StatusSuccess, ip, userAgent, map[string]interface{}{
 		"passwordless": true,
 	})
 
@@ -885,6 +929,7 @@ func (s *AuthService) finalizeAuth(ctx context.Context, user *models.User, ip, u
 		Browser:     deviceInfo.Browser,
 		SessionName: sessionName,
 		IPAddress:   ip,
+		UserAgent:   userAgent,
 	}
 
 	if err := s.tokenRepo.CreateRefreshToken(ctx, dbToken); err != nil {
@@ -956,14 +1001,15 @@ func (s *AuthService) GenerateTokensForUser(ctx context.Context, user *models.Us
 	return s.finalizeAuth(ctx, user, ip, userAgent, deviceInfo, nil, false, "password")
 }
 
-func (s *AuthService) logAudit(userID *uuid.UUID, action models.AuditAction, status models.AuditStatus, ip, userAgent string, details map[string]interface{}) {
+func (s *AuthService) logAudit(userID *uuid.UUID, appID *uuid.UUID, action models.AuditAction, status models.AuditStatus, ip, userAgent string, details map[string]interface{}) {
 	s.auditService.Log(AuditLogParams{
-		UserID:    userID,
-		Action:    action,
-		Status:    status,
-		IP:        ip,
-		UserAgent: userAgent,
-		Details:   details,
+		UserID:        userID,
+		ApplicationID: appID,
+		Action:        action,
+		Status:        status,
+		IP:            ip,
+		UserAgent:     userAgent,
+		Details:       details,
 	})
 }
 

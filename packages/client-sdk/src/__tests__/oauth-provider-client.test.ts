@@ -100,6 +100,7 @@ describe('OAuthProviderClient', () => {
 
   beforeEach(() => {
     fetchMock = vi.fn();
+    // @ts-ignore
     global.fetch = fetchMock;
 
     client = new OAuthProviderClient({

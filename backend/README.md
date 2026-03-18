@@ -247,14 +247,20 @@ curl -X DELETE http://localhost:3000/api-keys/{key_id} \
 
 Auth Gateway предоставляет gRPC API для проверки токенов и авторизации между микросервисами.
 
-**Важно:** Все gRPC методы требуют аутентификацию через API ключ.
+**Важно:** Все gRPC методы требуют аутентификацию (кроме gRPC Reflection).
 
 ### Безопасность gRPC
 
-- **Аутентификация:** Каждый запрос должен содержать API ключ в metadata `x-api-key` или `Authorization: Bearer agw_...`
-- **Авторизация:** Каждый метод требует определенный scope у API ключа
+- **Аутентификация:** Каждый запрос должен содержать учетные данные в metadata:
+  - `x-api-key: agw_...` или `Authorization: Bearer agw_...` - API ключ (требует scopes)
+  - `x-api-key: app_...` или `Authorization: Bearer app_...` - Application Secret (полный доступ)
+- **Авторизация:**
+  - **API ключи (`agw_`)**: Каждый метод требует определенный scope
+  - **Application Secrets (`app_`)**: Полный доступ ко всем методам без проверки scopes
+- **Application Context:** При использовании app secret, `application_id` автоматически извлекается из контекста — не нужно передавать в теле запроса
 - **TLS:** Поддерживается TLS шифрование для production-окружений
 - **Deny-by-default:** Методы не настроенные в системе scopes автоматически отклоняются
+- **Reflection:** gRPC Reflection работает без аутентификации (для отладки, grpcurl)
 
 ### Переменные окружения gRPC
 
@@ -301,6 +307,8 @@ Auth Gateway предоставляет gRPC API для проверки ток�
 
 ### Пример использования gRPC
 
+**С API ключом (требует scopes):**
+
 ```go
 package main
 
@@ -313,7 +321,7 @@ import (
 )
 
 func main() {
-    // Подключение к auth gateway с API ключом
+    // Подключение с API ключом
     client, err := grpcclient.NewClient(
         "localhost:50051",
         grpcclient.WithAPIKey("agw_YOUR_API_KEY"),
@@ -334,6 +342,37 @@ func main() {
     }
     log.Printf("Token valid: %t, User: %s", resp.Valid, resp.UserId)
 }
+```
+
+**С Application Secret (полный доступ, application_id в контексте):**
+
+```go
+// Подключение с app secret
+client, err := grpcclient.NewClient(
+    "localhost:50051",
+    grpcclient.WithAPIKey("app_YOUR_APPLICATION_SECRET"),
+    grpcclient.WithTimeout(10*time.Second),
+)
+// application_id извлекается автоматически из app secret
+// Не нужно передавать в теле запроса
+```
+
+**Примеры grpcurl:**
+
+```bash
+# С API ключом
+grpcurl -H 'x-api-key: agw_YOUR_API_KEY' \
+  -d '{"token": "your-jwt-token"}' \
+  localhost:50051 auth.AuthService/ValidateToken
+
+# С Application Secret
+grpcurl -H 'Authorization: Bearer app_YOUR_APP_SECRET' \
+  -d '{"token": "your-jwt-token"}' \
+  localhost:50051 auth.AuthService/ValidateToken
+
+# Reflection (без аутентификации)
+grpcurl localhost:50051 list
+grpcurl localhost:50051 describe auth.AuthService
 ```
 
 ### Интеграция с другими сервисами

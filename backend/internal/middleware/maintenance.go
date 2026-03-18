@@ -4,18 +4,18 @@ import (
 	"net/http"
 
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
+	"github.com/smilemakc/auth-gateway/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 // MaintenanceMiddleware checks if the system is in maintenance mode
 type MaintenanceMiddleware struct {
-	systemRepo *repository.SystemRepository
+	systemRepo service.SystemRepositoryInterface
 }
 
 // NewMaintenanceMiddleware creates a new maintenance middleware
-func NewMaintenanceMiddleware(systemRepo *repository.SystemRepository) *MaintenanceMiddleware {
+func NewMaintenanceMiddleware(systemRepo service.SystemRepositoryInterface) *MaintenanceMiddleware {
 	return &MaintenanceMiddleware{
 		systemRepo: systemRepo,
 	}

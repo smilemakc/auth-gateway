@@ -110,11 +110,8 @@ func (s *OTPService) SendOTP(ctx context.Context, req *models.SendOTPRequest) er
 		return fmt.Errorf("failed to generate OTP: %w", err)
 	}
 
-	// Hash the code
-	codeHash, err := utils.HashPassword(plainCode, 10)
-	if err != nil {
-		return fmt.Errorf("failed to hash OTP code: %w", err)
-	}
+	// Hash the code using HMAC (secure against brute-force on 6-digit codes)
+	codeHash := utils.HMACHash(plainCode, s.cfg.Security.OTPHMACSecret)
 
 	otp := &models.OTP{
 		ID:        uuid.New(),
@@ -196,8 +193,8 @@ func (s *OTPService) VerifyOTP(ctx context.Context, req *models.VerifyOTPRequest
 		return &models.VerifyOTPResponse{Valid: false}, nil
 	}
 
-	// Verify code
-	if err := utils.CheckPassword(otp.Code, req.Code); err != nil {
+	// Verify code using HMAC comparison
+	if !utils.HMACVerify(req.Code, s.cfg.Security.OTPHMACSecret, otp.Code) {
 		s.logAudit(nil, "otp_verify", "failed", "", "", map[string]interface{}{
 			"email":  otp.Email,
 			"phone":  otp.Phone,

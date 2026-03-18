@@ -153,6 +153,11 @@ type mockTokenStore struct {
 	RevokeAllUserTokensFunc func(ctx context.Context, userID uuid.UUID) error
 	AddToBlacklistFunc      func(ctx context.Context, token *models.TokenBlacklist) error
 	IsBlacklistedFunc       func(ctx context.Context, tokenHash string) (bool, error)
+	// TransactionalTokenStore methods
+	GetRefreshTokenForUpdateFunc    func(ctx context.Context, tx bun.Tx, tokenHash string) (*models.RefreshToken, error)
+	RevokeRefreshTokenWithTxFunc    func(ctx context.Context, tx bun.Tx, tokenHash string) error
+	CreateRefreshTokenWithTxFunc    func(ctx context.Context, tx bun.Tx, token *models.RefreshToken) error
+	GetAllActiveBlacklistEntriesFunc func(ctx context.Context) ([]*models.TokenBlacklist, error)
 }
 
 func (m *mockTokenStore) CreateRefreshToken(ctx context.Context, token *models.RefreshToken) error {
@@ -190,6 +195,32 @@ func (m *mockTokenStore) IsBlacklisted(ctx context.Context, tokenHash string) (b
 		return m.IsBlacklistedFunc(ctx, tokenHash)
 	}
 	return false, nil
+}
+
+// TransactionalTokenStore method implementations
+func (m *mockTokenStore) GetRefreshTokenForUpdate(ctx context.Context, tx bun.Tx, tokenHash string) (*models.RefreshToken, error) {
+	if m.GetRefreshTokenForUpdateFunc != nil {
+		return m.GetRefreshTokenForUpdateFunc(ctx, tx, tokenHash)
+	}
+	return nil, nil
+}
+func (m *mockTokenStore) RevokeRefreshTokenWithTx(ctx context.Context, tx bun.Tx, tokenHash string) error {
+	if m.RevokeRefreshTokenWithTxFunc != nil {
+		return m.RevokeRefreshTokenWithTxFunc(ctx, tx, tokenHash)
+	}
+	return nil
+}
+func (m *mockTokenStore) CreateRefreshTokenWithTx(ctx context.Context, tx bun.Tx, token *models.RefreshToken) error {
+	if m.CreateRefreshTokenWithTxFunc != nil {
+		return m.CreateRefreshTokenWithTxFunc(ctx, tx, token)
+	}
+	return nil
+}
+func (m *mockTokenStore) GetAllActiveBlacklistEntries(ctx context.Context) ([]*models.TokenBlacklist, error) {
+	if m.GetAllActiveBlacklistEntriesFunc != nil {
+		return m.GetAllActiveBlacklistEntriesFunc(ctx)
+	}
+	return nil, nil
 }
 
 type mockRBACStore struct {
@@ -1108,4 +1139,74 @@ func (m *mockSessionStore) GetAppSessionsPaginated(ctx context.Context, appID uu
 		return m.GetAppSessionsPaginatedFunc(ctx, appID, page, perPage)
 	}
 	return nil, 0, nil
+}
+
+type mockBlacklistChecker struct {
+	IsBlacklistedFunc            func(ctx context.Context, tokenHash string) bool
+	AddToBlacklistFunc           func(ctx context.Context, tokenHash string, userID *uuid.UUID, ttl time.Duration) error
+	AddAccessTokenFunc           func(ctx context.Context, tokenHash string, userID *uuid.UUID) error
+	AddRefreshTokenFunc          func(ctx context.Context, tokenHash string, userID *uuid.UUID) error
+	BlacklistSessionTokensFunc   func(ctx context.Context, session *models.Session) error
+	BlacklistAllUserSessionsFunc func(ctx context.Context, userID uuid.UUID) error
+}
+
+func (m *mockBlacklistChecker) IsBlacklisted(ctx context.Context, tokenHash string) bool {
+	if m.IsBlacklistedFunc != nil {
+		return m.IsBlacklistedFunc(ctx, tokenHash)
+	}
+	return false
+}
+
+func (m *mockBlacklistChecker) AddToBlacklist(ctx context.Context, tokenHash string, userID *uuid.UUID, ttl time.Duration) error {
+	if m.AddToBlacklistFunc != nil {
+		return m.AddToBlacklistFunc(ctx, tokenHash, userID, ttl)
+	}
+	return nil
+}
+
+func (m *mockBlacklistChecker) AddAccessToken(ctx context.Context, tokenHash string, userID *uuid.UUID) error {
+	if m.AddAccessTokenFunc != nil {
+		return m.AddAccessTokenFunc(ctx, tokenHash, userID)
+	}
+	return nil
+}
+
+func (m *mockBlacklistChecker) AddRefreshToken(ctx context.Context, tokenHash string, userID *uuid.UUID) error {
+	if m.AddRefreshTokenFunc != nil {
+		return m.AddRefreshTokenFunc(ctx, tokenHash, userID)
+	}
+	return nil
+}
+
+func (m *mockBlacklistChecker) BlacklistSessionTokens(ctx context.Context, session *models.Session) error {
+	if m.BlacklistSessionTokensFunc != nil {
+		return m.BlacklistSessionTokensFunc(ctx, session)
+	}
+	return nil
+}
+
+func (m *mockBlacklistChecker) BlacklistAllUserSessions(ctx context.Context, userID uuid.UUID) error {
+	if m.BlacklistAllUserSessionsFunc != nil {
+		return m.BlacklistAllUserSessionsFunc(ctx, userID)
+	}
+	return nil
+}
+
+type mockSessionManager struct {
+	CreateSessionNonFatalFunc  func(ctx context.Context, params SessionCreationParams) *models.Session
+	RefreshSessionNonFatalFunc func(ctx context.Context, params SessionRefreshParams) bool
+}
+
+func (m *mockSessionManager) CreateSessionNonFatal(ctx context.Context, params SessionCreationParams) *models.Session {
+	if m.CreateSessionNonFatalFunc != nil {
+		return m.CreateSessionNonFatalFunc(ctx, params)
+	}
+	return nil
+}
+
+func (m *mockSessionManager) RefreshSessionNonFatal(ctx context.Context, params SessionRefreshParams) bool {
+	if m.RefreshSessionNonFatalFunc != nil {
+		return m.RefreshSessionNonFatalFunc(ctx, params)
+	}
+	return false
 }

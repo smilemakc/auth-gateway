@@ -15,3 +15,4 @@ export * from './session';
 export * from './admin';
 export * from './app-oauth-provider';
 export * from './telegram';
+export * from './email-provider';

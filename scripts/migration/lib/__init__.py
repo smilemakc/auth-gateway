@@ -35,6 +35,7 @@ class ConflictStrategy(str, Enum):
 
 
 class DedupStrategy(str, Enum):
+    NONE = "none"
     KEEP_LATEST = "keep_latest"
     KEEP_FIRST = "keep_first"
     ERROR = "error"
@@ -67,11 +68,13 @@ class SourceConfig:
         "id": "id",
         "email": "email",
         "username": "username",
-        "password_hash": "password_hash",
         "full_name": "full_name",
         "phone": "phone",
         "is_active": "is_active",
+        "email_verified": "email_verified",
         "created_at": "created_at",
+        # Optional — include only if source DB has password column:
+        # "password_hash": "password_hash",
     })
     batch_size: int = 100
 
@@ -93,6 +96,22 @@ class PasswordConfig:
 class DedupConfig:
     key: str = "email"
     strategy: DedupStrategy = DedupStrategy.KEEP_LATEST
+
+
+@dataclass
+class ValidationConfig:
+    skip_email_validation: bool = False
+    skip_phone_validation: bool = False
+
+
+@dataclass
+class RolesConfig:
+    enabled: bool = False
+    source_column: str = "role_id"
+    source_table: str = ""
+    source_user_id_column: str = "user_id"
+    source_role_id_column: str = "role_id"
+    mapping: dict[int, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -121,6 +140,8 @@ class MigrationConfig:
     conflicts: ConflictStrategy = ConflictStrategy.SKIP
     dedup: DedupConfig = field(default_factory=DedupConfig)
     shadow: ShadowConfig = field(default_factory=ShadowConfig)
+    validation: ValidationConfig = field(default_factory=ValidationConfig)
+    roles: RolesConfig = field(default_factory=RolesConfig)
 
 
 # ──────────────────────────────────────────────
@@ -130,13 +151,16 @@ class MigrationConfig:
 @dataclass
 class SourceUser:
     id: str
-    email: str
+    email: Optional[str] = None
     username: Optional[str] = None
     password_hash: Optional[str] = None
     full_name: Optional[str] = None
     phone: Optional[str] = None
     is_active: bool = True
+    email_verified: bool = False
+    phone_verified: bool = False
     created_at: Optional[datetime] = None
+    roles: list[int] = field(default_factory=list)
 
 
 @dataclass
@@ -265,6 +289,8 @@ def load_config(path: str | Path) -> MigrationConfig:
     conflicts = raw.get("conflicts", {})
     dedup = raw.get("deduplication", {})
     shadow_raw = raw.get("shadow", {})
+    validation_raw = raw.get("validation", {})
+    roles_raw = raw.get("roles", {})
 
     source = SourceConfig(
         type=src.get("type", "postgresql"),
@@ -302,6 +328,31 @@ def load_config(path: str | Path) -> MigrationConfig:
         add_columns=shadow_add_cols,
     )
 
+    validation = ValidationConfig(
+        skip_email_validation=validation_raw.get("skip_email_validation", False),
+        skip_phone_validation=validation_raw.get("skip_phone_validation", False),
+    )
+
+    roles_mapping_raw = roles_raw.get("mapping", {})
+    if not isinstance(roles_mapping_raw, dict):
+        roles_mapping_raw = {}
+    roles_mapping: dict[int, str] = {}
+    for k, v in roles_mapping_raw.items():
+        if isinstance(v, list):
+            # mapping: {1: ["admin", "moderator"]} → multiple role names per source ID
+            for role_name in v:
+                roles_mapping[int(k)] = str(role_name)
+        else:
+            roles_mapping[int(k)] = str(v)
+    roles = RolesConfig(
+        enabled=roles_raw.get("enabled", False),
+        source_column=roles_raw.get("source_column", "role_id"),
+        source_table=roles_raw.get("source_table", ""),
+        source_user_id_column=roles_raw.get("source_user_id_column", "user_id"),
+        source_role_id_column=roles_raw.get("source_role_id_column", "role_id"),
+        mapping=roles_mapping,
+    )
+
     return MigrationConfig(
         mode=migration.get("mode", "dry-run"),
         batch_size=migration.get("batch_size", 100),
@@ -315,4 +366,6 @@ def load_config(path: str | Path) -> MigrationConfig:
             strategy=DedupStrategy(dedup.get("strategy", "keep_latest")),
         ),
         shadow=shadow,
+        validation=validation,
+        roles=roles,
     )

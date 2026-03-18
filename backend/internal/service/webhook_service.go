@@ -125,7 +125,7 @@ func (s *WebhookService) ListWebhooks(ctx context.Context, page, perPage int) (*
 		Webhooks:   webhooks,
 		Total:      total,
 		Page:       page,
-		PerPage:    perPage,
+		PageSize:   perPage,
 		TotalPages: totalPages,
 	}, nil
 }
@@ -340,7 +340,7 @@ func (s *WebhookService) ListWebhookDeliveries(ctx context.Context, webhookID uu
 		Deliveries: deliveries,
 		Total:      total,
 		Page:       page,
-		PerPage:    perPage,
+		PageSize:   perPage,
 		TotalPages: totalPages,
 	}, nil
 }

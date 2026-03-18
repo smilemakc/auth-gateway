@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Server } from 'lucide-react';
 import { useLanguage } from '../services/i18n';
 import EmailTemplates from './EmailTemplates';
-import EmailProviders from './EmailProviders';
+import { EmailProviders } from './email-management';
 
 type Tab = 'templates' | 'providers';
 

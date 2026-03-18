@@ -130,6 +130,13 @@ func (s *APIKeyService) ValidateAPIKey(ctx context.Context, plainKey string) (*m
 		return nil, nil, models.ErrInvalidToken
 	}
 
+	// Defense-in-depth: constant-time verification of hash match
+	// The DB query uses string equality which may leak timing info;
+	// this re-check ensures no timing side-channel on the hash comparison.
+	if !utils.CompareHashConstantTime(keyHash, apiKey.KeyHash) {
+		return nil, nil, models.ErrInvalidToken
+	}
+
 	// Check if active
 	if !apiKey.IsActive {
 		return nil, nil, models.NewAppError(401, "API key is revoked")

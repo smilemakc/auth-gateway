@@ -74,6 +74,24 @@ service AuthService {
   // GetUserTelegramBots returns user's Telegram bot access for an application
   rpc GetUserTelegramBots(GetUserTelegramBotsRequest) returns (UserTelegramBotsResponse);
 
+  // UpdateUserProfile updates user's profile for a specific application
+  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UserAppProfileResponse);
+
+  // CreateUserProfile creates a new user profile for a specific application
+  rpc CreateUserProfile(CreateUserProfileRequest) returns (UserAppProfileResponse);
+
+  // DeleteUserProfile deletes user's profile for a specific application
+  rpc DeleteUserProfile(DeleteUserProfileRequest) returns (GenericResponse);
+
+  // BanUser bans a user from a specific application
+  rpc BanUser(BanUserRequest) returns (GenericResponse);
+
+  // UnbanUser unbans a user from a specific application
+  rpc UnbanUser(UnbanUserRequest) returns (GenericResponse);
+
+  // ListApplicationUsers lists all users for a specific application with pagination
+  rpc ListApplicationUsers(ListApplicationUsersRequest) returns (ListApplicationUsersResponse);
+
   // ========== Sync & Config Methods ==========
 
   // SyncUsers returns users updated after a given timestamp for shadow table sync
@@ -423,12 +441,82 @@ message UserAppProfileResponse {
   string application_id = 2;
   string display_name = 3;
   string avatar_url = 4;
-  string locale = 5;
-  string timezone = 6;
+  reserved 5, 6; // removed: locale, timezone (no backing in Go model)
   repeated string app_roles = 7;
   bool is_active = 8;
   int64 created_at = 9;
   string error_message = 10;
+  string nickname = 11;
+  map<string, string> metadata = 12;
+  bool is_banned = 13;
+  string ban_reason = 14;
+  int64 last_access_at = 15;
+  int64 updated_at = 16;
+}
+
+// UpdateUserProfileRequest contains data to update a user's application profile
+message UpdateUserProfileRequest {
+  string user_id = 1;
+  string application_id = 2;
+  string display_name = 3;
+  string avatar_url = 4;
+  string nickname = 5;
+  map<string, string> metadata = 6;
+  repeated string app_roles = 7;
+}
+
+// CreateUserProfileRequest contains data to create a user's application profile
+message CreateUserProfileRequest {
+  string user_id = 1;
+  string application_id = 2;
+  string display_name = 3;
+  string avatar_url = 4;
+  string nickname = 5;
+  map<string, string> metadata = 6;
+  repeated string app_roles = 7;
+}
+
+// DeleteUserProfileRequest contains data to delete a user's application profile
+message DeleteUserProfileRequest {
+  string user_id = 1;
+  string application_id = 2;
+}
+
+// BanUserRequest contains data to ban a user from an application
+message BanUserRequest {
+  string user_id = 1;
+  string application_id = 2;
+  string reason = 3;
+  string banned_by = 4;
+}
+
+// UnbanUserRequest contains data to unban a user from an application
+message UnbanUserRequest {
+  string user_id = 1;
+  string application_id = 2;
+}
+
+// ListApplicationUsersRequest contains pagination parameters for listing users
+message ListApplicationUsersRequest {
+  string application_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+// ListApplicationUsersResponse contains paginated list of user profiles
+message ListApplicationUsersResponse {
+  repeated UserAppProfileResponse profiles = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  int32 total_pages = 5;
+}
+
+// GenericResponse contains a simple success/error response
+message GenericResponse {
+  bool success = 1;
+  string message = 2;
+  string error_message = 3;
 }
 
 // GetUserTelegramBotsRequest contains user and application IDs

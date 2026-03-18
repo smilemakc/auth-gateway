@@ -38,7 +38,7 @@ type ActiveSessionResponse struct {
 	// User email address
 	UserEmail string `json:"user_email,omitempty" example:"user@example.com"`
 	// User username
-	UserName string `json:"user_name,omitempty" example:"john_doe"`
+	Username string `json:"username,omitempty" example:"john_doe"`
 	// Device type (mobile, desktop, tablet)
 	DeviceType string `json:"device_type,omitempty" example:"desktop"`
 	// Operating system with version
@@ -82,7 +82,7 @@ type SessionListResponse struct {
 	// Current page number
 	Page int `json:"page" example:"1"`
 	// Number of items per page
-	PerPage int `json:"per_page" example:"20"`
+	PageSize int `json:"page_size" example:"20"`
 	// Total number of pages
 	TotalPages int `json:"total_pages" example:"1"`
 }

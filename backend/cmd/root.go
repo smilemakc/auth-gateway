@@ -49,6 +49,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(adminCmd)
+	rootCmd.AddCommand(appCmd)
 	rootCmd.AddCommand(migrateCmd)
 	rootCmd.AddCommand(serverCmd)
 }

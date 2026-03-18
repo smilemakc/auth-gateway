@@ -109,6 +109,7 @@ type repoSet struct {
 	AppOAuthProvider *repository.AppOAuthProviderRepository
 	TelegramBot      *repository.TelegramBotRepository
 	UserTelegram     *repository.UserTelegramRepository
+	SMSSettings      *repository.SMSSettingsRepository
 }
 
 type serviceSet struct {
@@ -169,6 +170,7 @@ type handlerSet struct {
 	Telegram         *handler.TelegramHandler
 	Migration        *handler.MigrationHandler
 	TokenExchange    *handler.TokenExchangeHandler
+	SMSSettings      *handler.SMSSettingsHandler
 }
 
 type middlewareSet struct {
@@ -225,16 +227,20 @@ func runServer() {
 	middlewares := buildMiddlewares(deps, repos, services)
 	router := buildRouter(deps, services, handlers, middlewares)
 
-	startTokenCleanup(repos.Token, deps.cfg.Security.TokenBlacklistCleanupInterval, deps.log)
+	bgCtx, bgCancel := context.WithCancel(context.Background())
+	startTokenCleanup(bgCtx, repos.Token, deps.cfg.Security.TokenBlacklistCleanupInterval, deps.log)
+	if deps.cfg.Metrics.Enabled {
+		startMetricsCollection(bgCtx, deps.db, deps.redis, deps.log)
+	}
 
 	// Start LDAP sync job if LDAP service is available
 	var ldapSyncJob *jobs.LDAPSyncJob
 	if services.LDAP != nil {
 		ldapSyncJob = jobs.NewLDAPSyncJob(services.LDAP, deps.log)
-		ctx, cancel := context.WithCancel(context.Background())
+		ldapCtx, ldapCancel := context.WithCancel(bgCtx)
 		go func() {
-			ldapSyncJob.Start(ctx)
-			cancel()
+			ldapSyncJob.Start(ldapCtx)
+			ldapCancel()
 		}()
 		deps.log.Info("LDAP sync job started")
 	}
@@ -305,6 +311,9 @@ func runServer() {
 		ldapSyncJob.Stop()
 	}
 
+	// Stop background goroutines
+	bgCancel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -314,7 +323,21 @@ func runServer() {
 		})
 	}
 
-	grpcSrv.Stop()
+	// Graceful gRPC shutdown with timeout
+	grpcDone := make(chan struct{})
+	go func() {
+		grpcSrv.Stop()
+		close(grpcDone)
+	}()
+
+	grpcTimeout := time.After(15 * time.Second)
+	select {
+	case <-grpcDone:
+		deps.log.Info("gRPC server stopped gracefully")
+	case <-grpcTimeout:
+		deps.log.Warn("gRPC server forced stop after timeout")
+		grpcSrv.ForceStop()
+	}
 
 	deps.log.Info("Servers exited successfully")
 }
@@ -418,6 +441,7 @@ func buildRepositories(deps *infra) *repoSet {
 		AppOAuthProvider: repository.NewAppOAuthProviderRepository(deps.db),
 		TelegramBot:      repository.NewTelegramBotRepository(deps.db),
 		UserTelegram:     repository.NewUserTelegramRepository(deps.db),
+		SMSSettings:      repository.NewSMSSettingsRepository(deps.db),
 	}
 }
 
@@ -429,7 +453,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	}
 
 	auditService := service.NewAuditService(repos.Audit, geoService)
-	blacklistService := service.NewBlacklistService(deps.redis, repos.Token, deps.jwtService, deps.log, auditService)
+	blacklistService := service.NewBlacklistService(deps.redis, repos.Token, repos.Session, deps.jwtService, deps.log, auditService)
 
 	// Synchronize blacklist from database to Redis on startup
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -443,7 +467,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 		deps.log.Info("Blacklist synchronized from database to Redis")
 	}
 
-	sessionService := service.NewSessionService(repos.Session, blacklistService, deps.log)
+	sessionService := service.NewSessionService(repos.Session, blacklistService, deps.log, deps.cfg.Security.MaxActiveSessions)
 	userService := service.NewUserService(repos.User, auditService)
 	apiKeyService := service.NewAPIKeyService(repos.APIKey, repos.User, auditService)
 	emailService := service.NewEmailService(&deps.cfg.SMTP)
@@ -476,7 +500,10 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 	// LoginAlertService: detects logins from new devices and sends email alerts
 	loginAlertService := service.NewLoginAlertService(deps.redis, repos.Session, emailProfileService, geoService, deps.log)
 
-	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db, repos.Application, loginAlertService, webhookService)
+	// PasswordChecker: checks passwords against HaveIBeenPwned API
+	passwordChecker := service.NewPasswordChecker(deps.cfg.Security.PasswordPolicy.CheckCompromised)
+
+	authService := service.NewAuthService(repos.User, repos.Token, repos.RBAC, auditService, deps.jwtService, blacklistService, deps.redis, sessionService, twoFAService, deps.cfg.Security.BcryptCost, passwordPolicy, deps.db, repos.Application, loginAlertService, webhookService, deps.cfg.Security.StrictTokenBinding, passwordChecker)
 	oauthService := service.NewOAuthService(repos.User, repos.OAuth, repos.Token, repos.Audit, repos.RBAC, deps.jwtService, sessionService, &http.Client{Timeout: 10 * time.Second}, repos.AppOAuthProvider, repos.Application, deps.cfg.Security.JITProvisioning, loginAlertService)
 
 	// OTP Service
@@ -545,6 +572,7 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 		repos.User,
 		repos.Group,
 		deps.log,
+		deps.cfg.Security.EncryptionKey,
 	)
 
 	// Bulk Service
@@ -604,14 +632,16 @@ func buildServices(deps *infra, repos *repoSet) *serviceSet {
 }
 
 func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSet {
+	secureCookie := deps.cfg.Server.Env == "production"
+
 	authHandler := handler.NewAuthHandler(services.Auth, services.User, services.OTP, services.EmailProfile, deps.log)
 	healthHandler := handler.NewHealthHandler(deps.db, deps.redis)
 	apiKeyHandler := handler.NewAPIKeyHandler(services.APIKey, deps.log)
 	otpHandler := handler.NewOTPHandler(services.OTP, services.Auth, deps.log)
-	oauthHandler := handler.NewOAuthHandler(services.OAuth, deps.log)
+	oauthHandler := handler.NewOAuthHandler(services.OAuth, deps.log, deps.cfg.OAuth.TelegramBotToken, secureCookie)
 	twoFAHandler := handler.NewTwoFactorHandler(services.TwoFA, services.User, services.EmailProfile, deps.log)
 	adminHandler := handler.NewAdminHandler(services.Admin, services.User, services.OTP, services.Audit, deps.log)
-	advancedAdminHandler := handler.NewAdvancedAdminHandler(services.RBAC, services.Session, services.IPFilter, repos.Branding, repos.System, repos.Geo, deps.log)
+	advancedAdminHandler := handler.NewAdvancedAdminHandler(services.RBAC, services.Session, services.IPFilter, repos.Branding, repos.System, repos.Geo, deps.log, deps.cfg)
 	webhookHandler := handler.NewWebhookHandler(services.Webhook, deps.log)
 	templateHandler := handler.NewTemplateHandler(services.Template, deps.log)
 
@@ -621,7 +651,6 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	}
 	oauthAdminHandler := handler.NewOAuthAdminHandler(services.MinimalOAuthSvc, deps.log)
 
-	secureCookie := deps.cfg.Server.Env == "production"
 	loginHandler := handler.NewLoginHandler(services.Auth, services.OTP, deps.jwtService, deps.log, secureCookie)
 	groupHandler := handler.NewGroupHandler(services.Group, deps.log)
 	ldapHandler := handler.NewLDAPHandler(services.LDAP, deps.log)
@@ -635,6 +664,7 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 	telegramHandler := handler.NewTelegramHandler(services.Telegram, deps.log)
 	migrationHandler := handler.NewMigrationHandler(services.Migration, deps.log)
 	tokenExchangeHandler := handler.NewTokenExchangeHandler(services.TokenExchange)
+	smsSettingsHandler := handler.NewSMSSettingsHandler(repos.SMSSettings, deps.log)
 
 	return &handlerSet{
 		Auth:             authHandler,
@@ -662,16 +692,18 @@ func buildHandlers(deps *infra, repos *repoSet, services *serviceSet) *handlerSe
 		Telegram:         telegramHandler,
 		Migration:        migrationHandler,
 		TokenExchange:    tokenExchangeHandler,
+		SMSSettings:      smsSettingsHandler,
 	}
 }
 
 func buildMiddlewares(deps *infra, repos *repoSet, services *serviceSet) *middlewareSet {
 	authMiddleware := middleware.NewAuthMiddleware(deps.jwtService, services.Blacklist)
-	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(services.APIKey, repos.RBAC)
+	apiKeyMiddleware := middleware.NewAPIKeyMiddleware(services.APIKey, services.Application, repos.RBAC)
+	authMiddleware.SetAPIKeyMiddleware(apiKeyMiddleware)
 	rateLimitMiddleware := middleware.NewRateLimitMiddleware(deps.redis, &deps.cfg.RateLimit)
 	ipFilterMiddleware := middleware.NewIPFilterMiddleware(services.IPFilter)
 	maintenanceMiddleware := middleware.NewMaintenanceMiddleware(repos.System)
-	applicationMiddleware := middleware.NewApplicationMiddleware(services.Application, deps.log)
+	applicationMiddleware := middleware.NewApplicationMiddleware(services.Application, services.Application, deps.log)
 	appSecretMiddleware := middleware.NewAppSecretMiddleware(services.Application)
 
 	return &middlewareSet{
@@ -692,6 +724,13 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 
 	router := gin.New()
 
+	if len(deps.cfg.Server.TrustedProxies) > 0 {
+		router.SetTrustedProxies(deps.cfg.Server.TrustedProxies)
+	} else {
+		// No trusted proxies = don't trust any proxy headers, use RemoteAddr
+		router.SetTrustedProxies(nil)
+	}
+
 	if deps.cfg.OIDC.Enabled {
 		tmpl, err := template.ParseGlob("internal/templates/*.html")
 		if err != nil {
@@ -707,6 +746,8 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 	router.Use(middleware.Recovery(deps.log))
 	router.Use(middleware.Logger(deps.log))
 	router.Use(middleware.SetupCORS(&deps.cfg.CORS))
+	router.Use(middleware.SecurityHeaders())
+	router.Use(middleware.CSRFProtection(deps.cfg.Security.CSRFEnabled, deps.cfg.Server.Env == "production"))
 	router.Use(middlewares.Maintenance.CheckMaintenance())
 	router.Use(middlewares.IPFilter.CheckIPFilter())
 	router.Use(middlewares.Application.ExtractApplicationID())
@@ -816,6 +857,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 		}
 
 		authGroup := apiGroup.Group("/auth")
+		authGroup.Use(middlewares.Application.ExtractApplicationID())
 		{
 			authGroup.POST("/signup", middlewares.RateLimit.LimitSignup(), handlers.Auth.SignUp)
 			authGroup.POST("/signin", middlewares.RateLimit.LimitSignin(), handlers.Auth.SignIn)
@@ -830,6 +872,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 		}
 
 		otpGroup := apiGroup.Group("/otp")
+		otpGroup.Use(middlewares.Application.ExtractApplicationID())
 		{
 			otpGroup.POST("/send", handlers.OTP.SendOTP)
 			otpGroup.POST("/verify", handlers.OTP.VerifyOTP)
@@ -888,9 +931,9 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			userAppsGroup.PUT("/:id/profile", handlers.Application.UpdateMyProfile)
 		}
 
-		// Sync endpoint with API key authentication (placed before JWT-only admin routes)
-		apiGroup.GET("/admin/users/sync", middlewares.APIKey.RequireScope(models.ScopeSyncUsers), handlers.Admin.SyncUsers)
-		apiGroup.POST("/admin/users/import", middlewares.APIKey.RequireScope(models.ScopeImportUsers), handlers.Admin.ImportUsers)
+		// API key only endpoints (placed before admin group)
+		apiGroup.GET("/admin/users/sync", middlewares.APIKey.Authenticate(), middlewares.APIKey.RequireScope(models.ScopeSyncUsers), handlers.Admin.SyncUsers)
+		apiGroup.POST("/admin/users/import", middlewares.APIKey.Authenticate(), middlewares.APIKey.RequireScope(models.ScopeImportUsers), handlers.Admin.ImportUsers)
 
 		adminGroup := apiGroup.Group("/admin")
 		adminGroup.Use(middlewares.Auth.Authenticate())
@@ -909,6 +952,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			adminGroup.POST("/users/:id/reset-2fa", handlers.Admin.Reset2FA)
 			adminGroup.GET("/users/:id/telegram-accounts", handlers.Telegram.ListUserTelegramAccounts)
 			adminGroup.GET("/users/:id/telegram-bot-access", handlers.Telegram.ListUserTelegramBotAccess)
+			adminGroup.GET("/users/:id/sessions", handlers.AdvancedAdmin.ListUserSessionsAdmin)
 			adminGroup.GET("/api-keys", handlers.Admin.ListAPIKeys)
 			adminGroup.POST("/api-keys/:id/revoke", handlers.Admin.RevokeAPIKey)
 			adminGroup.GET("/audit-logs", handlers.Admin.ListAuditLogs)
@@ -917,6 +961,7 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			{
 				rbacGroup.GET("/permissions", handlers.AdvancedAdmin.ListPermissions)
 				rbacGroup.POST("/permissions", handlers.AdvancedAdmin.CreatePermission)
+				rbacGroup.GET("/permissions/:id", handlers.AdvancedAdmin.GetPermission)
 				rbacGroup.PUT("/permissions/:id", handlers.AdvancedAdmin.UpdatePermission)
 				rbacGroup.DELETE("/permissions/:id", handlers.AdvancedAdmin.DeletePermission)
 				rbacGroup.GET("/roles", handlers.AdvancedAdmin.ListRoles)
@@ -945,6 +990,8 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 			{
 				systemGroup.PUT("/maintenance", handlers.AdvancedAdmin.SetMaintenanceMode)
 				systemGroup.GET("/health", handlers.AdvancedAdmin.GetSystemHealth)
+				systemGroup.GET("/password-policy", handlers.AdvancedAdmin.GetPasswordPolicy)
+				systemGroup.PUT("/password-policy", handlers.AdvancedAdmin.UpdatePasswordPolicy)
 			}
 
 			analyticsGroup := adminGroup.Group("/analytics")
@@ -1074,6 +1121,17 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 				emailProfilesGroup.POST("/:id/test", handlers.EmailProfile.TestProfile)
 			}
 
+			// SMS Settings Management
+			smsSettingsGroup := adminGroup.Group("/sms/settings")
+			{
+				smsSettingsGroup.GET("", handlers.SMSSettings.GetAllSettings)
+				smsSettingsGroup.POST("", handlers.SMSSettings.CreateSettings)
+				smsSettingsGroup.GET("/active", handlers.SMSSettings.GetActiveSettings)
+				smsSettingsGroup.GET("/:id", handlers.SMSSettings.GetSettings)
+				smsSettingsGroup.PUT("/:id", handlers.SMSSettings.UpdateSettings)
+				smsSettingsGroup.DELETE("/:id", handlers.SMSSettings.DeleteSettings)
+			}
+
 			// Application Management
 			applicationsGroup := adminGroup.Group("/applications")
 			{
@@ -1090,6 +1148,9 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 
 				// Users
 				applicationsGroup.GET("/:id/users", handlers.Application.ListApplicationUsers)
+				applicationsGroup.GET("/:id/users/:user_id", handlers.Application.GetApplicationUserProfile)
+				applicationsGroup.PUT("/:id/users/:user_id", handlers.Application.UpdateApplicationUserProfile)
+				applicationsGroup.DELETE("/:id/users/:user_id", handlers.Application.DeleteApplicationUserProfile)
 				applicationsGroup.POST("/:id/users/:user_id/ban", handlers.Application.BanUser)
 				applicationsGroup.POST("/:id/users/:user_id/unban", handlers.Application.UnbanUser)
 
@@ -1156,42 +1217,48 @@ func buildRouter(deps *infra, services *serviceSet, handlers *handlerSet, middle
 }
 
 // startTokenCleanup starts a background routine to clean up expired tokens
-func startTokenCleanup(tokenRepo *repository.TokenRepository, interval time.Duration, log *logger.Logger) {
+func startTokenCleanup(ctx context.Context, tokenRepo *repository.TokenRepository, interval time.Duration, log *logger.Logger) {
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
-		for range ticker.C {
-			log.Debug("Running token cleanup")
-
-			// Use context with timeout for cleanup operation
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-			if err := tokenRepo.CleanupExpiredTokens(ctx); err != nil {
-				log.Error("Token cleanup failed", map[string]interface{}{
-					"error": err.Error(),
-				})
-			} else {
-				log.Debug("Token cleanup completed successfully")
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info("token cleanup stopped")
+				return
+			case <-ticker.C:
+				log.Debug("Running token cleanup")
+				cleanupCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+				if err := tokenRepo.CleanupExpiredTokens(cleanupCtx); err != nil {
+					log.Error("Token cleanup failed", map[string]interface{}{
+						"error": err.Error(),
+					})
+				} else {
+					log.Debug("Token cleanup completed successfully")
+				}
+				cancel()
 			}
-			cancel()
 		}
 	}()
 }
 
 // startMetricsCollection starts a background routine to collect and update metrics
-func startMetricsCollection(db *repository.Database, redis *service.RedisService, log *logger.Logger) {
+func startMetricsCollection(ctx context.Context, db *repository.Database, redis *service.RedisService, log *logger.Logger) {
 	go func() {
-		ticker := time.NewTicker(30 * time.Second) // Update every 30 seconds
+		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 
-		for range ticker.C {
-			// Update database connection pool metrics
-			stats := db.Stats()
-			metrics.UpdateDBConnections(stats)
-
-			// TODO: Update Redis metrics if Redis service exposes stats
-			// TODO: Update active sessions count
-			_ = redis
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info("metrics collection stopped")
+				return
+			case <-ticker.C:
+				stats := db.Stats()
+				metrics.UpdateDBConnections(stats)
+				_ = redis
+			}
 		}
 	}()
 }

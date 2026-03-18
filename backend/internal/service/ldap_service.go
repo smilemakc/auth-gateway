@@ -8,15 +8,17 @@ import (
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/ldap"
 	"github.com/smilemakc/auth-gateway/internal/models"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
 // LDAPService handles LDAP configuration and operations
 type LDAPService struct {
-	ldapRepo  LDAPConfigRepository
-	userRepo  UserStore
-	groupRepo LDAPGroupRepository
-	logger    *logger.Logger
+	ldapRepo      LDAPConfigRepository
+	userRepo      UserStore
+	groupRepo     LDAPGroupRepository
+	logger        *logger.Logger
+	encryptionKey string
 }
 
 // LDAPGroupRepository defines interface for group operations needed by LDAP sync
@@ -48,17 +50,24 @@ func NewLDAPService(
 	userRepo UserStore,
 	groupRepo LDAPGroupRepository,
 	logger *logger.Logger,
+	encryptionKey string,
 ) *LDAPService {
 	return &LDAPService{
-		ldapRepo:  ldapRepo,
-		userRepo:  userRepo,
-		groupRepo: groupRepo,
-		logger:    logger,
+		ldapRepo:      ldapRepo,
+		userRepo:      userRepo,
+		groupRepo:     groupRepo,
+		logger:        logger,
+		encryptionKey: encryptionKey,
 	}
 }
 
 // CreateConfig creates a new LDAP configuration
 func (s *LDAPService) CreateConfig(ctx context.Context, req *models.CreateLDAPConfigRequest) (*models.LDAPConfig, error) {
+	bindPassword, err := s.encryptBindPassword(req.BindPassword)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt bind password: %w", err)
+	}
+
 	config := &models.LDAPConfig{
 		Server:               req.Server,
 		Port:                 req.Port,
@@ -66,7 +75,7 @@ func (s *LDAPService) CreateConfig(ctx context.Context, req *models.CreateLDAPCo
 		UseSSL:               req.UseSSL,
 		Insecure:             req.Insecure,
 		BindDN:               req.BindDN,
-		BindPassword:         req.BindPassword, // TODO: Encrypt before storing
+		BindPassword:         bindPassword,
 		BaseDN:               req.BaseDN,
 		UserSearchBase:       req.UserSearchBase,
 		GroupSearchBase:      req.GroupSearchBase,
@@ -161,7 +170,11 @@ func (s *LDAPService) UpdateConfig(ctx context.Context, id uuid.UUID, req *model
 		config.BindDN = *req.BindDN
 	}
 	if req.BindPassword != nil {
-		config.BindPassword = *req.BindPassword // TODO: Encrypt
+		encryptedPassword, encErr := s.encryptBindPassword(*req.BindPassword)
+		if encErr != nil {
+			return nil, fmt.Errorf("failed to encrypt bind password: %w", encErr)
+		}
+		config.BindPassword = encryptedPassword
 	}
 	if req.BaseDN != nil {
 		config.BaseDN = *req.BaseDN
@@ -268,6 +281,12 @@ func (s *LDAPService) Sync(ctx context.Context, configID uuid.UUID, req *models.
 		return nil, err
 	}
 
+	decryptedPassword, err := s.decryptBindPassword(config.BindPassword)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt bind password: %w", err)
+	}
+	config.BindPassword = decryptedPassword
+
 	connector := ldap.NewConnector(config)
 	syncService := ldap.NewSyncService(
 		connector,
@@ -314,6 +333,20 @@ func (s *LDAPService) GetSyncLogs(ctx context.Context, configID uuid.UUID, page,
 
 	offset := (page - 1) * pageSize
 	return s.ldapRepo.GetSyncLogs(ctx, configID, pageSize, offset)
+}
+
+func (s *LDAPService) encryptBindPassword(plaintext string) (string, error) {
+	if s.encryptionKey == "" {
+		return plaintext, nil
+	}
+	return utils.EncryptAESGCM(plaintext, s.encryptionKey)
+}
+
+func (s *LDAPService) decryptBindPassword(ciphertext string) (string, error) {
+	if s.encryptionKey == "" {
+		return ciphertext, nil
+	}
+	return utils.DecryptAESGCM(ciphertext, s.encryptionKey)
 }
 
 // Adapters to convert service interfaces to LDAP sync interfaces

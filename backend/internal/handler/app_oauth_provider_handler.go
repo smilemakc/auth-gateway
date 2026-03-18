@@ -12,11 +12,11 @@ import (
 )
 
 type AppOAuthProviderHandler struct {
-	service *service.AppOAuthProviderService
+	service service.AppOAuthProviderServicer
 	logger  *logger.Logger
 }
 
-func NewAppOAuthProviderHandler(service *service.AppOAuthProviderService, logger *logger.Logger) *AppOAuthProviderHandler {
+func NewAppOAuthProviderHandler(service service.AppOAuthProviderServicer, logger *logger.Logger) *AppOAuthProviderHandler {
 	return &AppOAuthProviderHandler{
 		service: service,
 		logger:  logger,
@@ -150,7 +150,7 @@ func (h *AppOAuthProviderHandler) GetProvider(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param id path string true "Application ID (UUID)"
-// @Success 200 {array} models.ApplicationOAuthProvider
+// @Success 200 {object} models.AppOAuthProviderListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -175,7 +175,10 @@ func (h *AppOAuthProviderHandler) ListProviders(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, providers)
+	c.JSON(http.StatusOK, models.AppOAuthProviderListResponse{
+		Providers: providers,
+		Total:     len(providers),
+	})
 }
 
 // UpdateProvider updates an OAuth provider
@@ -292,24 +295,23 @@ func (h *AppOAuthProviderHandler) parseIDParam(c *gin.Context, param string) (uu
 func (h *AppOAuthProviderHandler) ListProvidersAdmin(c *gin.Context) {
 	appID, _ := utils.GetApplicationIDFromContext(c)
 
+	var providers []*models.ApplicationOAuthProvider
+	var err error
 	if appID != nil {
-		providers, err := h.service.ListByApp(c.Request.Context(), *appID)
-		if err != nil {
-			h.logger.Error("Failed to list OAuth providers", map[string]interface{}{"error": err.Error()})
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"providers": providers})
-		return
+		providers, err = h.service.ListByApp(c.Request.Context(), *appID)
+	} else {
+		providers, err = h.service.ListAll(c.Request.Context())
 	}
-
-	providers, err := h.service.ListAll(c.Request.Context())
 	if err != nil {
 		h.logger.Error("Failed to list OAuth providers", map[string]interface{}{"error": err.Error()})
 		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"providers": providers})
+
+	c.JSON(http.StatusOK, models.AppOAuthProviderListResponse{
+		Providers: providers,
+		Total:     len(providers),
+	})
 }
 
 // CreateProviderAdmin creates an OAuth provider using X-Application-ID from context
@@ -366,11 +368,8 @@ func (h *AppOAuthProviderHandler) CreateProviderAdmin(c *gin.Context) {
 
 // GetProviderAdmin gets an OAuth provider by ID from path param
 func (h *AppOAuthProviderHandler) GetProviderAdmin(c *gin.Context) {
-	providerID, err := uuid.Parse(c.Param("providerId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid provider ID"),
-		))
+	providerID, ok := utils.ParseUUIDParam(c, "providerId")
+	if !ok {
 		return
 	}
 
@@ -392,11 +391,8 @@ func (h *AppOAuthProviderHandler) GetProviderAdmin(c *gin.Context) {
 
 // UpdateProviderAdmin updates an OAuth provider by ID
 func (h *AppOAuthProviderHandler) UpdateProviderAdmin(c *gin.Context) {
-	providerID, err := uuid.Parse(c.Param("providerId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid provider ID"),
-		))
+	providerID, ok := utils.ParseUUIDParam(c, "providerId")
+	if !ok {
 		return
 	}
 
@@ -432,11 +428,8 @@ func (h *AppOAuthProviderHandler) UpdateProviderAdmin(c *gin.Context) {
 
 // DeleteProviderAdmin deletes an OAuth provider by ID
 func (h *AppOAuthProviderHandler) DeleteProviderAdmin(c *gin.Context) {
-	providerID, err := uuid.Parse(c.Param("providerId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid provider ID"),
-		))
+	providerID, ok := utils.ParseUUIDParam(c, "providerId")
+	if !ok {
 		return
 	}
 

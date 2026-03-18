@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,11 +13,11 @@ import (
 )
 
 type ApplicationHandler struct {
-	appService *service.ApplicationService
+	appService service.ApplicationServicer
 	logger     *logger.Logger
 }
 
-func NewApplicationHandler(appService *service.ApplicationService, logger *logger.Logger) *ApplicationHandler {
+func NewApplicationHandler(appService service.ApplicationServicer, logger *logger.Logger) *ApplicationHandler {
 	return &ApplicationHandler{
 		appService: appService,
 		logger:     logger,
@@ -41,9 +40,8 @@ func NewApplicationHandler(appService *service.ApplicationService, logger *logge
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/applications [post]
 func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -55,7 +53,7 @@ func (h *ApplicationHandler) CreateApplication(c *gin.Context) {
 		return
 	}
 
-	app, secret, err := h.appService.CreateApplication(c.Request.Context(), &req, userID)
+	app, secret, err := h.appService.CreateApplication(c.Request.Context(), &req, &userID)
 	if err != nil {
 		if err == service.ErrInvalidApplicationName {
 			c.JSON(http.StatusBadRequest, models.NewErrorResponse(
@@ -133,7 +131,7 @@ func (h *ApplicationHandler) GetApplication(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Param is_active query bool false "Filter by active status"
 // @Success 200 {object} models.ApplicationListResponse
 // @Failure 401 {object} models.ErrorResponse
@@ -141,7 +139,7 @@ func (h *ApplicationHandler) GetApplication(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/applications [get]
 func (h *ApplicationHandler) ListApplications(c *gin.Context) {
-	page, perPage := h.getPagination(c)
+	page, perPage := utils.ParsePagination(c)
 
 	var isActive *bool
 	if isActiveStr := c.Query("is_active"); isActiveStr != "" {
@@ -350,7 +348,7 @@ func (h *ApplicationHandler) UpdateBranding(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Application ID (UUID)"
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Success 200 {object} models.UserAppProfileListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
@@ -367,7 +365,7 @@ func (h *ApplicationHandler) ListApplicationUsers(c *gin.Context) {
 		return
 	}
 
-	page, perPage := h.getPagination(c)
+	page, perPage := utils.ParsePagination(c)
 
 	response, err := h.appService.ListApplicationUsers(c.Request.Context(), id, page, perPage)
 	if err != nil {
@@ -426,13 +424,12 @@ func (h *ApplicationHandler) BanUser(c *gin.Context) {
 		return
 	}
 
-	adminID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	adminID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	if err := h.appService.BanUser(c.Request.Context(), userID, appID, *adminID, req.Reason); err != nil {
+	if err := h.appService.BanUser(c.Request.Context(), userID, appID, adminID, req.Reason); err != nil {
 		if err == service.ErrUserProfileNotFound {
 			c.JSON(http.StatusNotFound, models.NewErrorResponse(
 				models.NewAppError(http.StatusNotFound, "User profile not found in this application"),
@@ -448,7 +445,7 @@ func (h *ApplicationHandler) BanUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User banned successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "User banned successfully"})
 }
 
 // UnbanUser unbans a user from an application
@@ -499,7 +496,126 @@ func (h *ApplicationHandler) UnbanUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User unbanned successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "User unbanned successfully"})
+}
+
+// GetApplicationUserProfile returns a specific user's profile in an application
+// @Summary Get user profile in application
+// @Description Get a specific user's profile within an application (admin only)
+// @Tags Admin - Applications
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Application ID"
+// @Param user_id path string true "User ID"
+// @Success 200 {object} models.UserApplicationProfile
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/applications/{id}/users/{user_id} [get]
+func (h *ApplicationHandler) GetApplicationUserProfile(c *gin.Context) {
+	appID, err := h.parseIDParam(c, "id")
+	if err != nil {
+		return
+	}
+	userID, err := h.parseIDParam(c, "user_id")
+	if err != nil {
+		return
+	}
+
+	profile, err := h.appService.GetUserProfile(c.Request.Context(), userID, appID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.NewErrorResponse(
+			models.NewAppError(http.StatusNotFound, "PROFILE_NOT_FOUND", "User profile not found in this application"),
+		))
+		return
+	}
+
+	c.JSON(http.StatusOK, profile)
+}
+
+// UpdateApplicationUserProfile updates a specific user's profile in an application
+// @Summary Update user profile in application
+// @Description Update a specific user's profile within an application (admin only)
+// @Tags Admin - Applications
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Application ID"
+// @Param user_id path string true "User ID"
+// @Param request body models.UpdateUserAppProfileRequest true "Profile update data"
+// @Success 200 {object} models.UserApplicationProfile
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/applications/{id}/users/{user_id} [put]
+func (h *ApplicationHandler) UpdateApplicationUserProfile(c *gin.Context) {
+	appID, err := h.parseIDParam(c, "id")
+	if err != nil {
+		return
+	}
+	userID, err := h.parseIDParam(c, "user_id")
+	if err != nil {
+		return
+	}
+
+	var req models.UpdateUserAppProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
+			models.NewAppError(http.StatusBadRequest, "INVALID_REQUEST", err.Error()),
+		))
+		return
+	}
+
+	profile, err := h.appService.UpdateUserProfile(c.Request.Context(), userID, appID, &req)
+	if err != nil {
+		if err.Error() == "profile not found" {
+			c.JSON(http.StatusNotFound, models.NewErrorResponse(
+				models.NewAppError(http.StatusNotFound, "PROFILE_NOT_FOUND", "User profile not found"),
+			))
+			return
+		}
+		h.logger.Error("Failed to update user profile", map[string]interface{}{
+			"error":          err.Error(),
+			"user_id":        userID.String(),
+			"application_id": appID.String(),
+		})
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, profile)
+}
+
+// DeleteApplicationUserProfile removes a user's profile from an application
+// @Summary Delete user profile from application
+// @Description Remove a user's profile from an application (admin only)
+// @Tags Admin - Applications
+// @Security BearerAuth
+// @Param id path string true "Application ID"
+// @Param user_id path string true "User ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/applications/{id}/users/{user_id} [delete]
+func (h *ApplicationHandler) DeleteApplicationUserProfile(c *gin.Context) {
+	appID, err := h.parseIDParam(c, "id")
+	if err != nil {
+		return
+	}
+	userID, err := h.parseIDParam(c, "user_id")
+	if err != nil {
+		return
+	}
+
+	if err := h.appService.DeleteUserProfile(c.Request.Context(), userID, appID); err != nil {
+		h.logger.Error("Failed to delete user profile", map[string]interface{}{
+			"error":          err.Error(),
+			"user_id":        userID.String(),
+			"application_id": appID.String(),
+		})
+		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "User profile removed from application"})
 }
 
 // GetPublicBranding retrieves public branding for an application
@@ -564,13 +680,12 @@ func (h *ApplicationHandler) GetMyProfile(c *gin.Context) {
 		return
 	}
 
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	profile, err := h.appService.GetOrCreateUserProfile(c.Request.Context(), *userID, appID)
+	profile, err := h.appService.GetOrCreateUserProfile(c.Request.Context(), userID, appID)
 	if err != nil {
 		h.logger.Error("Failed to get user profile", map[string]interface{}{
 			"error":          err.Error(),
@@ -608,9 +723,8 @@ func (h *ApplicationHandler) UpdateMyProfile(c *gin.Context) {
 		return
 	}
 
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -626,7 +740,7 @@ func (h *ApplicationHandler) UpdateMyProfile(c *gin.Context) {
 		return
 	}
 
-	profile, err := h.appService.UpdateUserProfile(c.Request.Context(), *userID, appID, &req)
+	profile, err := h.appService.UpdateUserProfile(c.Request.Context(), userID, appID, &req)
 	if err != nil {
 		if err == service.ErrUserProfileNotFound {
 			c.JSON(http.StatusNotFound, models.NewErrorResponse(
@@ -671,12 +785,12 @@ func (h *ApplicationHandler) RotateSecret(c *gin.Context) {
 
 	secret, err := h.appService.RotateSecret(c.Request.Context(), id)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else if err == service.ErrApplicationNotFound {
+		if err == service.ErrApplicationNotFound {
 			c.JSON(http.StatusNotFound, models.NewErrorResponse(
 				models.NewAppError(http.StatusNotFound, "Application not found"),
 			))
+		} else if appErr, ok := err.(*models.AppError); ok {
+			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
 		} else {
 			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(
 				models.NewAppError(http.StatusInternalServerError, "Failed to rotate secret"),
@@ -740,14 +854,3 @@ func (h *ApplicationHandler) GetAuthConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, config)
 }
 
-func (h *ApplicationHandler) getPagination(c *gin.Context) (int, int) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
-	if page < 1 {
-		page = 1
-	}
-	if perPage < 1 || perPage > 100 {
-		perPage = 20
-	}
-	return page, perPage
-}

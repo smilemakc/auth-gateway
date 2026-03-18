@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
@@ -15,7 +14,8 @@ import (
 // It combines Redis (fast, primary) and PostgreSQL (persistent, fallback) storage.
 type BlacklistService struct {
 	redis       CacheService
-	tokenRepo   TokenStore
+	tokenRepo   TransactionalTokenStore
+	sessionRepo SessionStore
 	jwtService  TokenService
 	logger      *logger.Logger
 	auditLogger AuditLogger
@@ -33,10 +33,11 @@ type SyncStats struct {
 }
 
 // NewBlacklistService creates a new blacklist service
-func NewBlacklistService(redis CacheService, tokenRepo TokenStore, jwtService TokenService, logger *logger.Logger, auditLogger AuditLogger) *BlacklistService {
+func NewBlacklistService(redis CacheService, tokenRepo TransactionalTokenStore, sessionRepo SessionStore, jwtService TokenService, logger *logger.Logger, auditLogger AuditLogger) *BlacklistService {
 	return &BlacklistService{
 		redis:       redis,
 		tokenRepo:   tokenRepo,
+		sessionRepo: sessionRepo,
 		jwtService:  jwtService,
 		logger:      logger,
 		auditLogger: auditLogger,
@@ -52,12 +53,7 @@ func (s *BlacklistService) SyncFromDatabase(ctx context.Context) error {
 	s.logger.Info("Starting blacklist synchronization from database to Redis")
 
 	// Get all active blacklist entries from database
-	tokenRepo, ok := s.tokenRepo.(*repository.TokenRepository)
-	if !ok {
-		return fmt.Errorf("token repository does not support GetAllActiveBlacklistEntries")
-	}
-
-	entries, err := tokenRepo.GetAllActiveBlacklistEntries(ctx)
+	entries, err := s.tokenRepo.GetAllActiveBlacklistEntries(ctx)
 	if err != nil {
 		s.syncStats.DatabaseErrors++
 		s.logger.Error("Failed to get blacklist entries from database", map[string]interface{}{
@@ -263,5 +259,36 @@ func (s *BlacklistService) BlacklistSessionTokens(ctx context.Context, session *
 			"os":      session.OS,
 		},
 	})
+	return lastErr
+}
+
+// BlacklistAllUserSessions blacklists access and refresh tokens for all active sessions of a user.
+// This is used after password change/reset to immediately invalidate all existing tokens.
+func (s *BlacklistService) BlacklistAllUserSessions(ctx context.Context, userID uuid.UUID) error {
+	sessions, err := s.sessionRepo.GetUserSessions(ctx, userID)
+	if err != nil {
+		s.logger.Error("Failed to get user sessions for blacklisting", map[string]interface{}{
+			"user_id": userID.String(),
+			"error":   err.Error(),
+		})
+		return fmt.Errorf("failed to get user sessions: %w", err)
+	}
+
+	var lastErr error
+	blacklisted := 0
+	for i := range sessions {
+		if err := s.BlacklistSessionTokens(ctx, &sessions[i]); err != nil {
+			lastErr = err
+			continue
+		}
+		blacklisted++
+	}
+
+	s.logger.Info("Blacklisted all user sessions", map[string]interface{}{
+		"user_id":     userID.String(),
+		"total":       len(sessions),
+		"blacklisted": blacklisted,
+	})
+
 	return lastErr
 }

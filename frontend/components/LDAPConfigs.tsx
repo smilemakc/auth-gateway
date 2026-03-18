@@ -7,6 +7,7 @@ import { useLanguage } from '../services/i18n';
 import { formatRelative } from '../lib/date';
 import { toast } from '../services/toast';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const LDAPConfigs: React.FC = () => {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ const LDAPConfigs: React.FC = () => {
       try {
         await deleteConfig.mutateAsync(id);
       } catch (error) {
-        console.error('Failed to delete LDAP config:', error);
+        logger.error('Failed to delete LDAP config:', error);
         toast.error(t('common.failed_to_load'));
       }
     }
@@ -66,7 +67,7 @@ const LDAPConfigs: React.FC = () => {
       await syncLDAP.mutateAsync({ id, data: { sync_users: true, sync_groups: true } });
       toast.success(t('ldap.sync_started'));
     } catch (error) {
-      console.error('Failed to start sync:', error);
+      logger.error('Failed to start sync:', error);
       toast.error(t('common.failed_to_load'));
     } finally {
       setSyncingId(null);

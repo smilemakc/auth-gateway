@@ -29,7 +29,7 @@ export class AdminSMSSettingsService extends BaseService {
    */
   async get(id: string): Promise<SMSSettings> {
     const response = await this.http.get<SMSSettings>(
-      `/admin/sms/settings/${id}`
+      `/api/admin/sms/settings/${id}`
     );
     return response.data;
   }
@@ -66,7 +66,7 @@ export class AdminSMSSettingsService extends BaseService {
    */
   async update(id: string, data: Partial<SMSSettingsRequest>): Promise<SMSSettings> {
     const response = await this.http.put<SMSSettings>(
-      `/admin/sms/settings/${id}`,
+      `/api/admin/sms/settings/${id}`,
       data
     );
     return response.data;
@@ -79,7 +79,7 @@ export class AdminSMSSettingsService extends BaseService {
    */
   async delete(id: string): Promise<MessageResponse> {
     const response = await this.http.delete<MessageResponse>(
-      `/admin/sms/settings/${id}`
+      `/api/admin/sms/settings/${id}`
     );
     return response.data;
   }

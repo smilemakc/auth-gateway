@@ -12,11 +12,11 @@ import (
 )
 
 type EmailProfileHandler struct {
-	emailProfileService *service.EmailProfileService
+	emailProfileService service.EmailProfileServicer
 	logger              *logger.Logger
 }
 
-func NewEmailProfileHandler(emailProfileService *service.EmailProfileService, logger *logger.Logger) *EmailProfileHandler {
+func NewEmailProfileHandler(emailProfileService service.EmailProfileServicer, logger *logger.Logger) *EmailProfileHandler {
 	return &EmailProfileHandler{
 		emailProfileService: emailProfileService,
 		logger:              logger,
@@ -29,7 +29,7 @@ func NewEmailProfileHandler(emailProfileService *service.EmailProfileService, lo
 // @Tags Email Providers
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {array} models.EmailProviderResponse
+// @Success 200 {object} models.EmailProviderListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -45,7 +45,13 @@ func (h *EmailProfileHandler) ListProviders(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, providers)
+	c.JSON(http.StatusOK, models.EmailProviderListResponse{
+		Providers:  providers,
+		Total:      len(providers),
+		Page:       1,
+		PageSize:   len(providers),
+		TotalPages: 1,
+	})
 }
 
 // GetProvider handles retrieving a specific email provider
@@ -72,15 +78,7 @@ func (h *EmailProfileHandler) GetProvider(c *gin.Context) {
 
 	provider, err := h.emailProfileService.GetProvider(c.Request.Context(), id)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to get email provider", map[string]interface{}{
-			"error":       err.Error(),
-			"provider_id": id.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -110,15 +108,7 @@ func (h *EmailProfileHandler) CreateProvider(c *gin.Context) {
 
 	provider, err := h.emailProfileService.CreateProvider(c.Request.Context(), &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to create email provider", map[string]interface{}{
-			"error": err.Error(),
-			"name":  req.Name,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -156,19 +146,11 @@ func (h *EmailProfileHandler) UpdateProvider(c *gin.Context) {
 	}
 
 	if err := h.emailProfileService.UpdateProvider(c.Request.Context(), id, &req); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to update email provider", map[string]interface{}{
-			"error":       err.Error(),
-			"provider_id": id.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Email provider updated successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Email provider updated successfully"})
 }
 
 // DeleteProvider handles deleting an email provider
@@ -194,19 +176,11 @@ func (h *EmailProfileHandler) DeleteProvider(c *gin.Context) {
 	}
 
 	if err := h.emailProfileService.DeleteProvider(c.Request.Context(), id); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to delete email provider", map[string]interface{}{
-			"error":       err.Error(),
-			"provider_id": id.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Email provider deleted successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Email provider deleted successfully"})
 }
 
 // TestProvider handles testing an email provider
@@ -242,20 +216,11 @@ func (h *EmailProfileHandler) TestProvider(c *gin.Context) {
 	}
 
 	if err := h.emailProfileService.TestProvider(c.Request.Context(), id, req.Email); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to test email provider", map[string]interface{}{
-			"error":       err.Error(),
-			"provider_id": id.String(),
-			"email":       req.Email,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Test email sent successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Test email sent successfully"})
 }
 
 // ListProfiles handles listing all email profiles
@@ -264,7 +229,7 @@ func (h *EmailProfileHandler) TestProvider(c *gin.Context) {
 // @Tags Email Profiles
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {array} models.EmailProfile
+// @Success 200 {object} models.EmailProfileListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -280,7 +245,13 @@ func (h *EmailProfileHandler) ListProfiles(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, profiles)
+	c.JSON(http.StatusOK, models.EmailProfileListResponse{
+		Profiles:   profiles,
+		Total:      len(profiles),
+		Page:       1,
+		PageSize:   len(profiles),
+		TotalPages: 1,
+	})
 }
 
 // GetProfile handles retrieving a specific email profile
@@ -307,15 +278,7 @@ func (h *EmailProfileHandler) GetProfile(c *gin.Context) {
 
 	profile, err := h.emailProfileService.GetProfile(c.Request.Context(), id)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to get email profile", map[string]interface{}{
-			"error":      err.Error(),
-			"profile_id": id.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -345,15 +308,7 @@ func (h *EmailProfileHandler) CreateProfile(c *gin.Context) {
 
 	profile, err := h.emailProfileService.CreateProfile(c.Request.Context(), &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to create email profile", map[string]interface{}{
-			"error": err.Error(),
-			"name":  req.Name,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -391,19 +346,11 @@ func (h *EmailProfileHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	if err := h.emailProfileService.UpdateProfile(c.Request.Context(), id, &req); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to update email profile", map[string]interface{}{
-			"error":      err.Error(),
-			"profile_id": id.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Email profile updated successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Email profile updated successfully"})
 }
 
 // DeleteProfile handles deleting an email profile
@@ -429,19 +376,11 @@ func (h *EmailProfileHandler) DeleteProfile(c *gin.Context) {
 	}
 
 	if err := h.emailProfileService.DeleteProfile(c.Request.Context(), id); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to delete email profile", map[string]interface{}{
-			"error":      err.Error(),
-			"profile_id": id.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Email profile deleted successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Email profile deleted successfully"})
 }
 
 // SetDefaultProfile handles setting a profile as default
@@ -467,19 +406,11 @@ func (h *EmailProfileHandler) SetDefaultProfile(c *gin.Context) {
 	}
 
 	if err := h.emailProfileService.SetDefaultProfile(c.Request.Context(), id); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to set default email profile", map[string]interface{}{
-			"error":      err.Error(),
-			"profile_id": id.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Default email profile set successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Default email profile set successfully"})
 }
 
 // GetProfileTemplates handles retrieving templates assigned to a profile
@@ -489,7 +420,7 @@ func (h *EmailProfileHandler) SetDefaultProfile(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param id path string true "Profile ID (UUID)"
-// @Success 200 {array} models.EmailProfileTemplate
+// @Success 200 {object} models.EmailProfileTemplateListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -506,19 +437,14 @@ func (h *EmailProfileHandler) GetProfileTemplates(c *gin.Context) {
 
 	templates, err := h.emailProfileService.GetProfileTemplates(c.Request.Context(), id)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to get profile templates", map[string]interface{}{
-			"error":      err.Error(),
-			"profile_id": id.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, templates)
+	c.JSON(http.StatusOK, models.EmailProfileTemplateListResponse{
+		Templates: templates,
+		Total:     len(templates),
+	})
 }
 
 // SetProfileTemplate handles assigning a template to a profile for a specific OTP type
@@ -563,21 +489,11 @@ func (h *EmailProfileHandler) SetProfileTemplate(c *gin.Context) {
 	}
 
 	if err := h.emailProfileService.SetProfileTemplate(c.Request.Context(), id, otpType, templateID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to set profile template", map[string]interface{}{
-			"error":       err.Error(),
-			"profile_id":  id.String(),
-			"otp_type":    otpType,
-			"template_id": templateID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Profile template set successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Profile template set successfully"})
 }
 
 // RemoveProfileTemplate handles removing a template assignment from a profile
@@ -606,20 +522,11 @@ func (h *EmailProfileHandler) RemoveProfileTemplate(c *gin.Context) {
 	otpType := c.Param("otp_type")
 
 	if err := h.emailProfileService.RemoveProfileTemplate(c.Request.Context(), id, otpType); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to remove profile template", map[string]interface{}{
-			"error":      err.Error(),
-			"profile_id": id.String(),
-			"otp_type":   otpType,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Profile template removed successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Profile template removed successfully"})
 }
 
 // SendEmail handles sending an email using a template
@@ -651,20 +558,11 @@ func (h *EmailProfileHandler) SendEmail(c *gin.Context) {
 	}
 
 	if err := h.emailProfileService.SendEmail(c.Request.Context(), req.ProfileID, applicationID, req.ToEmail, req.TemplateType, req.Variables); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to send email", map[string]interface{}{
-			"error":         err.Error(),
-			"template_type": req.TemplateType,
-			"to_email":      req.ToEmail,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Email sent successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Email sent successfully"})
 }
 
 // GetProfileStats handles retrieving statistics for an email profile
@@ -691,15 +589,7 @@ func (h *EmailProfileHandler) GetProfileStats(c *gin.Context) {
 
 	stats, err := h.emailProfileService.GetProfileStats(c.Request.Context(), id)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to get profile stats", map[string]interface{}{
-			"error":      err.Error(),
-			"profile_id": id.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -739,18 +629,9 @@ func (h *EmailProfileHandler) TestProfile(c *gin.Context) {
 	}
 
 	if err := h.emailProfileService.TestProfile(c.Request.Context(), id, req.Email); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to test email profile", map[string]interface{}{
-			"error":      err.Error(),
-			"profile_id": id.String(),
-			"email":      req.Email,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Test email sent successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "Test email sent successfully"})
 }

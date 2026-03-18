@@ -7,6 +7,7 @@ import { useLanguage } from '../services/i18n';
 import { formatDate } from '../lib/date';
 import { toast } from '../services/toast';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const SAMLSPs: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -27,7 +28,7 @@ const SAMLSPs: React.FC = () => {
       try {
         await deleteSP.mutateAsync(id);
       } catch (error) {
-        console.error('Failed to delete SAML SP:', error);
+        logger.error('Failed to delete SAML SP:', error);
         toast.error(t('common.failed_to_load'));
       }
     }

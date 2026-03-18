@@ -14,17 +14,17 @@ import (
 
 // TwoFactorHandler handles 2FA-related requests
 type TwoFactorHandler struct {
-	twoFAService        *service.TwoFactorService
-	userService         *service.UserService
-	emailProfileService *service.EmailProfileService
+	twoFAService        service.TwoFactorServicer
+	userService         service.UserServicer
+	emailProfileService service.EmailProfileServicer
 	logger              *logger.Logger
 }
 
 // NewTwoFactorHandler creates a new 2FA handler
 func NewTwoFactorHandler(
-	twoFAService *service.TwoFactorService,
-	userService *service.UserService,
-	emailProfileService *service.EmailProfileService,
+	twoFAService service.TwoFactorServicer,
+	userService service.UserServicer,
+	emailProfileService service.EmailProfileServicer,
 	logger *logger.Logger,
 ) *TwoFactorHandler {
 	return &TwoFactorHandler{
@@ -49,9 +49,8 @@ func NewTwoFactorHandler(
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/2fa/setup [post]
 func (h *TwoFactorHandler) Setup(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -64,17 +63,9 @@ func (h *TwoFactorHandler) Setup(c *gin.Context) {
 	}
 
 	// Setup 2FA (password verification happens in service)
-	response, err := h.twoFAService.SetupTOTP(c.Request.Context(), *userID, req.Password)
+	response, err := h.twoFAService.SetupTOTP(c.Request.Context(), userID, req.Password)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to setup 2FA", map[string]interface{}{
-			"error":   err.Error(),
-			"user_id": userID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -95,9 +86,8 @@ func (h *TwoFactorHandler) Setup(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/2fa/verify [post]
 func (h *TwoFactorHandler) Verify(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -109,12 +99,8 @@ func (h *TwoFactorHandler) Verify(c *gin.Context) {
 		return
 	}
 
-	if err := h.twoFAService.VerifyTOTPSetup(c.Request.Context(), *userID, req.Code); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+	if err := h.twoFAService.VerifyTOTPSetup(c.Request.Context(), userID, req.Code); err != nil {
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -123,7 +109,7 @@ func (h *TwoFactorHandler) Verify(c *gin.Context) {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			user, err := h.userService.GetProfile(ctx, *userID)
+			user, err := h.userService.GetProfile(ctx, userID)
 			if err != nil {
 				return
 			}
@@ -161,9 +147,8 @@ func (h *TwoFactorHandler) Verify(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/2fa/disable [post]
 func (h *TwoFactorHandler) Disable(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -175,12 +160,8 @@ func (h *TwoFactorHandler) Disable(c *gin.Context) {
 		return
 	}
 
-	if err := h.twoFAService.DisableTOTP(c.Request.Context(), *userID, req.Password, req.Code); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+	if err := h.twoFAService.DisableTOTP(c.Request.Context(), userID, req.Password, req.Code); err != nil {
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -189,7 +170,7 @@ func (h *TwoFactorHandler) Disable(c *gin.Context) {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			user, err := h.userService.GetProfile(ctx, *userID)
+			user, err := h.userService.GetProfile(ctx, userID)
 			if err != nil {
 				return
 			}
@@ -224,13 +205,12 @@ func (h *TwoFactorHandler) Disable(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/2fa/status [get]
 func (h *TwoFactorHandler) GetStatus(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	status, err := h.twoFAService.GetStatus(c.Request.Context(), *userID)
+	status, err := h.twoFAService.GetStatus(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
 		return
@@ -253,9 +233,8 @@ func (h *TwoFactorHandler) GetStatus(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/auth/2fa/backup-codes/regenerate [post]
 func (h *TwoFactorHandler) RegenerateBackupCodes(c *gin.Context) {
-	userID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
@@ -270,13 +249,9 @@ func (h *TwoFactorHandler) RegenerateBackupCodes(c *gin.Context) {
 		return
 	}
 
-	codes, err := h.twoFAService.RegenerateBackupCodes(c.Request.Context(), *userID, req.Password)
+	codes, err := h.twoFAService.RegenerateBackupCodes(c.Request.Context(), userID, req.Password)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 

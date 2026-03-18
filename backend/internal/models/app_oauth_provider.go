@@ -52,3 +52,11 @@ type UpdateAppOAuthProviderRequest struct {
 	UserInfoURL  *string  `json:"user_info_url,omitempty" binding:"omitempty,url,max=500" example:"https://www.googleapis.com/oauth2/v2/userinfo"`
 	IsActive     *bool    `json:"is_active,omitempty" example:"true"`
 }
+
+// AppOAuthProviderListResponse represents application OAuth providers list
+type AppOAuthProviderListResponse struct {
+	// List of OAuth providers
+	Providers []*ApplicationOAuthProvider `json:"providers"`
+	// Total number of providers
+	Total int `json:"total" example:"3"`
+}

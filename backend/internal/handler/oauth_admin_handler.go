@@ -2,21 +2,21 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
 type OAuthAdminHandler struct {
-	service *service.OAuthProviderService
+	service service.OAuthProviderServicer
 	logger  *logger.Logger
 }
 
-func NewOAuthAdminHandler(service *service.OAuthProviderService, logger *logger.Logger) *OAuthAdminHandler {
+func NewOAuthAdminHandler(service service.OAuthProviderServicer, logger *logger.Logger) *OAuthAdminHandler {
 	return &OAuthAdminHandler{
 		service: service,
 		logger:  logger,
@@ -66,17 +66,16 @@ func (h *OAuthAdminHandler) CreateClient(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Param owner_id query string false "Filter by owner ID"
 // @Param is_active query bool false "Filter by active status"
-// @Success 200 {object} map[string]interface{} "Response with clients, total, page, per_page"
+// @Success 200 {object} models.OAuthClientListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients [get]
 func (h *OAuthAdminHandler) ListClients(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	page, pageSize := utils.ParsePagination(c)
 
 	var opts []service.OAuthClientListOption
 
@@ -96,7 +95,7 @@ func (h *OAuthAdminHandler) ListClients(c *gin.Context) {
 		opts = append(opts, service.OAuthClientListActive(&val))
 	}
 
-	clients, total, err := h.service.ListClients(c.Request.Context(), page, perPage, opts...)
+	clients, total, err := h.service.ListClients(c.Request.Context(), page, pageSize, opts...)
 	if err != nil {
 		h.logger.Error("Failed to list OAuth clients", map[string]interface{}{
 			"error": err.Error(),
@@ -105,11 +104,13 @@ func (h *OAuthAdminHandler) ListClients(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"clients":  clients,
-		"total":    total,
-		"page":     page,
-		"per_page": perPage,
+	totalPages := (total + pageSize - 1) / pageSize
+	c.JSON(http.StatusOK, models.OAuthClientListResponse{
+		Clients:    clients,
+		Total:      total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
 	})
 }
 
@@ -128,23 +129,14 @@ func (h *OAuthAdminHandler) ListClients(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients/{id} [get]
 func (h *OAuthAdminHandler) GetClient(c *gin.Context) {
-	clientID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid client ID"),
-		))
+	clientID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	client, err := h.service.GetClient(c.Request.Context(), clientID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusNotFound, models.NewErrorResponse(
-			models.NewAppError(http.StatusNotFound, "Client not found"),
-		))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -168,11 +160,8 @@ func (h *OAuthAdminHandler) GetClient(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients/{id} [put]
 func (h *OAuthAdminHandler) UpdateClient(c *gin.Context) {
-	clientID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid client ID"),
-		))
+	clientID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -186,15 +175,7 @@ func (h *OAuthAdminHandler) UpdateClient(c *gin.Context) {
 
 	client, err := h.service.UpdateClient(c.Request.Context(), clientID, &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to update OAuth client", map[string]interface{}{
-			"error":     err.Error(),
-			"client_id": clientID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -215,24 +196,13 @@ func (h *OAuthAdminHandler) UpdateClient(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients/{id} [delete]
 func (h *OAuthAdminHandler) DeleteClient(c *gin.Context) {
-	clientID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid client ID"),
-		))
+	clientID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	if err := h.service.DeleteClient(c.Request.Context(), clientID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to delete OAuth client", map[string]interface{}{
-			"error":     err.Error(),
-			"client_id": clientID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -254,25 +224,14 @@ func (h *OAuthAdminHandler) DeleteClient(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients/{id}/rotate-secret [post]
 func (h *OAuthAdminHandler) RotateSecret(c *gin.Context) {
-	clientID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid client ID"),
-		))
+	clientID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	clientSecret, err := h.service.RotateClientSecret(c.Request.Context(), clientID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to rotate client secret", map[string]interface{}{
-			"error":     err.Error(),
-			"client_id": clientID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -287,7 +246,7 @@ func (h *OAuthAdminHandler) RotateSecret(c *gin.Context) {
 // @Tags Admin - OAuth Scopes
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {object} map[string]interface{} "Response with scopes array"
+// @Success 200 {object} models.OAuthScopeListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -302,9 +261,7 @@ func (h *OAuthAdminHandler) ListScopes(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"scopes": scopes,
-	})
+	c.JSON(http.StatusOK, models.OAuthScopeListResponse{Scopes: scopes, Total: len(scopes)})
 }
 
 // CreateScope creates a custom OAuth scope
@@ -371,24 +328,13 @@ func (h *OAuthAdminHandler) CreateScope(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/scopes/{id} [delete]
 func (h *OAuthAdminHandler) DeleteScope(c *gin.Context) {
-	scopeID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid scope ID"),
-		))
+	scopeID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	if err := h.service.DeleteScope(c.Request.Context(), scopeID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to delete OAuth scope", map[string]interface{}{
-			"error":    err.Error(),
-			"scope_id": scopeID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -402,7 +348,7 @@ func (h *OAuthAdminHandler) DeleteScope(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param id path string true "Client ID"
-// @Success 200 {object} map[string]interface{} "Response with consents array"
+// @Success 200 {object} models.OAuthConsentListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -410,11 +356,8 @@ func (h *OAuthAdminHandler) DeleteScope(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients/{id}/consents [get]
 func (h *OAuthAdminHandler) ListClientConsents(c *gin.Context) {
-	clientID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid client ID"),
-		))
+	clientID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -428,9 +371,7 @@ func (h *OAuthAdminHandler) ListClientConsents(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"consents": consents,
-	})
+	c.JSON(http.StatusOK, models.OAuthConsentListResponse{Consents: consents, Total: len(consents)})
 }
 
 // RevokeUserConsent revokes user consent for a client
@@ -448,33 +389,18 @@ func (h *OAuthAdminHandler) ListClientConsents(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/oauth/clients/{id}/consents/{user_id} [delete]
 func (h *OAuthAdminHandler) RevokeUserConsent(c *gin.Context) {
-	clientID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid client ID"),
-		))
+	clientID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	userID, err := uuid.Parse(c.Param("user_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "user_id")
+	if !ok {
 		return
 	}
 
 	if err := h.service.RevokeConsent(c.Request.Context(), userID, clientID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to revoke user consent", map[string]interface{}{
-			"error":     err.Error(),
-			"client_id": clientID.String(),
-			"user_id":   userID.String(),
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 

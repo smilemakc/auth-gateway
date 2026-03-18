@@ -17,13 +17,15 @@ try:
 except ImportError:
     pymysql = None
 
-from . import SourceConfig, SourceUser
+from . import RolesConfig, SourceConfig, SourceUser
 
 
 class UserExporter:
-    def __init__(self, config: SourceConfig):
+    def __init__(self, config: SourceConfig, roles_config: Optional[RolesConfig] = None):
         self.config = config
+        self.roles_config = roles_config
         self.conn = None
+        self._roles_cache: dict[str, list[int]] = {}
         self._connect()
 
     def _connect(self):
@@ -57,11 +59,27 @@ class UserExporter:
             raise ValueError(f"Unsupported database type: {self.config.type}")
 
     def export_users(self) -> Iterator[SourceUser]:
+        # Prefetch M2M roles if configured
+        if self.roles_config and self.roles_config.enabled and self.roles_config.source_table:
+            self.prefetch_roles()
+
         cols = self.config.columns
 
+        # Include roles source_column in SELECT if it's a single-column mapping
+        extra_cols: list[str] = []
+        if (
+            self.roles_config
+            and self.roles_config.enabled
+            and not self.roles_config.source_table
+            and self.roles_config.source_column not in cols.values()
+        ):
+            extra_cols.append(self.roles_config.source_column)
+
         select_parts = []
-        for field, column_name in cols.items():
-            select_parts.append(f"{column_name} AS {field}")
+        for field_name, column_name in cols.items():
+            select_parts.append(f"{column_name} AS {field_name}")
+        for col in extra_cols:
+            select_parts.append(col)
 
         select_clause = ", ".join(select_parts)
         order_by = cols.get("created_at", "created_at")
@@ -74,7 +92,11 @@ class UserExporter:
             cursor.execute(query)
 
             for row in cursor:
-                yield self._map_to_source_user(row)
+                user = self._map_to_source_user(row)
+                # Merge M2M roles if available
+                if self.roles_config and self.roles_config.enabled and self.roles_config.source_table:
+                    user.roles = self.get_user_roles(user.id)
+                yield user
 
             cursor.close()
 
@@ -86,21 +108,71 @@ class UserExporter:
 
             for row_tuple in cursor:
                 row = dict(zip(columns, row_tuple))
-                yield self._map_to_source_user(row)
+                user = self._map_to_source_user(row)
+                if self.roles_config and self.roles_config.enabled and self.roles_config.source_table:
+                    user.roles = self.get_user_roles(user.id)
+                yield user
 
             cursor.close()
 
     def _map_to_source_user(self, row: dict) -> SourceUser:
+        email = row.get("email") or None
+        phone = row.get("phone") or None
+
+        # Collect roles from the row if roles column is mapped
+        roles: list[int] = []
+        if self.roles_config and self.roles_config.enabled:
+            if not self.roles_config.source_table:
+                # Single column in users table
+                role_val = row.get(self.roles_config.source_column)
+                if role_val is not None:
+                    # Handle both scalar (INT) and array (INT[]) column types
+                    if isinstance(role_val, (list, tuple)):
+                        roles = [int(r) for r in role_val]
+                    else:
+                        roles = [int(role_val)]
+
         return SourceUser(
             id=str(row.get("id", "")),
-            email=row.get("email") or "",
+            email=email,
             username=row.get("username"),
             password_hash=row.get("password_hash"),
             full_name=row.get("full_name"),
-            phone=row.get("phone"),
+            phone=phone,
             is_active=bool(row.get("is_active", True)),
+            email_verified=bool(row.get("email_verified", False)),
+            phone_verified=bool(row.get("phone_verified", False)),
             created_at=row.get("created_at"),
+            roles=roles,
         )
+
+    def prefetch_roles(self) -> None:
+        """Prefetch roles from M2M table into cache (for M2M role sources)."""
+        if not self.roles_config or not self.roles_config.enabled or not self.roles_config.source_table:
+            return
+
+        rc = self.roles_config
+        query = f"SELECT {rc.source_user_id_column}, {rc.source_role_id_column} FROM {rc.source_table}"
+
+        cursor = self.conn.cursor()
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        cursor.close()
+
+        self._roles_cache.clear()
+        for row in rows:
+            user_id = str(row[0])
+            role_val = row[1]
+            # Handle both scalar and array column types
+            if isinstance(role_val, (list, tuple)):
+                for r in role_val:
+                    self._roles_cache.setdefault(user_id, []).append(int(r))
+            else:
+                self._roles_cache.setdefault(user_id, []).append(int(role_val))
+
+    def get_user_roles(self, user_id: str) -> list[int]:
+        """Get roles for a user from cache (M2M) or return empty list."""
+        return self._roles_cache.get(user_id, [])
 
     def count_users(self) -> int:
         cursor = self.conn.cursor()
@@ -155,7 +227,10 @@ class UserExporter:
         return "uuid"
 
     def detect_password_algorithm(self, sample_size: int = 10) -> str:
-        password_column = self.config.columns.get("password_hash", "password_hash")
+        password_column = self.config.columns.get("password_hash")
+
+        if not password_column:
+            return "none"
 
         cursor = self.conn.cursor()
         cursor.execute(

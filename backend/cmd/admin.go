@@ -68,8 +68,8 @@ func runAdminCreate(cmd *cobra.Command, args []string) error {
 
 	// Validate email
 	email := utils.NormalizeEmail(adminEmail)
-	if !utils.IsValidEmail(email) {
-		return fmt.Errorf("invalid email format: %s", adminEmail)
+	if err := utils.ValidateEmail(email); err != nil {
+		return fmt.Errorf("invalid email: %w", err)
 	}
 
 	// Validate username

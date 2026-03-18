@@ -6,6 +6,7 @@ import { useLanguage } from '../services/i18n';
 import { useWebhooks, useDeleteWebhook } from '../hooks/useWebhooks';
 import { formatRelative } from '../lib/date';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const Webhooks: React.FC = () => {
   const [revealedSecrets, setRevealedSecrets] = useState<string[]>([]);
@@ -26,7 +27,7 @@ const Webhooks: React.FC = () => {
       try {
         await deleteWebhookMutation.mutateAsync(id);
       } catch (err) {
-        console.error('Failed to delete webhook:', err);
+        logger.error('Failed to delete webhook:', err);
       }
     }
   };
@@ -103,7 +104,7 @@ const Webhooks: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="font-medium text-foreground font-mono text-sm truncate max-w-xs" title={webhook.url}>{webhook.url}</span>
-                        <span className="text-xs text-muted-foreground mt-0.5">{webhook.description}</span>
+                        <span className="text-xs text-muted-foreground mt-0.5">{webhook.name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -123,7 +124,7 @@ const Webhooks: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <code className="text-xs font-mono bg-muted px-2 py-1 rounded border border-border text-muted-foreground w-24 truncate">
-                          {revealedSecrets.includes(webhook.id) ? (webhook.secret || 'N/A') : 'whsec_••••••••'}
+                          {revealedSecrets.includes(webhook.id) ? (webhook.secret_key || 'N/A') : 'whsec_••••••••'}
                         </code>
                         <button
                           onClick={() => toggleSecret(webhook.id)}

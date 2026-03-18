@@ -115,11 +115,14 @@ func (s *GroupService) ListGroups(ctx context.Context, page, pageSize int) (*mod
 		}
 	}
 
+	totalPages := (total + pageSize - 1) / pageSize
+
 	return &models.GroupListResponse{
-		Groups: responses,
-		Total:  total,
-		Page:   page,
-		Size:   pageSize,
+		Groups:     responses,
+		Total:      total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
 	}, nil
 }
 

@@ -11,11 +11,11 @@ type EmailProvider struct {
 	ID            uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
 	ApplicationID *uuid.UUID `bun:"application_id,type:uuid" json:"application_id,omitempty"`
 	Name          string     `json:"name" bun:"name"`
-	Type      string     `json:"type" bun:"type"`
-	IsActive  bool       `json:"is_active" bun:"is_active"`
-	CreatedAt time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
-	UpdatedAt time.Time  `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
-	CreatedBy *uuid.UUID `json:"created_by,omitempty" bun:"created_by,type:uuid"`
+	Type          string     `json:"type" bun:"type"`
+	IsActive      bool       `json:"is_active" bun:"is_active"`
+	CreatedAt     time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	UpdatedAt     time.Time  `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
+	CreatedBy     *uuid.UUID `json:"created_by,omitempty" bun:"created_by,type:uuid"`
 
 	// SMTP fields
 	SMTPHost     *string `json:"smtp_host,omitempty" bun:"smtp_host"`
@@ -42,15 +42,15 @@ type EmailProfile struct {
 	ID            uuid.UUID  `json:"id" bun:"id,pk,type:uuid,default:gen_random_uuid()"`
 	ApplicationID *uuid.UUID `bun:"application_id,type:uuid" json:"application_id,omitempty"`
 	Name          string     `json:"name" bun:"name"`
-	ProviderID uuid.UUID  `json:"provider_id" bun:"provider_id,type:uuid"`
-	FromEmail  string     `json:"from_email" bun:"from_email"`
-	FromName   string     `json:"from_name" bun:"from_name"`
-	ReplyTo    *string    `json:"reply_to,omitempty" bun:"reply_to"`
-	IsDefault  bool       `json:"is_default" bun:"is_default"`
-	IsActive   bool       `json:"is_active" bun:"is_active"`
-	CreatedAt  time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
-	UpdatedAt  time.Time  `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
-	CreatedBy  *uuid.UUID `json:"created_by,omitempty" bun:"created_by,type:uuid"`
+	ProviderID    uuid.UUID  `json:"provider_id" bun:"provider_id,type:uuid"`
+	FromEmail     string     `json:"from_email" bun:"from_email"`
+	FromName      string     `json:"from_name" bun:"from_name"`
+	ReplyTo       *string    `json:"reply_to,omitempty" bun:"reply_to"`
+	IsDefault     bool       `json:"is_default" bun:"is_default"`
+	IsActive      bool       `json:"is_active" bun:"is_active"`
+	CreatedAt     time.Time  `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
+	UpdatedAt     time.Time  `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
+	CreatedBy     *uuid.UUID `json:"created_by,omitempty" bun:"created_by,type:uuid"`
 
 	// Relations
 	Provider *EmailProvider `json:"provider,omitempty" bun:"rel:belongs-to,join:provider_id=id"`
@@ -223,13 +223,13 @@ type EmailProviderResponse struct {
 // EmailProviderListResponse contains paginated provider list
 type EmailProviderListResponse struct {
 	// List of email providers
-	Providers []EmailProviderResponse `json:"providers"`
+	Providers []*EmailProviderResponse `json:"providers"`
 	// Total number of providers
 	Total int `json:"total" example:"5"`
 	// Current page number
 	Page int `json:"page" example:"1"`
 	// Number of items per page
-	PerPage int `json:"per_page" example:"20"`
+	PageSize int `json:"page_size" example:"20"`
 	// Total number of pages
 	TotalPages int `json:"total_pages" example:"1"`
 }
@@ -237,13 +237,13 @@ type EmailProviderListResponse struct {
 // EmailProfileListResponse contains paginated profile list
 type EmailProfileListResponse struct {
 	// List of email profiles
-	Profiles []EmailProfile `json:"profiles"`
+	Profiles []*EmailProfile `json:"profiles"`
 	// Total number of profiles
 	Total int `json:"total" example:"3"`
 	// Current page number
 	Page int `json:"page" example:"1"`
 	// Number of items per page
-	PerPage int `json:"per_page" example:"20"`
+	PageSize int `json:"page_size" example:"20"`
 	// Total number of pages
 	TotalPages int `json:"total_pages" example:"1"`
 }
@@ -257,7 +257,7 @@ type EmailLogListResponse struct {
 	// Current page number
 	Page int `json:"page" example:"1"`
 	// Number of items per page
-	PerPage int `json:"per_page" example:"20"`
+	PageSize int `json:"page_size" example:"20"`
 	// Total number of pages
 	TotalPages int `json:"total_pages" example:"8"`
 }
@@ -318,6 +318,14 @@ type AssignTemplateToProfileRequest struct {
 	OTPType OTPType `json:"otp_type" binding:"required,oneof=verification password_reset 2fa login registration" example:"verification"`
 	// Email template ID
 	TemplateID uuid.UUID `json:"template_id" binding:"required" example:"550e8400-e29b-41d4-a716-446655440001"`
+}
+
+// EmailProfileTemplateListResponse represents email profile templates list
+type EmailProfileTemplateListResponse struct {
+	// List of email profile templates
+	Templates []*EmailProfileTemplate `json:"templates"`
+	// Total number of templates
+	Total int `json:"total" example:"3"`
 }
 
 // Email provider types

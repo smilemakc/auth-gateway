@@ -12,12 +12,12 @@ import (
 
 // SCIMHandler handles SCIM 2.0 API requests
 type SCIMHandler struct {
-	scimService *service.SCIMService
+	scimService service.SCIMServicer
 	logger      *logger.Logger
 }
 
 // NewSCIMHandler creates a new SCIM handler
-func NewSCIMHandler(scimService *service.SCIMService, logger *logger.Logger) *SCIMHandler {
+func NewSCIMHandler(scimService service.SCIMServicer, logger *logger.Logger) *SCIMHandler {
 	return &SCIMHandler{
 		scimService: scimService,
 		logger:      logger,

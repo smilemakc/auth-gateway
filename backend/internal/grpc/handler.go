@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/jwt"
@@ -225,36 +225,36 @@ func buildDeviceInfo(clientInfo ClientInfo) models.DeviceInfo {
 type AuthHandlerV2 struct {
 	pb.UnimplementedAuthServiceServer
 	jwtService           *jwt.Service
-	userRepo             *repository.UserRepository
-	tokenRepo            *repository.TokenRepository
-	rbacRepo             *repository.RBACRepository
-	apiKeyService        *service.APIKeyService
-	authService          *service.AuthService
-	oauthProviderService *service.OAuthProviderService
-	otpService           *service.OTPService
-	emailProfileService  *service.EmailProfileService
-	adminService         *service.AdminService
-	appService           *service.ApplicationService
-	redis                *service.RedisService
-	tokenExchangeService *service.TokenExchangeService
+	userRepo             service.UserStore
+	tokenRepo            service.TokenStore
+	rbacRepo             service.RBACStore
+	apiKeyService        service.APIKeyServicer
+	authService          service.AuthServicer
+	oauthProviderService service.OAuthProviderServicer
+	otpService           service.OTPServicer
+	emailProfileService  service.EmailProfileServicer
+	adminService         service.AdminServicer
+	appService           service.ApplicationServicer
+	redis                service.RedisServicer
+	tokenExchangeService service.TokenExchangeServicer
 	logger               *logger.Logger
 }
 
 // NewAuthHandlerV2 creates a new auth handler with API key support
 func NewAuthHandlerV2(
 	jwtService *jwt.Service,
-	userRepo *repository.UserRepository,
-	tokenRepo *repository.TokenRepository,
-	rbacRepo *repository.RBACRepository,
-	apiKeyService *service.APIKeyService,
-	authService *service.AuthService,
-	oauthProviderService *service.OAuthProviderService,
-	otpService *service.OTPService,
-	emailProfileService *service.EmailProfileService,
-	adminService *service.AdminService,
-	appService *service.ApplicationService,
-	redis *service.RedisService,
-	tokenExchangeService *service.TokenExchangeService,
+	userRepo service.UserStore,
+	tokenRepo service.TokenStore,
+	rbacRepo service.RBACStore,
+	apiKeyService service.APIKeyServicer,
+	authService service.AuthServicer,
+	oauthProviderService service.OAuthProviderServicer,
+	otpService service.OTPServicer,
+	emailProfileService service.EmailProfileServicer,
+	adminService service.AdminServicer,
+	appService service.ApplicationServicer,
+	redis service.RedisServicer,
+	tokenExchangeService service.TokenExchangeServicer,
 	log *logger.Logger,
 ) *AuthHandlerV2 {
 	return &AuthHandlerV2{
@@ -321,10 +321,10 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *pb.ValidateToken
 			IsActive:  user.IsActive,
 		}
 
-		if req.ApplicationId != "" {
-			appID, parseErr := uuid.Parse(req.ApplicationId)
+		if resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId); resolvedAppID != "" {
+			appID, parseErr := uuid.Parse(resolvedAppID)
 			if parseErr == nil {
-				response.ApplicationId = req.ApplicationId
+				response.ApplicationId = resolvedAppID
 				appRoles, roleErr := h.rbacRepo.GetUserRolesInApp(ctx, user.ID, &appID)
 				if roleErr == nil {
 					response.AppRoles = extractRoleNames(appRoles)
@@ -384,8 +384,8 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *pb.ValidateToken
 		}
 	}
 
-	if req.ApplicationId != "" {
-		reqAppID, parseErr := uuid.Parse(req.ApplicationId)
+	if resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId); resolvedAppID != "" {
+		reqAppID, parseErr := uuid.Parse(resolvedAppID)
 		if parseErr != nil {
 			return &pb.ValidateTokenResponse{
 				Valid:        false,
@@ -401,7 +401,7 @@ func (h *AuthHandlerV2) ValidateToken(ctx context.Context, req *pb.ValidateToken
 		}
 
 		if claims.ApplicationID == nil {
-			response.ApplicationId = req.ApplicationId
+			response.ApplicationId = resolvedAppID
 			appRoles, roleErr := h.rbacRepo.GetUserRolesInApp(ctx, claims.UserID, &reqAppID)
 			if roleErr == nil {
 				response.AppRoles = extractRoleNames(appRoles)
@@ -463,8 +463,8 @@ func (h *AuthHandlerV2) CheckPermission(ctx context.Context, req *pb.CheckPermis
 	}
 
 	var roles []models.Role
-	if req.ApplicationId != "" {
-		appID, parseErr := uuid.Parse(req.ApplicationId)
+	if resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId); resolvedAppID != "" {
+		appID, parseErr := uuid.Parse(resolvedAppID)
 		if parseErr != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
 		}
@@ -839,7 +839,7 @@ func (h *AuthHandlerV2) CreateUser(ctx context.Context, req *pb.CreateUserReques
 	deviceInfo := buildDeviceInfo(clientInfo)
 
 	// Call AuthService.SignUp
-	authResp, err := h.authService.SignUp(ctx, createReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo, nil)
+	authResp, err := h.authService.SignUp(ctx, createReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo, GetApplicationUUIDFromGRPCContext(ctx))
 	if err != nil {
 		h.logger.Error("Failed to create user via gRPC", map[string]interface{}{
 			"error":    err.Error(),
@@ -921,7 +921,7 @@ func (h *AuthHandlerV2) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Lo
 	deviceInfo := buildDeviceInfo(clientInfo)
 
 	// Call AuthService.SignIn
-	authResp, err := h.authService.SignIn(ctx, signInReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo, nil)
+	authResp, err := h.authService.SignIn(ctx, signInReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo, GetApplicationUUIDFromGRPCContext(ctx))
 	if err != nil {
 		h.logger.Debug("Login via gRPC failed", map[string]interface{}{
 			"error": err.Error(),
@@ -1380,7 +1380,7 @@ func (h *AuthHandlerV2) VerifyRegistrationOTP(ctx context.Context, req *pb.Verif
 		Browser:    clientInfo.UserAgent,
 	}
 
-	authResp, err := h.authService.SignUp(ctx, createReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo, nil)
+	authResp, err := h.authService.SignUp(ctx, createReq, clientInfo.IP, clientInfo.UserAgent, deviceInfo, GetApplicationUUIDFromGRPCContext(ctx))
 	if err != nil {
 		h.logger.Error("Failed to create user via gRPC OTP registration", map[string]interface{}{
 			"error": err.Error(),
@@ -1420,16 +1420,27 @@ func (h *AuthHandlerV2) VerifyRegistrationOTP(ctx context.Context, req *pb.Verif
 	}, nil
 }
 
-// GetUserApplicationProfile returns user's profile for a specific application
 func (h *AuthHandlerV2) GetUserApplicationProfile(ctx context.Context, req *pb.GetUserAppProfileRequest) (*pb.UserAppProfileResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
-	if req.ApplicationId == "" {
+	resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId)
+	if resolvedAppID == "" {
 		return nil, status.Error(codes.InvalidArgument, "application_id is required")
 	}
-
-	return nil, status.Errorf(codes.Unimplemented, "GetUserApplicationProfile not implemented - handler requires ApplicationRepository dependency")
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
+	}
+	appID, err := uuid.Parse(resolvedAppID)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	profile, err := h.appService.GetOrCreateUserProfile(ctx, userID, appID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get user profile: %v", err)
+	}
+	return toUserAppProfileResponse(profile), nil
 }
 
 // GetUserTelegramBots returns user's Telegram bot access for an application
@@ -1437,11 +1448,194 @@ func (h *AuthHandlerV2) GetUserTelegramBots(ctx context.Context, req *pb.GetUser
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
+	resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId)
+	if resolvedAppID == "" {
+		return nil, status.Error(codes.InvalidArgument, "application_id is required")
+	}
+	_ = resolvedAppID // TODO: use when implemented
+
+	return nil, status.Errorf(codes.Unimplemented, "GetUserTelegramBots not implemented - handler requires UserTelegramRepository dependency")
+}
+
+func (h *AuthHandlerV2) UpdateUserProfile(ctx context.Context, req *pb.UpdateUserProfileRequest) (*pb.UserAppProfileResponse, error) {
+	if req.UserId == "" || req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id and application_id are required")
+	}
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
+	}
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	updateReq := &models.UpdateUserAppProfileRequest{
+		AppRoles: req.AppRoles,
+	}
+	if req.DisplayName != "" {
+		updateReq.DisplayName = &req.DisplayName
+	}
+	if req.AvatarUrl != "" {
+		updateReq.AvatarURL = &req.AvatarUrl
+	}
+	if req.Nickname != "" {
+		updateReq.Nickname = &req.Nickname
+	}
+	profile, err := h.appService.UpdateUserProfile(ctx, userID, appID, updateReq)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to update user profile: %v", err)
+	}
+	return toUserAppProfileResponse(profile), nil
+}
+
+func (h *AuthHandlerV2) CreateUserProfile(ctx context.Context, req *pb.CreateUserProfileRequest) (*pb.UserAppProfileResponse, error) {
+	if req.UserId == "" || req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id and application_id are required")
+	}
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
+	}
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	profile, err := h.appService.GetOrCreateUserProfile(ctx, userID, appID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create user profile: %v", err)
+	}
+	return toUserAppProfileResponse(profile), nil
+}
+
+func (h *AuthHandlerV2) DeleteUserProfile(ctx context.Context, req *pb.DeleteUserProfileRequest) (*pb.GenericResponse, error) {
+	if req.UserId == "" || req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id and application_id are required")
+	}
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
+	}
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	if err := h.appService.DeleteUserProfile(ctx, userID, appID); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to delete user profile: %v", err)
+	}
+	return &pb.GenericResponse{Success: true, Message: "User profile deleted"}, nil
+}
+
+func (h *AuthHandlerV2) BanUser(ctx context.Context, req *pb.BanUserRequest) (*pb.GenericResponse, error) {
+	if req.UserId == "" || req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id and application_id are required")
+	}
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
+	}
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	var bannedBy uuid.UUID
+	if req.BannedBy != "" {
+		bannedBy, err = uuid.Parse(req.BannedBy)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid banned_by format")
+		}
+	}
+	if err := h.appService.BanUser(ctx, userID, appID, bannedBy, req.Reason); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to ban user: %v", err)
+	}
+	return &pb.GenericResponse{Success: true, Message: "User banned"}, nil
+}
+
+func (h *AuthHandlerV2) UnbanUser(ctx context.Context, req *pb.UnbanUserRequest) (*pb.GenericResponse, error) {
+	if req.UserId == "" || req.ApplicationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id and application_id are required")
+	}
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id format")
+	}
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	if err := h.appService.UnbanUser(ctx, userID, appID); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to unban user: %v", err)
+	}
+	return &pb.GenericResponse{Success: true, Message: "User unbanned"}, nil
+}
+
+func (h *AuthHandlerV2) ListApplicationUsers(ctx context.Context, req *pb.ListApplicationUsersRequest) (*pb.ListApplicationUsersResponse, error) {
 	if req.ApplicationId == "" {
 		return nil, status.Error(codes.InvalidArgument, "application_id is required")
 	}
+	appID, err := uuid.Parse(req.ApplicationId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
+	}
+	page := int(req.Page)
+	if page < 1 {
+		page = 1
+	}
+	pageSize := int(req.PageSize)
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+	result, err := h.appService.ListApplicationUsers(ctx, appID, page, pageSize)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to list application users: %v", err)
+	}
+	var profiles []*pb.UserAppProfileResponse
+	for _, p := range result.Profiles {
+		profiles = append(profiles, toUserAppProfileResponse(&p))
+	}
+	return &pb.ListApplicationUsersResponse{
+		Profiles:   profiles,
+		Total:      int32(result.Total),
+		Page:       int32(result.Page),
+		PageSize:   int32(result.PageSize),
+		TotalPages: int32(result.TotalPages),
+	}, nil
+}
 
-	return nil, status.Errorf(codes.Unimplemented, "GetUserTelegramBots not implemented - handler requires UserTelegramRepository dependency")
+func toUserAppProfileResponse(p *models.UserApplicationProfile) *pb.UserAppProfileResponse {
+	resp := &pb.UserAppProfileResponse{
+		UserId:        p.UserID.String(),
+		ApplicationId: p.ApplicationID.String(),
+		AppRoles:      p.AppRoles,
+		IsActive:      p.IsActive,
+		IsBanned:      p.IsBanned,
+		CreatedAt:     p.CreatedAt.Unix(),
+		UpdatedAt:     p.UpdatedAt.Unix(),
+	}
+	if p.DisplayName != nil {
+		resp.DisplayName = *p.DisplayName
+	}
+	if p.AvatarURL != nil {
+		resp.AvatarUrl = *p.AvatarURL
+	}
+	if p.Nickname != nil {
+		resp.Nickname = *p.Nickname
+	}
+	if p.BanReason != nil {
+		resp.BanReason = *p.BanReason
+	}
+	if p.LastAccessAt != nil {
+		resp.LastAccessAt = p.LastAccessAt.Unix()
+	}
+	if len(p.Metadata) > 0 {
+		metadataMap, err := p.GetMetadataMap()
+		if err == nil {
+			resp.Metadata = make(map[string]string)
+			for k, v := range metadataMap {
+				resp.Metadata[k] = fmt.Sprintf("%v", v)
+			}
+		}
+	}
+	return resp
 }
 
 // ========== Sync & Config Methods ==========
@@ -1462,8 +1656,8 @@ func (h *AuthHandlerV2) SyncUsers(ctx context.Context, req *pb.SyncUsersRequest)
 	}
 
 	var appID *uuid.UUID
-	if req.ApplicationId != "" {
-		parsed, err := uuid.Parse(req.ApplicationId)
+	if resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId); resolvedAppID != "" {
+		parsed, err := uuid.Parse(resolvedAppID)
 		if err != nil {
 			return &pb.SyncUsersResponse{
 				ErrorMessage: "invalid application_id format",
@@ -1518,13 +1712,14 @@ func (h *AuthHandlerV2) SyncUsers(ctx context.Context, req *pb.SyncUsersRequest)
 
 // GetApplicationAuthConfig returns auth configuration for a specific application
 func (h *AuthHandlerV2) GetApplicationAuthConfig(ctx context.Context, req *pb.GetApplicationAuthConfigRequest) (*pb.GetApplicationAuthConfigResponse, error) {
-	if req.ApplicationId == "" {
+	resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId)
+	if resolvedAppID == "" {
 		return &pb.GetApplicationAuthConfigResponse{
 			ErrorMessage: "application_id is required",
 		}, nil
 	}
 
-	appID, err := uuid.Parse(req.ApplicationId)
+	appID, err := uuid.Parse(resolvedAppID)
 	if err != nil {
 		return &pb.GetApplicationAuthConfigResponse{
 			ErrorMessage: "invalid application_id format",
@@ -1580,10 +1775,10 @@ func (h *AuthHandlerV2) SendEmail(ctx context.Context, req *pb.SendEmailRequest)
 		profileID = &id
 	}
 
-	// Parse optional application ID
+	// Parse optional application ID (falls back to app secret context)
 	var applicationID *uuid.UUID
-	if req.ApplicationId != "" {
-		id, err := uuid.Parse(req.ApplicationId)
+	if resolvedAppID := ResolveApplicationID(ctx, req.ApplicationId); resolvedAppID != "" {
+		id, err := uuid.Parse(resolvedAppID)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid application_id format")
 		}

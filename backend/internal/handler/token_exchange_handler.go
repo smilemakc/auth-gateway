@@ -10,10 +10,10 @@ import (
 )
 
 type TokenExchangeHandler struct {
-	tokenExchangeService *service.TokenExchangeService
+	tokenExchangeService service.TokenExchangeServicer
 }
 
-func NewTokenExchangeHandler(tokenExchangeService *service.TokenExchangeService) *TokenExchangeHandler {
+func NewTokenExchangeHandler(tokenExchangeService service.TokenExchangeServicer) *TokenExchangeHandler {
 	return &TokenExchangeHandler{
 		tokenExchangeService: tokenExchangeService,
 	}
@@ -32,11 +32,7 @@ func (h *TokenExchangeHandler) CreateExchange(c *gin.Context) {
 
 	resp, err := h.tokenExchangeService.CreateExchange(c.Request.Context(), &req, appID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -56,11 +52,7 @@ func (h *TokenExchangeHandler) RedeemExchange(c *gin.Context) {
 
 	resp, err := h.tokenExchangeService.RedeemExchange(c.Request.Context(), &req, appID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 

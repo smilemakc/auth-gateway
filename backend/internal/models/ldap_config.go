@@ -177,3 +177,25 @@ type LDAPSyncResponse struct {
 	Message       string    `json:"message" example:"Sync completed successfully"`
 	Error         string    `json:"error,omitempty"`
 }
+
+// LDAPSyncLogListResponse represents paginated LDAP sync log list
+type LDAPSyncLogListResponse struct {
+	// List of sync logs
+	Logs []*LDAPSyncLog `json:"logs"`
+	// Total number of logs
+	Total int `json:"total" example:"50"`
+	// Current page number
+	Page int `json:"page" example:"1"`
+	// Number of items per page
+	PageSize int `json:"page_size" example:"20"`
+	// Total number of pages
+	TotalPages int `json:"total_pages" example:"3"`
+}
+
+// LDAPConfigListResponse represents LDAP configurations list
+type LDAPConfigListResponse struct {
+	// List of LDAP configurations
+	Configs []*LDAPConfig `json:"configs"`
+	// Total number of configurations
+	Total int `json:"total" example:"2"`
+}

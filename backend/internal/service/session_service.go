@@ -65,14 +65,16 @@ type SessionService struct {
 	sessionRepo      SessionStore
 	blacklistService BlackListStore
 	logger           *logger.Logger
+	maxSessions      int
 }
 
 // NewSessionService creates a new session service
-func NewSessionService(sessionRepo SessionStore, blacklistService *BlacklistService, logger *logger.Logger) *SessionService {
+func NewSessionService(sessionRepo SessionStore, blacklistService *BlacklistService, logger *logger.Logger, maxSessions int) *SessionService {
 	return &SessionService{
 		sessionRepo:      sessionRepo,
 		blacklistService: blacklistService,
 		logger:           logger,
+		maxSessions:      maxSessions,
 	}
 }
 
@@ -94,6 +96,33 @@ func (s *SessionService) CreateSessionWithParams(ctx context.Context, params Ses
 	sessionName := params.SessionName
 	if sessionName == "" {
 		sessionName = utils.GenerateSessionName(deviceInfo)
+	}
+
+	// Enforce session count limit
+	if s.maxSessions > 0 {
+		sessions, err := s.sessionRepo.GetUserSessions(ctx, params.UserID)
+		if err == nil && len(sessions) >= s.maxSessions {
+			// Revoke the oldest session to make room
+			oldest := sessions[len(sessions)-1]
+			for _, sess := range sessions {
+				if sess.CreatedAt.Before(oldest.CreatedAt) {
+					oldest = sess
+				}
+			}
+			s.logger.Info("revoking oldest session due to limit", map[string]interface{}{
+				"user_id":    params.UserID,
+				"session_id": oldest.ID,
+				"limit":      s.maxSessions,
+			})
+			// Blacklist tokens before revoking to invalidate active access tokens
+			if err := s.blacklistService.BlacklistSessionTokens(ctx, &oldest); err != nil {
+				s.logger.Warn("failed to blacklist evicted session tokens", map[string]interface{}{
+					"session_id": oldest.ID,
+					"error":      err.Error(),
+				})
+			}
+			_ = s.sessionRepo.RevokeSession(ctx, oldest.ID)
+		}
 	}
 
 	session := &models.Session{
@@ -276,7 +305,7 @@ func (s *SessionService) GetUserSessions(ctx context.Context, userID uuid.UUID, 
 		}
 		if session.User != nil {
 			resp.UserEmail = session.User.Email
-			resp.UserName = session.User.Username
+			resp.Username = session.User.Username
 		}
 		responseSessions = append(responseSessions, resp)
 	}
@@ -287,7 +316,7 @@ func (s *SessionService) GetUserSessions(ctx context.Context, userID uuid.UUID, 
 		Sessions:   responseSessions,
 		Total:      total,
 		Page:       page,
-		PerPage:    perPage,
+		PageSize:   perPage,
 		TotalPages: totalPages,
 	}, nil
 }
@@ -317,7 +346,7 @@ func (s *SessionService) GetAllSessions(ctx context.Context, page, perPage int) 
 		}
 		if session.User != nil {
 			resp.UserEmail = session.User.Email
-			resp.UserName = session.User.Username
+			resp.Username = session.User.Username
 		}
 		responseSessions = append(responseSessions, resp)
 	}
@@ -328,7 +357,7 @@ func (s *SessionService) GetAllSessions(ctx context.Context, page, perPage int) 
 		Sessions:   responseSessions,
 		Total:      total,
 		Page:       page,
-		PerPage:    perPage,
+		PageSize:   perPage,
 		TotalPages: totalPages,
 	}, nil
 }

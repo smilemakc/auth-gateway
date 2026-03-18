@@ -71,8 +71,9 @@ type SAMLSPResponse struct {
 
 // ListSAMLSPsResponse defines the response structure for listing SAML SPs
 type ListSAMLSPsResponse struct {
-	SPs      []SAMLSPResponse `json:"sps"`
-	Total    int              `json:"total"`
-	Page     int              `json:"page"`
-	PageSize int              `json:"page_size"`
+	SPs        []SAMLSPResponse `json:"sps"`
+	Total      int              `json:"total"`
+	Page       int              `json:"page"`
+	PageSize   int              `json:"page_size"`
+	TotalPages int              `json:"total_pages"`
 }

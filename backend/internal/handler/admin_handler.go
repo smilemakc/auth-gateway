@@ -15,15 +15,15 @@ import (
 
 // AdminHandler handles admin operations
 type AdminHandler struct {
-	adminService *service.AdminService
-	userService  *service.UserService
-	otpService   *service.OTPService
-	auditService *service.AuditService
+	adminService service.AdminServicer
+	userService  service.UserServicer
+	otpService   service.OTPServicer
+	auditService service.AuditServicer
 	logger       *logger.Logger
 }
 
 // NewAdminHandler creates a new admin handler
-func NewAdminHandler(adminService *service.AdminService, userService *service.UserService, otpService *service.OTPService, auditService *service.AuditService, logger *logger.Logger) *AdminHandler {
+func NewAdminHandler(adminService service.AdminServicer, userService service.UserServicer, otpService service.OTPServicer, auditService service.AuditServicer, logger *logger.Logger) *AdminHandler {
 	return &AdminHandler{
 		adminService: adminService,
 		userService:  userService,
@@ -71,8 +71,7 @@ func (h *AdminHandler) GetStats(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users [get]
 func (h *AdminHandler) ListUsers(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	page, pageSize := utils.ParsePagination(c)
 	appID, _ := utils.GetApplicationIDFromContext(c)
 
 	response, err := h.adminService.ListUsers(c.Request.Context(), appID, page, pageSize)
@@ -102,21 +101,14 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id} [get]
 func (h *AdminHandler) GetUser(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	user, err := h.adminService.GetUser(c.Request.Context(), userID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -130,7 +122,7 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param id path string true "User ID (UUID)"
-// @Success 200 {array} models.OAuthAccount
+// @Success 200 {object} models.OAuthAccountListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
@@ -138,25 +130,21 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id}/oauth-accounts [get]
 func (h *AdminHandler) GetUserOAuthAccounts(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	accounts, err := h.adminService.GetUserOAuthAccounts(c.Request.Context(), userID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, accounts)
+	c.JSON(http.StatusOK, models.OAuthAccountListResponse{
+		Accounts: accounts,
+		Total:    len(accounts),
+	})
 }
 
 // UpdateUser updates user information
@@ -176,11 +164,8 @@ func (h *AdminHandler) GetUserOAuthAccounts(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id} [put]
 func (h *AdminHandler) UpdateUser(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -192,20 +177,14 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Get admin ID from context
-	adminID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	adminID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	user, err := h.adminService.UpdateUser(c.Request.Context(), userID, &req, *adminID)
+	user, err := h.adminService.UpdateUser(c.Request.Context(), userID, &req, adminID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -236,20 +215,14 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Get admin ID from context
-	adminID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	adminID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	user, err := h.adminService.CreateUser(c.Request.Context(), &req, *adminID)
+	user, err := h.adminService.CreateUser(c.Request.Context(), &req, adminID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -271,24 +244,17 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id} [delete]
 func (h *AdminHandler) DeleteUser(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	if err := h.adminService.DeleteUser(c.Request.Context(), userID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "User deleted successfully"})
 }
 
 // ListAPIKeys returns all API keys
@@ -305,11 +271,10 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/api-keys [get]
 func (h *AdminHandler) ListAPIKeys(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
+	page, pageSize := utils.ParsePagination(c, 50)
 	appID, _ := utils.GetApplicationIDFromContext(c)
 
-	apiKeys, err := h.adminService.ListAPIKeys(c.Request.Context(), appID, page, pageSize)
+	result, err := h.adminService.ListAPIKeys(c.Request.Context(), appID, page, pageSize)
 	if err != nil {
 		h.logger.Error("Failed to list API keys", map[string]interface{}{
 			"error": err.Error(),
@@ -318,7 +283,7 @@ func (h *AdminHandler) ListAPIKeys(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, apiKeys)
+	c.JSON(http.StatusOK, result)
 }
 
 // RevokeAPIKey revokes an API key
@@ -336,24 +301,17 @@ func (h *AdminHandler) ListAPIKeys(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/api-keys/{id}/revoke [post]
 func (h *AdminHandler) RevokeAPIKey(c *gin.Context) {
-	keyID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid API key ID"),
-		))
+	keyID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	if err := h.adminService.RevokeAPIKey(c.Request.Context(), keyID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "API key revoked successfully"})
+	c.JSON(http.StatusOK, models.MessageResponse{Message: "API key revoked successfully"})
 }
 
 // ListAuditLogs returns audit logs
@@ -372,8 +330,7 @@ func (h *AdminHandler) RevokeAPIKey(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/audit-logs [get]
 func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
+	page, pageSize := utils.ParsePagination(c, 50)
 
 	var userID *uuid.UUID
 	if userIDStr := c.Query("user_id"); userIDStr != "" {
@@ -390,7 +347,7 @@ func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
 	appID, _ := utils.GetApplicationIDFromContext(c)
 	if appID != nil {
 		offset := (page - 1) * pageSize
-		logs, total, err := h.auditService.ListByApp(c.Request.Context(), *appID, pageSize, offset)
+		rawLogs, total, err := h.auditService.ListByApp(c.Request.Context(), *appID, pageSize, offset)
 		if err != nil {
 			h.logger.Error("Failed to list audit logs", map[string]interface{}{
 				"error": err.Error(),
@@ -398,11 +355,29 @@ func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"logs":      logs,
-			"total":     total,
-			"page":      page,
-			"page_size": pageSize,
+		adminLogs := make([]*models.AdminAuditLogResponse, 0, len(rawLogs))
+		for _, log := range rawLogs {
+			resp := &models.AdminAuditLogResponse{
+				ID:        log.ID,
+				UserID:    log.UserID,
+				Action:    string(log.Action),
+				Status:    string(log.Status),
+				IP:        log.IPAddress,
+				UserAgent: log.UserAgent,
+				CreatedAt: log.CreatedAt,
+			}
+			if log.User != nil {
+				resp.UserEmail = log.User.Email
+			}
+			adminLogs = append(adminLogs, resp)
+		}
+		totalPages := (total + pageSize - 1) / pageSize
+		c.JSON(http.StatusOK, models.AuditLogListResponse{
+			Logs:       adminLogs,
+			Total:      total,
+			Page:       page,
+			PageSize:   pageSize,
+			TotalPages: totalPages,
 		})
 		return
 	}
@@ -436,11 +411,8 @@ func (h *AdminHandler) ListAuditLogs(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id}/roles [post]
 func (h *AdminHandler) AssignRole(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -452,19 +424,14 @@ func (h *AdminHandler) AssignRole(c *gin.Context) {
 		return
 	}
 
-	adminID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	adminID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	user, err := h.adminService.AssignRole(c.Request.Context(), userID, req.RoleID, *adminID)
+	user, err := h.adminService.AssignRole(c.Request.Context(), userID, req.RoleID, adminID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -487,29 +454,19 @@ func (h *AdminHandler) AssignRole(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id}/roles/{roleId} [delete]
 func (h *AdminHandler) RemoveRole(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	roleID, err := uuid.Parse(c.Param("roleId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid role ID"),
-		))
+	roleID, ok := utils.ParseUUIDParam(c, "roleId")
+	if !ok {
 		return
 	}
 
 	user, err := h.adminService.RemoveRole(c.Request.Context(), userID, roleID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -531,21 +488,14 @@ func (h *AdminHandler) RemoveRole(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id}/send-password-reset [post]
 func (h *AdminHandler) SendPasswordReset(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	user, err := h.userService.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -572,16 +522,7 @@ func (h *AdminHandler) SendPasswordReset(c *gin.Context) {
 	}
 
 	if err := h.otpService.SendOTP(c.Request.Context(), otpReq); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		h.logger.Error("Failed to send password reset email", map[string]interface{}{
-			"error":   err.Error(),
-			"user_id": userID,
-			"email":   email,
-		})
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -621,26 +562,18 @@ func (h *AdminHandler) SendPasswordReset(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/users/{id}/reset-2fa [post]
 func (h *AdminHandler) Reset2FA(c *gin.Context) {
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid user ID"),
-		))
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	adminID, exists := utils.GetUserIDFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.NewErrorResponse(models.ErrUnauthorized))
+	adminID, ok := utils.MustGetUserID(c)
+	if !ok {
 		return
 	}
 
-	if err := h.adminService.AdminReset2FA(c.Request.Context(), userID, *adminID); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.NewErrorResponse(models.ErrInternalServer))
+	if err := h.adminService.AdminReset2FA(c.Request.Context(), userID, adminID); err != nil {
+		utils.RespondWithError(c, err)
 		return
 	}
 

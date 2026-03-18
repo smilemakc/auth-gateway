@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 )
@@ -17,6 +18,29 @@ func IsValidEmail(email string) bool {
 		return false
 	}
 	return emailRegex.MatchString(email)
+}
+
+// ValidateEmail performs comprehensive email validation including RFC 5321 limits
+// and header injection prevention.
+func ValidateEmail(email string) error {
+	if len(email) > 254 {
+		return errors.New("email too long")
+	}
+
+	parts := strings.SplitN(email, "@", 2)
+	if len(parts) != 2 || len(parts[0]) > 64 {
+		return errors.New("invalid email format")
+	}
+
+	if strings.ContainsAny(email, "\r\n") {
+		return errors.New("email contains invalid characters")
+	}
+
+	if !IsValidEmail(email) {
+		return errors.New("invalid email format")
+	}
+
+	return nil
 }
 
 // IsValidUsername checks if a username is valid

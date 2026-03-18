@@ -2,23 +2,22 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
 // LDAPHandler handles LDAP-related HTTP requests
 type LDAPHandler struct {
-	ldapService *service.LDAPService
+	ldapService service.LDAPServicer
 	logger      *logger.Logger
 }
 
 // NewLDAPHandler creates a new LDAP handler
-func NewLDAPHandler(ldapService *service.LDAPService, logger *logger.Logger) *LDAPHandler {
+func NewLDAPHandler(ldapService service.LDAPServicer, logger *logger.Logger) *LDAPHandler {
 	return &LDAPHandler{
 		ldapService: ldapService,
 		logger:      logger,
@@ -48,11 +47,7 @@ func (h *LDAPHandler) CreateConfig(c *gin.Context) {
 
 	config, err := h.ldapService.CreateConfig(c.Request.Context(), &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -71,21 +66,14 @@ func (h *LDAPHandler) CreateConfig(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/ldap/config/{id} [get]
 func (h *LDAPHandler) GetConfig(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid configuration ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	config, err := h.ldapService.GetConfig(c.Request.Context(), id)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -105,11 +93,7 @@ func (h *LDAPHandler) GetConfig(c *gin.Context) {
 func (h *LDAPHandler) GetActiveConfig(c *gin.Context) {
 	config, err := h.ldapService.GetActiveConfig(c.Request.Context())
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -122,7 +106,7 @@ func (h *LDAPHandler) GetActiveConfig(c *gin.Context) {
 // @Tags Admin - LDAP
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {array} models.LDAPConfig
+// @Success 200 {object} models.LDAPConfigListResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/ldap/configs [get]
 func (h *LDAPHandler) ListConfigs(c *gin.Context) {
@@ -132,7 +116,10 @@ func (h *LDAPHandler) ListConfigs(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, configs)
+	c.JSON(http.StatusOK, models.LDAPConfigListResponse{
+		Configs: configs,
+		Total:   len(configs),
+	})
 }
 
 // UpdateConfig handles updating LDAP configuration
@@ -150,11 +137,8 @@ func (h *LDAPHandler) ListConfigs(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/ldap/config/{id} [put]
 func (h *LDAPHandler) UpdateConfig(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid configuration ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -168,11 +152,7 @@ func (h *LDAPHandler) UpdateConfig(c *gin.Context) {
 
 	config, err := h.ldapService.UpdateConfig(c.Request.Context(), id, &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -190,20 +170,13 @@ func (h *LDAPHandler) UpdateConfig(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/ldap/config/{id} [delete]
 func (h *LDAPHandler) DeleteConfig(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid configuration ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	if err := h.ldapService.DeleteConfig(c.Request.Context(), id); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -255,11 +228,8 @@ func (h *LDAPHandler) TestConnection(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/ldap/config/{id}/sync [post]
 func (h *LDAPHandler) Sync(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid configuration ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -273,11 +243,7 @@ func (h *LDAPHandler) Sync(c *gin.Context) {
 
 	response, err := h.ldapService.Sync(c.Request.Context(), id, &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -293,21 +259,17 @@ func (h *LDAPHandler) Sync(c *gin.Context) {
 // @Param id path string true "Configuration ID (UUID)"
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Page size" default(20)
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} models.LDAPSyncLogListResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/ldap/config/{id}/sync-logs [get]
 func (h *LDAPHandler) GetSyncLogs(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid configuration ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	page, pageSize := utils.ParsePagination(c)
 
 	logs, total, err := h.ldapService.GetSyncLogs(c.Request.Context(), id, page, pageSize)
 	if err != nil {
@@ -315,10 +277,12 @@ func (h *LDAPHandler) GetSyncLogs(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"logs":      logs,
-		"total":     total,
-		"page":      page,
-		"page_size": pageSize,
+	totalPages := (total + pageSize - 1) / pageSize
+	c.JSON(http.StatusOK, models.LDAPSyncLogListResponse{
+		Logs:       logs,
+		Total:      total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
 	})
 }

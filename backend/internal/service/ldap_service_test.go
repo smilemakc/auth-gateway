@@ -120,7 +120,7 @@ func setupLDAPService() (*LDAPService, *mockLDAPConfigRepository, *mockUserStore
 	mUser := &mockUserStore{}
 	mGroup := newMockGroupStore()
 	log := logger.New("test", logger.InfoLevel, false)
-	svc := NewLDAPService(mLDAP, mUser, mGroup, log)
+	svc := NewLDAPService(mLDAP, mUser, mGroup, log, "")
 	return svc, mLDAP, mUser, mGroup
 }
 

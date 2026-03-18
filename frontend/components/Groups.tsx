@@ -9,6 +9,7 @@ import { useSort } from '../hooks/useSort';
 import SortableHeader from './SortableHeader';
 import { toast } from '../services/toast';
 import { confirm } from '../services/confirm';
+import { logger } from '@/lib/logger';
 
 const Groups: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -32,7 +33,7 @@ const Groups: React.FC = () => {
       try {
         await deleteGroup.mutateAsync(id);
       } catch (error) {
-        console.error('Failed to delete group:', error);
+        logger.error('Failed to delete group:', error);
         toast.error(t('common.failed_to_load'));
       }
     }

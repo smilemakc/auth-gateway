@@ -4,6 +4,7 @@
 
 import type { HttpClient } from '../../core/http';
 import type { MessageResponse } from '../../types/common';
+import type { OAuthAccountListResponse } from '../../types/oauth';
 import type {
   AdminStatsResponse,
   AdminUpdateUserRequest,
@@ -205,6 +206,18 @@ export class AdminUsersService extends BaseService {
   async sendPasswordReset(userId: string): Promise<{ message: string; email: string }> {
     const response = await this.http.post<{ message: string; email: string }>(
       `/api/admin/users/${userId}/send-password-reset`
+    );
+    return response.data;
+  }
+
+  /**
+   * Get OAuth accounts linked to a user (admin only)
+   * @param userId User ID
+   * @returns List of OAuth accounts
+   */
+  async getOAuthAccounts(userId: string): Promise<OAuthAccountListResponse> {
+    const response = await this.http.get<OAuthAccountListResponse>(
+      `/api/admin/users/${userId}/oauth-accounts`
     );
     return response.data;
   }

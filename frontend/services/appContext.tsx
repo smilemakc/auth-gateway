@@ -22,23 +22,9 @@ export const ApplicationProvider: React.FC<{ children: ReactNode }> = ({ childre
     return localStorage.getItem(STORAGE_KEY);
   });
 
-  const API_BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api`;
-
   const { data, isLoading } = useQuery<ListApplicationsResponse>({
     queryKey: queryKeys.applications.list(1, 100),
-    queryFn: async () => {
-      const token = localStorage.getItem('auth_gateway_access_token');
-      const response = await fetch(`${API_BASE}/admin/applications?page=1&per_page=100`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch applications');
-      }
-      return response.json();
-    },
+    queryFn: () => apiClient.admin.applications.list(1, 100),
   });
 
   const applications = data?.applications ?? [];

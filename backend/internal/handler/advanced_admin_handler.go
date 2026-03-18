@@ -2,12 +2,13 @@ package handler
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 
+	"github.com/smilemakc/auth-gateway/internal/config"
 	"github.com/smilemakc/auth-gateway/internal/models"
-	"github.com/smilemakc/auth-gateway/internal/repository"
 	"github.com/smilemakc/auth-gateway/internal/service"
 	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
@@ -18,24 +19,26 @@ import (
 
 // AdvancedAdminHandler handles advanced admin endpoints
 type AdvancedAdminHandler struct {
-	rbacService     *service.RBACService
-	sessionService  *service.SessionService
-	ipFilterService *service.IPFilterService
-	brandingRepo    *repository.BrandingRepository
-	systemRepo      *repository.SystemRepository
-	geoRepo         *repository.GeoRepository
+	rbacService     service.RBACServicer
+	sessionService  service.SessionServicer
+	ipFilterService service.IPFilterServicer
+	brandingRepo    service.BrandingRepositoryInterface
+	systemRepo      service.SystemRepositoryInterface
+	geoRepo         service.GeoRepositoryInterface
+	cfg             *config.Config
 	log             *logger.Logger
 }
 
 // NewAdvancedAdminHandler creates a new advanced admin handler
 func NewAdvancedAdminHandler(
-	rbacService *service.RBACService,
-	sessionService *service.SessionService,
-	ipFilterService *service.IPFilterService,
-	brandingRepo *repository.BrandingRepository,
-	systemRepo *repository.SystemRepository,
-	geoRepo *repository.GeoRepository,
+	rbacService service.RBACServicer,
+	sessionService service.SessionServicer,
+	ipFilterService service.IPFilterServicer,
+	brandingRepo service.BrandingRepositoryInterface,
+	systemRepo service.SystemRepositoryInterface,
+	geoRepo service.GeoRepositoryInterface,
 	log *logger.Logger,
+	cfg *config.Config,
 ) *AdvancedAdminHandler {
 	return &AdvancedAdminHandler{
 		rbacService:     rbacService,
@@ -44,6 +47,7 @@ func NewAdvancedAdminHandler(
 		brandingRepo:    brandingRepo,
 		systemRepo:      systemRepo,
 		geoRepo:         geoRepo,
+		cfg:             cfg,
 		log:             log,
 	}
 }
@@ -58,7 +62,7 @@ func NewAdvancedAdminHandler(
 // @Tags Admin - RBAC
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {array} models.Permission
+// @Success 200 {object} models.PermissionListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -78,7 +82,10 @@ func (h *AdvancedAdminHandler) ListPermissions(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, permissions)
+	c.JSON(http.StatusOK, models.PermissionListResponse{
+		Permissions: permissions,
+		Total:       len(permissions),
+	})
 }
 
 // CreatePermission godoc
@@ -125,9 +132,8 @@ func (h *AdvancedAdminHandler) CreatePermission(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/rbac/permissions/{id} [put]
 func (h *AdvancedAdminHandler) UpdatePermission(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid permission ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -137,8 +143,7 @@ func (h *AdvancedAdminHandler) UpdatePermission(c *gin.Context) {
 		return
 	}
 
-	err = h.rbacService.UpdatePermission(c.Request.Context(), id, &req)
-	if err != nil {
+	if err := h.rbacService.UpdatePermission(c.Request.Context(), id, &req); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -160,6 +165,33 @@ func (h *AdvancedAdminHandler) UpdatePermission(c *gin.Context) {
 	c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Permission not found"})
 }
 
+// GetPermission godoc
+// @Summary Get a permission by ID
+// @Description Get a specific permission by its ID (admin only)
+// @Tags Admin - RBAC
+// @Accept json
+// @Produce json
+// @Param id path string true "Permission ID (UUID)"
+// @Security BearerAuth
+// @Success 200 {object} models.Permission
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Router /api/admin/rbac/permissions/{id} [get]
+func (h *AdvancedAdminHandler) GetPermission(c *gin.Context) {
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
+		return
+	}
+
+	permission, err := h.rbacService.GetPermission(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "Permission not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, permission)
+}
+
 // DeletePermission godoc
 // @Summary Delete a permission
 // @Description Delete a permission by ID
@@ -173,14 +205,12 @@ func (h *AdvancedAdminHandler) UpdatePermission(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/rbac/permissions/{id} [delete]
 func (h *AdvancedAdminHandler) DeletePermission(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid permission ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = h.rbacService.DeletePermission(c.Request.Context(), id)
-	if err != nil {
+	if err := h.rbacService.DeletePermission(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -194,7 +224,7 @@ func (h *AdvancedAdminHandler) DeletePermission(c *gin.Context) {
 // @Tags Admin - RBAC
 // @Security BearerAuth
 // @Produce json
-// @Success 200 {array} models.Role
+// @Success 200 {object} models.RoleListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
@@ -214,7 +244,10 @@ func (h *AdvancedAdminHandler) ListRoles(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, roles)
+	c.JSON(http.StatusOK, models.RoleListResponse{
+		Roles: roles,
+		Total: len(roles),
+	})
 }
 
 // CreateRole godoc
@@ -268,9 +301,8 @@ func (h *AdvancedAdminHandler) CreateRole(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/rbac/roles/{id} [get]
 func (h *AdvancedAdminHandler) GetRole(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid role ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -299,9 +331,8 @@ func (h *AdvancedAdminHandler) GetRole(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/rbac/roles/{id} [put]
 func (h *AdvancedAdminHandler) UpdateRole(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid role ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -333,14 +364,12 @@ func (h *AdvancedAdminHandler) UpdateRole(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/rbac/roles/{id} [delete]
 func (h *AdvancedAdminHandler) DeleteRole(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid role ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = h.rbacService.DeleteRole(c.Request.Context(), id)
-	if err != nil {
+	if err := h.rbacService.DeleteRole(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -380,29 +409,20 @@ func (h *AdvancedAdminHandler) GetPermissionMatrix(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Success 200 {object} models.SessionListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/sessions [get]
 func (h *AdvancedAdminHandler) ListUserSessions(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
+	userID, ok := utils.MustGetUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "User not authenticated"})
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	page, pageSize := utils.ParsePagination(c)
 
-	if page < 1 {
-		page = 1
-	}
-	if perPage < 1 || perPage > 100 {
-		perPage = 20
-	}
-
-	sessions, err := h.sessionService.GetUserSessions(c.Request.Context(), *userID, page, perPage)
+	sessions, err := h.sessionService.GetUserSessions(c.Request.Context(), userID, page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
@@ -423,19 +443,16 @@ func (h *AdvancedAdminHandler) ListUserSessions(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/sessions/{id} [delete]
 func (h *AdvancedAdminHandler) RevokeSession(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
+	userID, ok := utils.MustGetUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "User not authenticated"})
 		return
 	}
-	sessionID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid session ID"})
+	sessionID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = h.sessionService.RevokeSession(c.Request.Context(), *userID, sessionID)
-	if err != nil {
+	if err := h.sessionService.RevokeSession(c.Request.Context(), userID, sessionID); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -456,14 +473,12 @@ func (h *AdvancedAdminHandler) RevokeSession(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/sessions/{id} [delete]
 func (h *AdvancedAdminHandler) AdminRevokeSession(c *gin.Context) {
-	sessionID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid session ID"})
+	sessionID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = h.sessionService.AdminRevokeSession(c.Request.Context(), sessionID)
-	if err != nil {
+	if err := h.sessionService.AdminRevokeSession(c.Request.Context(), sessionID); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -539,6 +554,36 @@ func (h *AdvancedAdminHandler) GetSessionStats(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
+// ListUserSessionsAdmin godoc
+// @Summary List user sessions (admin)
+// @Description Get sessions for a specific user (admin only)
+// @Tags Admin - Sessions
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID (UUID)"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Page size" default(20)
+// @Security BearerAuth
+// @Success 200 {object} models.SessionListResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Router /api/admin/users/{id}/sessions [get]
+func (h *AdvancedAdminHandler) ListUserSessionsAdmin(c *gin.Context) {
+	userID, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
+		return
+	}
+
+	page, pageSize := utils.ParsePagination(c)
+
+	sessions, err := h.sessionService.GetUserSessions(c.Request.Context(), userID, page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to list user sessions"})
+		return
+	}
+
+	c.JSON(http.StatusOK, sessions)
+}
+
 // ListAllSessions godoc
 // @Summary List all sessions (admin only)
 // @Description Get a list of all active sessions in the system
@@ -546,44 +591,57 @@ func (h *AdvancedAdminHandler) GetSessionStats(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(50)
-// @Success 200 {array} models.ActiveSessionResponse
+// @Param page_size query int false "Page size" default(50)
+// @Success 200 {object} models.SessionListResponse
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 403 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/sessions [get]
 func (h *AdvancedAdminHandler) ListAllSessions(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "50"))
-
-	if page < 1 {
-		page = 1
-	}
-	if perPage < 1 || perPage > 100 {
-		perPage = 50
-	}
+	page, pageSize := utils.ParsePagination(c, 50)
 
 	appID, _ := utils.GetApplicationIDFromContext(c)
 
 	if appID != nil {
-		sessions, total, err := h.sessionService.GetAppSessionsPaginated(c.Request.Context(), *appID, page, perPage)
+		sessions, total, err := h.sessionService.GetAppSessionsPaginated(c.Request.Context(), *appID, page, pageSize)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 			return
 		}
 
-		totalPages := (total + perPage - 1) / perPage
-		c.JSON(http.StatusOK, gin.H{
-			"sessions":    sessions,
-			"total":       total,
-			"page":        page,
-			"per_page":    perPage,
-			"total_pages": totalPages,
+		responseSessions := make([]models.ActiveSessionResponse, len(sessions))
+		for i, session := range sessions {
+			responseSessions[i] = models.ActiveSessionResponse{
+				ID:           session.ID,
+				UserID:       session.UserID,
+				DeviceType:   session.DeviceType,
+				OS:           session.OS,
+				Browser:      session.Browser,
+				UserAgent:    session.UserAgent,
+				IPAddress:    session.IPAddress,
+				SessionName:  session.SessionName,
+				LastActiveAt: session.LastActiveAt,
+				CreatedAt:    session.CreatedAt,
+				ExpiresAt:    session.ExpiresAt,
+			}
+			if session.User != nil {
+				responseSessions[i].UserEmail = session.User.Email
+				responseSessions[i].Username = session.User.Username
+			}
+		}
+
+		totalPages := (total + pageSize - 1) / pageSize
+		c.JSON(http.StatusOK, models.SessionListResponse{
+			Sessions:   responseSessions,
+			Total:      total,
+			Page:       page,
+			PageSize:   pageSize,
+			TotalPages: totalPages,
 		})
 		return
 	}
 
-	sessions, err := h.sessionService.GetAllSessions(c.Request.Context(), page, perPage)
+	sessions, err := h.sessionService.GetAllSessions(c.Request.Context(), page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
@@ -603,7 +661,7 @@ func (h *AdvancedAdminHandler) ListAllSessions(c *gin.Context) {
 // @Security BearerAuth
 // @Produce json
 // @Param page query int false "Page number" default(1)
-// @Param per_page query int false "Items per page" default(20)
+// @Param page_size query int false "Page size" default(20)
 // @Param type query string false "Filter type (whitelist/blacklist)"
 // @Success 200 {object} models.IPFilterListResponse
 // @Failure 401 {object} models.ErrorResponse
@@ -611,18 +669,10 @@ func (h *AdvancedAdminHandler) ListAllSessions(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/ip-filters [get]
 func (h *AdvancedAdminHandler) ListIPFilters(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	page, pageSize := utils.ParsePagination(c)
 	filterType := c.Query("type")
 
-	if page < 1 {
-		page = 1
-	}
-	if perPage < 1 || perPage > 100 {
-		perPage = 20
-	}
-
-	filters, err := h.ipFilterService.ListIPFilters(c.Request.Context(), page, perPage, filterType)
+	filters, err := h.ipFilterService.ListIPFilters(c.Request.Context(), page, pageSize, filterType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
@@ -645,9 +695,8 @@ func (h *AdvancedAdminHandler) ListIPFilters(c *gin.Context) {
 // @Failure 403 {object} models.ErrorResponse
 // @Router /api/admin/ip-filters [post]
 func (h *AdvancedAdminHandler) CreateIPFilter(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
+	userID, ok := utils.MustGetUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "User not authenticated"})
 		return
 	}
 
@@ -657,7 +706,7 @@ func (h *AdvancedAdminHandler) CreateIPFilter(c *gin.Context) {
 		return
 	}
 
-	filter, err := h.ipFilterService.CreateIPFilter(c.Request.Context(), &req, *userID)
+	filter, err := h.ipFilterService.CreateIPFilter(c.Request.Context(), &req, userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
@@ -679,14 +728,12 @@ func (h *AdvancedAdminHandler) CreateIPFilter(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/ip-filters/{id} [delete]
 func (h *AdvancedAdminHandler) DeleteIPFilter(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Invalid filter ID"})
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = h.ipFilterService.DeleteIPFilter(c.Request.Context(), id)
-	if err != nil {
+	if err := h.ipFilterService.DeleteIPFilter(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -746,9 +793,8 @@ func (h *AdvancedAdminHandler) GetBranding(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/branding [put]
 func (h *AdvancedAdminHandler) UpdateBranding(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
+	userID, ok := utils.MustGetUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "User not authenticated"})
 		return
 	}
 
@@ -797,7 +843,7 @@ func (h *AdvancedAdminHandler) UpdateBranding(c *gin.Context) {
 		settings.PrivacyURL = req.PrivacyURL
 	}
 
-	err = h.brandingRepo.UpdateBrandingSettings(c.Request.Context(), settings, *userID)
+	err = h.brandingRepo.UpdateBrandingSettings(c.Request.Context(), settings, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
@@ -850,9 +896,8 @@ func (h *AdvancedAdminHandler) GetMaintenanceMode(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/admin/system/maintenance [put]
 func (h *AdvancedAdminHandler) SetMaintenanceMode(c *gin.Context) {
-	userID, ok := utils.GetUserIDFromContext(c)
+	userID, ok := utils.MustGetUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "User not authenticated"})
 		return
 	}
 
@@ -867,7 +912,7 @@ func (h *AdvancedAdminHandler) SetMaintenanceMode(c *gin.Context) {
 	if req.Enabled {
 		value = "true"
 	}
-	err := h.systemRepo.UpdateSetting(c.Request.Context(), models.SettingMaintenanceMode, value, userID)
+	err := h.systemRepo.UpdateSetting(c.Request.Context(), models.SettingMaintenanceMode, value, &userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
@@ -875,7 +920,7 @@ func (h *AdvancedAdminHandler) SetMaintenanceMode(c *gin.Context) {
 
 	// Update message if provided
 	if req.Message != "" {
-		err = h.systemRepo.UpdateSetting(c.Request.Context(), models.SettingMaintenanceMessage, req.Message, userID)
+		err = h.systemRepo.UpdateSetting(c.Request.Context(), models.SettingMaintenanceMessage, req.Message, &userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 			return
@@ -961,4 +1006,72 @@ func (h *AdvancedAdminHandler) GetGeoDistribution(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// GetPasswordPolicy godoc
+// @Summary Get password policy settings
+// @Description Get current password policy configuration and JWT TTL settings
+// @Tags Admin - System
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/system/password-policy [get]
+func (h *AdvancedAdminHandler) GetPasswordPolicy(c *gin.Context) {
+	response := map[string]interface{}{
+		"minLength":        h.cfg.Security.PasswordPolicy.MinLength,
+		"requireUppercase": h.cfg.Security.PasswordPolicy.RequireUppercase,
+		"requireLowercase": h.cfg.Security.PasswordPolicy.RequireLowercase,
+		"requireNumbers":   h.cfg.Security.PasswordPolicy.RequireNumbers,
+		"requireSpecial":   h.cfg.Security.PasswordPolicy.RequireSpecial,
+		"historyCount":     0,
+		"expiryDays":       0,
+		"jwtTtlMinutes":    int(h.cfg.JWT.AccessExpires.Minutes()),
+		"refreshTtlDays":   int(h.cfg.JWT.RefreshExpires.Hours() / 24),
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// UpdatePasswordPolicy godoc
+// @Summary Update password policy settings
+// @Description Update password policy configuration (admin only)
+// @Tags Admin - System
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param policy body map[string]interface{} true "Password policy data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/admin/system/password-policy [put]
+func (h *AdvancedAdminHandler) UpdatePasswordPolicy(c *gin.Context) {
+	userID, ok := utils.MustGetUserID(c)
+	if !ok {
+		return
+	}
+
+	var req map[string]interface{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	jsonData, err := json.Marshal(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Failed to serialize policy"})
+		return
+	}
+
+	err = h.systemRepo.UpdateSetting(c.Request.Context(), "password_policy", string(jsonData), &userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, req)
 }

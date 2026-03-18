@@ -5,23 +5,23 @@ import (
 	"encoding/xml"
 	"net/http"
 	"net/url"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/smilemakc/auth-gateway/internal/models"
 	"github.com/smilemakc/auth-gateway/internal/service"
+	"github.com/smilemakc/auth-gateway/internal/utils"
 	"github.com/smilemakc/auth-gateway/pkg/logger"
 )
 
 // SAMLHandler handles SAML-related HTTP requests
 type SAMLHandler struct {
-	samlService *service.SAMLService
+	samlService service.SAMLServicer
 	logger      *logger.Logger
 }
 
 // NewSAMLHandler creates a new SAML handler
-func NewSAMLHandler(samlService *service.SAMLService, logger *logger.Logger) *SAMLHandler {
+func NewSAMLHandler(samlService service.SAMLServicer, logger *logger.Logger) *SAMLHandler {
 	return &SAMLHandler{
 		samlService: samlService,
 		logger:      logger,
@@ -180,11 +180,7 @@ func (h *SAMLHandler) CreateSP(c *gin.Context) {
 
 	sp, err := h.samlService.CreateSP(c.Request.Context(), &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -202,21 +198,14 @@ func (h *SAMLHandler) CreateSP(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/saml/sp/{id} [get]
 func (h *SAMLHandler) GetSP(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid SP ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	sp, err := h.samlService.GetSP(c.Request.Context(), id)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -234,8 +223,7 @@ func (h *SAMLHandler) GetSP(c *gin.Context) {
 // @Success 200 {object} models.ListSAMLSPsResponse
 // @Router /api/admin/saml/sp [get]
 func (h *SAMLHandler) ListSPs(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	page, pageSize := utils.ParsePagination(c)
 
 	sps, total, err := h.samlService.ListSPs(c.Request.Context(), page, pageSize)
 	if err != nil {
@@ -278,11 +266,8 @@ func (h *SAMLHandler) ListSPs(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse
 // @Router /api/admin/saml/sp/{id} [put]
 func (h *SAMLHandler) UpdateSP(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid SP ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -296,11 +281,7 @@ func (h *SAMLHandler) UpdateSP(c *gin.Context) {
 
 	sp, err := h.samlService.UpdateSP(c.Request.Context(), id, &req)
 	if err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
@@ -317,20 +298,13 @@ func (h *SAMLHandler) UpdateSP(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse
 // @Router /api/admin/saml/sp/{id} [delete]
 func (h *SAMLHandler) DeleteSP(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewErrorResponse(
-			models.NewAppError(http.StatusBadRequest, "Invalid SP ID"),
-		))
+	id, ok := utils.ParseUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	if err := h.samlService.DeleteSP(c.Request.Context(), id); err != nil {
-		if appErr, ok := err.(*models.AppError); ok {
-			c.JSON(appErr.Code, models.NewErrorResponse(appErr))
-		} else {
-			c.JSON(http.StatusInternalServerError, models.NewErrorResponse(err))
-		}
+		utils.RespondWithError(c, err)
 		return
 	}
 
